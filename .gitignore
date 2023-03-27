@@ -1,0 +1,8 @@
+*.egg-info
+__pycache__
+.vscode
+.pytype*
+.pytest*
+*.pkl
+*.ipynb
+.DS_Store
