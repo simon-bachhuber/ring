@@ -262,11 +262,17 @@ def inertia_from_geometries(geometries: list[Geometry]) -> Inertia:
     return inertia
 
 
+N_JOINT_PARAMS: int = 1
+
+
 @struct.dataclass
 class Link(_Base):
     transform1: Transform
-    joint_type: str = struct.field(False)
-    joint_params: dict = field(default_factory=lambda: dict())
+
+    # these parameters can be used to model joints that have parameters
+    # they are directly feed into the `jcalc` routine
+    # this array *must* be of shape (N_JOINT_PARAMS,)
+    joint_params: jax.Array = jnp.zeros((N_JOINT_PARAMS,))
 
     # internal useage
     inertia: Inertia = Inertia.zero()
@@ -276,11 +282,12 @@ class Link(_Base):
 
 @struct.dataclass
 class System(_Base):
-    links_parent_array: jax.Array
-    links: list[Link]
+    link_parents: jax.Array
+    links: Link
+    link_joint_types: list[str] = struct.field(False)
 
     # simulation timestep size
-    dt: jax.Array = struct.field(False)
+    dt: float = struct.field(False)
 
     # whether or not to re-calculate the inertia
     # matrix at every simulation timestep because
@@ -292,16 +299,16 @@ class System(_Base):
 
     @property
     def parent(self) -> jax.Array:
-        return self.links_parent_array
+        return self.link_parents
 
     @property
     def N(self):
-        return len(self.links_parent_array)
+        return len(self.link_parents)
 
 
 @struct.dataclass
 class State(_Base):
-    q: dict[str, jax.Array]
-    alpha: dict[str, jax.Array]
+    q: dict[int, jax.Array]
+    alpha: dict[int, jax.Array]
     x: Transform
     xd: Motion

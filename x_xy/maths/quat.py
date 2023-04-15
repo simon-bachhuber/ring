@@ -43,7 +43,8 @@ def quat_inv(q: jnp.ndarray) -> jnp.ndarray:
 @partial(jnp.vectorize, signature="(3),(4)->(3)")
 def rotate(vector: jnp.ndarray, quat: jnp.ndarray):
     """Rotates a vector `vector` by a *unit* quaternion `quat`."""
-    return quat_mul(quat, quat_mul(jnp.array([0, *vector]), quat_inv(quat)))[1:4]
+    qvec = jnp.array([0, *vector])
+    return rotate_quat(qvec, quat)[1:4]
 
 
 def rotate_matrix(matrix: jax.Array, quat: jax.Array):
@@ -52,10 +53,21 @@ def rotate_matrix(matrix: jax.Array, quat: jax.Array):
     return E @ matrix @ E.T
 
 
+def rotate_quat(q: jax.Array, quat: jax.Array):
+    "Rotate quaternion `q` by `quat`"
+    return quat_mul(quat, quat_mul(q, quat_inv(quat)))
+
+
 @partial(jnp.vectorize, signature="(3),()->(4)")
 def quat_rot_axis(axis: jnp.ndarray, angle: jnp.ndarray) -> jnp.ndarray:
     """Construct a *unit* quaternion that describes rotating around
-    `axis` by `angle` (radians)."""
+    `axis` by `angle` (radians).
+
+    This is the interpretation of rotating the vector and *not*
+    the frame.
+    For the interpretation of rotating the frame and *not* the
+    vector, you should use angle -> -angle.
+    """
     axis = safe_normalize(axis)
     s, c = jnp.sin(angle / 2), jnp.cos(angle / 2)
     return jnp.array([c, *(axis * s)])

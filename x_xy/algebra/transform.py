@@ -1,17 +1,17 @@
 import jax.numpy as jnp
 
-from .. import base, maths
+from x_xy import base, maths
 
 
-def transform_mul(t1: base.Transform, t2: base.Transform) -> base.Transform:
+def transform_mul(t2: base.Transform, t1: base.Transform) -> base.Transform:
     """Chains two transformations `t1` and `t2`.
     t1: Plücker A -> Plücker B,
     t2: Plücker B -> Plücker C
     =>
     Returns: Plücker A -> Plücker C
     """
-    pos = t2.pos + maths.rotate(t1.pos, maths.quat_inv(t2.rot))
-    rot = maths.quat_mul(t1.rot, t2.rot)
+    pos = t1.pos + maths.rotate(t2.pos, maths.quat_inv(t1.rot))
+    rot = maths.quat_mul(t2.rot, t1.rot)
     return base.Transform(pos, rot)
 
 
@@ -19,6 +19,22 @@ def transform_inv(t: base.Transform) -> base.Transform:
     "Inverts the transform. A -> B becomes B -> A"
     pos = maths.rotate(-t.pos, t.rot)
     rot = maths.quat_inv(t.rot)
+    return base.Transform(pos, rot)
+
+
+def transform_move_into_frame(
+    t: base.Transform, new_frame: base.Transform
+) -> base.Transform:
+    """Express transform `t`: A -> B, in frame C using `new_frame`: A -> C.
+
+    Suppose you are given a transform `t` that maps from A -> B.
+    Then, you think of this operation as something abstract.
+    Then, you want to do this operation that maps from A -> B but
+    apply it in frame C. The connection between A -> C is given by `new_frame`.
+    """
+    q_C_to_A = new_frame.rot
+    rot = maths.rotate_quat(t.rot, q_C_to_A)
+    pos = maths.rotate(t.pos, q_C_to_A)
     return base.Transform(pos, rot)
 
 

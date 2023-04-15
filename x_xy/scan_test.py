@@ -6,7 +6,7 @@ from x_xy import base, scan
 
 
 def empty_sys():
-    return base.System(jnp.array([-1, 0, 1, 0, 3, 0, 5, 0, 7]), [], 0.01, False)
+    return base.System(jnp.array([-1, 0, 1, 0, 3, 0, 5, 0, 7]), [], [], 0.01, False)
 
 
 def test_scan():

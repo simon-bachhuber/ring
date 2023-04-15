@@ -41,6 +41,6 @@ setuptools.setup(
         "vispy",
         "imageio",
         "pytest",
-        # "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
+        "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
     ],
 )

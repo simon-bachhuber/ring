@@ -1,9 +1,10 @@
+import jax
 import jax.numpy as jnp
 import jax.random as jrand
 import numpy as np
 import tree_utils as tu
 
-from x_xy import maths
+from x_xy import algebra, maths, testing
 from x_xy.base import Force, Inertia, Motion, Transform
 
 """Tests that compare directly to matrix implementations of the same operations."""
@@ -19,8 +20,10 @@ def test_mat_transform():
         X = maths.spatial.X_transform(E, r)
         t = Transform(r, maths.quat_from_3x3(E))
         assert jnp.allclose(X, t.as_matrix())
-        assert jnp.allclose(X @ X, t.do(t).as_matrix(), atol=1e-6)
-        assert jnp.allclose(jnp.linalg.inv(X), t.inv().as_matrix(), atol=1e-7)
+        assert jnp.allclose(X @ X, algebra.transform_mul(t, t).as_matrix(), atol=1e-6)
+        assert jnp.allclose(
+            jnp.linalg.inv(X), algebra.transform_inv(t).as_matrix(), atol=1e-7
+        )
 
 
 def toy_I_3x3(seed):
@@ -43,14 +46,20 @@ def test_mat_inertia():
             X_star = X_inv.T
             t = Transform(r, maths.quat_from_3x3(E))
             assert jnp.allclose(
-                t.do(inertia).as_matrix(), X_star @ I_mat @ X_inv, atol=1e-5
+                algebra.transform_inertia(t, inertia).as_matrix(),
+                X_star @ I_mat @ X_inv,
+                atol=1e-5,
             )
             assert jnp.allclose(
-                t.inv().do(inertia).as_matrix(), X.T @ I_mat @ X, atol=1e-5
+                algebra.transform_inertia(
+                    algebra.transform_inv(t), inertia
+                ).as_matrix(),
+                X.T @ I_mat @ X,
+                atol=1e-5,
             )
 
 
-"""Tests are all take from Page 247 of "Rigid Body Dynamics Algorithms" Book.
+"""Tests are all taken from Page 247 of "Rigid Body Dynamics Algorithms" Book.
 """
 
 
@@ -125,23 +134,30 @@ def test_transform_transform():
     rot = maths.quat_mul(rot1, rot2)
     pos = pos2 + maths.rotate(pos1, maths.quat_inv(rot2))
     t = Transform(pos, rot)
-    that = t1.do(t2)
+    that = algebra.transform_mul(t1, t2)
     assert tu.tree_close(t, that)
     assert jnp.allclose(t.as_matrix(), that.as_matrix())
 
 
 def test_transform_inv():
     for t in [t1, t2]:
-        assert jnp.allclose(t.inv().do(t).as_matrix(), jnp.eye(6), atol=1e-6)
-        assert jnp.allclose(t.do(t.inv()).as_matrix(), jnp.eye(6), atol=1e-7)
+        t_inv = algebra.transform_inv(t)
+        assert jnp.allclose(
+            algebra.transform_mul(t, t_inv).as_matrix(), jnp.eye(6), atol=1e-7
+        )
         # TODO
-        assert tu.tree_close(t.do(t.inv()), Transform.zero(), atol=1e-7)
+        assert jnp.allclose(
+            algebra.transform_mul(t_inv, t).as_matrix(), jnp.eye(6), atol=1e-6
+        )
+        assert tu.tree_close(
+            algebra.transform_mul(t, t_inv), Transform.zero(), atol=1e-7
+        )
 
 
 def test_transform_motion():
     for m, t in zip([m1, m2], [t1, t2]):
         assert tu.tree_close(
-            t.do(m),
+            algebra.transform_motion(t, m),
             Motion(
                 maths.rotate(m.ang, t.rot),
                 maths.rotate(m.vel - jnp.cross(t.pos, m.ang), t.rot),
@@ -153,7 +169,7 @@ def test_transform_inv_motion():
     for m, t in zip([m1, m2], [t1, t2]):
         inv = lambda vec: maths.rotate(vec, maths.quat_inv(t.rot))
         assert tu.tree_close(
-            t.inv().do(m),
+            algebra.transform_motion(algebra.transform_inv(t), m),
             Motion(inv(m.ang), inv(m.vel) + jnp.cross(t.pos, inv(m.ang))),
         )
 
@@ -161,7 +177,7 @@ def test_transform_inv_motion():
 def test_transform_force():
     for f, t in zip([f1, f2], [t1, t2]):
         assert tu.tree_close(
-            t.do(f),
+            algebra.transform_force(t, f),
             Force(
                 maths.rotate(f.ang - jnp.cross(t.pos, f.vel), t.rot),
                 maths.rotate(f.vel, t.rot),
@@ -173,7 +189,7 @@ def test_transform_inv_force():
     for f, t in zip([f1, f2], [t1, t2]):
         inv = lambda vec: maths.rotate(vec, maths.quat_inv(t.rot))
         assert tu.tree_close(
-            t.inv().do(f),
+            algebra.transform_force(algebra.transform_inv(t), f),
             Force(inv(f.ang) + jnp.cross(t.pos, inv(f.vel)), inv(f.vel)),
         )
 
@@ -189,14 +205,17 @@ def test_tranform_inv_inertia():
             - rcross @ maths.spatial.cross(inv(it.h))
             - maths.spatial.cross(new_h) @ rcross
         )
-        assert tu.tree_close(t.inv().do(it), Inertia(it_3x3, new_h, it.mass))
+        assert tu.tree_close(
+            algebra.transform_inertia(algebra.transform_inv(t), it),
+            Inertia(it_3x3, new_h, it.mass),
+        )
 
 
 def test_motion_cross_motion():
     for ma in [m1, m2]:
         for mb in [m1, m2]:
             assert jnp.allclose(
-                ma.cross(mb).as_matrix(),
+                algebra.motion_cross(ma, mb).as_matrix(),
                 jnp.concatenate(
                     (
                         jnp.cross(ma.ang, mb.ang),
@@ -210,7 +229,7 @@ def test_motion_cross_force():
     for m in [m1, m2]:
         for f in [f1, f2]:
             assert jnp.allclose(
-                m.cross(f).as_matrix(),
+                algebra.motion_cross_star(m, f).as_matrix(),
                 jnp.concatenate(
                     (
                         jnp.cross(m.ang, f.ang) + jnp.cross(m.vel, f.vel),
@@ -224,7 +243,7 @@ def test_inertia_dot_motion():
     for m in [m1, m2]:
         for it in [it1, it2]:
             assert tu.tree_close(
-                it.mul(m),
+                algebra.inertia_mul_motion(it, m),
                 Force(
                     it.it_3x3 @ m.ang + jnp.cross(it.h, m.vel),
                     it.mass * m.vel - jnp.cross(it.h, m.ang),
@@ -233,4 +252,39 @@ def test_inertia_dot_motion():
 
 
 def test_motion_dot_force():
-    assert jnp.isclose(m1.dot(f1), m1.flatten() @ f1.flatten())
+    assert jnp.isclose(algebra.motion_dot(m1, f1), m1.flatten() @ f1.flatten())
+
+
+"""Tests from 15.04.23 onwards"""
+
+
+def test_transform_move_into_frame():
+    xaxis, yaxis, zaxis, tA, tB = testing.basic_coordinate_logic()
+
+    t_A_B = algebra.transform_mul(tB, algebra.transform_inv(tA))
+
+    # first check that the position vector is ok
+    assert tu.tree_close(t_A_B.pos, -yaxis, atol=1e-7)
+
+    t_A_B_in_B = algebra.transform_move_into_frame(t_A_B, t_A_B)
+    assert tu.tree_close(t_A_B_in_B.pos, zaxis, atol=1e-7)
+
+    t_A_B_in_eps = algebra.transform_move_into_frame(t_A_B, algebra.transform_inv(tA))
+    assert tu.tree_close(t_A_B_in_eps.pos, xaxis, atol=1e-7)
+
+    # check that rotation quat is ok
+    assert tu.tree_close(maths.rotate(xaxis, t_A_B.rot), yaxis, atol=1e-7)
+    assert tu.tree_close(maths.rotate(yaxis, t_A_B.rot), -zaxis, atol=1e-7)
+
+    w, x, y, z = t_A_B.rot
+    assert tu.tree_close(t_A_B_in_eps.rot, jnp.array([w, -y, x, z]))
+
+    for seed in range(5):
+        tB = Transform.create(rot=maths.quat_random(jax.random.PRNGKey(seed)))
+        t_A_B = algebra.transform_mul(tB, algebra.transform_inv(tA))
+        t_A_B_in_eps = algebra.transform_move_into_frame(
+            t_A_B, algebra.transform_inv(tA)
+        )
+
+        w, x, y, z = t_A_B.rot
+        assert tu.tree_close(t_A_B_in_eps.rot, jnp.array([w, -y, x, z]))
