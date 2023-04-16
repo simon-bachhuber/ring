@@ -7,8 +7,48 @@ import tree_utils
 from . import base
 
 
+def scan_links_global_carry(
+    sys: base.System, f: Callable, *args, reverse: bool = False
+):
+    """Scan `f` along each link in system whilst carrying along state.
+
+    Args:
+        sys (base.System): _description_
+        f (Callable[..., Y]): f(y: Y, *args) -> y
+        args: Arguments passed to `f`, and split to match the link.
+        reverse (bool, optional): If `true` from leaves to root. Defaults to False.
+
+    Returns:
+        ys: Stacked output y of f.
+    """
+
+    order = range(sys.N)
+    if reverse:
+        order = range(sys.N - 1, -1, -1)
+
+    y, ys = None, []
+    for link_idx in order:
+        args_link = [arg[link_idx] for arg in args]
+        y = f(y, *args_link)
+        ys.append(y)
+
+    if reverse:
+        ys.reverse()
+
+    ys = tree_utils.tree_batch(ys, backend="jax")
+    return ys
+
+
 def scan_links(sys: base.System, f: Callable, y0, *args, reverse: bool = False):
     """Scan `f` along each link in system whilst carrying along state.
+
+    NOTE: TL;DR -> Don't use this for now. See below.
+
+    NOTE: This function supports that `sys.link_parents` is a traced jax.Array.
+    However, i could not get the `sys.link_joint_types` to follow the same logic.
+    Or, the input dictionary `q` having a dynamic PyTreeDef.
+    So, for now we settle with re-comilation, but this means we might as well
+    use the simplified logic of `scan_links` function.
 
     Args:
         sys (base.System): _description_
@@ -58,7 +98,6 @@ def scan_links(sys: base.System, f: Callable, y0, *args, reverse: bool = False):
 
     y, ys = None, []
     for link_idx in order:
-
         if y is not None:
             if reverse:
                 mask_is_successor = successor_mask(link_idx)

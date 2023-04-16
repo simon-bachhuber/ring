@@ -3,71 +3,96 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
+import tree_utils as tu
 from flax import struct
 
-from x_xy.algorithms import forward_kinematics_transforms
+from x_xy import algebra, maths, scan
+from x_xy.algorithms import (
+    forward_kinematics_transforms,
+    jcalc_force_projection,
+    jcalc_motion_subspace,
+)
 from x_xy.base import Force, Motion, State, System
 
 
-def inverse_dynamics(sys: System, qd: jax.Array, qdd: jax.Array) -> jax.Array:
+def inverse_dynamics(
+    sys: System, qd: dict[int, jax.Array], qdd: dict[int, jax.Array]
+) -> dict[int, jax.Array]:
     # TODO
     # should be -9.81 to pass tests; Roy uses -9.81
     # however vispy has z-axis upwards, then +9.81 better
     gravity = Motion.create(vel=sys.gravity)
 
-    vJ = sys.links.joint.motion.vmap().__mul__(qd)
-    aJ = sys.links.joint.motion.vmap().__mul__(qdd)
-    del qd, qdd
+    def joint_vel_acc_subspace(_, qd, qdd, joint_type: str):
+        vJ, aJ = jcalc_motion_subspace(joint_type, qd), jcalc_motion_subspace(
+            joint_type, qdd
+        )
+        return (vJ, aJ)
 
-    vel = Motion.zero((sys.N,))
-    acc = Motion.zero((sys.N,))
-    fs = Force.zero((sys.N,))
+    vJ, aJ = scan.scan_links(
+        sys,
+        joint_vel_acc_subspace,
+        (Motion.zero(), Motion.zero()),
+        qd,
+        qdd,
+        sys.link_joint_types,
+    )
 
-    def body_fn(i: int, val):
-        vel, acc, fs = val
-        p = sys.parent[i]
-        t = sys.links.transform.take(i)
+    def outwards(y, parent, vJ, aJ, Xup, inertia):
+        v_p, a_p, _ = y
 
-        def parent_is_root():
-            v = vJ.take(i)
-            a = t.do(gravity) + aJ.take(i)
-            return v, a
+        v_i = algebra.transform_motion(Xup, v_p) + vJ
+        a_i_cond_term = jax.lax.cond(
+            parent == -1, lambda: Motion.zero(), lambda: algebra.motion_cross(v_i, vJ)
+        )
+        a_i = algebra.transform_motion(Xup, a_p) + aJ + a_i_cond_term
+        f_i = algebra.inertia_mul_motion(inertia, a_i) + algebra.motion_cross_star(
+            v_i, algebra.inertia_mul_motion(inertia, v_i)
+        )
+        return (v_i, a_i, f_i)
 
-        def parent_not_root():
-            v = t.do(vel.take(p)) + vJ.take(i)
-            a = t.do(acc.take(p)) + aJ.take(i) + v.cross(vJ.take(i))
-            return v, a
+    v, a, fs = scan.scan_links(
+        sys,
+        outwards,
+        (Motion.zero(), gravity, Force.zero()),
+        sys.parent,
+        vJ,
+        aJ,
+        sys.links.transform,
+        sys.links.inertia,
+    )
 
-        v, a = jax.lax.cond(p == -1, parent_is_root, parent_not_root)
-        vel = vel.index_set(i, v)
-        acc = acc.index_set(i, a)
-        inertia_i = sys.links.inertia.take(i)
-        f = inertia_i.mul(a) + v.cross(inertia_i.mul(v))
-        fs = fs.index_set(i, f)
-        return vel, acc, fs
+    fs_init = fs
+    taus = []
 
-    vel, acc, fs, *_ = jax.lax.fori_loop(0, sys.N, body_fn, (vel, acc, fs))
+    def inwards(y, link_idx, parent, Xup, joint_type):
+        if y is None:
+            y = fs_init
 
-    def scan_fn(carry, _):
-        fs, i = carry
-        p = sys.parent[i]
-        tau = sys.links.joint.motion.take(i).dot(fs.take(i))
-
-        def parent_is_root(fs):
-            return fs
+        fs = y
+        f = fs.take(link_idx)
+        tau = jcalc_force_projection(joint_type, f)
+        taus.insert(0, tau)
 
         def parent_not_root(fs):
-            return fs.index_sum(p, sys.links.transform.take(i).inv().do(fs.take(i)))
+            return fs.index_sum(
+                parent, algebra.transform_force(algebra.transform_inv(Xup), f)
+            )
 
-        fs = jax.lax.cond(p == -1, parent_is_root, parent_not_root, fs)
-        return (fs, i - 1), tau
+        fs = jax.lax.cond(parent == -1, lambda fs: fs, parent_not_root, fs)
+        return fs
 
-    (fs, stop), taus = jax.lax.scan(scan_fn, (fs, sys.N - 1), None, length=sys.N)
+    scan.scan_links_global_carry(
+        sys,
+        inwards,
+        list(range(sys.N)),
+        sys.parent,
+        sys.links.transform,
+        sys.link_joint_types,
+        reverse=True,
+    )
 
-    # now tau is in revered order; because we scanned backwards
-    taus = jnp.flip(taus)
-
-    return taus, stop  # stop must be -1
+    return dict(zip(range(sys.N), taus))
 
 
 def _compute_mass_matrix(sys: System) -> jax.Array:

@@ -47,7 +47,7 @@ def example_system() -> Tuple[base.System, dict[int, jax.Array]]:
     sys = base.System(parents, links, joint_types, 0.01, False)
 
     q = {
-        0: jnp.array([0, 0, 0, 1, 1, 1.0]),
+        0: jnp.array([1, 0, 0, 0, 1, 1, 1.0]),
         1: -jnp.pi / 2,
         2: -jnp.pi / 2,
         3: -jnp.pi / 4,
