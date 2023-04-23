@@ -1,259 +1,387 @@
-from functools import partial
-from typing import Optional
-
 import jax
 import jax.numpy as jnp
-import tree_utils as tu
-from flax import struct
 
-from x_xy import algebra, maths, scan
-from x_xy.algorithms import (
-    forward_kinematics_transforms,
-    jcalc_force_projection,
-    jcalc_motion_subspace,
-)
-from x_xy.base import Force, Motion, State, System
+from x_xy import algebra, algorithms, base, maths, scan
 
 
-def inverse_dynamics(
-    sys: System, qd: dict[int, jax.Array], qdd: dict[int, jax.Array]
-) -> dict[int, jax.Array]:
-    # TODO
-    # should be -9.81 to pass tests; Roy uses -9.81
-    # however vispy has z-axis upwards, then +9.81 better
-    gravity = Motion.create(vel=sys.gravity)
+def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Array:
+    """Performs inverse dynamics in the system. Calculates "tau".
+    NOTE: Expects `sys` to have updated `transform` and `inertia`.
+    """
+    gravity = base.Motion.create(vel=sys.gravity)
 
-    def joint_vel_acc_subspace(_, qd, qdd, joint_type: str):
-        vJ, aJ = jcalc_motion_subspace(joint_type, qd), jcalc_motion_subspace(
-            joint_type, qdd
+    vel, acc, fs = {}, {}, {}
+
+    def forward_scan(_, __, link_idx, parent_idx, link_type, qd, qdd, p_to_l_trafo, it):
+        vJ, aJ = algorithms.jcalc_motion(link_type, qd), algorithms.jcalc_motion(
+            link_type, qdd
         )
-        return (vJ, aJ)
 
-    vJ, aJ = scan.scan_links(
+        t = lambda m: algebra.transform_motion(p_to_l_trafo, m)
+
+        if parent_idx == -1:
+            v = vJ
+            a = t(gravity) + aJ
+        else:
+            v = vJ + t(vel[parent_idx])
+            a = t(acc[parent_idx]) + aJ + algebra.motion_cross(v, vJ)
+
+        vel[link_idx], acc[link_idx] = v, a
+        f = algebra.inertia_mul_motion(it, a) + algebra.motion_cross_star(
+            v, algebra.inertia_mul_motion(it, v)
+        )
+        fs[link_idx] = f
+
+    scan.tree(
         sys,
-        joint_vel_acc_subspace,
-        (Motion.zero(), Motion.zero()),
+        forward_scan,
+        "lllddll",
+        list(range(sys.num_links())),
+        sys.link_parents,
+        sys.link_types,
         qd,
         qdd,
-        sys.link_joint_types,
-    )
-
-    def outwards(y, parent, vJ, aJ, Xup, inertia):
-        v_p, a_p, _ = y
-
-        v_i = algebra.transform_motion(Xup, v_p) + vJ
-        a_i_cond_term = jax.lax.cond(
-            parent == -1, lambda: Motion.zero(), lambda: algebra.motion_cross(v_i, vJ)
-        )
-        a_i = algebra.transform_motion(Xup, a_p) + aJ + a_i_cond_term
-        f_i = algebra.inertia_mul_motion(inertia, a_i) + algebra.motion_cross_star(
-            v_i, algebra.inertia_mul_motion(inertia, v_i)
-        )
-        return (v_i, a_i, f_i)
-
-    v, a, fs = scan.scan_links(
-        sys,
-        outwards,
-        (Motion.zero(), gravity, Force.zero()),
-        sys.parent,
-        vJ,
-        aJ,
         sys.links.transform,
         sys.links.inertia,
     )
 
-    fs_init = fs
     taus = []
 
-    def inwards(y, link_idx, parent, Xup, joint_type):
-        if y is None:
-            y = fs_init
-
-        fs = y
-        f = fs.take(link_idx)
-        tau = jcalc_force_projection(joint_type, f)
+    def backwards_scan(_, __, link_idx, parent_idx, link_type, l_to_p_trafo):
+        tau = algorithms.jcalc_tau(link_type, fs[link_idx])
         taus.insert(0, tau)
-
-        def parent_not_root(fs):
-            return fs.index_sum(
-                parent, algebra.transform_force(algebra.transform_inv(Xup), f)
+        if parent_idx != -1:
+            fs[parent_idx] = fs[parent_idx] + algebra.transform_force(
+                l_to_p_trafo, fs[link_idx]
             )
 
-        fs = jax.lax.cond(parent == -1, lambda fs: fs, parent_not_root, fs)
-        return fs
-
-    scan.scan_links_global_carry(
+    scan.tree(
         sys,
-        inwards,
-        list(range(sys.N)),
-        sys.parent,
-        sys.links.transform,
-        sys.link_joint_types,
+        backwards_scan,
+        "llll",
+        list(range(sys.num_links())),
+        sys.link_parents,
+        sys.link_types,
+        jax.vmap(algebra.transform_inv)(sys.links.transform),
         reverse=True,
     )
 
-    return dict(zip(range(sys.N), taus))
+    return jnp.concatenate(taus)
 
 
-def _compute_mass_matrix(sys: System) -> jax.Array:
-    t = sys.links.transform
-    s = sys.links.joint.motion
+def compute_mass_matrix(sys: base.System) -> jax.Array:
+    """Computes the mass matrix of the system using the `composite-rigid-body`
+    algorithm."""
 
-    def body_fn(i, val):
-        # jax does not support negative increments; naive workaround
-        i = sys.N - 1 - i
+    # STEP 1: Accumulate inertias inwards
+    # We will stay in spatial mode in this step
+    l_to_p = jax.vmap(algebra.transform_inv)(sys.links.transform)
+    its = [sys.links.inertia[link_idx] for link_idx in range(sys.num_links())]
 
-        H, inertia = val
-        p = sys.parent[i]
+    def accumulate_inertias(_, __, i, p):
+        nonlocal its
+        if p != -1:
+            its[p] += algebra.transform_inertia(l_to_p[i], its[i])
+        return its[i]
 
-        # Part 2 | Figure 7 | Line 7
-        def parent_is_root(inertia, p):
-            return inertia
+    batched_its = scan.tree(
+        sys,
+        accumulate_inertias,
+        "ll",
+        list(range(sys.num_links())),
+        sys.link_parents,
+        reverse=True,
+    )
 
-        def parent_not_root(inertia, p):
-            return inertia.index_sum(p, t.take(i).inv().do(inertia.take(i)))
+    # express inertias as matrices (in a vectorized way)
+    @jax.vmap
+    def to_matrix(obj):
+        return obj.as_matrix()
 
-        inertia = jax.lax.cond(p == -1, parent_is_root, parent_not_root, inertia, p)
-        del p
+    I_mat = to_matrix(batched_its)
+    del its, batched_its
 
-        f = inertia.take(i).mul(s.take(i))
-        H = H.at[i, i].set(f.dot(s.take(i)))
+    # STEP 2: Populate mass matrix
+    # Now we go into matrix mode
 
-        def from_link_directly_to_root(val):
-            j, H, f = val
-            f = t.take(j).inv().do(f)
-            j = sys.parent[j]
-            H = H.at[i, j].set(f.dot(s.take(j)))
-            return (j, H, f)
+    def _jcalc_motion_matrix(i: int):
+        list_motion = algorithms.jcalc._joint_types[sys.link_types[i]].motion
+        if len(list_motion) == 0:
+            # joint is frozen
+            return None
+        stacked_motion = list_motion[0].batch(*list_motion[1:])
+        return to_matrix(stacked_motion)
 
-        def cond_fn_parent_not_root(val):
-            return sys.parent[val[0]] != -1
+    S = [_jcalc_motion_matrix(i) for i in range(sys.num_links())]
 
-        _, H, _ = jax.lax.while_loop(
-            cond_fn_parent_not_root, from_link_directly_to_root, (i, H, f)
-        )
+    H = jnp.zeros((sys.qd_size(), sys.qd_size()))
 
-        return H, inertia
+    def populate_H(_, idx_map, i):
+        nonlocal H
 
-    H = jnp.zeros((sys.N, sys.N))
-    H, _ = jax.lax.fori_loop(0, sys.N, body_fn, (H, sys.links.inertia))
+        # frozen joint type
+        if S[i] is None:
+            return
+
+        f = (I_mat[i] @ (S[i].T)).T
+        idxs_i = idx_map["d"](i)
+        H_ii = f @ (S[i].T)
+
+        # set upper diagonal entries to zero
+        # they will be filled later automatically
+        H_ii_lower = jnp.tril(H_ii)
+        H = H.at[idxs_i, idxs_i].set(H_ii_lower)
+
+        j = i
+        parent = lambda i: sys.link_parents[i]
+        while parent(j) != -1:
+
+            @jax.vmap
+            def transform_force(f_arr):
+                spatial_f = base.Force(f_arr[:3], f_arr[3:])
+                spatial_f_in_p = algebra.transform_force(l_to_p[j], spatial_f)
+                return spatial_f_in_p.as_matrix()
+
+            # transforms force into parent frame
+            f = transform_force(f)
+
+            j = parent(j)
+            if S[j] is None:
+                continue
+
+            H_ij = f @ (S[j].T)
+            idxs_j = idx_map["d"](j)
+            H = H.at[idxs_i, idxs_j].set(H_ij)
+
+    scan.tree(sys, populate_H, "l", list(range(sys.num_links())), reverse=True)
+
     H = H + jnp.tril(H, -1).T
 
-    # TODO
-    # understand this; brax/mass.py line 80
-    H = H + jnp.diag(sys.links.joint.squeeze_1d().armature)
+    H += jnp.diag(sys.link_armature)
 
     return H
 
 
-def _forward_dynamics(
-    sys: System, q, qd, taus, mode: int, timestep: Optional[float] = None
+def forward_dynamics(
+    sys: base.System,
+    q: jax.Array,
+    qd: jax.Array,
+    tau: jax.Array,
+    mass_mat_inv: jax.Array,
 ) -> jax.Array:
-    joint = sys.links.joint.squeeze_1d()
+    C = inverse_dynamics(sys, qd, jnp.zeros_like(qd))
+    mass_matrix = compute_mass_matrix(sys)
+    # spring_force = joint.stiffness * (joint.zero_position - q) - joint.damping * qd
+    spring_force = -sys.link_damping * qd
+    qf_smooth = tau - C + spring_force
 
-    C, _ = inverse_dynamics(sys, qd, jnp.zeros_like(q))
-    H = _compute_mass_matrix(sys)
-    spring_force = joint.stiffness * (joint.zero_position - q) - joint.damping * qd
-    qf_smooth = spring_force + taus - C
-
-    if mode != 0:
-        assert timestep is not None, "Only in mode `0` is a timestep optional"
-
-    if mode == 0:
-        return jax.scipy.linalg.solve(H, qf_smooth, assume_a="pos")
-    elif mode == 1:
-        H_damp = H + timestep * jnp.diag(joint.damping)
-        return jax.scipy.linalg.solve(H_damp, qf_smooth, assume_a="pos")
-    elif mode == 2:
-        H_inv = jax.scipy.linalg.solve(H, jnp.eye(sys.N), assume_a="pos")
-        H_inv_damp = H_inv - H_inv @ (jnp.diag(joint.damping) * timestep) @ H_inv
-        return H_inv_damp @ qf_smooth
+    if sys.mass_mat_iters == 0:
+        overdamp = 0
+        eye = jnp.eye(sys.qd_size())
+        mass_matrix += eye * overdamp * sys.dt
+        mass_mat_inv = jax.scipy.linalg.solve(mass_matrix, eye, assume_a="pos")
     else:
-        raise NotImplementedError
+        mass_mat_inv = _inv_approximate(mass_matrix, mass_mat_inv, sys.mass_mat_iters)
+
+    return mass_mat_inv @ qf_smooth, mass_mat_inv
 
 
-def forward_dynamics(sys: System, q, qd, taus) -> jax.Array:
-    return _forward_dynamics(sys, q, qd, taus, 0)
+def _strapdown_integration(
+    q: base.Quaternion, dang: jax.Array, dt: float
+) -> base.Quaternion:
+    axis = maths.safe_normalize(dang)
+    angle = maths.safe_norm(dang) * dt
+    angle = jnp.squeeze(angle)
+    return maths.quat_mul(maths.quat_rot_axis(axis, angle), q)
 
 
-def _explicit_euler(rhs, t, x, dt):
-    dx = rhs(t, x)
-    return x + dx * dt
-
-
-def _runge_kutta(rhs, t, x, dt):
+def _rk4(rhs, x, dt):
     h = dt
-    k1 = rhs(t, x)
-    k2 = rhs(t + h / 2, x + k1 * (h / 2))
-    k3 = rhs(t + h / 2, x + k2 * (h / 2))
-    k4 = rhs(t + h, x + k3 * h)
+    k1 = rhs(x)
+    k2 = rhs(x + k1 * (h / 2))
+    k3 = rhs(x + k2 * (h / 2))
+    k4 = rhs(x + k3 * h)
     dx = (k1 + k2 * 2 + k3 * 2 + k4) * (1 / 6)
     return x + dx * dt
 
 
-@struct.dataclass
-class SolverParams:
-    mode: int
+def _runge_kutta_4_integration(
+    sys: base.System, state: base.State, taus: jax.Array
+) -> base.State:
+    def integrate_q_qd(q, qd, qdd, dt):
+        q_next = []
 
+        def q_integrate(_, __, q, qd, typ):
+            if typ == "free":
+                quat_next = _strapdown_integration(q[:4], qd[:3], dt)
+                pos_next = q[4:] + qd[4:] * dt
+                q_next_i = jnp.concatenate((quat_next, pos_next))
+            else:
+                q_next_i = q + dt * qd
+            q_next.append(q_next_i)
 
-def _solve_explicit(
-    sys, state, taus, timestep, solver_params: SolverParams, integrator_fn
-):
-    def rhs(t, x):
-        q, qd = x[: sys.N], x[sys.N :]
-        qdd = _forward_dynamics(sys, q, qd, taus, solver_params.mode, timestep)
-        return jnp.hstack((qd, qdd))
+        scan.tree(sys, q_integrate, "qdl", q, qd, sys.link_types)
+        q_next = jnp.concatenate(q_next)
+        return q_next, qd + qdd * dt
 
-    x = jnp.hstack((state.q, state.qd))
-    x_next = integrator_fn(rhs, 0.0, x, timestep)
-    q_next, qd_next = x_next[: sys.N], x_next[sys.N :]
-    return q_next, qd_next
+    for_dyn = lambda sys, q, qd: forward_dynamics(sys, q, qd, taus, state.mass_mat_inv)
 
+    # k1
+    qd_k1 = state.qd
+    qdd_k1, mass_mat_inv_next = for_dyn(sys, state.q, state.qd)
 
-def _semi_implicit_euler(sys, state, taus, timestep, solver_params: SolverParams):
-    qdd = _forward_dynamics(sys, state.q, state.qd, taus, solver_params.mode, timestep)
-    qd_next = state.qd + timestep * qdd
-    q_next = state.q + timestep * qd_next
-    return q_next, qd_next
+    # k2
+    q_k2, qd_k2 = integrate_q_qd(state.q, qd_k1, qdd_k1, sys.dt * 0.5)
+    _, sys = algorithms.kinematics.forward_kinematics_transforms(sys, q_k2)
+    qdd_k2, _ = for_dyn(sys, q_k2, qd_k2)
 
+    # k3
+    q_k3, qd_k3 = integrate_q_qd(state.q, qd_k2, qdd_k2, sys.dt * 0.5)
+    _, sys = algorithms.kinematics.forward_kinematics_transforms(sys, q_k3)
+    qdd_k3, _ = for_dyn(sys, q_k3, qd_k3)
 
-_solver_params_defaults = {
-    "SIE": SolverParams(0),  # mode 2?
-    "EE": SolverParams(0),
-    "RK4": SolverParams(0),
-}
+    # k4
+    q_k4, qd_k4 = integrate_q_qd(state.q, qd_k3, qdd_k3, sys.dt)
+    _, sys = algorithms.kinematics.forward_kinematics_transforms(sys, q_k4)
+    qdd_k4, _ = for_dyn(sys, q_k4, qd_k4)
 
-
-_solvers = {
-    "SIE": _semi_implicit_euler,
-    "EE": lambda *args: _solve_explicit(*args, _explicit_euler),
-    "RK4": lambda *args: _solve_explicit(*args, _runge_kutta),
-}
-
-
-@partial(jax.jit, static_argnums=(3, 5))
-def simulation_step(
-    sys: System,
-    state: State,
-    taus: jax.Array,
-    integrator="sie",
-    timestep: float = 0.01,
-    solver_params: Optional[SolverParams] = None,
-):
-    if solver_params is None:
-        solver_params = _solver_params_defaults[integrator.upper()]
-
-    # update all transforms
-    sys = update_link_transform(sys, state.q)
-
-    # compute maximal coordinates
-    # TODO
-    # maximal coordinates will lag one frame behind
-    x_max_cord = forward_kinematics(sys)
-    state = state.replace(x=x_max_cord)
-
-    q_next, qd_next = _solvers[integrator.upper()](
-        sys, state, taus, timestep, solver_params
+    # average over k`s
+    reduce = lambda k1, k2, k3, k4: (k1 + 2 * k2 + 2 * k3 + k4) * (1 / 6)
+    mqd, mqdd = reduce(qd_k1, qd_k2, qd_k3, qd_k4), reduce(
+        qdd_k1, qdd_k2, qdd_k3, qdd_k4
     )
 
-    return state.replace(q=q_next, qd=qd_next)
+    # forward integrate with averaged delta
+    q, qd = integrate_q_qd(state.q, mqd, mqdd, sys.dt)
+
+    # update mass matrix inverse
+    state = state.replace(q=q, qd=qd, mass_mat_inv=mass_mat_inv_next)
+    return state
+
+
+def _runge_kutta_2_integration(
+    sys: base.System, state: base.State, taus: jax.Array
+) -> base.State:
+    def integrate_q_qd(q, qd, qdd, dt):
+        q_next = []
+
+        def q_integrate(_, __, q, qd, typ):
+            if typ == "free":
+                quat_next = _strapdown_integration(q[:4], qd[:3], dt)
+                pos_next = q[4:] + qd[4:] * dt
+                q_next_i = jnp.concatenate((quat_next, pos_next))
+            else:
+                q_next_i = q + dt * qd
+            q_next.append(q_next_i)
+
+        scan.tree(sys, q_integrate, "qdl", q, qd, sys.link_types)
+        q_next = jnp.concatenate(q_next)
+        return q_next, qd + qdd * dt
+
+    for_dyn = lambda sys, q, qd: forward_dynamics(sys, q, qd, taus, state.mass_mat_inv)
+
+    # k1
+    qd_k1 = state.qd
+    qdd_k1, mass_mat_inv_next = for_dyn(sys, state.q, state.qd)
+
+    # k2
+    q_k2, qd_k2 = integrate_q_qd(state.q, qd_k1, qdd_k1, sys.dt)
+    _, sys = algorithms.kinematics.forward_kinematics_transforms(sys, q_k2)
+    qdd_k2, _ = for_dyn(sys, q_k2, qd_k2)
+
+    # average over k`s
+    reduce = lambda k1, k2: (k1 + k2) * (1 / 2)
+    mqd, mqdd = reduce(qd_k1, qd_k2), reduce(qdd_k1, qdd_k2)
+
+    # forward integrate with averaged delta
+    q, qd = integrate_q_qd(state.q, mqd, mqdd, sys.dt)
+
+    # update mass matrix inverse
+    state = state.replace(q=q, qd=qd, mass_mat_inv=mass_mat_inv_next)
+    return state
+
+
+def _semi_implicit_euler_integration(
+    sys: base.System, state: base.State, taus: jax.Array
+) -> base.State:
+    qdd, mass_mat_inv = forward_dynamics(
+        sys, state.q, state.qd, taus, state.mass_mat_inv
+    )
+    qd_next = state.qd + sys.dt * qdd
+
+    q_next = []
+
+    def q_integrate(_, __, q, qd, typ):
+        if typ == "free":
+            quat_next = _strapdown_integration(q[:4], qd[:3], sys.dt)
+            pos_next = q[4:] + qd[3:] * sys.dt
+            q_next_i = jnp.concatenate((quat_next, pos_next))
+        elif typ == "spherical":
+            quat_next = _strapdown_integration(q, qd, sys.dt)
+            q_next_i = quat_next
+        else:
+            q_next_i = q + sys.dt * qd
+        q_next.append(q_next_i)
+
+    # uses already `qd_next` because semi-implicit
+    scan.tree(sys, q_integrate, "qdl", state.q, qd_next, sys.link_types)
+    q_next = jnp.concatenate(q_next)
+
+    state = state.replace(q=q_next, qd=qd_next, mass_mat_inv=mass_mat_inv)
+    return state
+
+
+_integration_methods = {
+    "semi_implicit_euler": _semi_implicit_euler_integration,
+    "runge_kutta_4": _runge_kutta_4_integration,
+    "runge_kutta_2": _runge_kutta_2_integration,
+}
+
+
+def kinetic_energy(sys: base.System, qd: jax.Array):
+    H = compute_mass_matrix(sys)
+    return 0.5 * qd @ H @ qd
+
+
+def step(
+    sys: base.System,
+    state: base.State,
+    taus: jax.Array,
+) -> base.State:
+    assert sys.q_size() == state.q.size
+    assert sys.qd_size() == state.qd.size == taus.size
+
+    # update kinematics before stepping; this means that the `x` in `state`
+    # will lag one step behind but otherwise we would have to return
+    # the system object which would be awkward
+    sys, state = algorithms.kinematics.forward_kinematics(sys, state)
+    state = _integration_methods[sys.integration_method.lower()](sys, state, taus)
+    return state
+
+
+def _inv_approximate(a: jax.Array, a_inv: jax.Array, num_iter: int = 10) -> jax.Array:
+    """Use Newton-Schulz iteration to solve ``A^-1``.
+
+    Args:
+      a: 2D array to invert
+      a_inv: approximate solution to A^-1
+      num_iter: number of iterations
+
+    Returns:
+      A^-1 inverted matrix
+    """
+
+    def body_fn(carry, _):
+        a_inv, r, err = carry
+        a_inv_next = a_inv @ (jnp.eye(a.shape[0]) + r)
+        r_next = jnp.eye(a.shape[0]) - a @ a_inv_next
+        err_next = jnp.linalg.norm(r_next)
+        a_inv_next = jnp.where(err_next < err, a_inv_next, a_inv)
+        return (a_inv_next, r_next, err_next), None
+
+    # ensure ||I - X0 @ A|| < 1, in order to guarantee convergence
+    r0 = jnp.eye(a.shape[0]) - a @ a_inv
+    a_inv = jnp.where(jnp.linalg.norm(r0) > 1, 0.5 * a.T / jnp.trace(a @ a.T), a_inv)
+    (a_inv, _, _), _ = jax.lax.scan(body_fn, (a_inv, r0, 1.0), None, num_iter)
+
+    return a_inv

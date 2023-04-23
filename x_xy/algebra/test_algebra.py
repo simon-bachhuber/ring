@@ -4,7 +4,7 @@ import jax.random as jrand
 import numpy as np
 import tree_utils as tu
 
-from x_xy import algebra, maths, testing
+from x_xy import algebra, base, maths
 from x_xy.base import Force, Inertia, Motion, Transform
 
 """Tests that compare directly to matrix implementations of the same operations."""
@@ -258,8 +258,25 @@ def test_motion_dot_force():
 """Tests from 15.04.23 onwards"""
 
 
+def basic_coordinate_logic():
+    xaxis = jnp.array([1.0, 0, 0])
+    yaxis = jnp.array([0, 1.0, 0])
+    zaxis = jnp.array([0, 0, 1.0])
+    #   A  x      y  B
+    #   y--|      |--z
+    #
+    # E y
+    #   |--x
+
+    tA = base.Transform.create(rot=maths.quat_rot_axis(zaxis, jnp.pi / 2), pos=yaxis)
+    tB = base.Transform.create(
+        rot=maths.quat_rot_axis(yaxis, jnp.pi / 2), pos=xaxis + yaxis
+    )
+    return xaxis, yaxis, zaxis, tA, tB
+
+
 def test_transform_move_into_frame():
-    xaxis, yaxis, zaxis, tA, tB = testing.basic_coordinate_logic()
+    xaxis, yaxis, zaxis, tA, tB = basic_coordinate_logic()
 
     t_A_B = algebra.transform_mul(tB, algebra.transform_inv(tA))
 

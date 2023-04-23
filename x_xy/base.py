@@ -1,4 +1,3 @@
-from dataclasses import field
 from typing import Any, Sequence, Union
 
 import jax
@@ -76,6 +75,9 @@ class _Base:
 
     def squeeze_1d(self):
         return tree_map(lambda x: jnp.atleast_1d(jnp.squeeze(x)), self)
+
+    def batch_dim(self) -> int:
+        return tu.tree_shape(self)
 
 
 @struct.dataclass
@@ -175,14 +177,14 @@ class Inertia(_Base):
         """
         it_3x3 = maths.spatial.mcI(mass, CoM, it_3x3)[:3, :3]
         h = mass * CoM
-        return Inertia(it_3x3, h, mass)
+        return cls(it_3x3, h, mass)
 
     @classmethod
     def zero(cls, shape=()) -> "Inertia":
         it_shape_3x3 = jnp.zeros(shape + (3, 3))
         h = jnp.zeros(shape + (3,))
         mass = jnp.zeros(shape + (1,))
-        return Inertia(it_shape_3x3, h, mass)
+        return cls(it_shape_3x3, h, mass)
 
     def as_matrix(self):
         hcross = maths.spatial.cross(self.h)
@@ -200,7 +202,7 @@ class Geometry(_Base):
 @struct.dataclass
 class Sphere(Geometry):
     radius: jax.Array
-    vispy_kwargs: dict = field(default_factory=lambda: {})
+    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
 
     def get_it_3x3(self) -> jax.Array:
         it_3x3 = 2 / 5 * self.mass * self.radius**2 * jnp.eye(3)
@@ -212,7 +214,7 @@ class Box(Geometry):
     dim_x: jax.Array
     dim_y: jax.Array
     dim_z: jax.Array
-    vispy_kwargs: dict = field(default_factory=lambda: {})
+    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
 
     def get_it_3x3(self) -> jax.Array:
         it_3x3 = (
@@ -229,6 +231,24 @@ class Box(Geometry):
         )
         return it_3x3
 
+    @classmethod
+    def cube(cls, mass, CoM, dim, vispy_kwargs={}):
+        return cls(mass, CoM, dim, dim, dim, vispy_kwargs)
+
+    @classmethod
+    def standard_segment(cls, vispy_kwargs={}):
+        dim_x = 0.4
+        dim_y = 0.2
+        dim_z = 0.1
+        return cls(
+            5.0,
+            jnp.array([dim_x / 2, dim_y / 2, dim_z / 2]),
+            dim_x,
+            dim_y,
+            dim_z,
+            vispy_kwargs,
+        )
+
 
 @struct.dataclass
 class Cylinder(Geometry):
@@ -236,7 +256,7 @@ class Cylinder(Geometry):
 
     radius: jax.Array
     length: jax.Array
-    vispy_kwargs: dict = field(default_factory=lambda: {})
+    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
 
     def get_it_3x3(self) -> jax.Array:
         radius_dir = 3 * self.radius**2 + self.length**2
@@ -253,13 +273,6 @@ class Cylinder(Geometry):
             )
         )
         return it_3x3
-
-
-def inertia_from_geometries(geometries: list[Geometry]) -> Inertia:
-    inertia = Inertia.zero()
-    for geom in geometries:
-        inertia += Inertia.create(geom.mass, geom.CoM, geom.get_it_3x3())
-    return inertia
 
 
 N_JOINT_PARAMS: int = 1
@@ -280,35 +293,81 @@ class Link(_Base):
     transform: Transform = Transform.zero()
 
 
+Q_WIDTHS = {
+    "free": 7,
+    "frozen": 0,
+    "spherical": 4,
+    "px": 1,
+    "py": 1,
+    "pz": 1,
+    "rx": 1,
+    "ry": 1,
+    "rz": 1,
+}
+QD_WIDTHS = {
+    "free": 6,
+    "frozen": 0,
+    "spherical": 3,
+    "px": 1,
+    "py": 1,
+    "pz": 1,
+    "rx": 1,
+    "ry": 1,
+    "rz": 1,
+}
+
+
 @struct.dataclass
 class System(_Base):
-    link_parents: jax.Array
+    link_parents: list[int] = struct.field(False)
     links: Link
-    link_joint_types: list[str] = struct.field(False)
-
+    link_types: list[str] = struct.field(False)
+    link_damping: jax.Array
+    link_armature: jax.Array
     # simulation timestep size
     dt: float = struct.field(False)
-
     # whether or not to re-calculate the inertia
     # matrix at every simulation timestep because
     # the geometries may have changed
     dynamic_geometries: bool = struct.field(False)
-
+    # geometries in the system
+    # len(geoms) == len(links)
+    geoms: list[list[Geometry]]
     # root / base acceleration offset
-    gravity: jax.Array = jnp.array([0, 0, 9.81])
+    gravity: jax.Array = jnp.array([0, 0, -9.81])
 
-    @property
-    def parent(self) -> jax.Array:
-        return self.link_parents
+    integration_method: str = struct.field(
+        False, default_factory=lambda: "semi_implicit_euler"
+    )
+    mass_mat_iters: int = struct.field(False, default_factory=lambda: 0)
 
-    @property
-    def N(self):
+    link_names: list[str] = struct.field(False, default_factory=lambda: [])
+
+    def num_links(self) -> int:
         return len(self.link_parents)
+
+    def q_size(self) -> int:
+        return sum([Q_WIDTHS[typ] for typ in self.link_types])
+
+    def qd_size(self) -> int:
+        return sum([QD_WIDTHS[typ] for typ in self.link_types])
+
+    def name_to_idx(self, name: str) -> int:
+        return self.link_names.index(name)
 
 
 @struct.dataclass
 class State(_Base):
-    q: dict[int, jax.Array]
-    alpha: dict[int, jax.Array]
+    q: jax.Array
+    qd: jax.Array
     x: Transform
-    xd: Motion
+    mass_mat_inv: jax.Array
+
+    @classmethod
+    def create(cls, sys: System, q=None, qd=None):
+        if q is None:
+            q = jnp.zeros((sys.q_size(),))
+        if qd is None:
+            qd = jnp.zeros((sys.qd_size(),))
+        x = Motion.zero((sys.num_links(),))
+        return cls(q, qd, x, jnp.diag(jnp.ones((sys.qd_size(),))))

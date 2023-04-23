@@ -67,8 +67,18 @@ def quat_rot_axis(axis: jnp.ndarray, angle: jnp.ndarray) -> jnp.ndarray:
     the frame.
     For the interpretation of rotating the frame and *not* the
     vector, you should use angle -> -angle.
+    NOTE: Usually, we actually want the second interpretation. Think about it,
+    we use quaternions to re-express vectors in other frames. But the
+    vectors stay the same. We only transform them to a common frames.
     """
     axis = safe_normalize(axis)
+    # NOTE
+    # 23.04.23
+    # this fixes the issue of prismatic joints being inverted w.r.t.
+    # gravity vector.
+    # The reason is that it inverts the way how revolute joints behave
+    # Such that prismatic joints work by inverting gravity
+    angle *= -1.0
     s, c = jnp.sin(angle / 2), jnp.cos(angle / 2)
     return jnp.array([c, *(axis * s)])
 
@@ -109,7 +119,7 @@ def quat_random(key: jrand.PRNGKey, batch_shape: tuple[int] = ()) -> jax.Array:
     return safe_normalize(jrand.normal(key, shape))
 
 
-def quat_euler(angles, intrinsic=True, convention="xyz"):
+def quat_euler(angles, intrinsic=True, convention="zyx"):
     "Construct a *unit* quaternion from Euler angles (radians)."
 
     @partial(jnp.vectorize, signature="(3)->(4)")
@@ -129,9 +139,9 @@ def quat_euler(angles, intrinsic=True, convention="xyz"):
         q3 = quat_rot_axis(axes_map[convention[2]], angles[2])
 
         if intrinsic:
-            return quat_mul(q1, quat_mul(q2, q3))
-        else:
             return quat_mul(q3, quat_mul(q2, q1))
+        else:
+            return quat_mul(q1, quat_mul(q2, q3))
 
     return _quat_euler(angles)
 
@@ -147,5 +157,7 @@ def quat_angle(q):
 def quat_to_rot_axis(q):
     "Extract unit-axis and angle from quaternion `q`."
     angle = quat_angle(q)
+    # NOTE: To make consistent with `quat_rot_axis`
+    angle *= -1.0
     axis = safe_normalize(q[1:])
     return axis, angle

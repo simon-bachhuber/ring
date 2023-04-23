@@ -3,11 +3,20 @@ import jax.numpy as jnp
 import tree_utils as tu
 
 import x_xy
-from x_xy import maths, testing
+from x_xy import maths
 
 
 def test_forward_kinematics_transforms():
-    sys, q = testing.example_system()
+    sys = x_xy.io.load_example("branched")
+    q = [
+        jnp.array([1, 0, 0, 0, 1, 1, 1.0]),
+        jnp.pi / 2,
+        jnp.pi / 2,
+        jnp.pi / 4,
+        jnp.pi / 2,
+    ]
+    q = list(map(jnp.atleast_1d, q))
+    q = jnp.concatenate(q)
     ts, sys = jax.jit(x_xy.algorithms.forward_kinematics_transforms)(sys, q)
 
     # position ok
