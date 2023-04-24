@@ -10,7 +10,7 @@ import tqdm
 from vispy import app, scene
 from vispy.scene import MatrixTransform
 
-from x_xy import maths
+from x_xy import base, maths
 from x_xy.base import Box, Geometry
 
 
@@ -59,6 +59,25 @@ class VispyScene:
         headless: bool = False,
         **kwargs,
     ):
+        """Scene which can be rendered.
+
+        Args:
+            geoms (list[list[Geometry]]): A list of list of geometries per link.
+                len(geoms) == number of links in system
+            show_cs (bool, optional): Show coordinate system of links.
+                Defaults to True.
+            size (tuple, optional): Width and height of rendered image.
+                Defaults to (1280, 720).
+            camera (scene.cameras.BaseCamera, optional): The camera angle.
+                Defaults to scene.TurntableCamera( elevation=30, distance=6 ).
+            headless (bool, optional): Headless if the worker can not open windows.
+                Defaults to False.
+
+        Example:
+            >> scene = VispyScene(sys.geoms)
+            >> scene.update(state.x)
+            >> image = scene.render()
+        """
         self.headless = False
         if headless:
             # returns `True` if successfully found backend
@@ -99,14 +118,19 @@ class VispyScene:
                 )
             self.visuals.append(visuals_per_link)
 
-    def update(self, data_pos: jax.Array, data_rot: jax.Array):
-        self.data_pos = data_pos
-        self.data_rot = data_rot
+    def change_camera(self, camera: scene.cameras.BaseCamera):
+        "Change the camera angle of rendered image."
+        self.view.camera = camera
+
+    def update(self, x: base.Transform):
+        "Update the link coordinates of the scene."
+        self.data_pos = x.pos
+        self.data_rot = x.rot
         self._update_scene()
         self._can_mutate = True
 
     def render(self) -> np.ndarray:
-        """RGBA Array of Shape = (M, N, 4)"""
+        """Render scene. RGBA Array of Shape = (M, N, 4)"""
         return self.canvas.render(alpha=True)
 
     def _get_link_data(self, link_idx: int):
@@ -169,12 +193,14 @@ def _infer_extension_from_path(path: Path) -> Optional[str]:
 def animate(
     path: Union[str, Path],
     scene: VispyScene,
-    data_pos: jax.Array,
-    data_rot: jax.Array,
+    x: base.Transform,
     timestep: float,
     fps: int = 50,
     fmt: str = "gif",
 ):
+    """Make animation from scene and trajectory of maximal coordinates. `x`
+    are stacked in time along 0th-axis.
+    """
     path = Path(path)
     file_fmt = _infer_extension_from_path(path)
 
@@ -195,14 +221,14 @@ def animate(
             This way we don't open any GUI windows."""
         )
 
-    _data_checks(scene, data_pos, data_rot)
+    _data_checks(scene, x.pos, x.rot)
 
-    N = data_pos.shape[0]
+    N = x.pos.shape[0]
     _, step = _parse_timestep(timestep, fps, N)
 
     frames = []
     for t in tqdm.tqdm(range(0, N, step), "Rendering frames.."):
-        scene.update(data_pos[t], data_rot[t])
+        scene.update(x[t])
         frames.append(scene.render())
 
     print(f"DONE. Converting frames to {path} (this might take a while..)")
@@ -213,22 +239,29 @@ class Window:
     def __init__(
         self,
         scene: VispyScene,
-        data_pos: jax.Array,
-        data_rot: jax.Array,
+        x: base.Transform,
         timestep: float,
         fps: int = 50,
     ) -> None:
-        _data_checks(scene, data_pos, data_rot)
-        self._data_pos = data_pos
-        self._data_rot = data_rot
+        """Open an interactive Window that plays back the pre-computed trajectory.
+
+        Args:
+            scene (VispyScene): Scene used for rendering.
+            x (base.Transform): Pre-computed trajectory.
+            timestep (float): Timedelta between Transforms.
+            fps (int, optional): Frame-rate. Defaults to 50.
+        """
+        _data_checks(scene, x.pos, x.rot)
+        self._x = x
         self._scene = scene
 
-        self.N = data_pos.shape[0]
+        self.N = x.pos.shape[0]
         self.T, self.step = _parse_timestep(timestep, fps, self.N)
         self.timestep = timestep
         self.fps = fps
 
     def reset(self):
+        "Reset trajectory to beginning."
         self.reached_end = False
         self.time = 0
         self.t = 0
@@ -236,7 +269,7 @@ class Window:
         self._update_scene()
 
     def _update_scene(self):
-        self._scene.update(self._data_pos[self.t], self._data_rot[self.t])
+        self._scene.update(self._x[self.t])
 
     def _on_timer(self, event):
         if self.time > self.T:
@@ -255,6 +288,7 @@ class Window:
         print("FPS: ", int(self.current_fps), f"Target FPS: {self.fps}")
 
     def open(self):
+        "Open interactive GUI window."
         self.reset()
 
         self._timer = app.Timer(

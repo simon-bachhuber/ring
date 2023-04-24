@@ -1,1 +1,1 @@
-from . import algebra, algorithms, base, io, maths, render, scan, testing
+from . import algebra, algorithms, base, io, maths, render, scan

@@ -38,7 +38,7 @@ def test_animate(pytest=True):
         fmts += ["gif"]
 
     for fmt in fmts:
-        render.animate(filename, scene, xs.pos, xs.rot, sys.dt, fmt=fmt)
+        render.animate(filename, scene, xs, sys.dt, fmt=fmt)
         if pytest:
             os.system(f"rm animation.{fmt}")
 
