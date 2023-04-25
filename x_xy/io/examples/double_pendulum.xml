@@ -4,7 +4,7 @@
         <geom vispy_edge_color="black" vispy_color="white"/>
     </defaults>
     <worldbody>
-        <body name="upper" pos="0 0 0" euler="90 0 0" joint="ry" damping="2">
+        <body name="upper" pos="0 0 0" euler="0 90 0" joint="ry" damping="2">
             <geom type="box" mass="10" pos="0.5 0 0" dim="1 0.25 0.2"/>
             <body name="lower" pos="1 0 0" quat="1 0 0 0" joint="ry" damping="2" armature="1">
                 <geom type="box" mass="10" pos="0.5 0 0" dim="1 0.25 0.2"/>

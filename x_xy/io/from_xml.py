@@ -113,7 +113,11 @@ def load_sys_from_str(xml_str: str):
         if rot is not None:
             assert "euler" not in body.attrib
         elif "euler" in body.attrib:
-            rot = base.maths.quat_euler(jnp.deg2rad(body.attrib["euler"]))
+            # we use zyx convention but angles are given
+            # in x, y, z in the xml file
+            # thus flip the order
+            euler_xyz = jnp.deg2rad(body.attrib["euler"])
+            rot = base.maths.quat_euler(jnp.flip(euler_xyz), convention="zyx")
         else:
             rot = jnp.array([1.0, 0, 0, 0])
         links[current_link_idx] = base.Link(base.Transform(pos, rot))

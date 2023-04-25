@@ -196,7 +196,7 @@ def animate(
     x: base.Transform,
     timestep: float,
     fps: int = 50,
-    fmt: str = "gif",
+    fmt: str = "mp4",
 ):
     """Make animation from scene and trajectory of maximal coordinates. `x`
     are stacked in time along 0th-axis.
