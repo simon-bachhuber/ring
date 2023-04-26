@@ -1,3 +1,5 @@
+from typing import Optional
+
 import jax
 import jax.numpy as jnp
 
@@ -69,3 +71,20 @@ def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
         )
         noisy_imu_measurements[sensor] = imu_measurements[sensor] + noise + bias
     return noisy_imu_measurements
+
+
+def imu(
+    xs: base.Transform,
+    gravity: jax.Array,
+    dt: float,
+    key: Optional[jax.random.PRNGKey],
+    noisy: bool = False,
+):
+    "Simulates a 6D IMU."
+    measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
+
+    if noisy:
+        assert key is not None, "For noisy sensors random seed `key` must be provided."
+        measurements = add_noise_bias(key, measurements)
+
+    return measurements
