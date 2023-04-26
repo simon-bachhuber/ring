@@ -1,20 +1,21 @@
 <x_xy model="branched">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
-        <geom mass="5" pos="0.2 0.1 0.05" dim="0.4 0.2 0.1" type="box"/>
+        <geom type="box" mass="10" pos="0.5 0 0" dim="1 0.25 0.2" vispy_edge_color="black" vispy_color="white"/>
+        <body pos="1 0 0" joint="rz"/>
     </defaults>
     <worldbody>
-        <body name="0" joint="free">
+        <body name="0" pos="0 0 0" euler="0 90 0" joint="free">
             <geom/>
-            <body name="1" joint="rz">
+            <body name="1">
                 <geom/>
             </body>
-            <body name="2" joint="rz" pos="1 0 0">
+            <body name="2" joint="rx">
                 <geom/>
-                <body name="3" joint="rz" pos="1 0 0">
+                <body name="3">
                     <geom/>
                 </body>
-                <body name="4" joint="ry" pos="1 0 0">
+                <body name="4" joint="ry">
                     <geom/>
                 </body>
             </body>
