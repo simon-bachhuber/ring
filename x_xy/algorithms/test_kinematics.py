@@ -7,7 +7,7 @@ from x_xy import maths
 
 
 def test_forward_kinematics_transforms():
-    sys = x_xy.io.load_example("branched")
+    sys = x_xy.io.load_example("test_kinematics")
     q = [
         jnp.array([1, 0, 0, 0, 1, 1, 1.0]),
         jnp.pi / 2,
