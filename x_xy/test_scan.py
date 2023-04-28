@@ -89,7 +89,7 @@ def test_tree():
     np.testing.assert_array_equal(qds[-2], np.array(list(range(6, 7))))
 
 
-#################### OLD TESTS for `scan_links`
+# old tests for `scan_links`
 
 
 @struct.dataclass
