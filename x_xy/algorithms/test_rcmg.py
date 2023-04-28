@@ -4,7 +4,7 @@ import x_xy
 
 
 def test_rcmg():
-    for example in ["double_pendulum", "branched", "symmetric_pendulum"]:
+    for example in x_xy.io.list_examples():
         sys = x_xy.io.load_example(example)
         config = x_xy.algorithms.RCMG_Config(T=1.0)
         generator = x_xy.algorithms.build_generator(sys, config)
