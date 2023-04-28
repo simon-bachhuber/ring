@@ -113,7 +113,7 @@ def quat_to_3x3(q: jnp.ndarray) -> jnp.ndarray:
     )
 
 
-def quat_random(key: jrand.PRNGKey, batch_shape: tuple[int] = ()) -> jax.Array:
+def quat_random(key: jrand.PRNGKey, batch_shape: tuple = ()) -> jax.Array:
     """Provides a random *unit* quaternion, sampled uniformly"""
     shape = batch_shape + (4,)
     return safe_normalize(jrand.normal(key, shape))
@@ -157,7 +157,7 @@ def quat_angle(q):
 def quat_to_rot_axis(q):
     "Extract unit-axis and angle from quaternion `q`."
     angle = quat_angle(q)
-    # NOTE: To make consistent with `quat_rot_axis`
+    # NOTE: CONVENTION
     angle *= -1.0
     axis = safe_normalize(q[1:])
     return axis, angle
