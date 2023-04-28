@@ -132,7 +132,7 @@ FINALIZE_FN = Callable[[jax.Array, jax.Array, base.Transform, base.System], PyTr
 
 def build_generator(
     sys: base.System,
-    config: RCMG_Config,
+    config: RCMG_Config = RCMG_Config(),
     setup_fn: SETUP_FN = lambda key, sys: sys,
     finalize_fn: FINALIZE_FN = lambda key, q, x, sys: (q, x),
 ) -> Generator:
@@ -159,7 +159,7 @@ def build_generator(
         q = jnp.concatenate(q_list, axis=1)
 
         # do forward kinematics
-        x, sys_mod = jax.vmap(forward_kinematics_transforms, (None, 0))(sys_mod, q)
+        x, _ = jax.vmap(forward_kinematics_transforms, (None, 0))(sys_mod, q)
 
         return finalize_fn(key, q, x, sys_mod)
 
