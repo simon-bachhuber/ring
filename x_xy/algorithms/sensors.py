@@ -10,15 +10,13 @@ def accelerometer(xs: base.Transform, gravity: jax.Array, dt: float) -> jax.Arra
     """Compute measurements of an accelerometer that follows a frame which moves along
     a trajectory of Transforms. Let `xs` be the transforms from base to link.
     """
-    N = xs.pos.shape[0]
-    acc = jnp.zeros((N, 3))
-    acc = acc.at[1:-1].set((xs.pos[:-2] + xs.pos[2:] - 2 * xs.pos[1:-1]) / dt**2)
 
-    if isinstance(gravity, float) or gravity.shape == ():
-        gravity = jnp.array([0.0, 0, gravity])
-
-    # gravity is a scalar value
+    acc = (xs.pos[:-2] + xs.pos[2:] - 2 * xs.pos[1:-1]) / dt**2
     acc = acc + gravity
+
+    # 2nd order derivative, (N,) -> (N-2,)
+    # prepend and append one element to keep shape size
+    acc = jnp.vstack((acc[0:1], acc, acc[-1][None]))
 
     return maths.rotate(acc, xs.rot)
 
@@ -31,11 +29,15 @@ def gyroscope(rot: jax.Array, dt: float) -> jax.Array:
     # FROM LOCAL TO EPS
     # but now we q represents
     # FROM EPS TO LOCAL
-    q = maths.quat_inv(rot)
+    # q = maths.quat_inv(rot)
 
-    q = jnp.vstack((q, jnp.array([[1.0, 0, 0, 0]])))
+    q = rot
     # 1st-order approx to derivative
-    dq = maths.quat_mul(maths.quat_inv(q[:-1]), q[1:])
+    dq = maths.quat_mul(q[1:], maths.quat_inv(q[:-1]))
+
+    # due to 1st order derivative, shape (N,) -> (N-1,)
+    # append one element at the end to keep shape size
+    dq = jnp.vstack((dq, dq[-1][None]))
 
     axis, angle = maths.quat_to_rot_axis(dq)
     angle = angle[:, None]
@@ -77,7 +79,7 @@ def imu(
     xs: base.Transform,
     gravity: jax.Array,
     dt: float,
-    key: Optional[jax.random.PRNGKey],
+    key: Optional[jax.random.PRNGKey] = None,
     noisy: bool = False,
 ):
     "Simulates a 6D IMU."
