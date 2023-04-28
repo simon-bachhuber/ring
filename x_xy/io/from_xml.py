@@ -75,13 +75,21 @@ def _convert_attrs_to_arrays(xml_tree):
         for k, v in subtree.attrib.items():
             try:
                 array = [float(num) for num in v.split(" ")]
-            except:
+            except:  # noqa: E722
                 continue
             subtree.attrib[k] = jnp.squeeze(jnp.array(array))
 
 
 def load_sys_from_str(xml_str: str):
     xml_tree = ElementTree.fromstring(xml_str)
+
+    # check that <x_xy model="..."> syntax is correct
+    assert xml_tree.tag == "x_xy", (
+        "The root element in the xml of a x_xy model must be `x_xy`."
+        " Look up the examples under  x_xy/io/examples/*.xml to get started"
+    )
+    model_name = xml_tree.attrib.get("model", None)
+
     options = _find_assert_unique(xml_tree, "options").attrib
     default_attrs = _build_defaults_attributes(xml_tree)
     worldbody = _find_assert_unique(xml_tree, "worldbody")
@@ -172,6 +180,7 @@ def load_sys_from_str(xml_str: str):
         assert_order_then_to_list(geoms),
         options["gravity"],
         link_names=assert_order_then_to_list(link_names),
+        model_name=model_name,
     )
 
     return x_xy.io.parse_system(sys)

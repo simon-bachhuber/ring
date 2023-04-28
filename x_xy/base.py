@@ -1,4 +1,4 @@
-from typing import Any, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import jax
 import jax.numpy as jnp
@@ -342,6 +342,8 @@ class System(_Base):
     mass_mat_iters: int = struct.field(False, default_factory=lambda: 0)
 
     link_names: list[str] = struct.field(False, default_factory=lambda: [])
+
+    model_name: Optional[str] = struct.field(False, default_factory=lambda: None)
 
     def num_links(self) -> int:
         return len(self.link_parents)
