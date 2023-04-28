@@ -68,7 +68,15 @@ def main():
     x_xy.utils.disable_jit_warn()
 
     p = argparse.ArgumentParser(
-        "cli-render", description="Simulates and renders a system."
+        "cli-render",
+        description="""Simulates and renders a system.
+        Example Usage:
+
+        Using the dynamics
+        >> xxy-render x_xy/io/examples/double_pendulum.xml animation 10 --dyn-q 0 1
+        Using the RCMG
+        >> xxy-render x_xy/io/examples/double_pendulum.xml animation 10 --rcmg
+        """,
     )
     _parse_xml(p)
     _simulate(p)
