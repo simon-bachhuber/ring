@@ -22,10 +22,13 @@ and probably won't in the near future.
 
 ## Installation
 
-`pip install git+https://github.com/SimiPixel/x_xy.git`
+`pip install git+https://github.com/SimiPixel/x_xy_v2.git`
 
 Additionally,
-- `render.py` requires a vispy-backend (one is enough). Good options are
+- `render.py` requires a vispy-backend (one is enough). 
+
+Good options are
+    
     on linux:
         - PyQT5 (via e.g. pip)
         - EGL (headless) (via e.g. apt)
