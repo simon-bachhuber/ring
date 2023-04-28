@@ -4,17 +4,17 @@
         <geom mass="5" pos="0.2 0.1 0.05" dim="0.4 0.2 0.1" type="box"/>
     </defaults>
     <worldbody>
-        <body name="0" joint="free">
+        <body name="0th" joint="free">
             <geom/>
-            <body name="1" joint="rz">
+            <body name="1st" joint="rz">
                 <geom/>
             </body>
-            <body name="2" joint="rz" pos="1 0 0">
+            <body name="2nd" joint="rz" pos="1 0 0">
                 <geom/>
-                <body name="3" joint="rz" pos="1 0 0">
+                <body name="3rd" joint="rz" pos="1 0 0">
                     <geom/>
                 </body>
-                <body name="4" joint="ry" pos="1 0 0">
+                <body name="4th" joint="ry" pos="1 0 0">
                     <geom/>
                 </body>
             </body>

@@ -5,17 +5,17 @@
         <body pos="1 0 0" joint="rz"/>
     </defaults>
     <worldbody>
-        <body name="0" pos="0 0 0" euler="0 90 0" joint="free">
+        <body name="0th" pos="0 0 0" euler="0 90 0" joint="free">
             <geom/>
-            <body name="1">
+            <body name="1st">
                 <geom/>
             </body>
-            <body name="2" joint="rx">
+            <body name="2nd" joint="rx">
                 <geom/>
-                <body name="3">
+                <body name="3rd">
                     <geom/>
                 </body>
-                <body name="4" joint="ry">
+                <body name="4th" joint="ry">
                     <geom/>
                 </body>
             </body>
