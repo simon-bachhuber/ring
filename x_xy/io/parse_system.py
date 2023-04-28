@@ -7,6 +7,7 @@ def parse_system(sys: base.System) -> base.System:
     - some consistency checks
     - populate the spatial inertia tensors
     - check that all names are unique
+    - check that names are strings
     """
     assert (
         len(sys.link_parents)
@@ -17,6 +18,7 @@ def parse_system(sys: base.System) -> base.System:
 
     for name in sys.link_names:
         assert sys.link_names.count(name) == 1, "Duplicated name in system"
+        assert isinstance(name, str)
 
     for geometries_links in sys.geoms:
         assert isinstance(geometries_links, list)
