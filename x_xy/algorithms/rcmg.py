@@ -107,6 +107,11 @@ def _draw_free(
     return jnp.concatenate((q, pos), axis=1)
 
 
+def _draw_frozen(config: RCMG_Config, __, ___):
+    N = int(config.T / config.Ts)
+    return jnp.zeros((N, 0))
+
+
 LINK_TYPE_TO_DRAW_Q_FN = {
     "rx": _draw_rxyz,
     "ry": _draw_rxyz,
@@ -116,6 +121,7 @@ LINK_TYPE_TO_DRAW_Q_FN = {
     "pz": _draw_pxyz,
     "free": _draw_free,
     "spherical": _draw_spherical,
+    "frozen": _draw_frozen,
 }
 
 
@@ -199,10 +205,10 @@ def batch_generator(
 
         # merge pmap and vmap axis
         data = utils.merge_batchsize(data, pmap, vmap)
-        data = jax.tree_map(jnp.squeeze, data)
+        # data = jax.tree_map(jnp.squeeze, data)
 
-        if bs_total == 1:
-            data = jax.tree_map(lambda arr: arr[None], data)
+        # if bs_total == 1:
+        #    data = jax.tree_map(lambda arr: arr[None], data)
 
         return data
 
