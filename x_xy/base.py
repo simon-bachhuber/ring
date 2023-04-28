@@ -357,6 +357,9 @@ class System(_Base):
     def name_to_idx(self, name: str) -> int:
         return self.link_names.index(name)
 
+    def idx_to_name(self, idx: int) -> str:
+        return self.link_names[idx]
+
 
 @struct.dataclass
 class State(_Base):
