@@ -79,6 +79,9 @@ class _Base:
     def batch_dim(self) -> int:
         return tu.tree_shape(self)
 
+    def tranpose(self, axes: Sequence[int]) -> Any:
+        return tree_map(lambda x: jnp.transpose(x, axes), self)
+
 
 @struct.dataclass
 class Transform(_Base):
