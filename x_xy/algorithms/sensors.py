@@ -3,7 +3,7 @@ from typing import Optional
 import jax
 import jax.numpy as jnp
 
-from x_xy import base, maths
+from x_xy import base, maths, scan
 
 
 def accelerometer(xs: base.Transform, gravity: jax.Array, dt: float) -> jax.Array:
@@ -81,7 +81,7 @@ def imu(
     dt: float,
     key: Optional[jax.random.PRNGKey] = None,
     noisy: bool = False,
-):
+) -> dict:
     "Simulates a 6D IMU."
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
 
@@ -90,3 +90,54 @@ def imu(
         measurements = add_noise_bias(key, measurements)
 
     return measurements
+
+
+def rel_pose(
+    sys_scan: base.System, xs: base.Transform, sys_xs: Optional[base.System] = None
+) -> dict:
+    """Relative pose of the entire system. `sys_scan` defines the parent-child ordering,
+    relative pose is from child to parent in local coordinates. Bodies that connect
+    to the base are skipped (that would be absolute pose).
+
+    Args:
+        sys_scan (base.System): System defining parent-child ordering.
+        xs (base.Transform): Body transforms from base to body.
+        sys_xs (base.System): System that defines the stacking order of `xs`.
+
+    Returns:
+        dict:
+    """
+    if sys_xs is None:
+        sys_xs = sys_scan
+
+    if xs.pos.ndim == 3:
+        # swap (n_timesteps, n_links) axes
+        xs = xs.tranpose([1, 0, 2])
+
+    assert xs.batch_dim() == sys_xs.num_links()
+
+    qrel = lambda q1, q2: maths.quat_mul(q1, maths.quat_inv(q2))
+
+    y = {}
+
+    def pose_child_to_parent(_, __, name_i: str, p: int):
+        # body connects to base
+        if p == -1:
+            return
+
+        name_p = sys_scan.idx_to_name(p)
+
+        # find the transforms of those named bodies
+        i = sys_xs.name_to_idx(name_i)
+        p = sys_xs.name_to_idx(name_p)
+
+        # get those transforms
+        q1, q2 = xs.take(p).rot, xs.take(i).rot
+
+        y[name_i] = qrel(q1, q2)
+
+    scan.tree(
+        sys_scan, pose_child_to_parent, "ll", sys_scan.link_names, sys_scan.link_parents
+    )
+
+    return y

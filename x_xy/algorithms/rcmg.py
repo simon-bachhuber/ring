@@ -191,7 +191,6 @@ def batch_generator(
     @jax.pmap
     @jax.vmap
     def _generator(key, which_gen: int):
-        print("JOT")
         return jax.lax.switch(which_gen, generators, key)
 
     def generator(key):

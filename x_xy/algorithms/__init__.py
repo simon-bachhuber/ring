@@ -10,4 +10,4 @@ from .rcmg import (
     batch_generator,
     build_generator,
 )
-from .sensors import accelerometer, add_noise_bias, gyroscope, imu
+from .sensors import accelerometer, add_noise_bias, gyroscope, imu, rel_pose
