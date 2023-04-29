@@ -188,27 +188,18 @@ def batch_generator(
     pmap, vmap = utils.distribute_batchsize(bs_total)
     batch_arr = batch_arr.reshape((pmap, vmap))
 
+    @jax.pmap
+    @jax.vmap
+    def _generator(key, which_gen: int):
+        print("JOT")
+        return jax.lax.switch(which_gen, generators, key)
+
     def generator(key):
-        if utils.JIT_WARN:
-            print(
-                """This generator is not jitted or is getting jitted with this call.
-                You may disable this message with `x_xy.utils.disable_jit_warn`"""
-            )
-
-        @jax.pmap
-        @jax.vmap
-        def _generator(key, which_gen: int):
-            return jax.lax.switch(which_gen, generators, key)
-
         pmap_vmap_keys = jax.random.split(key, bs_total).reshape((pmap, vmap, 2))
         data = _generator(pmap_vmap_keys, batch_arr)
 
         # merge pmap and vmap axis
         data = utils.merge_batchsize(data, pmap, vmap)
-        # data = jax.tree_map(jnp.squeeze, data)
-
-        # if bs_total == 1:
-        #    data = jax.tree_map(lambda arr: arr[None], data)
 
         return data
 
