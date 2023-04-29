@@ -155,7 +155,10 @@ def build_generator(
             q_list.append(q_link)
             return key
 
-        key = scan.tree(sys_mod, draw_q, "l", sys.link_types)
+        keys = scan.tree(sys_mod, draw_q, "l", sys.link_types)
+        # stack of keys; only the last key is unused
+        key = keys[-1]
+
         q = jnp.concatenate(q_list, axis=1)
 
         # do forward kinematics
