@@ -63,7 +63,7 @@ def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
     """
     noisy_imu_measurements = {}
     for sensor in ["acc", "gyr"]:
-        key, c1, c2 = jax.random.split(key)
+        key, c1, c2 = jax.random.split(key, 3)
         noise = (
             jax.random.normal(c1, shape=imu_measurements[sensor].shape)
             * NOISE_LEVELS[sensor]
