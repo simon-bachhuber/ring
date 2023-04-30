@@ -278,7 +278,7 @@ class Cylinder(Geometry):
         return it_3x3
 
 
-N_JOINT_PARAMS: int = 1
+N_JOINT_PARAMS: int = 3
 
 
 @struct.dataclass
