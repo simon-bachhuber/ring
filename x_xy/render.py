@@ -42,7 +42,7 @@ def _enable_headless_backend():
         except RuntimeError:
             print(
                 "Headless mode requires either `egl` or `osmesa` as backends for vispy",
-                "Falling back to interactive mode.",
+                "Couldn't find neither. Falling back to interactive mode.",
             )
             return False
 
@@ -194,7 +194,7 @@ def animate(
     path: Union[str, Path],
     scene: VispyScene,
     x: base.Transform,
-    timestep: float,
+    dt: float,
     fps: int = 50,
     fmt: str = "mp4",
 ):
@@ -224,7 +224,7 @@ def animate(
     _data_checks(scene, x.pos, x.rot)
 
     N = x.pos.shape[0]
-    _, step = _parse_timestep(timestep, fps, N)
+    _, step = _parse_timestep(dt, fps, N)
 
     frames = []
     for t in tqdm.tqdm(range(0, N, step), "Rendering frames.."):
@@ -232,6 +232,7 @@ def animate(
         frames.append(scene.render())
 
     print(f"DONE. Converting frames to {path} (this might take a while..)")
+    # duration = int(1000 * 1 / fps)
     imageio.mimsave(path, frames, format=fmt, fps=fps)
 
 
