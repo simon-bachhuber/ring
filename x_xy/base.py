@@ -278,6 +278,35 @@ class Cylinder(Geometry):
         return it_3x3
 
 
+@struct.dataclass
+class Capsule(Geometry):
+    """Length is along x-axis."""
+
+    radius: jax.Array
+    length: jax.Array
+    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
+
+    def get_it_3x3(self) -> jax.Array:
+        """https://github.com/thomasmarsh/ODE/blob/master/ode/src/mass.cpp#L141"""
+        r = self.radius
+        d = self.length
+
+        v_cyl = jnp.pi * r**2 * d
+        v_cap = 4 / 3 * jnp.pi * r**3
+
+        v_tot = v_cyl + v_cap
+
+        m_cyl = self.mass * v_cyl / v_tot
+        m_cap = self.mass * v_cap / v_tot
+
+        I_a = m_cyl * (0.25 * r**2 + 1 / 12 * d**2) + m_cap * (
+            0.4 * r**2 + 0.375 * r * d + 0.25 * d**2
+        )
+        I_b = (0.5 * m_cyl + 0.4 * m_cap) * r**2
+
+        return jnp.array([[I_b, 0, 0], [0, I_a, 0], [0, 0, I_a]])
+
+
 N_JOINT_PARAMS: int = 3
 
 
