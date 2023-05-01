@@ -138,7 +138,7 @@ def load_sys_from_str(xml_str: str):
 
         geom_map = {
             "box": lambda m, pos, dim, vispy: base.Box(m, pos, *dim, vispy),
-            "sphere": lambda m, pos, dim, vispy: base.Sphere(m, pos, dim[0], vispy),
+            "sphere": lambda m, pos, dim, vispy: base.Sphere(m, pos, dim, vispy),
             "cylinder": lambda m, pos, dim, vispy: base.Cylinder(
                 m, pos, dim[0], dim[1], vispy
             ),
