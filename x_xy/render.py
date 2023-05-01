@@ -11,7 +11,7 @@ from vispy import app, scene
 from vispy.scene import MatrixTransform
 
 from x_xy import base, maths
-from x_xy.base import Box, Geometry
+from x_xy.base import Box, Cylinder, Geometry, Sphere
 
 
 @jax.jit
@@ -93,11 +93,30 @@ class VispyScene:
         self._populate()
 
     def _create_visual_element(self, geom: Geometry, **kwargs):
-        if isinstance(geom, Box):
-            return scene.visuals.Box(
-                geom.dim_x, geom.dim_z, geom.dim_y, parent=self.view.scene, **kwargs
-            )
-        raise NotImplementedError()
+        match geom:
+            case Sphere(radius=radius):
+                return scene.visuals.Sphere(radius, parent=self.view.scene, **kwargs)
+            case Box(dim_x=dim_x, dim_y=dim_y, dim_z=dim_z):
+                return scene.visuals.Box(
+                    dim_x, dim_z, dim_y, parent=self.view.scene, **kwargs
+                )
+            case Cylinder(radius=radius, length=length):
+                n_points = int(length * 100)
+
+                tube_points = jnp.zeros((n_points, 3))
+                tube_points = tube_points.at[:, 0].set(
+                    jnp.linspace(-length / 2, length / 2, n_points)
+                )
+
+                return scene.visuals.Tube(
+                    tube_points,
+                    jnp.full((n_points,), radius),
+                    closed=True,
+                    parent=self.view.scene,
+                    **kwargs,
+                )
+            case _:
+                raise NotImplementedError()
 
     def _populate(self):
         self._can_mutate = False
