@@ -182,7 +182,7 @@ def register_new_joint_type(
     qd_width: Optional[int] = None,
 ):
     if qd_width is None:
-        qd_width = 0
+        qd_width = q_width
 
     assert len(joint_model.motion) == qd_width
     assert joint_type not in _joint_types, "already exists"
