@@ -142,7 +142,7 @@ def load_sys_from_str(xml_str: str):
             "cylinder": lambda m, pos, dim, vispy: base.Cylinder(
                 m, pos, dim[0], dim[1], vispy
             ),
-            "capsule": lambda m, pos, dim, vispy: base.Cylinder(
+            "capsule": lambda m, pos, dim, vispy: base.Capsule(
                 m, pos, dim[0], dim[1], vispy
             ),
         }
