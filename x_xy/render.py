@@ -1,4 +1,5 @@
 import time
+from functools import partial
 from pathlib import Path
 from typing import Optional, Union
 
@@ -7,26 +8,31 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import tqdm
+from tree_utils import tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
 
-from x_xy import base, maths
+from x_xy import algebra, base, maths
 from x_xy.base import Box, Geometry
 
 
 @jax.jit
-def _transform_4x4(pos, rot, com):
-    E = maths.quat_to_3x3(rot)
+@partial(jax.vmap, in_axes=(None, 0, 0))
+def _transform_4x4(x_links, geom_t, geom_link_idx):
+    x = x_links[geom_link_idx]
+    x = algebra.transform_mul(geom_t, x)
+    E = maths.quat_to_3x3(x.rot)
     M = jnp.eye(4)
     M = M.at[:3, :3].set(E)
-    pos = pos + E.T @ com
     T = jnp.eye(4)
-    T = T.at[3, :3].set(pos)
+    T = T.at[3, :3].set(x.pos)
     return M @ T
 
 
-def transform_4x4(pos, rot, com=jnp.zeros((3,))):
-    return np.asarray(_transform_4x4(pos, rot, com))
+def transform_4x4(
+    x_links: base.Transform, geom_transforms: base.Transform, geom_link_idxs: jax.Array
+):
+    return np.asarray(_transform_4x4(x_links, geom_transforms, geom_link_idxs))
 
 
 def _enable_headless_backend():
@@ -89,8 +95,11 @@ class VispyScene:
         self.view = self.canvas.central_widget.add_view()
         self.view.camera = camera
         self.show_cs = show_cs
-        self.geoms = geoms
-        self._populate()
+
+        self.visuals = None
+        self.geom_link_idx = None
+        self.geom_transform = None
+        self._populate(geoms)
 
     def _create_visual_element(self, geom: Geometry, **kwargs):
         if isinstance(geom, Box):
@@ -99,33 +108,39 @@ class VispyScene:
             )
         raise NotImplementedError()
 
-    def _populate(self):
+    def _populate(self, geoms: list[list[Geometry]]):
         self._can_mutate = False
         self.visuals = []
-        self._geoms_cs = []
+        self.geom_link_idx = []
+        self.geom_transform = []
 
         if self.show_cs:
             scene.visuals.XYZAxis(parent=self.view.scene)
 
-        for geoms_per_link in self.geoms:
-            if self.show_cs:
-                self._geoms_cs.append(scene.visuals.XYZAxis(parent=self.view.scene))
+        def append(visual, link_idx, transform):
+            self.visuals.append(visual)
+            self.geom_link_idx.append(link_idx)
+            self.geom_transform.append(transform)
 
-            visuals_per_link = []
+        for link_idx, geoms_per_link in enumerate(geoms):
+            if self.show_cs:
+                visual = scene.visuals.XYZAxis(parent=self.view.scene)
+                append(visual, link_idx, base.Transform.zero())
+
             for geom in geoms_per_link:
-                visuals_per_link.append(
-                    self._create_visual_element(geom, **geom.vispy_kwargs)
-                )
-            self.visuals.append(visuals_per_link)
+                visual = self._create_visual_element(geom, **geom.vispy_kwargs)
+                append(visual, link_idx, geom.transform)
+
+        self.geom_link_idx = tree_batch(self.geom_link_idx, backend="jax")
+        self.geom_transform = tree_batch(self.geom_transform, backend="jax")
 
     def change_camera(self, camera: scene.cameras.BaseCamera):
         "Change the camera angle of rendered image."
         self.view.camera = camera
 
-    def update(self, x: base.Transform):
+    def update(self, x_links: base.Transform):
         "Update the link coordinates of the scene."
-        self.data_pos = x.pos
-        self.data_rot = x.rot
+        self._x_links = x_links
         self._update_scene()
         self._can_mutate = True
 
@@ -133,36 +148,16 @@ class VispyScene:
         """Render scene. RGBA Array of Shape = (M, N, 4)"""
         return self.canvas.render(alpha=True)
 
-    def _get_link_data(self, link_idx: int):
-        rot = self.data_rot[link_idx]
-        pos = self.data_pos[link_idx]
-        return rot, pos
-
-    def _get_transform_matrix(self, link_idx, geom_idx=None):
-        rot, pos = self._get_link_data(link_idx)
-
-        if geom_idx is not None:
-            return transform_4x4(pos, rot, self.geoms[link_idx][geom_idx].CoM)
-        else:
-            return transform_4x4(pos, rot)
-
     def _update_scene(self):
-        for link_idx in range(len(self.visuals)):
-            if self.show_cs:
-                transform_matrix = self._get_transform_matrix(link_idx)
-                cs = self._geoms_cs[link_idx]
-                if self._can_mutate:
-                    cs.transform.matrix = transform_matrix
-                else:
-                    cs.transform = MatrixTransform(transform_matrix)
+        # step 1: pre-compute all required 4x4 matrices (uses jax.vmap)
+        t_4x4 = transform_4x4(self._x_links, self.geom_transform, self.geom_link_idx)
 
-            for geom_idx in range(len(self.visuals[link_idx])):
-                transform_matrix = self._get_transform_matrix(link_idx, geom_idx)
-                visual = self.visuals[link_idx][geom_idx]
-                if self._can_mutate:
-                    visual.transform.matrix = transform_matrix
-                else:
-                    visual.transform = MatrixTransform(transform_matrix)
+        # step 2: update visuals
+        for i, visual in enumerate(self.visuals):
+            if self._can_mutate:
+                visual.transform.matrix = t_4x4[i]
+            else:
+                visual.transform = MatrixTransform(t_4x4[i])
 
 
 def _parse_timestep(timestep: float, fps: int, N: int):
@@ -178,7 +173,7 @@ def _data_checks(scene, data_pos, data_rot):
     assert (
         data_pos.ndim == data_rot.ndim == 3
     ), "Expected shape = (n_timesteps, n_links, 3/4)"
-    n_links = len(scene.geoms)
+    n_links = np.max(scene.geom_link_idx) + 1
     assert (
         data_pos.shape[1] == data_rot.shape[1] == n_links
     ), "Number of links does not match"

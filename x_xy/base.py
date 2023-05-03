@@ -173,13 +173,14 @@ class Inertia(_Base):
     mass: Vector
 
     @classmethod
-    def create(cls, mass: Vector, CoM: Vector, it_3x3: jnp.ndarray):
-        """Construct spatial inertia of an object with mass `mass` located
-        at the center of mass `CoM` and an inertia matrix `it_3x3` around that
-        center of mass.
+    def create(cls, mass: Vector, transform: Transform, it_3x3: jnp.ndarray):
+        """Construct spatial inertia of an object with mass `mass` located and aligned
+        with a coordinate system that is given by `transform` where `transform` is from
+        parent to local geometry coordinates.
         """
-        it_3x3 = maths.spatial.mcI(mass, CoM, it_3x3)[:3, :3]
-        h = mass * CoM
+        it_3x3 = maths.rotate_matrix(it_3x3, maths.quat_inv(transform.rot))
+        it_3x3 = maths.spatial.mcI(mass, transform.pos, it_3x3)[:3, :3]
+        h = mass * transform.pos
         return cls(it_3x3, h, mass)
 
     @classmethod
@@ -199,7 +200,7 @@ class Inertia(_Base):
 @struct.dataclass
 class Geometry(_Base):
     mass: jax.Array
-    CoM: jax.Array
+    transform: Transform
 
 
 @struct.dataclass
@@ -233,24 +234,6 @@ class Box(Geometry):
             )
         )
         return it_3x3
-
-    @classmethod
-    def cube(cls, mass, CoM, dim, vispy_kwargs={}):
-        return cls(mass, CoM, dim, dim, dim, vispy_kwargs)
-
-    @classmethod
-    def standard_segment(cls, vispy_kwargs={}):
-        dim_x = 0.4
-        dim_y = 0.2
-        dim_z = 0.1
-        return cls(
-            5.0,
-            jnp.array([dim_x / 2, dim_y / 2, dim_z / 2]),
-            dim_x,
-            dim_y,
-            dim_z,
-            vispy_kwargs,
-        )
 
 
 @struct.dataclass

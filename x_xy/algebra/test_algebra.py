@@ -38,7 +38,7 @@ def test_mat_inertia():
         I_3x3 = toy_I_3x3(i)
         mass = 10.0
         I_mat = maths.spatial.mcI(mass, r, I_3x3)
-        inertia = Inertia.create(mass, r, I_3x3)
+        inertia = Inertia.create(mass, Transform.create(pos=r), I_3x3)
         assert jnp.allclose(I_mat, inertia.as_matrix())
         for E in [E1, E2]:
             X = maths.spatial.X_transform(E, r)
@@ -105,8 +105,8 @@ it_3x3_1 = inertia_3x3_for_box(10, 0.3, 0.3, 0.5)
 it_3x3_2 = jnp.array([[1.0, 0.2, 0.5], [0.2, 2.0, 0.4], [0.5, 0.4, 1.0]])
 com1, com2 = jrand.uniform(key.next(), shape=(2, 3), minval=-1)
 mass1, mass2 = jrand.uniform(key.next(), shape=(2,), minval=1e-12)
-it1 = Inertia.create(mass1, com1, it_3x3_1)
-it2 = Inertia.create(mass2, com2, it_3x3_2)
+it1 = Inertia.create(mass1, Transform.create(pos=com1), it_3x3_1)
+it2 = Inertia.create(mass2, Transform.create(pos=com2), it_3x3_2)
 
 
 def test_flatten():

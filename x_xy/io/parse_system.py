@@ -32,7 +32,7 @@ def parse_system(sys: base.System) -> base.System:
 def inertia_from_geometries(geometries: list[base.Geometry]) -> base.Inertia:
     inertia = base.Inertia.zero()
     for geom in geometries:
-        inertia += base.Inertia.create(geom.mass, geom.CoM, geom.get_it_3x3())
+        inertia += base.Inertia.create(geom.mass, geom.transform, geom.get_it_3x3())
     return inertia
 
 

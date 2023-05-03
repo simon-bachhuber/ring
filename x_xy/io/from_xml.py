@@ -41,7 +41,7 @@ def _assert_all_tags_attrs_valid(xml_tree):
         "defaults": ["geom", "body"],
         "worldbody": [],
         "body": ["name", "pos", "quat", "euler", "joint", "armature", "damping"],
-        "geom": ["type", "mass", "pos", "dim"],
+        "geom": ["type", "mass", "pos", "dim", "quat", "euler"],
     }
     for subtree in xml_tree.iter():
         assert subtree.tag in list([key for key in valid_attrs])
@@ -78,6 +78,21 @@ def _convert_attrs_to_arrays(xml_tree):
             except:  # noqa: E722
                 continue
             subtree.attrib[k] = jnp.squeeze(jnp.array(array))
+
+
+def _get_rotation(attrib: dict):
+    rot = attrib.get("quat", None)
+    if rot is not None:
+        assert "euler" not in attrib
+    elif "euler" in attrib:
+        # we use zyx convention but angles are given
+        # in x, y, z in the xml file
+        # thus flip the order
+        euler_xyz = jnp.deg2rad(attrib["euler"])
+        rot = base.maths.quat_euler(jnp.flip(euler_xyz), convention="zyx")
+    else:
+        rot = jnp.array([1.0, 0, 0, 0])
+    return rot
 
 
 def load_sys_from_str(xml_str: str):
@@ -117,17 +132,7 @@ def load_sys_from_str(xml_str: str):
         link_names[current_link_idx] = body.attrib["name"]
 
         pos = body.attrib.get("pos", jnp.array([0.0, 0, 0]))
-        rot = body.attrib.get("quat", None)
-        if rot is not None:
-            assert "euler" not in body.attrib
-        elif "euler" in body.attrib:
-            # we use zyx convention but angles are given
-            # in x, y, z in the xml file
-            # thus flip the order
-            euler_xyz = jnp.deg2rad(body.attrib["euler"])
-            rot = base.maths.quat_euler(jnp.flip(euler_xyz), convention="zyx")
-        else:
-            rot = jnp.array([1.0, 0, 0, 0])
+        rot = _get_rotation(body.attrib)
         links[current_link_idx] = base.Link(base.Transform(pos, rot))
 
         qd_size = base.QD_WIDTHS[body.attrib["joint"]]
@@ -137,20 +142,22 @@ def load_sys_from_str(xml_str: str):
         dampings[current_link_idx] = jnp.atleast_1d(damping)
 
         geom_map = {
-            "box": lambda m, pos, dim, vispy: base.Box(m, pos, *dim, vispy),
-            "sphere": lambda m, pos, dim, vispy: base.Sphere(m, pos, dim[0], vispy),
-            "cylinder": lambda m, pos, dim, vispy: base.Cylinder(
-                m, pos, dim[0], dim[1], vispy
+            "box": lambda m, t, dim, vispy: base.Box(m, t, *dim, vispy),
+            "sphere": lambda m, t, dim, vispy: base.Sphere(m, t, dim[0], vispy),
+            "cylinder": lambda m, t, dim, vispy: base.Cylinder(
+                m, t, dim[0], dim[1], vispy
             ),
-            "capsule": lambda m, pos, dim, vispy: base.Capsule(
-                m, pos, dim[0], dim[1], vispy
+            "capsule": lambda m, t, dim, vispy: base.Capsule(
+                m, t, dim[0], dim[1], vispy
             ),
         }
         link_geoms = []
         for geom_subtree in body.findall("geom"):
             g_attr = geom_subtree.attrib
+            geom_rot = _get_rotation(g_attr)
+            geom_t = base.Transform(g_attr["pos"], geom_rot)
             geom = geom_map[g_attr["type"]](
-                g_attr["mass"], g_attr["pos"], g_attr["dim"], _vispy_subdict(g_attr)
+                g_attr["mass"], geom_t, g_attr["dim"], _vispy_subdict(g_attr)
             )
             link_geoms.append(geom)
         geoms[current_link_idx] = link_geoms
