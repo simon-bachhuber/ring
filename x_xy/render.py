@@ -1,7 +1,8 @@
 import time
+from abc import ABC, abstractmethod, abstractstaticmethod
 from functools import partial
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, TypeVar, Union
 
 import imageio
 import jax
@@ -13,7 +14,123 @@ from vispy import app, scene
 from vispy.scene import MatrixTransform
 
 from x_xy import algebra, base, maths
-from x_xy.base import Box, Geometry
+from x_xy.base import Box, Capsule, Cylinder, Geometry, Sphere
+
+Camera = TypeVar("Camera")
+Visual = TypeVar("Visual")
+VisualPosOri = TypeVar("VisualPosOri")
+
+
+class _AbstractRenderer(ABC):
+    """
+    Example:
+        >> renderer = Renderer()
+        >> renderer.init(sys.geoms)
+        >> for x in xs:
+        >>   renderer.update(x)
+        >>   image = renderer.render()
+    """
+
+    @abstractmethod
+    def _get_camera(self) -> Camera:
+        pass
+
+    @abstractmethod
+    def _set_camera(self, camera: Camera) -> None:
+        pass
+
+    @abstractmethod
+    def _render(self) -> jax.Array:
+        pass
+
+    def render(
+        self, camera: Optional[Camera | list[Camera]] = None
+    ) -> jax.Array | list[jax.Array]:
+        if camera is None:
+            camera = self._get_camera()
+
+        if isinstance(camera, Camera):
+            self._set_camera(camera)
+            return self._render()
+
+        images = []
+        for cam in camera:
+            self._set_camera(cam)
+            images.append(self._render())
+        return images
+
+    @staticmethod
+    def _add_box(geom: Box) -> Visual:
+        raise NotImplementedError
+
+    @staticmethod
+    def _add_sphere(geom: Sphere) -> Visual:
+        raise NotImplementedError
+
+    @staticmethod
+    def _add_cylinder(geom: Cylinder) -> Visual:
+        raise NotImplementedError
+
+    @staticmethod
+    def _add_capsule(geom: Capsule) -> Visual:
+        raise NotImplementedError
+
+    def init(self, geoms: list[Geometry]):
+        self.geoms = geoms
+        self._fresh_init = True
+
+        self.geom_link_idx = []
+        self.geom_transform = []
+        self.visuals = []
+        for geom in geoms:
+            self.geom_link_idx.append(geom.link_idx)
+            self.geom_transform.append(geom.transform)
+            if isinstance(geom, Box):
+                visual = self._add_box(geom)
+            elif isinstance(geom, Sphere):
+                visual = self._add_sphere(geom)
+            elif isinstance(geom, Cylinder):
+                visual = self._add_cylinder(geom)
+            elif isinstance(geom, Capsule):
+                visual = self._add_capsule(geom)
+            else:
+                raise Exception(f"Unknown geom type: {type(geom)}")
+            self.visuals.append(visual)
+
+        self.geom_link_idx = tree_batch(self.geom_link_idx, backend="jax")
+        self.geom_transform = tree_batch(self.geom_transform, backend="jax")
+
+    @abstractstaticmethod
+    def _compute_transform_per_visual(
+        x_links: base.Transform,
+        x_link_to_geom: base.Transform,
+        geom_link_idx: jax.Array[int],
+    ) -> VisualPosOri:
+        "This can easily account for possible convention differences"
+        pass
+
+    @abstractmethod
+    def _init_visual(self, visual: Visual, transform: VisualPosOri, geom: Geometry):
+        pass
+
+    def _update_visual(self, visual: Visual, transform: VisualPosOri, geom: Geometry):
+        self._init_visual(visual, transform, geom)
+
+    def update(self, x: base.Transform):
+        "`x` are (n_links,) Transforms."
+
+        # step 1: pre-compute all required transforms
+        transform_per_visual = jax.jit(
+            jax.vmap(self._compute_transform_per_visual, in_axes=(None, 0, 0))
+        )(x, self.geom_transform, self.geom_link_idx)
+
+        # step 2: update visuals
+        for i, (visual, geom) in enumerate(zip(self.visuals, self.geoms)):
+            t = transform_per_visual[i]
+            if self._fresh_init:
+                self._init_visual(visual, t, geom)
+            else:
+                self._update_visual(visual, t, geom)
 
 
 @jax.jit
