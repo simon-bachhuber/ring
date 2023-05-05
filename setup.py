@@ -30,10 +30,9 @@ def find_data_files(package_dir, patterns, excludes=()):
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.2.12",
+    version="0.2.13",
     package_data={
         "x_xy": find_data_files("x_xy", patterns=["*.xml"]),
-        "cli": find_data_files("cli", patterns=["*.py"]),
     },
     include_package_data=True,
     install_requires=[
