@@ -45,5 +45,5 @@ setuptools.setup(
         "pytest",
         "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
     ],
-    entry_points={"console_scripts": ["xxy-render = cli.render:main"]},
+    entry_points={"console_scripts": ["xxy-render = x_xy.cli.render:main"]},
 )
