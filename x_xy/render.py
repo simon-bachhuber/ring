@@ -104,7 +104,7 @@ class _AbstractRenderer(ABC):
     def _compute_transform_per_visual(
         x_links: base.Transform,
         x_link_to_geom: base.Transform,
-        geom_link_idx: jax.Array[int],
+        geom_link_idx: int,
     ) -> VisualPosOri:
         "This can easily account for possible convention differences"
         pass
