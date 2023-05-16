@@ -270,7 +270,11 @@ class VispyScene(Scene):
         x_link_to_geom: base.Transform,
         geom_link_idx: int,
     ) -> jax.Array:
-        x = x_links[geom_link_idx]
+        x = jax.lax.cond(
+            geom_link_idx == -1,
+            lambda: base.Transform.zero(),
+            lambda: x_links[geom_link_idx],
+        )
         x = algebra.transform_mul(x_link_to_geom, x)
         E = maths.quat_to_3x3(x.rot)
         M = jnp.eye(4)

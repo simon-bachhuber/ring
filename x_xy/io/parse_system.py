@@ -16,7 +16,7 @@ def parse_system(sys: base.System) -> base.System:
         assert isinstance(name, str)
 
     for geom in sys.geoms:
-        assert geom.link_idx in list(range(sys.num_links()))
+        assert geom.link_idx in list(range(sys.num_links())) + [-1]
 
     inertia = _parse_system_calculate_inertia(sys)
     sys = sys.replace(links=sys.links.replace(inertia=inertia))

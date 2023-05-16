@@ -95,6 +95,33 @@ def _get_rotation(attrib: dict):
     return rot
 
 
+def _extract_geoms_from_body_xml(body, current_link_idx):
+    geom_map = {
+        "box": lambda m, t, l, dim, vispy: base.Box(m, t, l, *dim, vispy),
+        "sphere": lambda m, t, l, dim, vispy: base.Sphere(m, t, l, dim[0], vispy),
+        "cylinder": lambda m, t, l, dim, vispy: base.Cylinder(
+            m, t, l, dim[0], dim[1], vispy
+        ),
+        "capsule": lambda m, t, l, dim, vispy: base.Capsule(
+            m, t, l, dim[0], dim[1], vispy
+        ),
+    }
+    link_geoms = []
+    for geom_subtree in body.findall("geom"):
+        g_attr = geom_subtree.attrib
+        geom_rot = _get_rotation(g_attr)
+        geom_t = base.Transform(g_attr["pos"], geom_rot)
+        geom = geom_map[g_attr["type"]](
+            g_attr["mass"],
+            geom_t,
+            current_link_idx,
+            g_attr["dim"],
+            _vispy_subdict(g_attr),
+        )
+        link_geoms.append(geom)
+    return link_geoms
+
+
 def load_sys_from_str(xml_str: str):
     xml_tree = ElementTree.fromstring(xml_str)
 
@@ -141,30 +168,7 @@ def load_sys_from_str(xml_str: str):
         armatures[current_link_idx] = jnp.atleast_1d(armature)
         dampings[current_link_idx] = jnp.atleast_1d(damping)
 
-        geom_map = {
-            "box": lambda m, t, l, dim, vispy: base.Box(m, t, l, *dim, vispy),
-            "sphere": lambda m, t, l, dim, vispy: base.Sphere(m, t, l, dim[0], vispy),
-            "cylinder": lambda m, t, l, dim, vispy: base.Cylinder(
-                m, t, l, dim[0], dim[1], vispy
-            ),
-            "capsule": lambda m, t, l, dim, vispy: base.Capsule(
-                m, t, l, dim[0], dim[1], vispy
-            ),
-        }
-        link_geoms = []
-        for geom_subtree in body.findall("geom"):
-            g_attr = geom_subtree.attrib
-            geom_rot = _get_rotation(g_attr)
-            geom_t = base.Transform(g_attr["pos"], geom_rot)
-            geom = geom_map[g_attr["type"]](
-                g_attr["mass"],
-                geom_t,
-                current_link_idx,
-                g_attr["dim"],
-                _vispy_subdict(g_attr),
-            )
-            link_geoms.append(geom)
-        geoms[current_link_idx] = link_geoms
+        geoms[current_link_idx] = _extract_geoms_from_body_xml(body, current_link_idx)
 
         for subbodies in body.findall("body"):
             process_body(subbodies, current_link_idx)
@@ -183,6 +187,10 @@ def load_sys_from_str(xml_str: str):
     dampings = jnp.concatenate(assert_order_then_to_list(dampings))
     armatures = jnp.concatenate(assert_order_then_to_list(armatures))
 
+    # add all geoms directly connected to worldbody
+    flat_geoms = [geom for geoms in assert_order_then_to_list(geoms) for geom in geoms]
+    flat_geoms += _extract_geoms_from_body_xml(worldbody, -1)
+
     sys = base.System(
         assert_order_then_to_list(link_parents),
         links,
@@ -191,7 +199,7 @@ def load_sys_from_str(xml_str: str):
         armatures,
         options["dt"],
         False,
-        [geom for geoms in assert_order_then_to_list(geoms) for geom in geoms],
+        flat_geoms,
         options["gravity"],
         link_names=assert_order_then_to_list(link_names),
         model_name=model_name,
