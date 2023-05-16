@@ -201,6 +201,7 @@ class Inertia(_Base):
 class Geometry(_Base):
     mass: jax.Array
     transform: Transform
+    link_idx: int
 
 
 @struct.dataclass
@@ -346,8 +347,7 @@ class System(_Base):
     # the geometries may have changed
     dynamic_geometries: bool = struct.field(False)
     # geometries in the system
-    # len(geoms) == len(links)
-    geoms: list[list[Geometry]]
+    geoms: list[Geometry]
     # root / base acceleration offset
     gravity: jax.Array = jnp.array([0, 0, -9.81])
 

@@ -31,14 +31,13 @@ def test_animate(pytest=True):
         xs.append(state.x)
 
     xs = xs[0].batch(*xs[1:])
-    scene = render.VispyScene(sys.geoms)
 
     fmts = ["mp4"]
     if pytest:
         fmts += ["gif"]
 
     for fmt in fmts:
-        render.animate(filename, scene, xs, sys.dt, fmt=fmt)
+        render.animate(filename, sys, xs, fmt=fmt)
         if pytest:
             os.system(f"rm animation.{fmt}")
 

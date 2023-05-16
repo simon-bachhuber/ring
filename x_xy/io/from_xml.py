@@ -142,13 +142,13 @@ def load_sys_from_str(xml_str: str):
         dampings[current_link_idx] = jnp.atleast_1d(damping)
 
         geom_map = {
-            "box": lambda m, t, dim, vispy: base.Box(m, t, *dim, vispy),
-            "sphere": lambda m, t, dim, vispy: base.Sphere(m, t, dim[0], vispy),
-            "cylinder": lambda m, t, dim, vispy: base.Cylinder(
-                m, t, dim[0], dim[1], vispy
+            "box": lambda m, t, l, dim, vispy: base.Box(m, t, l, *dim, vispy),
+            "sphere": lambda m, t, l, dim, vispy: base.Sphere(m, t, l, dim[0], vispy),
+            "cylinder": lambda m, t, l, dim, vispy: base.Cylinder(
+                m, t, l, dim[0], dim[1], vispy
             ),
-            "capsule": lambda m, t, dim, vispy: base.Capsule(
-                m, t, dim[0], dim[1], vispy
+            "capsule": lambda m, t, l, dim, vispy: base.Capsule(
+                m, t, l, dim[0], dim[1], vispy
             ),
         }
         link_geoms = []
@@ -157,7 +157,11 @@ def load_sys_from_str(xml_str: str):
             geom_rot = _get_rotation(g_attr)
             geom_t = base.Transform(g_attr["pos"], geom_rot)
             geom = geom_map[g_attr["type"]](
-                g_attr["mass"], geom_t, g_attr["dim"], _vispy_subdict(g_attr)
+                g_attr["mass"],
+                geom_t,
+                current_link_idx,
+                g_attr["dim"],
+                _vispy_subdict(g_attr),
             )
             link_geoms.append(geom)
         geoms[current_link_idx] = link_geoms
@@ -187,7 +191,7 @@ def load_sys_from_str(xml_str: str):
         armatures,
         options["dt"],
         False,
-        assert_order_then_to_list(geoms),
+        [geom for geoms in assert_order_then_to_list(geoms) for geom in geoms],
         options["gravity"],
         link_names=assert_order_then_to_list(link_names),
         model_name=model_name,

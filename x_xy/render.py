@@ -9,7 +9,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import tqdm
-from tree_utils import tree_batch
+from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
 
@@ -18,10 +18,13 @@ from x_xy.base import Box, Capsule, Cylinder, Geometry, Sphere
 
 Camera = TypeVar("Camera")
 Visual = TypeVar("Visual")
-VisualPosOri = TypeVar("VisualPosOri")
+VisualPosOri1 = PyTree
+VisualPosOri2 = PyTree
 
 
-class _AbstractRenderer(ABC):
+class Scene(ABC):
+    _xyz: bool = True
+
     """
     Example:
         >> renderer = Renderer()
@@ -43,13 +46,20 @@ class _AbstractRenderer(ABC):
     def _render(self) -> jax.Array:
         pass
 
+    def enable_xyz(self) -> None:
+        self._xyz = True
+
+    def disable_xyz(self) -> None:
+        self._xyz = False
+
     def render(
         self, camera: Optional[Camera | list[Camera]] = None
     ) -> jax.Array | list[jax.Array]:
+        "Returns: RGBA Array of Shape = (M, N, 4)"
         if camera is None:
             camera = self._get_camera()
 
-        if isinstance(camera, Camera):
+        if not isinstance(camera, list):
             self._set_camera(camera)
             return self._render()
 
@@ -59,32 +69,31 @@ class _AbstractRenderer(ABC):
             images.append(self._render())
         return images
 
-    @staticmethod
-    def _add_box(geom: Box) -> Visual:
+    def _add_box(self, geom: Box) -> Visual:
         raise NotImplementedError
 
-    @staticmethod
-    def _add_sphere(geom: Sphere) -> Visual:
+    def _add_sphere(self, geom: Sphere) -> Visual:
         raise NotImplementedError
 
-    @staticmethod
-    def _add_cylinder(geom: Cylinder) -> Visual:
+    def _add_cylinder(self, geom: Cylinder) -> Visual:
         raise NotImplementedError
 
-    @staticmethod
-    def _add_capsule(geom: Capsule) -> Visual:
+    def _add_capsule(self, geom: Capsule) -> Visual:
+        raise NotImplementedError
+
+    def _add_xyz(self) -> Visual:
         raise NotImplementedError
 
     def init(self, geoms: list[Geometry]):
         self.geoms = geoms
         self._fresh_init = True
 
-        self.geom_link_idx = []
-        self.geom_transform = []
+        geom_link_idx = []
+        geom_transform = []
         self.visuals = []
         for geom in geoms:
-            self.geom_link_idx.append(geom.link_idx)
-            self.geom_transform.append(geom.transform)
+            geom_link_idx.append(geom.link_idx)
+            geom_transform.append(geom.transform)
             if isinstance(geom, Box):
                 visual = self._add_box(geom)
             elif isinstance(geom, Sphere):
@@ -97,40 +106,63 @@ class _AbstractRenderer(ABC):
                 raise Exception(f"Unknown geom type: {type(geom)}")
             self.visuals.append(visual)
 
-        self.geom_link_idx = tree_batch(self.geom_link_idx, backend="jax")
-        self.geom_transform = tree_batch(self.geom_transform, backend="jax")
+        if self._xyz:
+            for unique_link_idx in set(geom_link_idx):
+                geom_link_idx.append(unique_link_idx)
+                geom_transform.append(base.Transform.zero())
+                self.visuals.append(self._add_xyz())
+
+        self.geom_link_idx = tree_batch(geom_link_idx, backend="jax")
+        self.geom_transform = tree_batch(geom_transform, backend="jax")
 
     @abstractstaticmethod
     def _compute_transform_per_visual(
         x_links: base.Transform,
         x_link_to_geom: base.Transform,
         geom_link_idx: int,
-    ) -> VisualPosOri:
+    ) -> VisualPosOri1:
         "This can easily account for possible convention differences"
         pass
 
-    @abstractmethod
-    def _init_visual(self, visual: Visual, transform: VisualPosOri, geom: Geometry):
+    @abstractstaticmethod
+    def _postprocess_transforms(transform: VisualPosOri1) -> VisualPosOri2:
         pass
 
-    def _update_visual(self, visual: Visual, transform: VisualPosOri, geom: Geometry):
+    @abstractmethod
+    def _init_visual(self, visual: Visual, transform: VisualPosOri2, geom: Geometry):
+        pass
+
+    def _update_visual(self, visual: Visual, transform: VisualPosOri2, geom: Geometry):
         self._init_visual(visual, transform, geom)
 
     def update(self, x: base.Transform):
         "`x` are (n_links,) Transforms."
 
         # step 1: pre-compute all required transforms
-        transform_per_visual = jax.jit(
-            jax.vmap(self._compute_transform_per_visual, in_axes=(None, 0, 0))
-        )(x, self.geom_transform, self.geom_link_idx)
+        transform_per_visual = _compile_staticmethod(
+            self._compute_transform_per_visual,
+            x,
+            self.geom_transform,
+            self.geom_link_idx,
+        )
 
-        # step 2: update visuals
+        # step 2: postprocess all transforms once
+        transform_per_visual = self._postprocess_transforms(transform_per_visual)
+
+        # step 3: update visuals
         for i, (visual, geom) in enumerate(zip(self.visuals, self.geoms)):
-            t = transform_per_visual[i]
+            t = jax.tree_map(lambda arr: arr[i], transform_per_visual)
             if self._fresh_init:
                 self._init_visual(visual, t, geom)
             else:
                 self._update_visual(visual, t, geom)
+
+
+@partial(jax.jit, static_argnums=0)
+def _compile_staticmethod(static_method, x, geom_transform, geom_link_idx):
+    return jax.vmap(static_method, in_axes=(None, 0, 0))(
+        x, geom_transform, geom_link_idx
+    )
 
 
 @jax.jit
@@ -170,7 +202,104 @@ def _enable_headless_backend():
             return False
 
 
-class VispyScene:
+class VispyScene(Scene):
+    def __init__(
+        self,
+        show_cs=True,
+        size=(1280, 720),
+        camera: scene.cameras.BaseCamera = scene.TurntableCamera(
+            elevation=30, distance=6
+        ),
+        headless: bool = False,
+        **kwargs,
+    ):
+        """Scene which can be rendered.
+
+        Args:
+            geoms (list[list[Geometry]]): A list of list of geometries per link.
+                len(geoms) == number of links in system
+            show_cs (bool, optional): Show coordinate system of links.
+                Defaults to True.
+            size (tuple, optional): Width and height of rendered image.
+                Defaults to (1280, 720).
+            camera (scene.cameras.BaseCamera, optional): The camera angle.
+                Defaults to scene.TurntableCamera( elevation=30, distance=6 ).
+            headless (bool, optional): Headless if the worker can not open windows.
+                Defaults to False.
+
+        Example:
+            >> scene = VispyScene(sys.geoms)
+            >> scene.update(state.x)
+            >> image = scene.render()
+        """
+        self.headless = False
+        if headless:
+            # returns `True` if successfully found backend
+            self.headless = _enable_headless_backend()
+
+        self.canvas = scene.SceneCanvas(
+            keys="interactive", size=size, show=True, **kwargs
+        )
+        self.view = self.canvas.central_widget.add_view()
+        self._set_camera(camera)
+        if show_cs:
+            self.enable_xyz()
+        else:
+            self.disable_xyz()
+
+    def _get_camera(self) -> scene.cameras.BaseCamera:
+        return self.view.camera
+
+    def _set_camera(self, camera: scene.cameras.BaseCamera) -> None:
+        self.view.camera = camera
+
+    def _render(self) -> jax.Array:
+        return self.canvas.render(alpha=True)
+
+    def _add_box(self, geom: base.Box):
+        return scene.visuals.Box(
+            geom.dim_x,
+            geom.dim_z,
+            geom.dim_y,
+            parent=self.view.scene,
+            **geom.vispy_kwargs,
+        )
+
+    def _add_xyz(self) -> Visual:
+        return scene.visuals.XYZAxis(parent=self.view.scene)
+
+    @staticmethod
+    def _compute_transform_per_visual(
+        x_links: base.Transform,
+        x_link_to_geom: base.Transform,
+        geom_link_idx: int,
+    ) -> jax.Array:
+        print("COMPILE")
+        x = x_links[geom_link_idx]
+        x = algebra.transform_mul(x_link_to_geom, x)
+        E = maths.quat_to_3x3(x.rot)
+        M = jnp.eye(4)
+        M = M.at[:3, :3].set(E)
+        T = jnp.eye(4)
+        T = T.at[3, :3].set(x.pos)
+        return M @ T
+
+    @staticmethod
+    def _postprocess_transforms(transform: jax.Array) -> np.ndarray:
+        return np.asarray(transform)
+
+    def _init_visual(
+        self, visual: scene.visuals.VisualNode, transform: np.ndarray, geom: Geometry
+    ):
+        visual.transform = MatrixTransform(transform)
+
+    def _update_visual(
+        self, visual: scene.visuals.VisualNode, transform: np.ndarray, geom: Geometry
+    ):
+        visual.transform.matrix = transform
+
+
+class VispySceneOLD:
     def __init__(
         self,
         geoms: list[list[Geometry]],
@@ -302,15 +431,27 @@ def _infer_extension_from_path(path: Path) -> Optional[str]:
     return ext[1:] if len(ext) > 0 else None
 
 
+SCENE_BACKENDS = {
+    "vispy": VispyScene,
+}
+
+
+def _make_scene(sys: base.System, backend: str, **backend_kwargs) -> Scene:
+    scene = SCENE_BACKENDS[backend](**backend_kwargs)
+    scene.init(sys.geoms)
+    return scene
+
+
 def animate(
     path: Union[str, Path],
-    scene: VispyScene,
+    sys: base.System,
     x: base.Transform,
-    dt: float,
     fps: int = 50,
     fmt: str = "mp4",
+    backend: str = "vispy",
+    **backend_kwargs,
 ):
-    """Make animation from scene and trajectory of maximal coordinates. `x`
+    """Make animation from system and trajectory of maximal coordinates. `x`
     are stacked in time along 0th-axis.
     """
     path = Path(path)
@@ -325,18 +466,12 @@ def animate(
     if file_fmt is None:
         path = path.with_suffix("." + fmt)
 
-    # assert fmt.lower() == "gif", "Currently the only implemented option is `GIF`"
-
-    if not scene.headless:
-        print(
-            """Warning: Animate function expected a `Renderer(headless=True)`.
-            This way we don't open any GUI windows."""
-        )
+    scene = _make_scene(sys, backend, **backend_kwargs)
 
     _data_checks(scene, x.pos, x.rot)
 
     N = x.pos.shape[0]
-    _, step = _parse_timestep(dt, fps, N)
+    _, step = _parse_timestep(sys.dt, fps, N)
 
     frames = []
     for t in tqdm.tqdm(range(0, N, step), "Rendering frames.."):
@@ -344,7 +479,6 @@ def animate(
         frames.append(scene.render())
 
     print(f"DONE. Converting frames to {path} (this might take a while..)")
-    # duration = int(1000 * 1 / fps)
     imageio.mimsave(path, frames, format=fmt, fps=fps)
 
 
