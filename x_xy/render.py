@@ -85,7 +85,7 @@ class Scene(ABC):
         raise NotImplementedError
 
     def init(self, geoms: list[Geometry]):
-        self.geoms = geoms
+        self.geoms = [geom for geom in geoms]
         self._fresh_init = True
 
         geom_link_idx = []
@@ -107,10 +107,17 @@ class Scene(ABC):
             self.visuals.append(visual)
 
         if self._xyz:
-            for unique_link_idx in set(geom_link_idx):
+            unique_link_indices = set(geom_link_idx)
+            for unique_link_idx in unique_link_indices:
                 geom_link_idx.append(unique_link_idx)
                 geom_transform.append(base.Transform.zero())
                 self.visuals.append(self._add_xyz())
+                # otherwise the .update function won't iterate
+                # over all visuals since it uses a zip(...)
+                self.geoms.append(None)
+
+            # add one final for root frame
+            self._add_xyz()
 
         self.geom_link_idx = tree_batch(geom_link_idx, backend="jax")
         self.geom_transform = tree_batch(geom_transform, backend="jax")
@@ -129,10 +136,14 @@ class Scene(ABC):
         pass
 
     @abstractmethod
-    def _init_visual(self, visual: Visual, transform: VisualPosOri2, geom: Geometry):
+    def _init_visual(
+        self, visual: Visual, transform: VisualPosOri2, geom: None | Geometry
+    ):
         pass
 
-    def _update_visual(self, visual: Visual, transform: VisualPosOri2, geom: Geometry):
+    def _update_visual(
+        self, visual: Visual, transform: VisualPosOri2, geom: None | Geometry
+    ):
         self._init_visual(visual, transform, geom)
 
     def update(self, x: base.Transform):
@@ -157,31 +168,15 @@ class Scene(ABC):
             else:
                 self._update_visual(visual, t, geom)
 
+        # step 4: unset flag
+        self._fresh_init = False
+
 
 @partial(jax.jit, static_argnums=0)
 def _compile_staticmethod(static_method, x, geom_transform, geom_link_idx):
     return jax.vmap(static_method, in_axes=(None, 0, 0))(
         x, geom_transform, geom_link_idx
     )
-
-
-@jax.jit
-@partial(jax.vmap, in_axes=(None, 0, 0))
-def _transform_4x4(x_links, geom_t, geom_link_idx):
-    x = x_links[geom_link_idx]
-    x = algebra.transform_mul(geom_t, x)
-    E = maths.quat_to_3x3(x.rot)
-    M = jnp.eye(4)
-    M = M.at[:3, :3].set(E)
-    T = jnp.eye(4)
-    T = T.at[3, :3].set(x.pos)
-    return M @ T
-
-
-def transform_4x4(
-    x_links: base.Transform, geom_transforms: base.Transform, geom_link_idxs: jax.Array
-):
-    return np.asarray(_transform_4x4(x_links, geom_transforms, geom_link_idxs))
 
 
 def _enable_headless_backend():
@@ -228,7 +223,8 @@ class VispyScene(Scene):
                 Defaults to False.
 
         Example:
-            >> scene = VispyScene(sys.geoms)
+            >> scene = VispyScene()
+            >> scene.init(sys.geoms)
             >> scene.update(state.x)
             >> image = scene.render()
         """
@@ -274,7 +270,6 @@ class VispyScene(Scene):
         x_link_to_geom: base.Transform,
         geom_link_idx: int,
     ) -> jax.Array:
-        print("COMPILE")
         x = x_links[geom_link_idx]
         x = algebra.transform_mul(x_link_to_geom, x)
         E = maths.quat_to_3x3(x.rot)
@@ -297,113 +292,6 @@ class VispyScene(Scene):
         self, visual: scene.visuals.VisualNode, transform: np.ndarray, geom: Geometry
     ):
         visual.transform.matrix = transform
-
-
-class VispySceneOLD:
-    def __init__(
-        self,
-        geoms: list[list[Geometry]],
-        show_cs=True,
-        size=(1280, 720),
-        camera: scene.cameras.BaseCamera = scene.TurntableCamera(
-            elevation=30, distance=6
-        ),
-        headless: bool = False,
-        **kwargs,
-    ):
-        """Scene which can be rendered.
-
-        Args:
-            geoms (list[list[Geometry]]): A list of list of geometries per link.
-                len(geoms) == number of links in system
-            show_cs (bool, optional): Show coordinate system of links.
-                Defaults to True.
-            size (tuple, optional): Width and height of rendered image.
-                Defaults to (1280, 720).
-            camera (scene.cameras.BaseCamera, optional): The camera angle.
-                Defaults to scene.TurntableCamera( elevation=30, distance=6 ).
-            headless (bool, optional): Headless if the worker can not open windows.
-                Defaults to False.
-
-        Example:
-            >> scene = VispyScene(sys.geoms)
-            >> scene.update(state.x)
-            >> image = scene.render()
-        """
-        self.headless = False
-        if headless:
-            # returns `True` if successfully found backend
-            self.headless = _enable_headless_backend()
-
-        self.canvas = scene.SceneCanvas(
-            keys="interactive", size=size, show=True, **kwargs
-        )
-        self.view = self.canvas.central_widget.add_view()
-        self.view.camera = camera
-        self.show_cs = show_cs
-
-        self.visuals = None
-        self.geom_link_idx = None
-        self.geom_transform = None
-        self._populate(geoms)
-
-    def _create_visual_element(self, geom: Geometry, **kwargs):
-        if isinstance(geom, Box):
-            return scene.visuals.Box(
-                geom.dim_x, geom.dim_z, geom.dim_y, parent=self.view.scene, **kwargs
-            )
-        raise NotImplementedError()
-
-    def _populate(self, geoms: list[list[Geometry]]):
-        self._can_mutate = False
-        self.visuals = []
-        self.geom_link_idx = []
-        self.geom_transform = []
-
-        if self.show_cs:
-            scene.visuals.XYZAxis(parent=self.view.scene)
-
-        def append(visual, link_idx, transform):
-            self.visuals.append(visual)
-            self.geom_link_idx.append(link_idx)
-            self.geom_transform.append(transform)
-
-        for link_idx, geoms_per_link in enumerate(geoms):
-            if self.show_cs:
-                visual = scene.visuals.XYZAxis(parent=self.view.scene)
-                append(visual, link_idx, base.Transform.zero())
-
-            for geom in geoms_per_link:
-                visual = self._create_visual_element(geom, **geom.vispy_kwargs)
-                append(visual, link_idx, geom.transform)
-
-        self.geom_link_idx = tree_batch(self.geom_link_idx, backend="jax")
-        self.geom_transform = tree_batch(self.geom_transform, backend="jax")
-
-    def change_camera(self, camera: scene.cameras.BaseCamera):
-        "Change the camera angle of rendered image."
-        self.view.camera = camera
-
-    def update(self, x_links: base.Transform):
-        "Update the link coordinates of the scene."
-        self._x_links = x_links
-        self._update_scene()
-        self._can_mutate = True
-
-    def render(self) -> np.ndarray:
-        """Render scene. RGBA Array of Shape = (M, N, 4)"""
-        return self.canvas.render(alpha=True)
-
-    def _update_scene(self):
-        # step 1: pre-compute all required 4x4 matrices (uses jax.vmap)
-        t_4x4 = transform_4x4(self._x_links, self.geom_transform, self.geom_link_idx)
-
-        # step 2: update visuals
-        for i, visual in enumerate(self.visuals):
-            if self._can_mutate:
-                visual.transform.matrix = t_4x4[i]
-            else:
-                visual.transform = MatrixTransform(t_4x4[i])
 
 
 def _parse_timestep(timestep: float, fps: int, N: int):
@@ -485,11 +373,12 @@ def animate(
 class Window:
     def __init__(
         self,
-        scene: VispyScene,
+        sys: base.System,
         x: base.Transform,
-        timestep: float,
         fps: int = 50,
-    ) -> None:
+        backend: str = "vispy",
+        **backend_kwargs,
+    ):
         """Open an interactive Window that plays back the pre-computed trajectory.
 
         Args:
@@ -500,11 +389,11 @@ class Window:
         """
         _data_checks(scene, x.pos, x.rot)
         self._x = x
-        self._scene = scene
+        self._scene = _make_scene(sys, backend, **backend_kwargs)
 
         self.N = x.pos.shape[0]
-        self.T, self.step = _parse_timestep(timestep, fps, self.N)
-        self.timestep = timestep
+        self.T, self.step = _parse_timestep(sys.dt, fps, self.N)
+        self.timestep = sys.dt
         self.fps = fps
 
     def reset(self):
