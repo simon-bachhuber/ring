@@ -2,6 +2,7 @@ import argparse
 
 import jax
 import jax.numpy as jnp
+from vispy import scene
 
 import x_xy
 
@@ -63,6 +64,15 @@ def _simulate(
         default=[],
     )
 
+    # add camera arguments
+    p.add_argument(
+        "--azimuth", help="Azimuth camera angle in degrees.", type=float, default=30
+    )
+    p.add_argument(
+        "--elevation", help="Elevation camera angle in degrees.", type=float, default=30
+    )
+    p.add_argument("--distance", help="Distance of camera.", type=float, default=6)
+
 
 def main():
     x_xy.utils.disable_jit_warn()
@@ -110,8 +120,8 @@ def main():
             )
         )
     else:
-        q = jnp.zeros((sys.q_size())) if len(p.dyn_q) == 0 else jnp.array(p.dyn_q)
-        qd = jnp.zeros((sys.qd_size())) if len(p.dyn_qd) == 0 else jnp.array(p.dyn_qd)
+        q = None if len(p.dyn_q) == 0 else jnp.array(p.dyn_q)
+        qd = None if len(p.dyn_qd) == 0 else jnp.array(p.dyn_qd)
 
         state = x_xy.base.State.create(sys, q, qd)
         xs = []
@@ -121,8 +131,11 @@ def main():
             xs.append(state.x)
         xs = xs[0].batch(*xs[1:])
 
-    scene = x_xy.render.VispyScene(sys.geoms)
-    x_xy.render.animate(p.path_video, scene, xs, sys.dt, fmt=p.format)
+    camera = scene.TurntableCamera(
+        elevation=p.elevation, distance=p.distance, azimuth=p.azimuth
+    )
+
+    x_xy.render.animate(p.path_video, sys, xs, fmt=p.format, camera=camera)
 
 
 if __name__ == "__main__":

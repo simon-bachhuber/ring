@@ -340,6 +340,8 @@ class System(_Base):
     link_types: list[str] = struct.field(False)
     link_damping: jax.Array
     link_armature: jax.Array
+    link_spring_stiffness: jax.Array
+    link_spring_zeropoint: jax.Array
     # simulation timestep size
     dt: float = struct.field(False)
     # whether or not to re-calculate the inertia
@@ -385,8 +387,28 @@ class State(_Base):
 
     @classmethod
     def create(cls, sys: System, q=None, qd=None):
+        # to avoid circular imports
+        from x_xy import scan
+
         if q is None:
             q = jnp.zeros((sys.q_size(),))
+
+            # free and spherical joints are not zeros but unit quaternions
+            def replace_by_unit_quat(carry, idx_map, link_typ, link_idx):
+                nonlocal q
+
+                if link_typ == "spherical" or link_typ == "free":
+                    q_idxs_link = idx_map["q"](link_idx)
+                    q = q.at[q_idxs_link.start].set(1.0)
+
+            scan.tree(
+                sys,
+                replace_by_unit_quat,
+                "ll",
+                sys.link_types,
+                list(range(sys.num_links())),
+            )
+
         if qd is None:
             qd = jnp.zeros((sys.qd_size(),))
         x = Motion.zero((sys.num_links(),))

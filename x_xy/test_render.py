@@ -11,10 +11,11 @@ from x_xy.algorithms import dynamics
 def test_animate(pytest=True):
     dt = 1e-2
     filename = "animation"
-    sys = x_xy.io.load_example("double_pendulum")
+    xml = "double_pendulum"
+    sys = x_xy.io.load_example(xml)
     sys = sys.replace(dt=dt)
 
-    q = jnp.array([0.0, 1.0])
+    q = jnp.array([0, 1.0])
     qd = jnp.zeros((sys.qd_size(),))
 
     state = x_xy.base.State.create(sys, q, qd)

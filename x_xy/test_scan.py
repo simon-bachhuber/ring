@@ -16,6 +16,8 @@ def load_ant():
         ["free"] + 8 * ["rx"],
         None,
         None,
+        None,
+        None,
         0.01,
         False,
         [[]],
