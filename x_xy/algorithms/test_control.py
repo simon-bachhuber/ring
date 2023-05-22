@@ -1,0 +1,45 @@
+import jax
+import jax.numpy as jnp
+import numpy as np
+
+import x_xy
+from x_xy.algorithms import pd_control
+
+
+def test_pd_control():
+    def evaluate(controller, example, nograv: bool = False):
+        sys = x_xy.io.load_example(example)
+
+        if nograv:
+            sys = sys.replace(gravity=sys.gravity * 0.0)
+
+        q, xs = x_xy.algorithms.build_generator(
+            sys, x_xy.algorithms.RCMG_Config(T=10.0, dang_max=3.0, t_max=0.5)
+        )(jax.random.PRNGKey(1))
+
+        jit_step_fn = jax.jit(
+            lambda sys, state, tau: x_xy.algorithms.step(sys, state, tau, 1)
+        )
+
+        q_reconst = []
+        N = len(q)
+        state = x_xy.base.State.create(sys)
+        controller_state = controller.init(sys, q)
+
+        for _ in range(N):
+            controller_state, tau = jax.jit(controller.apply)(
+                controller_state, sys, state
+            )
+            state = jit_step_fn(sys, state, tau)
+            q_reconst.append(state.q)
+
+        q_reconst = np.vstack(q_reconst)
+        return jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
+
+    gains = jnp.array(3 * [17] + 3 * [300])
+    controller = pd_control(gains, gains)
+    rmse = evaluate(controller, "free")
+    assert rmse == 0.5126502
+
+    assert evaluate(pd_control(), "double_pendulum") < 0.15
+    assert evaluate(pd_control(), "double_pendulum", True) < 0.1
