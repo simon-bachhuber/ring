@@ -82,6 +82,9 @@ class _Base:
     def tranpose(self, axes: Sequence[int]) -> Any:
         return tree_map(lambda x: jnp.transpose(x, axes), self)
 
+    def __iter__(self):
+        raise NotImplementedError
+
 
 @struct.dataclass
 class Transform(_Base):
@@ -411,5 +414,5 @@ class State(_Base):
 
         if qd is None:
             qd = jnp.zeros((sys.qd_size(),))
-        x = Motion.zero((sys.num_links(),))
+        x = Transform.zero((sys.num_links(),))
         return cls(q, qd, x, jnp.diag(jnp.ones((sys.qd_size(),))))
