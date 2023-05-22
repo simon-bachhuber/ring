@@ -378,9 +378,7 @@ def kinetic_energy(sys: base.System, qd: jax.Array):
 
 
 def step(
-    sys: base.System,
-    state: base.State,
-    taus: jax.Array,
+    sys: base.System, state: base.State, taus: jax.Array, n_substeps: int = 1
 ) -> base.State:
     assert sys.q_size() == state.q.size
     assert sys.qd_size() == state.qd.size == taus.size
@@ -388,12 +386,20 @@ def step(
         sys.integration_method.lower() == "semi_implicit_euler"
     ), "Currently Runge-Kutta methods are broken."
 
-    # update kinematics before stepping; this means that the `x` in `state`
-    # will lag one step behind but otherwise we would have to return
-    # the system object which would be awkward
-    sys, state = algorithms.kinematics.forward_kinematics(sys, state)
-    state = _integration_methods[sys.integration_method.lower()](sys, state, taus)
-    return state
+    sys = sys.replace(dt=sys.dt / n_substeps)
+
+    def substep(state, _):
+        nonlocal sys
+        # update kinematics before stepping; this means that the `x` in `state`
+        # will lag one step behind but otherwise we would have to return
+        # the system object which would be awkward
+        sys_updated, state = algorithms.kinematics.forward_kinematics(sys, state)
+        state = _integration_methods[sys.integration_method.lower()](
+            sys_updated, state, taus
+        )
+        return state, _
+
+    return jax.lax.scan(substep, state, None, length=n_substeps)[0]
 
 
 def _inv_approximate(a: jax.Array, a_inv: jax.Array, num_iter: int = 10) -> jax.Array:
