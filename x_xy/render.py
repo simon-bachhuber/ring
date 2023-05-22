@@ -205,7 +205,8 @@ class VispyScene(Scene):
         camera: scene.cameras.BaseCamera = scene.TurntableCamera(
             elevation=30, distance=6
         ),
-        headless: bool = False,
+        headless_backend: bool = False,
+        vispy_backend: Optional[str] = None,
         **kwargs,
     ):
         """Scene which can be rendered.
@@ -219,7 +220,7 @@ class VispyScene(Scene):
                 Defaults to (1280, 720).
             camera (scene.cameras.BaseCamera, optional): The camera angle.
                 Defaults to scene.TurntableCamera( elevation=30, distance=6 ).
-            headless (bool, optional): Headless if the worker can not open windows.
+            headless_backend (bool, optional): Headless if the worker can not open windows.
                 Defaults to False.
 
         Example:
@@ -228,10 +229,19 @@ class VispyScene(Scene):
             >> scene.update(state.x)
             >> image = scene.render()
         """
+        if headless_backend:
+            assert (
+                vispy_backend is None
+            ), "Can only set one backend. Either provide `vispy_backend` or enable `headless_backend`"
+
         self.headless = False
-        if headless:
+        if headless_backend:
             # returns `True` if successfully found backend
             self.headless = _enable_headless_backend()
+        if vispy_backend is not None:
+            import vispy
+
+            vispy.use(vispy_backend)
 
         self.canvas = scene.SceneCanvas(
             keys="interactive", size=size, show=True, **kwargs
@@ -359,7 +369,6 @@ def animate(
         path = path.with_suffix("." + fmt)
 
     scene = _make_scene(sys, backend, **backend_kwargs)
-
     _data_checks(scene, x.pos, x.rot)
 
     N = x.pos.shape[0]
@@ -391,9 +400,9 @@ class Window:
             timestep (float): Timedelta between Transforms.
             fps (int, optional): Frame-rate. Defaults to 50.
         """
-        _data_checks(scene, x.pos, x.rot)
         self._x = x
         self._scene = _make_scene(sys, backend, **backend_kwargs)
+        _data_checks(self._scene, x.pos, x.rot)
 
         self.N = x.pos.shape[0]
         self.T, self.step = _parse_timestep(sys.dt, fps, self.N)
