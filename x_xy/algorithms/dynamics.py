@@ -162,6 +162,38 @@ def compute_mass_matrix(sys: base.System) -> jax.Array:
     return H
 
 
+def _quaternion_spring_force(q_zeropoint, q) -> jax.Array:
+    "Computes the angular velocity direction from q to q_zeropoint."
+    qrel = maths.quat_mul(q_zeropoint, maths.quat_inv(q))
+    axis, angle = maths.quat_to_rot_axis(qrel)
+    return axis * angle
+
+
+def _spring_force(sys: base.System, q: jax.Array):
+    q_spring_force = []
+
+    def _calc_spring_force_per_link(_, __, q, zeropoint, typ):
+        if typ == "free":
+            quat_force = _quaternion_spring_force(zeropoint[:4], q[:4])
+            pos_force = zeropoint[4:] - q[4:]
+            q_spring_force_link = jnp.concatenate((quat_force, pos_force))
+        elif typ == "spherical":
+            q_spring_force_link = _quaternion_spring_force(zeropoint, q)
+        else:
+            q_spring_force_link = zeropoint - q
+        q_spring_force.append(q_spring_force_link)
+
+    scan.tree(
+        sys,
+        _calc_spring_force_per_link,
+        "qql",
+        q,
+        sys.link_spring_zeropoint,
+        sys.link_types,
+    )
+    return jnp.concatenate(q_spring_force)
+
+
 def forward_dynamics(
     sys: base.System,
     q: jax.Array,
@@ -171,14 +203,16 @@ def forward_dynamics(
 ) -> jax.Array:
     C = inverse_dynamics(sys, qd, jnp.zeros_like(qd))
     mass_matrix = compute_mass_matrix(sys)
-    # spring_force = joint.stiffness * (joint.zero_position - q) - joint.damping * qd
-    spring_force = -sys.link_damping * qd
+
+    spring_force = -sys.link_damping * qd + sys.link_spring_stiffness * _spring_force(
+        sys, q
+    )
     qf_smooth = tau - C + spring_force
 
     if sys.mass_mat_iters == 0:
-        overdamp = 0
         eye = jnp.eye(sys.qd_size())
-        mass_matrix += eye * overdamp * sys.dt
+        # overdamp = 0.0
+        # mass_matrix += eye * overdamp * sys.dt
         mass_mat_inv = jax.scipy.linalg.solve(mass_matrix, eye, assume_a="pos")
     else:
         mass_mat_inv = _inv_approximate(mass_matrix, mass_mat_inv, sys.mass_mat_iters)
@@ -344,19 +378,28 @@ def kinetic_energy(sys: base.System, qd: jax.Array):
 
 
 def step(
-    sys: base.System,
-    state: base.State,
-    taus: jax.Array,
+    sys: base.System, state: base.State, taus: jax.Array, n_substeps: int = 1
 ) -> base.State:
     assert sys.q_size() == state.q.size
     assert sys.qd_size() == state.qd.size == taus.size
+    assert (
+        sys.integration_method.lower() == "semi_implicit_euler"
+    ), "Currently Runge-Kutta methods are broken."
 
-    # update kinematics before stepping; this means that the `x` in `state`
-    # will lag one step behind but otherwise we would have to return
-    # the system object which would be awkward
-    sys, state = algorithms.kinematics.forward_kinematics(sys, state)
-    state = _integration_methods[sys.integration_method.lower()](sys, state, taus)
-    return state
+    sys = sys.replace(dt=sys.dt / n_substeps)
+
+    def substep(state, _):
+        nonlocal sys
+        # update kinematics before stepping; this means that the `x` in `state`
+        # will lag one step behind but otherwise we would have to return
+        # the system object which would be awkward
+        sys_updated, state = algorithms.kinematics.forward_kinematics(sys, state)
+        state = _integration_methods[sys.integration_method.lower()](
+            sys_updated, state, taus
+        )
+        return state, _
+
+    return jax.lax.scan(substep, state, None, length=n_substeps)[0]
 
 
 def _inv_approximate(a: jax.Array, a_inv: jax.Array, num_iter: int = 10) -> jax.Array:

@@ -1,4 +1,5 @@
 from . import dynamics, jcalc, kinematics, sensors
+from .control import pd_control
 from .dynamics import compute_mass_matrix, forward_dynamics, inverse_dynamics, step
 from .jcalc import (
     JointModel,

@@ -82,6 +82,9 @@ class _Base:
     def tranpose(self, axes: Sequence[int]) -> Any:
         return tree_map(lambda x: jnp.transpose(x, axes), self)
 
+    def __iter__(self):
+        raise NotImplementedError
+
 
 @struct.dataclass
 class Transform(_Base):
@@ -173,13 +176,14 @@ class Inertia(_Base):
     mass: Vector
 
     @classmethod
-    def create(cls, mass: Vector, CoM: Vector, it_3x3: jnp.ndarray):
-        """Construct spatial inertia of an object with mass `mass` located
-        at the center of mass `CoM` and an inertia matrix `it_3x3` around that
-        center of mass.
+    def create(cls, mass: Vector, transform: Transform, it_3x3: jnp.ndarray):
+        """Construct spatial inertia of an object with mass `mass` located and aligned
+        with a coordinate system that is given by `transform` where `transform` is from
+        parent to local geometry coordinates.
         """
-        it_3x3 = maths.spatial.mcI(mass, CoM, it_3x3)[:3, :3]
-        h = mass * CoM
+        it_3x3 = maths.rotate_matrix(it_3x3, maths.quat_inv(transform.rot))
+        it_3x3 = maths.spatial.mcI(mass, transform.pos, it_3x3)[:3, :3]
+        h = mass * transform.pos
         return cls(it_3x3, h, mass)
 
     @classmethod
@@ -199,7 +203,8 @@ class Inertia(_Base):
 @struct.dataclass
 class Geometry(_Base):
     mass: jax.Array
-    CoM: jax.Array
+    transform: Transform
+    link_idx: int
 
 
 @struct.dataclass
@@ -233,24 +238,6 @@ class Box(Geometry):
             )
         )
         return it_3x3
-
-    @classmethod
-    def cube(cls, mass, CoM, dim, vispy_kwargs={}):
-        return cls(mass, CoM, dim, dim, dim, vispy_kwargs)
-
-    @classmethod
-    def standard_segment(cls, vispy_kwargs={}):
-        dim_x = 0.4
-        dim_y = 0.2
-        dim_z = 0.1
-        return cls(
-            5.0,
-            jnp.array([dim_x / 2, dim_y / 2, dim_z / 2]),
-            dim_x,
-            dim_y,
-            dim_z,
-            vispy_kwargs,
-        )
 
 
 @struct.dataclass
@@ -356,6 +343,8 @@ class System(_Base):
     link_types: list[str] = struct.field(False)
     link_damping: jax.Array
     link_armature: jax.Array
+    link_spring_stiffness: jax.Array
+    link_spring_zeropoint: jax.Array
     # simulation timestep size
     dt: float = struct.field(False)
     # whether or not to re-calculate the inertia
@@ -363,8 +352,7 @@ class System(_Base):
     # the geometries may have changed
     dynamic_geometries: bool = struct.field(False)
     # geometries in the system
-    # len(geoms) == len(links)
-    geoms: list[list[Geometry]]
+    geoms: list[Geometry]
     # root / base acceleration offset
     gravity: jax.Array = jnp.array([0, 0, -9.81])
 
@@ -402,9 +390,29 @@ class State(_Base):
 
     @classmethod
     def create(cls, sys: System, q=None, qd=None):
+        # to avoid circular imports
+        from x_xy import scan
+
         if q is None:
             q = jnp.zeros((sys.q_size(),))
+
+            # free and spherical joints are not zeros but unit quaternions
+            def replace_by_unit_quat(carry, idx_map, link_typ, link_idx):
+                nonlocal q
+
+                if link_typ == "spherical" or link_typ == "free":
+                    q_idxs_link = idx_map["q"](link_idx)
+                    q = q.at[q_idxs_link.start].set(1.0)
+
+            scan.tree(
+                sys,
+                replace_by_unit_quat,
+                "ll",
+                sys.link_types,
+                list(range(sys.num_links())),
+            )
+
         if qd is None:
             qd = jnp.zeros((sys.qd_size(),))
-        x = Motion.zero((sys.num_links(),))
+        x = Transform.zero((sys.num_links(),))
         return cls(q, qd, x, jnp.diag(jnp.ones((sys.qd_size(),))))

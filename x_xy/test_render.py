@@ -11,10 +11,11 @@ from x_xy.algorithms import dynamics
 def test_animate(pytest=True):
     dt = 1e-2
     filename = "animation"
-    sys = x_xy.io.load_example("double_pendulum")
+    xml = "double_pendulum"
+    sys = x_xy.io.load_example(xml)
     sys = sys.replace(dt=dt)
 
-    q = jnp.array([0.0, 1.0])
+    q = jnp.array([0, 1.0])
     qd = jnp.zeros((sys.qd_size(),))
 
     state = x_xy.base.State.create(sys, q, qd)
@@ -31,14 +32,13 @@ def test_animate(pytest=True):
         xs.append(state.x)
 
     xs = xs[0].batch(*xs[1:])
-    scene = render.VispyScene(sys.geoms)
 
     fmts = ["mp4"]
     if pytest:
         fmts += ["gif"]
 
     for fmt in fmts:
-        render.animate(filename, scene, xs, sys.dt, fmt=fmt)
+        render.animate(filename, sys, xs, fmt=fmt)
         if pytest:
             os.system(f"rm animation.{fmt}")
 

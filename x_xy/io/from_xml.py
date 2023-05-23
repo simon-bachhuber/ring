@@ -40,8 +40,18 @@ def _assert_all_tags_attrs_valid(xml_tree):
         "options": ["gravity", "dt"],
         "defaults": ["geom", "body"],
         "worldbody": [],
-        "body": ["name", "pos", "quat", "euler", "joint", "armature", "damping"],
-        "geom": ["type", "mass", "pos", "dim"],
+        "body": [
+            "name",
+            "pos",
+            "quat",
+            "euler",
+            "joint",
+            "armature",
+            "damping",
+            "spring_stiff",
+            "spring_zero",
+        ],
+        "geom": ["type", "mass", "pos", "dim", "quat", "euler"],
     }
     for subtree in xml_tree.iter():
         assert subtree.tag in list([key for key in valid_attrs])
@@ -80,6 +90,48 @@ def _convert_attrs_to_arrays(xml_tree):
             subtree.attrib[k] = jnp.squeeze(jnp.array(array))
 
 
+def _get_rotation(attrib: dict):
+    rot = attrib.get("quat", None)
+    if rot is not None:
+        assert "euler" not in attrib
+    elif "euler" in attrib:
+        # we use zyx convention but angles are given
+        # in x, y, z in the xml file
+        # thus flip the order
+        euler_xyz = jnp.deg2rad(attrib["euler"])
+        rot = base.maths.quat_euler(jnp.flip(euler_xyz), convention="zyx")
+    else:
+        rot = jnp.array([1.0, 0, 0, 0])
+    return rot
+
+
+def _extract_geoms_from_body_xml(body, current_link_idx):
+    geom_map = {
+        "box": lambda m, t, l, dim, vispy: base.Box(m, t, l, *dim, vispy),
+        "sphere": lambda m, t, l, dim, vispy: base.Sphere(m, t, l, dim[0], vispy),
+        "cylinder": lambda m, t, l, dim, vispy: base.Cylinder(
+            m, t, l, dim[0], dim[1], vispy
+        ),
+        "capsule": lambda m, t, l, dim, vispy: base.Capsule(
+            m, t, l, dim[0], dim[1], vispy
+        ),
+    }
+    link_geoms = []
+    for geom_subtree in body.findall("geom"):
+        g_attr = geom_subtree.attrib
+        geom_rot = _get_rotation(g_attr)
+        geom_t = base.Transform(g_attr["pos"], geom_rot)
+        geom = geom_map[g_attr["type"]](
+            g_attr["mass"],
+            geom_t,
+            current_link_idx,
+            g_attr["dim"],
+            _vispy_subdict(g_attr),
+        )
+        link_geoms.append(geom)
+    return link_geoms
+
+
 def load_sys_from_str(xml_str: str):
     xml_tree = ElementTree.fromstring(xml_str)
 
@@ -105,55 +157,44 @@ def load_sys_from_str(xml_str: str):
     geoms = {}
     armatures = {}
     dampings = {}
+    spring_stiffnesses = {}
+    spring_zeropoints = {}
     global_link_idx = -1
 
     def process_body(body: ElementTree, parent: int):
         nonlocal global_link_idx
         global_link_idx += 1
         current_link_idx = global_link_idx
+        current_link_typ = body.attrib["joint"]
 
         link_parents[current_link_idx] = parent
-        link_types[current_link_idx] = body.attrib["joint"]
+        link_types[current_link_idx] = current_link_typ
         link_names[current_link_idx] = body.attrib["name"]
 
         pos = body.attrib.get("pos", jnp.array([0.0, 0, 0]))
-        rot = body.attrib.get("quat", None)
-        if rot is not None:
-            assert "euler" not in body.attrib
-        elif "euler" in body.attrib:
-            # we use zyx convention but angles are given
-            # in x, y, z in the xml file
-            # thus flip the order
-            euler_xyz = jnp.deg2rad(body.attrib["euler"])
-            rot = base.maths.quat_euler(jnp.flip(euler_xyz), convention="zyx")
-        else:
-            rot = jnp.array([1.0, 0, 0, 0])
+        rot = _get_rotation(body.attrib)
         links[current_link_idx] = base.Link(base.Transform(pos, rot))
 
-        qd_size = base.QD_WIDTHS[body.attrib["joint"]]
+        q_size = base.Q_WIDTHS[current_link_typ]
+        qd_size = base.QD_WIDTHS[current_link_typ]
+
         damping = body.attrib.get("damping", jnp.zeros((qd_size,)))
         armature = body.attrib.get("armature", jnp.zeros((qd_size,)))
+        stiffness = body.attrib.get("spring_stiff", jnp.zeros((qd_size)))
+        zeropoint = body.attrib.get("spring_zero", None)
+
+        if zeropoint is None:
+            zeropoint = jnp.zeros((q_size))
+            if current_link_typ == "spherical" or current_link_typ == "free":
+                # zeropoint then is unit quaternion and not zeros
+                zeropoint = zeropoint.at[0].set(1.0)
+
         armatures[current_link_idx] = jnp.atleast_1d(armature)
         dampings[current_link_idx] = jnp.atleast_1d(damping)
+        spring_stiffnesses[current_link_idx] = jnp.atleast_1d(stiffness)
+        spring_zeropoints[current_link_idx] = jnp.atleast_1d(zeropoint)
 
-        geom_map = {
-            "box": lambda m, pos, dim, vispy: base.Box(m, pos, *dim, vispy),
-            "sphere": lambda m, pos, dim, vispy: base.Sphere(m, pos, dim, vispy),
-            "cylinder": lambda m, pos, dim, vispy: base.Cylinder(
-                m, pos, dim[0], dim[1], vispy
-            ),
-            "capsule": lambda m, pos, dim, vispy: base.Capsule(
-                m, pos, dim[0], dim[1], vispy
-            ),
-        }
-        link_geoms = []
-        for geom_subtree in body.findall("geom"):
-            g_attr = geom_subtree.attrib
-            geom = geom_map[g_attr["type"]](
-                g_attr["mass"], g_attr["pos"], g_attr["dim"], _vispy_subdict(g_attr)
-            )
-            link_geoms.append(geom)
-        geoms[current_link_idx] = link_geoms
+        geoms[current_link_idx] = _extract_geoms_from_body_xml(body, current_link_idx)
 
         for subbodies in body.findall("body"):
             process_body(subbodies, current_link_idx)
@@ -171,6 +212,12 @@ def load_sys_from_str(xml_str: str):
     links = links[0].batch(*links[1:])
     dampings = jnp.concatenate(assert_order_then_to_list(dampings))
     armatures = jnp.concatenate(assert_order_then_to_list(armatures))
+    spring_stiffnesses = jnp.concatenate(assert_order_then_to_list(spring_stiffnesses))
+    spring_zeropoints = jnp.concatenate(assert_order_then_to_list(spring_zeropoints))
+
+    # add all geoms directly connected to worldbody
+    flat_geoms = [geom for geoms in assert_order_then_to_list(geoms) for geom in geoms]
+    flat_geoms += _extract_geoms_from_body_xml(worldbody, -1)
 
     sys = base.System(
         assert_order_then_to_list(link_parents),
@@ -178,9 +225,11 @@ def load_sys_from_str(xml_str: str):
         assert_order_then_to_list(link_types),
         dampings,
         armatures,
+        spring_stiffnesses,
+        spring_zeropoints,
         options["dt"],
         False,
-        assert_order_then_to_list(geoms),
+        flat_geoms,
         options["gravity"],
         link_names=assert_order_then_to_list(link_names),
         model_name=model_name,

@@ -1,0 +1,11 @@
+<x_xy model="spherical_stiff">
+    <options gravity="0 0 0" dt="0.01"/>
+    <defaults>
+        <geom vispy_edge_color="black" vispy_color="white"/>
+    </defaults>
+    <worldbody>
+        <body name="upper" pos="0 0 0" euler="0 0 0" joint="spherical" damping="2" spring_stiff="20">
+            <geom type="box" mass="10" pos="0.5 0 0" dim="1 0.25 0.2"/>
+        </body>
+    </worldbody>
+</x_xy>
