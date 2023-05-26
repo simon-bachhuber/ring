@@ -317,11 +317,10 @@ def _parse_timestep(timestep: float, fps: int, N: int):
     return T, step
 
 
-def _data_checks(scene, data_pos, data_rot):
+def _data_checks(n_links, data_pos, data_rot):
     assert (
         data_pos.ndim == data_rot.ndim == 3
     ), "Expected shape = (n_timesteps, n_links, 3/4)"
-    n_links = np.max(scene.geom_link_idx) + 1
     assert (
         data_pos.shape[1] == data_rot.shape[1] == n_links
     ), "Number of links does not match"
@@ -369,7 +368,7 @@ def animate(
         path = path.with_suffix("." + fmt)
 
     scene = _make_scene(sys, backend, **backend_kwargs)
-    _data_checks(scene, x.pos, x.rot)
+    _data_checks(sys.num_links(), x.pos, x.rot)
 
     N = x.pos.shape[0]
     _, step = _parse_timestep(sys.dt, fps, N)
@@ -402,7 +401,7 @@ class Window:
         """
         self._x = x
         self._scene = _make_scene(sys, backend, **backend_kwargs)
-        _data_checks(self._scene, x.pos, x.rot)
+        _data_checks(sys.num_links(), x.pos, x.rot)
 
         self.N = x.pos.shape[0]
         self.T, self.step = _parse_timestep(sys.dt, fps, self.N)

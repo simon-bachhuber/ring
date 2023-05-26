@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 from flax import struct
 
+import x_xy
 from x_xy import base, maths, scan
 
 qrel = lambda q1, q2: maths.quat_mul(q1, maths.quat_inv(q2))
@@ -148,3 +149,55 @@ def pd_control(P: jax.Array, D: jax.Array):
         return controller_state.replace(i=controller_state.i + 1), taus
 
     return SimpleNamespace(init=init, apply=apply)
+
+
+DAMPING_SPHERICAL = 25.0
+DAMPING_ELSE = 25.0
+
+
+def _sys_large_damping(sys: base.System) -> base.System:
+    damping = jnp.ones_like(sys.link_damping) * DAMPING_ELSE
+
+    def f(_, idx_map, typ, idx):
+        nonlocal damping
+
+        slice = idx_map["d"](idx)
+        a, b = slice.start, slice.stop
+        if typ == "free":
+            b -= 3
+        elif typ == "spherical":
+            pass
+        else:
+            return
+        damping = damping.at[a:b].set(DAMPING_SPHERICAL)
+
+    scan.tree(sys, f, "ll", sys.link_types, list(range(sys.num_links())))
+    return sys.replace(link_damping=damping)
+
+
+def unroll_dynamics_pd_control(
+    sys: base.System,
+    q: jax.Array,
+    P: jax.Array,
+    D: jax.Array,
+    nograv: bool = False,
+):
+    if nograv:
+        sys = sys.replace(gravity=sys.gravity * 0.0)
+
+    sys = _sys_large_damping(sys)
+
+    state = base.State.create(sys)
+
+    controller = pd_control(P, D)
+    cs = controller.init(sys, q)
+
+    def step(carry, _):
+        state, cs = carry
+        cs, taus = controller.apply(cs, sys, state)
+        state = x_xy.algorithms.step(sys, state, taus)
+        carry = (state, cs)
+        return carry, state
+
+    states = jax.lax.scan(step, (state, cs), None, length=len(q))[1]
+    return states
