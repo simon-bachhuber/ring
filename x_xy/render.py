@@ -9,10 +9,12 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import tqdm
+import tree_utils
 from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
 
+import x_xy
 from x_xy import algebra, base, maths
 from x_xy.base import Box, Capsule, Cylinder, Geometry, Sphere
 
@@ -388,6 +390,7 @@ class Window:
         sys: base.System,
         x: base.Transform,
         fps: int = 50,
+        show_fps: bool = False,
         backend: str = "vispy",
         **backend_kwargs,
     ):
@@ -407,6 +410,7 @@ class Window:
         self.T, self.step = _parse_timestep(sys.dt, fps, self.N)
         self.timestep = sys.dt
         self.fps = fps
+        self.show_fps = show_fps
 
     def reset(self):
         "Reset trajectory to beginning."
@@ -433,7 +437,8 @@ class Window:
         self.realtime = time.time()
         self.current_fps = (self.time / (self.realtime - self.starttime)) * self.fps
 
-        print("FPS: ", int(self.current_fps), f"Target FPS: {self.fps}")
+        if self.show_fps:
+            print("FPS: ", int(self.current_fps), f"Target FPS: {self.fps}")
 
     def open(self):
         "Open interactive GUI window."
@@ -446,3 +451,32 @@ class Window:
         )
 
         app.run()
+
+
+def gui(
+    sys: base.System,
+    x: base.Transform,
+    fps: int = 50,
+    show_fps: bool = False,
+    backend: str = "vispy",
+    **backend_kwargs,
+):
+    """Open an interactive Window that plays back the pre-computed trajectory.
+
+    Args:
+        scene (VispyScene): Scene used for rendering.
+        x (base.Transform): Pre-computed trajectory.
+        timestep (float): Timedelta between Transforms.
+        fps (int, optional): Frame-rate. Defaults to 50.
+    """
+    if tree_utils.tree_ndim(x) == 2:
+        x = x.batch()
+
+    window = Window(sys, x, fps, show_fps, backend, **backend_kwargs)
+    window.open()
+
+
+def probe(sys, **backend_kwargs):
+    state = base.State.create(sys)
+    _, state = x_xy.algorithms.forward_kinematics(sys, state)
+    gui(sys, state.x, **backend_kwargs)
