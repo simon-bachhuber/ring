@@ -19,7 +19,7 @@ def list_examples() -> list[str]:
     def list_of_examples_in_folder(folder):
         return [ex.split(".")[0] for ex in os.listdir(folder)]
 
-    folders = ["", "three_segs"]
+    folders = ["", "three_segs", "four_segs"]
     examples = []
     for folder in folders:
         example_folder = list_of_examples_in_folder(examples_dir.joinpath(folder))
