@@ -13,7 +13,7 @@ from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
 
-from x_xy import algebra, base, maths
+from x_xy import algebra, base, maths, visuals
 from x_xy.base import Box, Capsule, Cylinder, Geometry, Sphere
 
 Camera = TypeVar("Camera")
@@ -71,30 +71,23 @@ class Scene(ABC):
 
     def _add_box(self, box: Box) -> Visual:
         return scene.visuals.Box(
-                    box.dim_x, box.dim_z, box.dim_y, parent=self.view.scene, **kwargs
-                )
+            box.dim_x, box.dim_z, box.dim_y, parent=self.view.scene, **box.vispy_kwargs
+        )
 
     def _add_sphere(self, sphere: Sphere) -> Visual:
-        return scene.visuals.Sphere(sphere.radius, parent=self.view.scene, **kwargs)
+        return scene.visuals.Sphere(
+            sphere.radius, parent=self.view.scene, **sphere.vispy_kwargs
+        )
 
     def _add_cylinder(self, cyl: Cylinder) -> Visual:
-        n_points = int(cyl.length * 100)
-
-        tube_points = jnp.zeros((n_points, 3))
-        tube_points = tube_points.at[:, 0].set(
-            jnp.linspace(-cyl.length / 2, cyl.length / 2, n_points)
+        return visuals.Cylinder(
+            cyl.radius, cyl.length, parent=self.view.scene, **cyl.vispy_kwargs
         )
 
-        return scene.visuals.Tube(
-            tube_points,
-            jnp.full((n_points,), cyl.radius),
-            closed=True,
-            parent=self.view.scene,
-            **kwargs,
+    def _add_capsule(self, cap: Capsule) -> Visual:
+        return visuals.Capsule(
+            cap.radius, cap.length, parent=self.view.scene, **cap.vispy_kwargs
         )
-
-    def _add_capsule(self, geom: Capsule) -> Visual:
-        raise NotImplementedError
 
     def _add_xyz(self) -> Visual:
         raise NotImplementedError
@@ -247,7 +240,7 @@ class VispyScene(Scene):
         if headless_backend:
             assert (
                 vispy_backend is None
-            ), "Can only set one backend. Either provide `vispy_backend` or enable `headless_backend`"
+            ), "Can only set one backend. Either provide `vispy_backend` or enable`headless_backend`"
 
         self.headless = False
         if headless_backend:
@@ -276,6 +269,9 @@ class VispyScene(Scene):
 
     def _set_camera(self, camera: scene.cameras.BaseCamera) -> None:
         self.view.camera = camera
+
+    def _get_camera(self) -> scene.cameras.BaseCamera:
+        return self.view.camera
 
     def _render(self) -> jax.Array:
         return self.canvas.render(alpha=True)
