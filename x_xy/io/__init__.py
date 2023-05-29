@@ -1,5 +1,5 @@
-from .from_xml import load_sys_from_str, load_sys_from_xml
-from .parse_system import parse_system
+from .parse import parse_system
+from .xml import load_sys_from_str, load_sys_from_xml
 
 
 def load_example(name: str):

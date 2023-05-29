@@ -11,7 +11,7 @@ from x_xy.algorithms import dynamics
 def test_animate(pytest=True):
     dt = 1e-2
     filename = "animation"
-    xml = "double_pendulum"
+    xml = "test_double_pendulum"
     sys = x_xy.io.load_example(xml)
     sys = sys.replace(dt=dt)
 
