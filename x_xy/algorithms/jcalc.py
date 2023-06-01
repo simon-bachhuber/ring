@@ -18,8 +18,8 @@ class RCMG_Config:
     dang_max: float = float(jnp.deg2rad(120))  # maximum angular velocity in deg/s
 
     # minimum angular velocity of euler angles used for `free and spherical joints`
-    dang_min_free: float = float(jnp.deg2rad(0))
-    dang_max_free: float = float(jnp.deg2rad(60))
+    dang_min_free_spherical: float = float(jnp.deg2rad(0))
+    dang_max_free_spherical: float = float(jnp.deg2rad(60))
 
     dpos_min: float = 0.001  # speed of translation
     dpos_max: float = 0.1
@@ -81,14 +81,15 @@ def _draw_rxyz(
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     enable_range_of_motion: bool = True,
+    use_dang_free: bool = False,
 ) -> jax.Array:
     ANG_0 = 0.0
     return algorithms.random_angle_over_time(
         key_t,
         key_value,
         ANG_0,
-        config.dang_min,
-        config.dang_max,
+        config.dang_min_free_spherical if use_dang_free else config.dang_min,
+        config.dang_max_free_spherical if use_dang_free else config.dang_max,
         config.t_min,
         config.t_max,
         config.T,
@@ -126,7 +127,9 @@ def _draw_spherical(
     # Not ideal, but i am unaware of a better way.
     @jax.vmap
     def draw_euler_angles(key_t, key_value):
-        return _draw_rxyz(config, key_t, key_value, enable_range_of_motion=False)
+        return _draw_rxyz(
+            config, key_t, key_value, enable_range_of_motion=False, use_dang_free=True
+        )
 
     triple = lambda key: jax.random.split(key, 3)
     euler_angles = draw_euler_angles(triple(key_t), triple(key_value)).T
