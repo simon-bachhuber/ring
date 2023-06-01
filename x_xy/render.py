@@ -109,7 +109,7 @@ class Scene(ABC):
             self.visuals.append(visual)
 
         if self._xyz:
-            unique_link_indices = set(geom_link_idx)
+            unique_link_indices = np.unique(np.array(geom_link_idx))
             for unique_link_idx in unique_link_indices:
                 geom_link_idx.append(unique_link_idx)
                 geom_transform.append(base.Transform.zero())
