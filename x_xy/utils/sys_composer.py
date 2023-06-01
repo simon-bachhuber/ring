@@ -33,17 +33,35 @@ def inject_system(
     Returns:
         base.System: _description_
     """
+
+    # give bodies new names if required
     sub_sys = sub_sys.replace(link_names=[prefix + name for name in sub_sys.link_names])
 
+    # replace parent array
     if at_body is None:
-        parent_sub_sys = -1
+        new_world = -1
     else:
-        parent_sub_sys = sys.name_to_idx(at_body)
+        new_world = sys.name_to_idx(at_body)
 
     # append sub_sys at index end and replace sub_sys world with `at_body`
     N = sys.num_links()
-    incr_repl = lambda p: p + N if p != -1 else parent_sub_sys
-    sub_sys = sub_sys.replace(link_parents=[incr_repl(p) for p in sub_sys.link_parents])
+
+    def new_parent(old_parent: int):
+        if old_parent != -1:
+            return old_parent + N
+        else:
+            return new_world
+
+    sub_sys = sub_sys.replace(
+        link_parents=[new_parent(p) for p in sub_sys.link_parents]
+    )
+
+    # replace link indices of geoms in sub_sys
+    sub_sys = sub_sys.replace(
+        geoms=[
+            geom.replace(link_idx=new_parent(geom.link_idx)) for geom in sub_sys.geoms
+        ]
+    )
 
     # merge two systems
     concat = lambda a1, a2: tree_batch([a1, a2], True, "jax")
