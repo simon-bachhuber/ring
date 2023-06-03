@@ -73,12 +73,12 @@ class Scene(ABC):
         return images
 
     def _add_box(self, box: Box) -> Visual:
-        return scene.visuals.Box(
+        return visuals.Box(
             box.dim_x, box.dim_z, box.dim_y, parent=self.view.scene, **box.vispy_kwargs
         )
 
     def _add_sphere(self, sphere: Sphere) -> Visual:
-        return scene.visuals.Sphere(
+        return visuals.Sphere(
             sphere.radius, parent=self.view.scene, **sphere.vispy_kwargs
         )
 
@@ -278,15 +278,6 @@ class VispyScene(Scene):
 
     def _render(self) -> jax.Array:
         return self.canvas.render(alpha=True)
-
-    def _add_box(self, geom: base.Box):
-        return scene.visuals.Box(
-            geom.dim_x,
-            geom.dim_z,
-            geom.dim_y,
-            parent=self.view.scene,
-            **geom.vispy_kwargs,
-        )
 
     def _add_xyz(self) -> Visual:
         return scene.visuals.XYZAxis(parent=self.view.scene)
