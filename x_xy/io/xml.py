@@ -120,7 +120,8 @@ def _extract_geoms_from_body_xml(body, current_link_idx):
     for geom_subtree in body.findall("geom"):
         g_attr = geom_subtree.attrib
         geom_rot = _get_rotation(g_attr)
-        geom_t = base.Transform(g_attr["pos"], geom_rot)
+        geom_pos = g_attr.get("pos", jnp.zeros((3,)))
+        geom_t = base.Transform(geom_pos, geom_rot)
         geom = geom_map[g_attr["type"]](
             g_attr["mass"],
             geom_t,

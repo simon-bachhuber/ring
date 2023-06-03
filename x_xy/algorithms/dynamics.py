@@ -1,3 +1,5 @@
+from typing import Optional
+
 import jax
 import jax.numpy as jnp
 
@@ -211,8 +213,14 @@ def forward_dynamics(
 
     if sys.mass_mat_iters == 0:
         eye = jnp.eye(sys.qd_size())
-        # overdamp = 0.0
-        # mass_matrix += eye * overdamp * sys.dt
+
+        # trick from brax / mujoco aka "integrate joint damping implicitly"
+        mass_matrix += jnp.diag(sys.link_damping) * sys.dt
+
+        # make cholesky decomposition not sometimes fail
+        # see: https://github.com/google/jax/issues/16149
+        mass_matrix += eye * 1e-6
+
         mass_mat_inv = jax.scipy.linalg.solve(mass_matrix, eye, assume_a="pos")
     else:
         mass_mat_inv = _inv_approximate(mass_matrix, mass_mat_inv, sys.mass_mat_iters)
@@ -378,9 +386,14 @@ def kinetic_energy(sys: base.System, qd: jax.Array):
 
 
 def step(
-    sys: base.System, state: base.State, taus: jax.Array, n_substeps: int = 1
+    sys: base.System,
+    state: base.State,
+    taus: Optional[jax.Array] = None,
+    n_substeps: int = 1,
 ) -> base.State:
     assert sys.q_size() == state.q.size
+    if taus is None:
+        taus = jnp.zeros_like(state.qd)
     assert sys.qd_size() == state.qd.size == taus.size
     assert (
         sys.integration_method.lower() == "semi_implicit_euler"
@@ -398,6 +411,8 @@ def step(
             sys_updated, state, taus
         )
         return state, _
+
+    substep(state, None)
 
     return jax.lax.scan(substep, state, None, length=n_substeps)[0]
 

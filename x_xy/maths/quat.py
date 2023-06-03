@@ -71,6 +71,9 @@ def quat_rot_axis(axis: jnp.ndarray, angle: jnp.ndarray) -> jnp.ndarray:
     we use quaternions to re-express vectors in other frames. But the
     vectors stay the same. We only transform them to a common frames.
     """
+    assert axis.shape == (3,)
+    assert angle.shape == ()
+
     axis = safe_normalize(axis)
     # NOTE
     # 23.04.23

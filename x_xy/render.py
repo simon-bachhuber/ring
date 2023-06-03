@@ -1,18 +1,21 @@
+from typing import Optional, TypeVar, Union
+
 import time
 from abc import ABC, abstractmethod, abstractstaticmethod
 from functools import partial
 from pathlib import Path
-from typing import Optional, TypeVar, Union
 
 import imageio
 import jax
 import jax.numpy as jnp
 import numpy as np
 import tqdm
+import tree_utils
 from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
 
+import x_xy
 from x_xy import algebra, base, maths, visuals
 from x_xy.base import Box, Capsule, Cylinder, Geometry, Sphere
 
@@ -115,7 +118,7 @@ class Scene(ABC):
             self.visuals.append(visual)
 
         if self._xyz:
-            unique_link_indices = set(geom_link_idx)
+            unique_link_indices = np.unique(np.array(geom_link_idx))
             for unique_link_idx in unique_link_indices:
                 geom_link_idx.append(unique_link_idx)
                 geom_transform.append(base.Transform.zero())
@@ -331,11 +334,10 @@ def _parse_timestep(timestep: float, fps: int, N: int):
     return T, step
 
 
-def _data_checks(scene, data_pos, data_rot):
+def _data_checks(n_links, data_pos, data_rot):
     assert (
         data_pos.ndim == data_rot.ndim == 3
     ), "Expected shape = (n_timesteps, n_links, 3/4)"
-    n_links = np.max(scene.geom_link_idx) + 1
     assert (
         data_pos.shape[1] == data_rot.shape[1] == n_links
     ), "Number of links does not match"
@@ -383,7 +385,7 @@ def animate(
         path = path.with_suffix("." + fmt)
 
     scene = _make_scene(sys, backend, **backend_kwargs)
-    _data_checks(scene, x.pos, x.rot)
+    _data_checks(sys.num_links(), x.pos, x.rot)
 
     N = x.pos.shape[0]
     _, step = _parse_timestep(sys.dt, fps, N)
@@ -403,6 +405,7 @@ class Window:
         sys: base.System,
         x: base.Transform,
         fps: int = 50,
+        show_fps: bool = False,
         backend: str = "vispy",
         **backend_kwargs,
     ):
@@ -416,12 +419,13 @@ class Window:
         """
         self._x = x
         self._scene = _make_scene(sys, backend, **backend_kwargs)
-        _data_checks(self._scene, x.pos, x.rot)
+        _data_checks(sys.num_links(), x.pos, x.rot)
 
         self.N = x.pos.shape[0]
         self.T, self.step = _parse_timestep(sys.dt, fps, self.N)
         self.timestep = sys.dt
         self.fps = fps
+        self.show_fps = show_fps
 
     def reset(self):
         "Reset trajectory to beginning."
@@ -448,7 +452,8 @@ class Window:
         self.realtime = time.time()
         self.current_fps = (self.time / (self.realtime - self.starttime)) * self.fps
 
-        print("FPS: ", int(self.current_fps), f"Target FPS: {self.fps}")
+        if self.show_fps:
+            print("FPS: ", int(self.current_fps), f"Target FPS: {self.fps}")
 
     def open(self):
         "Open interactive GUI window."
@@ -461,3 +466,32 @@ class Window:
         )
 
         app.run()
+
+
+def gui(
+    sys: base.System,
+    x: base.Transform,
+    fps: int = 50,
+    show_fps: bool = False,
+    backend: str = "vispy",
+    **backend_kwargs,
+):
+    """Open an interactive Window that plays back the pre-computed trajectory.
+
+    Args:
+        scene (VispyScene): Scene used for rendering.
+        x (base.Transform): Pre-computed trajectory.
+        timestep (float): Timedelta between Transforms.
+        fps (int, optional): Frame-rate. Defaults to 50.
+    """
+    if tree_utils.tree_ndim(x) == 2:
+        x = x.batch()
+
+    window = Window(sys, x, fps, show_fps, backend, **backend_kwargs)
+    window.open()
+
+
+def probe(sys, **backend_kwargs):
+    state = base.State.create(sys)
+    _, state = x_xy.algorithms.forward_kinematics(sys, state)
+    gui(sys, state.x, **backend_kwargs)

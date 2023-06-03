@@ -1,5 +1,5 @@
-from .from_xml import load_sys_from_str, load_sys_from_xml
-from .parse_system import parse_system
+from .parse import parse_system
+from .xml import load_sys_from_str, load_sys_from_xml
 
 
 def load_example(name: str):
@@ -16,4 +16,18 @@ def list_examples() -> list[str]:
 
     examples_dir = Path(__file__).parent.joinpath("examples")
 
-    return [ex.split(".")[0] for ex in os.listdir(examples_dir)]
+    def list_of_examples_in_folder(folder):
+        return [ex.split(".")[0] for ex in os.listdir(folder)]
+
+    folders = ["", "three_segs", "four_segs"]
+    examples = []
+    for folder in folders:
+        example_folder = list_of_examples_in_folder(examples_dir.joinpath(folder))
+        if len(folder) > 0:
+            example_folder = [folder + "/" + ex for ex in example_folder]
+        examples += example_folder
+
+    # exclude subfolders from examples
+    examples = list(set(examples) - set(folders))
+
+    return examples
