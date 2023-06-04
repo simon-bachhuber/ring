@@ -205,12 +205,12 @@ class Geometry(_Base):
     mass: jax.Array
     transform: Transform
     link_idx: int
+    vispy_kwargs: dict = struct.field(pytree_node=False)
 
 
 @struct.dataclass
 class Sphere(Geometry):
     radius: jax.Array
-    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
 
     def get_it_3x3(self) -> jax.Array:
         it_3x3 = 2 / 5 * self.mass * self.radius**2 * jnp.eye(3)
@@ -222,7 +222,6 @@ class Box(Geometry):
     dim_x: jax.Array
     dim_y: jax.Array
     dim_z: jax.Array
-    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
 
     def get_it_3x3(self) -> jax.Array:
         it_3x3 = (
@@ -246,7 +245,6 @@ class Cylinder(Geometry):
 
     radius: jax.Array
     length: jax.Array
-    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
 
     def get_it_3x3(self) -> jax.Array:
         radius_dir = 3 * self.radius**2 + self.length**2
@@ -271,7 +269,6 @@ class Capsule(Geometry):
 
     radius: jax.Array
     length: jax.Array
-    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
 
     def get_it_3x3(self) -> jax.Array:
         """https://github.com/thomasmarsh/ODE/blob/master/ode/src/mass.cpp#L141"""

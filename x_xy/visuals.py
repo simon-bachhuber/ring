@@ -38,18 +38,6 @@ def box_mesh(dim_x: float, dim_y: float, dim_z: float) -> tuple[np.ndarray, np.n
         dtype=np.uint32,
     )
 
-    """faces = np.array(
-        [
-            (0, 1, 2),
-            (1, 2, 3),
-            (0, 1, 4),
-            (1, 4, 5),
-            (1, 3, 7),
-            (1, 5, 7),
-        ],
-        dtype=np.uint32,
-    )"""
-
     mesh = MeshData(vertices=verts, faces=faces)
 
     return mesh.get_vertices(), mesh.get_edges()
@@ -58,7 +46,11 @@ def box_mesh(dim_x: float, dim_y: float, dim_z: float) -> tuple[np.ndarray, np.n
 
 
 class BoxVisual(MeshVisual):
-    def __init__(self, dim_x, dim_y, dim_z, **kwargs):
+    def __init__(self, dim_x: float, dim_y: float, dim_z: float, **kwargs):
+        dim_x = float(dim_x)
+        dim_y = float(dim_y)
+        dim_z = float(dim_z)
+
         self.dim_x = dim_x
         self.dim_y = dim_y
         self.dim_z = dim_z
@@ -146,7 +138,9 @@ def sphere_ico_mesh(radius: float) -> MeshData:
 
 
 class SphereVisual(MeshVisual):
-    def __init__(self, radius, **kwargs):
+    def __init__(self, radius: float, **kwargs):
+        radius = float(radius)
+
         self.radius = radius
 
         verts, faces = sphere_ico_mesh(radius)
@@ -207,7 +201,10 @@ def cylinder_mesh(
 
 
 class CylinderVisual(MeshVisual):
-    def __init__(self, radius, length, **kwargs):
+    def __init__(self, radius: float, length: float, **kwargs):
+        radius = float(radius)
+        length = float(length)
+
         self.radius = radius
         self.length = length
 
@@ -302,7 +299,7 @@ def capsule_mesh(radius: float, length: float, offset: bool = True) -> MeshData:
 
 
 class CapsuleVisual(MeshVisual):
-    def __init__(self, radius, length, **kwargs):
+    def __init__(self, radius: float, length: float, **kwargs):
         radius = float(radius)
         length = float(length)
 

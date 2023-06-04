@@ -91,9 +91,11 @@ def _convert_attrs_to_arrays(xml_tree):
 
 
 def _get_rotation(attrib: dict):
-    rot = attrib.get("quat", None)
-    if rot is not None:
-        assert "euler" not in attrib
+    if "quat" in attrib and "euler" in attrib:
+        raise RuntimeError("Can't specify both quat and euler")
+
+    if "quat" in attrib:
+        rot = attrib.get("quat", None)
     elif "euler" in attrib:
         # we use zyx convention but angles are given
         # in x, y, z in the xml file
@@ -102,19 +104,16 @@ def _get_rotation(attrib: dict):
         rot = base.maths.quat_euler(jnp.flip(euler_xyz), convention="zyx")
     else:
         rot = jnp.array([1.0, 0, 0, 0])
+
     return rot
 
 
 def _extract_geoms_from_body_xml(body, current_link_idx):
     geom_map = {
-        "box": lambda m, t, l, dim, vispy: base.Box(m, t, l, *dim, vispy),
-        "sphere": lambda m, t, l, dim, vispy: base.Sphere(m, t, l, dim[0], vispy),
-        "cylinder": lambda m, t, l, dim, vispy: base.Cylinder(
-            m, t, l, dim[0], dim[1], vispy
-        ),
-        "capsule": lambda m, t, l, dim, vispy: base.Capsule(
-            m, t, l, dim[0], dim[1], vispy
-        ),
+        "box": lambda m, t, l, vispy, dim: base.Box(m, t, l, vispy, *dim),
+        "sphere": lambda m, t, l, vispy, dim: base.Sphere(m, t, l, vispy, *dim),
+        "cylinder": lambda m, t, l, vispy, dim: base.Cylinder(m, t, l, vispy, *dim),
+        "capsule": lambda m, t, l, vispy, dim: base.Capsule(m, t, l, vispy, *dim),
     }
     link_geoms = []
     for geom_subtree in body.findall("geom"):
@@ -126,8 +125,8 @@ def _extract_geoms_from_body_xml(body, current_link_idx):
             g_attr["mass"],
             geom_t,
             current_link_idx,
-            g_attr["dim"],
             _vispy_subdict(g_attr),
+            jnp.atleast_1d(g_attr["dim"]),
         )
         link_geoms.append(geom)
     return link_geoms
