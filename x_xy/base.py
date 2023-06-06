@@ -380,6 +380,18 @@ class System(_Base):
     def idx_to_name(self, idx: int) -> str:
         return self.link_names[idx]
 
+    def idx_map(self, type: str) -> dict:
+        from x_xy.scan import tree
+
+        dict_int_slices = {}
+
+        def f(_, idx_map, name: str, link_idx: int):
+            dict_int_slices[name] = idx_map[type](link_idx)
+
+        tree(self, f, "ll", self.link_names, list(range(self.num_links())))
+
+        return dict_int_slices
+
 
 @struct.dataclass
 class State(_Base):
