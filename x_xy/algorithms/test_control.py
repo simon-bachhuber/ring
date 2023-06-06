@@ -48,7 +48,7 @@ def test_pd_control():
     controller = pd_control(gains, gains)
     q, q_reconst = evaluate(controller, "free")
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
-    assert error == 0.5126501
+    assert error <= 0.5
 
     gains = jnp.array([300.0, 300])
     controller = pd_control(gains, gains)

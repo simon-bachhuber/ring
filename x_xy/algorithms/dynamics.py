@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -202,7 +202,7 @@ def forward_dynamics(
     qd: jax.Array,
     tau: jax.Array,
     mass_mat_inv: jax.Array,
-) -> jax.Array:
+) -> Tuple[jax.Array, jax.Array]:
     C = inverse_dynamics(sys, qd, jnp.zeros_like(qd))
     mass_matrix = compute_mass_matrix(sys)
 
@@ -411,8 +411,6 @@ def step(
             sys_updated, state, taus
         )
         return state, _
-
-    substep(state, None)
 
     return jax.lax.scan(substep, state, None, length=n_substeps)[0]
 
