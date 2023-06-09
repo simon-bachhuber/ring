@@ -34,6 +34,10 @@ Good options are
         - EGL (headless) (via e.g. apt)
     on m1 mac:
         - PyQT6 (via e.g. pip)
-        - OS Mesa (headless) (via brew install mesa)
 
     More info: https://vispy.org/installation.html
+
+## Examples
+Example systems can be found under `x_xy/io/examples`. 
+
+Additionally, there are some simple example scripts available on the wiki https://github.com/SimiPixel/x_xy_v2/wiki.
