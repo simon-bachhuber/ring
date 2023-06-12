@@ -1,73 +1,41 @@
-from vispy.visuals import MeshVisual
+from vispy.visuals import MeshVisual, CompoundVisual
 from vispy.geometry.meshdata import MeshData
 from vispy.scene.visuals import create_visual_node
 
 import numpy as np
 
 
-def box_mesh(dim_x: float, dim_y: float, dim_z: float) -> tuple[np.ndarray, np.ndarray]:
-    verts = np.array(
-        [
-            (-dim_x, -dim_y, -dim_z),
-            (dim_x, -dim_y, -dim_z),
-            (-dim_x, dim_y, -dim_z),
-            (dim_x, dim_y, -dim_z),
-            (-dim_x, -dim_y, dim_z),
-            (dim_x, -dim_y, dim_z),
-            (-dim_x, dim_y, dim_z),
-            (dim_x, dim_y, dim_z),
-        ],
-        dtype=np.float32,
-    )
+class DoubleMeshVisual(CompoundVisual):
+    _lines: MeshVisual
+    _faces: MeshVisual
 
-    faces = np.array(
-        [
-            (0, 1, 1),
-            (0, 2, 2),
-            (0, 4, 4),
-            (1, 3, 3),
-            (1, 5, 5),
-            (2, 3, 3),
-            (2, 6, 6),
-            (3, 7, 7),
-            (4, 5, 5),
-            (4, 6, 6),
-            (5, 7, 7),
-            (6, 7, 7),
-        ],
-        dtype=np.uint32,
-    )
+    def __init__(self, verts, edges, faces, *, color=None, edge_color=None):
+        # if color is None:
+        #     color = (0.5, 0.5, 1, 1)
 
-    mesh = MeshData(vertices=verts, faces=faces)
+        if color is not None:
+            self._faces = MeshVisual(verts, faces, color=color)
+        else:
+            self._faces = MeshVisual()
 
-    return mesh.get_vertices(), mesh.get_edges()
+        if edge_color is not None:
+            self._edges = MeshVisual(verts, edges, color=edge_color, mode="lines")
+        else:
+            self._edges = MeshVisual()
 
-    # return verts, faces
-
-
-class BoxVisual(MeshVisual):
-    def __init__(self, dim_x: float, dim_y: float, dim_z: float, **kwargs):
-        dim_x = float(dim_x)
-        dim_y = float(dim_y)
-        dim_z = float(dim_z)
-
-        self.dim_x = dim_x
-        self.dim_y = dim_y
-        self.dim_z = dim_z
-
-        verts, faces = box_mesh(dim_x, dim_y, dim_z)
-
-        super().__init__(verts, faces, mode="lines", **kwargs)
-
-
-Box = create_visual_node(BoxVisual)
+        super().__init__([self._faces, self._edges])
+        self._faces.set_gl_state(
+            polygon_offset_fill=True, polygon_offset=(1, 1), depth_test=True
+        )
 
 
 def sphere_ico_mesh(radius: float) -> MeshData:
     # golden ratio
     t = (1.0 + np.sqrt(5.0)) / 2.0
 
-    subdivisions = max(int(radius), 1)
+    # subdivisions = max(3 * int(radius), 3)
+
+    subdivisions = 3
 
     # semipositive vertices of a icosahedron
     verts = [
@@ -134,21 +102,96 @@ def sphere_ico_mesh(radius: float) -> MeshData:
 
     mesh = MeshData(vertices=verts, faces=faces)
 
-    return mesh.get_vertices(), mesh.get_edges()
+    return mesh.get_vertices(), mesh.get_edges(), mesh.get_faces()
 
 
-class SphereVisual(MeshVisual):
-    def __init__(self, radius: float, **kwargs):
+class SphereVisual(DoubleMeshVisual):
+    def __init__(self, radius: float, *, color=None, edge_color=None):
         radius = float(radius)
 
         self.radius = radius
 
-        verts, faces = sphere_ico_mesh(radius)
+        verts, edges, faces = sphere_ico_mesh(radius)
 
-        super().__init__(verts, faces, mode="lines", **kwargs)
+        super().__init__(verts, edges, faces, color=color, edge_color=edge_color)
 
 
 Sphere = create_visual_node(SphereVisual)
+
+
+def box_mesh(dim_x: float, dim_y: float, dim_z: float) -> tuple[np.ndarray, np.ndarray]:
+    verts = np.array(
+        [
+            (-dim_x, -dim_y, -dim_z),
+            (dim_x, -dim_y, -dim_z),
+            (-dim_x, dim_y, -dim_z),
+            (dim_x, dim_y, -dim_z),
+            (-dim_x, -dim_y, dim_z),
+            (dim_x, -dim_y, dim_z),
+            (-dim_x, dim_y, dim_z),
+            (dim_x, dim_y, dim_z),
+        ],
+        dtype=np.float32,
+    )
+
+    verts /= 2
+
+    edges = np.array(
+        [
+            (0, 1),
+            (0, 2),
+            (0, 4),
+            (1, 3),
+            (1, 5),
+            (2, 3),
+            (2, 6),
+            (3, 7),
+            (4, 5),
+            (4, 6),
+            (5, 7),
+            (6, 7),
+        ],
+        dtype=np.uint32,
+    )
+
+    faces = np.array(
+        [
+            (0, 1, 2),
+            (1, 2, 3),
+            (0, 1, 4),
+            (1, 4, 5),
+            (0, 2, 4),
+            (2, 4, 6),
+            (1, 3, 5),
+            (3, 5, 7),
+            (2, 3, 6),
+            (3, 6, 7),
+            (4, 5, 6),
+            (5, 6, 7),
+        ]
+    )
+
+    return verts, edges, faces
+
+
+class BoxVisual(DoubleMeshVisual):
+    def __init__(
+        self, dim_x: float, dim_y: float, dim_z: float, *, color=None, edge_color=None
+    ):
+        dim_x = float(dim_x)
+        dim_y = float(dim_y)
+        dim_z = float(dim_z)
+
+        self.dim_x = dim_x
+        self.dim_y = dim_y
+        self.dim_z = dim_z
+
+        verts, edges, faces = box_mesh(dim_x, dim_y, dim_z)
+
+        super().__init__(verts, edges, faces, color=color, edge_color=edge_color)
+
+
+Box = create_visual_node(BoxVisual)
 
 
 def cylinder_mesh(
@@ -197,20 +240,20 @@ def cylinder_mesh(
 
     mesh = MeshData(vertices=verts, faces=faces)
 
-    return mesh.get_vertices(), mesh.get_edges()
+    return mesh.get_vertices(), mesh.get_edges(), mesh.get_faces()
 
 
-class CylinderVisual(MeshVisual):
-    def __init__(self, radius: float, length: float, **kwargs):
+class CylinderVisual(DoubleMeshVisual):
+    def __init__(self, radius: float, length: float, *, color=None, edge_color=None):
         radius = float(radius)
         length = float(length)
 
         self.radius = radius
         self.length = length
 
-        verts, faces = cylinder_mesh(radius, length)
+        verts, edges, faces = cylinder_mesh(radius, length)
 
-        super().__init__(verts, faces, mode="lines", **kwargs)
+        super().__init__(verts, edges, faces, color=color, edge_color=edge_color)
 
 
 Cylinder = create_visual_node(CylinderVisual)
@@ -295,28 +338,20 @@ def capsule_mesh(radius: float, length: float, offset: bool = True) -> MeshData:
 
     mesh = MeshData(vertices=verts, faces=faces)
 
-    return mesh.get_vertices(), mesh.get_edges()
+    return mesh.get_vertices(), mesh.get_edges(), mesh.get_faces()
 
 
-class CapsuleVisual(MeshVisual):
-    def __init__(self, radius: float, length: float, **kwargs):
+class CapsuleVisual(DoubleMeshVisual):
+    def __init__(self, radius: float, length: float, *, color=None, edge_color=None):
         radius = float(radius)
         length = float(length)
 
         self.radius = radius
         self.length = length
 
-        # rows = kwargs.pop("rows", 5)
-        # cols = kwargs.pop("cols", 8)
+        verts, edges, faces = capsule_mesh(radius, length)
 
-        verts, faces = capsule_mesh(radius, length)
-
-        # self.capsule = MeshVisual(
-        #     vertices=verts, faces=faces, color=color, mode="lines"
-        # )
-
-        # self.sphere1, self.sphere2, self.cylinder
-        super().__init__(verts, faces, mode="lines", **kwargs)
+        super().__init__(verts, edges, faces, color=color, edge_color=edge_color)
 
 
 Capsule = create_visual_node(CapsuleVisual)

@@ -205,12 +205,14 @@ class Geometry(_Base):
     mass: jax.Array
     transform: Transform
     link_idx: int
-    vispy_kwargs: dict = struct.field(pytree_node=False)
 
 
 @struct.dataclass
 class Sphere(Geometry):
-    radius: jax.Array
+    color: Any = struct.field(pytree_node=False)
+    edge_color: Any = struct.field(pytree_node=False)
+
+    radius: float
 
     def get_it_3x3(self) -> jax.Array:
         it_3x3 = 2 / 5 * self.mass * self.radius**2 * jnp.eye(3)
@@ -219,9 +221,12 @@ class Sphere(Geometry):
 
 @struct.dataclass
 class Box(Geometry):
-    dim_x: jax.Array
-    dim_y: jax.Array
-    dim_z: jax.Array
+    color: Any = struct.field(pytree_node=False)
+    edge_color: Any = struct.field(pytree_node=False)
+
+    dim_x: float
+    dim_y: float
+    dim_z: float
 
     def get_it_3x3(self) -> jax.Array:
         it_3x3 = (
@@ -243,8 +248,11 @@ class Box(Geometry):
 class Cylinder(Geometry):
     """Length is along x-axis."""
 
-    radius: jax.Array
-    length: jax.Array
+    color: Any = struct.field(pytree_node=False)
+    edge_color: Any = struct.field(pytree_node=False)
+
+    radius: float
+    length: float
 
     def get_it_3x3(self) -> jax.Array:
         radius_dir = 3 * self.radius**2 + self.length**2
@@ -267,8 +275,11 @@ class Cylinder(Geometry):
 class Capsule(Geometry):
     """Length is along x-axis."""
 
-    radius: jax.Array
-    length: jax.Array
+    color: Any = struct.field(pytree_node=False)
+    edge_color: Any = struct.field(pytree_node=False)
+
+    radius: float
+    length: float
 
     def get_it_3x3(self) -> jax.Array:
         """https://github.com/thomasmarsh/ODE/blob/master/ode/src/mass.cpp#L141"""

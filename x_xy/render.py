@@ -73,24 +73,16 @@ class Scene(ABC):
         return images
 
     def _add_box(self, box: Box) -> Visual:
-        return visuals.Box(
-            box.dim_x, box.dim_z, box.dim_y, parent=self.view.scene, **box.vispy_kwargs
-        )
+        raise NotImplementedError
 
     def _add_sphere(self, sphere: Sphere) -> Visual:
-        return visuals.Sphere(
-            sphere.radius, parent=self.view.scene, **sphere.vispy_kwargs
-        )
+        raise NotImplementedError
 
     def _add_cylinder(self, cyl: Cylinder) -> Visual:
-        return visuals.Cylinder(
-            cyl.radius, cyl.length, parent=self.view.scene, **cyl.vispy_kwargs
-        )
+        raise NotImplementedError
 
     def _add_capsule(self, cap: Capsule) -> Visual:
-        return visuals.Capsule(
-            cap.radius, cap.length, parent=self.view.scene, **cap.vispy_kwargs
-        )
+        raise NotImplementedError
 
     def _add_xyz(self) -> Visual:
         raise NotImplementedError
@@ -278,6 +270,43 @@ class VispyScene(Scene):
 
     def _render(self) -> jax.Array:
         return self.canvas.render(alpha=True)
+
+    def _add_box(self, box: Box) -> Visual:
+        return visuals.Box(
+            box.dim_x,
+            box.dim_z,
+            box.dim_y,
+            parent=self.view.scene,
+            color=box.color,
+            edge_color=box.edge_color,
+        )
+
+    def _add_sphere(self, sphere: Sphere) -> Visual:
+        return visuals.Sphere(
+            sphere.radius,
+            parent=self.view.scene,
+            color=sphere.color,
+            edge_color=sphere.edge_color,
+            # method="ico",
+        )
+
+    def _add_cylinder(self, cyl: Cylinder) -> Visual:
+        return visuals.Cylinder(
+            cyl.radius,
+            cyl.length,
+            parent=self.view.scene,
+            color=cyl.color,
+            edge_color=cyl.edge_color,
+        )
+
+    def _add_capsule(self, cap: Capsule) -> Visual:
+        return visuals.Capsule(
+            cap.radius,
+            cap.length,
+            parent=self.view.scene,
+            color=cap.color,
+            edge_color=cap.edge_color,
+        )
 
     def _add_xyz(self) -> Visual:
         return scene.visuals.XYZAxis(parent=self.view.scene)

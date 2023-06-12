@@ -51,13 +51,13 @@ def _assert_all_tags_attrs_valid(xml_tree):
             "spring_stiff",
             "spring_zero",
         ],
-        "geom": ["type", "mass", "pos", "dim", "quat", "euler"],
+        "geom": ["type", "mass", "pos", "dim", "quat", "euler", "color", "edge_color"],
     }
     for subtree in xml_tree.iter():
         assert subtree.tag in list([key for key in valid_attrs])
         for attr in subtree.attrib:
-            if subtree.tag == "geom" and attr.split("_")[0] == "vispy":
-                continue
+            # if subtree.tag == "geom" and attr.split("_")[0] == "vispy":
+            #     continue
             assert attr in valid_attrs[subtree.tag]
 
 
@@ -109,24 +109,35 @@ def _get_rotation(attrib: dict):
 
 
 def _extract_geoms_from_body_xml(body, current_link_idx):
+    # geom_map = {
+    #     "box": lambda m, t, l, vispy, dim: base.Box(m, t, l, vispy, *dim),
+    #     "sphere": lambda m, t, l, vispy, dim: base.Sphere(m, t, l, vispy, *dim),
+    #     "cylinder": lambda m, t, l, vispy, dim: base.Cylinder(m, t, l, vispy, *dim),
+    #     "capsule": lambda m, t, l, vispy, dim: base.Capsule(m, t, l, vispy, *dim),
+    # })
     geom_map = {
-        "box": lambda m, t, l, vispy, dim: base.Box(m, t, l, vispy, *dim),
-        "sphere": lambda m, t, l, vispy, dim: base.Sphere(m, t, l, vispy, *dim),
-        "cylinder": lambda m, t, l, vispy, dim: base.Cylinder(m, t, l, vispy, *dim),
-        "capsule": lambda m, t, l, vispy, dim: base.Capsule(m, t, l, vispy, *dim),
+        "box": base.Box,
+        "sphere": base.Sphere,
+        "cylinder": base.Cylinder,
+        "capsule": base.Capsule,
     }
     link_geoms = []
     for geom_subtree in body.findall("geom"):
         g_attr = geom_subtree.attrib
+
         geom_rot = _get_rotation(g_attr)
         geom_pos = g_attr.get("pos", jnp.zeros((3,)))
-        geom_t = base.Transform(geom_pos, geom_rot)
+        transform = base.Transform(geom_pos, geom_rot)
+
+        dims = [float(x) for x in jnp.atleast_1d(g_attr["dim"])]
+
         geom = geom_map[g_attr["type"]](
             g_attr["mass"],
-            geom_t,
+            transform,
             current_link_idx,
-            _vispy_subdict(g_attr),
-            jnp.atleast_1d(g_attr["dim"]),
+            g_attr.get("color", None),
+            g_attr.get("edge_color", None),
+            *dims,
         )
         link_geoms.append(geom)
     return link_geoms
