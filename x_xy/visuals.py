@@ -14,7 +14,7 @@ class DoubleMeshVisual(CompoundVisual):
         #     color = (0.5, 0.5, 1, 1)
 
         if color is not None:
-            self._faces = MeshVisual(verts, faces, color=color)
+            self._faces = MeshVisual(verts, faces, color=color, shading="smooth")
         else:
             self._faces = MeshVisual()
 
