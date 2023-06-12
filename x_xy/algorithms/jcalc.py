@@ -11,18 +11,18 @@ from x_xy import algebra, algorithms, base, maths
 class RCMG_Config:
     T: float = 60.0  # length of random motion
     Ts: float = 0.01  # sampling rate
-    t_min: float = 0.15  # min time between two generated angles
-    t_max: float = 0.75  # max time ..
+    t_min: float = 0.05  # min time between two generated angles
+    t_max: float = 0.30  # max time ..
 
-    dang_min: float = float(jnp.deg2rad(0))  # minimum angular velocity in deg/s
-    dang_max: float = float(jnp.deg2rad(120))  # maximum angular velocity in deg/s
+    dang_min: float = 0.1  # minimum angular velocity in rad/s
+    dang_max: float = 3.0  # maximum angular velocity in rad/s
 
     # minimum angular velocity of euler angles used for `free and spherical joints`
-    dang_min_free_spherical: float = float(jnp.deg2rad(0))
-    dang_max_free_spherical: float = float(jnp.deg2rad(60))
+    dang_min_free_spherical: float = 0.1
+    dang_max_free_spherical: float = 3.0
 
     dpos_min: float = 0.001  # speed of translation
-    dpos_max: float = 0.1
+    dpos_max: float = 0.3
     pos_min: float = -2.5
     pos_max: float = +2.5
 

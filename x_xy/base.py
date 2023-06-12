@@ -389,6 +389,7 @@ class System(_Base):
         return self.link_names[idx]
 
     def idx_map(self, type: str) -> dict:
+        "type: is either `l` or `q` or `d`"
         from x_xy.scan import tree
 
         dict_int_slices = {}
