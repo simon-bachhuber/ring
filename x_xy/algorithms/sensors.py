@@ -112,7 +112,7 @@ def rel_pose(
 
     if xs.pos.ndim == 3:
         # swap (n_timesteps, n_links) axes
-        xs = xs.tranpose([1, 0, 2])
+        xs = xs.transpose([1, 0, 2])
 
     assert xs.batch_dim() == sys_xs.num_links()
 
