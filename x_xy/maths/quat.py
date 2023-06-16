@@ -76,7 +76,8 @@ def quat_rot_axis(axis: jnp.ndarray, angle: jnp.ndarray) -> jnp.ndarray:
     assert angle.shape == ()
 
     angle = _angle_convention_quat_rot_axis(angle)
-    return quat_rotvec(axis * angle)
+    s, c = jnp.sin(angle / 2), jnp.cos(angle / 2)
+    return jnp.array([c, *(axis * s)])
 
 
 @partial(jnp.vectorize, signature="(3,3)->(4)")
