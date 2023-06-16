@@ -167,8 +167,7 @@ def compute_mass_matrix(sys: base.System) -> jax.Array:
 def _quaternion_spring_force(q_zeropoint, q) -> jax.Array:
     "Computes the angular velocity direction from q to q_zeropoint."
     qrel = maths.quat_mul(q_zeropoint, maths.quat_inv(q))
-    axis, angle = maths.quat_to_rot_axis(qrel)
-    return axis * angle
+    return maths.quat_to_rotvec(qrel)
 
 
 def _spring_force(sys: base.System, q: jax.Array):

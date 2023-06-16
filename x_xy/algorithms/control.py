@@ -11,10 +11,8 @@ qrel = lambda q1, q2: maths.quat_mul(q1, maths.quat_inv(q2))
 
 
 def _derivative_quaternion(q, dt):
-    axis, angle = maths.quat_to_rot_axis(qrel(q[2:], q[:-2]))
-    # axis.shape = (n_timesteps, 3); angle.shape = (n_timesteps,)
-    # Thus add singleton dimesions otherwise broadcast error
-    dq = axis * angle[:, None] / (2 * dt)
+    rotvec = maths.quat_to_rotvec(qrel(q[2:], q[:-2]))
+    dq = rotvec / (2 * dt)
     dq = jnp.vstack((jnp.zeros((3,)), dq, jnp.zeros((3,))))
     return dq
 
@@ -27,8 +25,7 @@ def _derivative(q, dt):
 
 
 def _p_control_quaternion(q, q_ref):
-    axis, angle = maths.quat_to_rot_axis(qrel(q_ref, q))
-    return axis * angle
+    return maths.quat_to_rotvec(qrel(q_ref, q))
 
 
 @struct.dataclass

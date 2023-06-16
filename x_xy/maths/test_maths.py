@@ -53,3 +53,14 @@ def test_quat_convention():
     # negative axis and angle cancel
     np.testing.assert_allclose(axis, jnp.array([0, -1.0, 0]), atol=1e-8)
     np.testing.assert_allclose(angle, -jnp.deg2rad(90), atol=1e-8)
+
+
+def test_rotvec():
+    q = maths.quat_random(
+        jax.random.PRNGKey(
+            1,
+        )
+    )
+
+    axis, angle = maths.quat_to_rot_axis(q)
+    np.testing.assert_allclose(maths.quat_to_rotvec(q), axis * angle, 1e-6, 1e-6)

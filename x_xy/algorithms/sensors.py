@@ -38,11 +38,9 @@ def gyroscope(rot: jax.Array, dt: float) -> jax.Array:
     # due to 1st order derivative, shape (N,) -> (N-1,)
     # append one element at the end to keep shape size
     dq = jnp.vstack((dq, dq[-1][None]))
-
-    axis, angle = maths.quat_to_rot_axis(dq)
-    angle = angle[:, None]
-
-    gyr = axis * angle / dt
+    rotvec = maths.quat_to_rotvec(dq)
+    gyr = rotvec / dt
+    angle = maths.safe_norm(rotvec)
     return jnp.where(jnp.abs(angle) > 1e-10, gyr, jnp.zeros(3))
 
 
