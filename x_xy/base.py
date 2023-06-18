@@ -393,6 +393,27 @@ class System(_Base):
 
         return dict_int_slices
 
+    def __eq__(self, other):
+        if isinstance(other, System):
+            return System.deep_equal(dir(self), dir(other))
+        return NotImplemented
+
+    @staticmethod
+    def deep_equal(a, b):
+        if type(a) is not type(b):
+            return False
+        if isinstance(a, dict):
+            if a.keys() != b.keys():
+                return False
+            return all(System.deep_equal(a[k], b[k]) for k in a.keys())
+        if isinstance(a, list):
+            if len(a) != len(b):
+                return False
+            return all(System.deep_equal(a[i], b[i]) for i in range(len(a)))
+        if isinstance(a, jax.Array):
+            return jnp.array_equal(a, b)
+        return a == b
+
 
 @struct.dataclass
 class State(_Base):
