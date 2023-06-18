@@ -1,7 +1,6 @@
 from xml.etree import ElementTree
-
+from xml.dom.minidom import parseString
 import jax.numpy as jnp
-
 import x_xy
 from x_xy import base
 
@@ -58,7 +57,7 @@ def _assert_all_tags_attrs_valid(xml_tree):
         for attr in subtree.attrib:
             if subtree.tag == "geom" and attr.split("_")[0] == "vispy":
                 continue
-            assert attr in valid_attrs[subtree.tag]
+            assert attr in valid_attrs[subtree.tag], (attr, subtree.tag)
 
 
 def _mix_in_defaults(worldbody, default_attrs):
@@ -243,3 +242,91 @@ def load_sys_from_xml(xml_path: str):
     with open(xml_path, "r") as f:
         xml_str = f.read()
     return load_sys_from_str(xml_str)
+
+
+def system_to_xml_str(sys):
+    def to_str(obj):
+        if isinstance(obj, jnp.ndarray):
+            if obj.ndim == 0:
+                return str(obj)
+            return " ".join([str(x) for x in obj])
+        else:
+            return str(obj)
+
+    # Define root element
+    root = ElementTree.Element("x_xy")
+    root.set("model", str(sys.model_name))
+
+    # Define options
+    options = ElementTree.SubElement(root, "options")
+    options.set('gravity', to_str(sys.gravity))
+    options.set('dt', to_str(sys.dt))
+
+    # Define worldbody
+    worldbody = ElementTree.SubElement(root, 'worldbody')
+
+    def add_geom(geom, parent_body):
+        geom_element = ElementTree.SubElement(parent_body, 'geom')
+
+        def add_geom_attr(geom_element, geom):
+            geom_type = type(geom).__name__.lower()
+            # Get all the attributes of the geom
+            pos = geom.transform.pos
+            quat = geom.transform.rot
+            mass = geom.mass
+            dim = jnp.array([geom.dim_x, geom.dim_y, geom.dim_z])
+            # Add the attributes to the XML element
+            geom_element.set('type', to_str(geom_type))
+            geom_element.set('pos', to_str(pos))
+            geom_element.set('mass', to_str(mass))
+            geom_element.set('quat', to_str(quat))
+            geom_element.set('dim', to_str(dim))
+            # Add vispy kwargs if they exist
+            if hasattr(geom, ('vispy_kwargs')):
+                for key, value in geom.vispy_kwargs.items():
+                    geom_element.set(f'vispy_{key}', to_str(value))
+
+        add_geom_attr(geom_element, geom)
+
+    # Add elements
+    def add_body(parent_elem, link_idx, parent_idx):
+        body = ElementTree.SubElement(parent_elem, 'body')
+        # Get body attributes
+        name = sys.link_names[link_idx]
+        joint = sys.link_types[link_idx]
+        quat = sys.links[link_idx].transform1.rot
+        pos = sys.links[link_idx].transform1.pos
+        damping = sys.link_damping[link_idx]
+        armature = sys.link_armature[link_idx]
+        spring_stiff = sys.link_spring_stiffness[link_idx]
+        spring_zero = sys.link_spring_zeropoint[link_idx]
+        # Save body attributes to XML element
+        body.set('name', to_str(name))
+        body.set('joint', to_str(joint))
+        body.set('quat', to_str(quat))
+        body.set('pos', to_str(pos))
+        body.set('damping', to_str(damping))
+        body.set('armature', to_str(armature))
+        body.set('spring_stiff', to_str(spring_stiff))
+        body.set('spring_zero', to_str(spring_zero))
+
+        # Add additional geom elements
+        for geom in sys.geoms:
+            if geom.link_idx == link_idx:
+                add_geom(geom, body)
+
+        # Recurse over child links
+        for child_idx in range(len(sys.link_parents)):
+            if sys.link_parents[child_idx] == link_idx:
+                add_body(body, child_idx, link_idx)
+
+    # Start the recursion with the world body as the parent
+    for idx in range(len(sys.link_parents)):
+        if sys.link_parents[idx] == -1:
+            add_body(worldbody, idx, -1)
+
+    # Generate and prettify XML string
+    xml_str = parseString(
+        ElementTree.tostring(root)
+    ).documentElement.toprettyxml(indent="    ")
+    return xml_str
