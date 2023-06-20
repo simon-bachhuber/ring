@@ -33,6 +33,7 @@ def process_omc(
     hz_imu: int = 40,
     hz_common: int = 100,
     verbose: bool = True,
+    assume_imus_are_in_sync: bool = False,
 ):
     try:
         import qmt
@@ -54,8 +55,9 @@ def process_omc(
 
     data = {}
 
+    imu_offset_time = None
     for seg in marker_imu_setup:
-        opt_imu_seg_data = _synced_opti_imu_data(
+        opt_imu_seg_data, imu_offset_time = _synced_opti_imu_data(
             path_optitrack,
             path_imu,
             imu_file_prefix,
@@ -65,11 +67,15 @@ def process_omc(
             hz_optitrack,
             hz_common,
             verbose,
-            imu_offset_time=3.33,
-        )[0]
+            imu_offset_time=imu_offset_time,
+        )
 
         if opt_imu_seg_data is not None:
             data[seg] = opt_imu_seg_data
+
+        if not assume_imus_are_in_sync:
+            # delete previous sync, and re-calculate for each IMU
+            imu_offset_time = None
 
     # make folder
     path_mat_file = parse_path(p_output + f"/{experiment_name}.mat")
@@ -112,7 +118,7 @@ def _synced_opti_imu_data(
 
     # then `seg_number` is not present in .csv of OMC data
     if q is None:
-        return
+        return None, imu_offset_time
 
     pos = _construct_pos_from_single_marker(
         path_optitrack, seg_number, marker_imu_setup, hz_opti, hz_common, resample=True
