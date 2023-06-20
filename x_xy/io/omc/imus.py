@@ -14,11 +14,17 @@ def _imu_measurements_from_txt(
 ):
     from pathlib import Path
 
-    df = pd.read_csv(
-        Path(path_imu).joinpath(Path(imu_file_prefix + imu_number).with_suffix(".txt")),
-        delimiter="\t",
-        skiprows=4,
-    )
+    try:
+        df = pd.read_csv(
+            Path(path_imu).joinpath(
+                Path(imu_file_prefix + imu_number).with_suffix(".txt")
+            ),
+            delimiter="\t",
+            skiprows=4,
+        )
+    except FileNotFoundError:
+        return
+
     acc = df[["Acc_X", "Acc_Y", "Acc_Z"]].to_numpy()
     gyr = df[["Gyr_X", "Gyr_Y", "Gyr_Z"]].to_numpy()
     mag = df[["Mag_X", "Mag_Y", "Mag_Z"]].to_numpy()

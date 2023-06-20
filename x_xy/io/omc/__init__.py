@@ -52,8 +52,10 @@ def process_omc(
     with open(p_setup_file) as f:
         marker_imu_setup = json.load(f)
 
-    data = {
-        seg: _synced_opti_imu_data(
+    data = {}
+
+    for seg in marker_imu_setup:
+        opt_imu_seg_data = _synced_opti_imu_data(
             path_optitrack,
             path_imu,
             imu_file_prefix,
@@ -63,9 +65,11 @@ def process_omc(
             hz_optitrack,
             hz_common,
             verbose,
+            imu_offset_time=3.33,
         )[0]
-        for seg in marker_imu_setup
-    }
+
+        if opt_imu_seg_data is not None:
+            data[seg] = opt_imu_seg_data
 
     # make folder
     path_mat_file = parse_path(p_output + f"/{experiment_name}.mat")
@@ -106,6 +110,10 @@ def _synced_opti_imu_data(
         resample=True,
     )
 
+    # then `seg_number` is not present in .csv of OMC data
+    if q is None:
+        return
+
     pos = _construct_pos_from_single_marker(
         path_optitrack, seg_number, marker_imu_setup, hz_opti, hz_common, resample=True
     )
@@ -121,6 +129,10 @@ def _synced_opti_imu_data(
             hz_common,
             resample=True,
         )
+
+        # then this IMU was not recording in this trial
+        if imu_data is None:
+            continue
 
         if verbose:
             print(">>> SYNC START (might take 1-2 minutes)")

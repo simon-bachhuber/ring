@@ -7,7 +7,7 @@ _df_optitrack = None
 _path_optitrack = None
 
 
-def _get_marker_xyz(path_optitrack: str, seg_number: int, marker_number: int):
+def _load_df(path_optitrack: str):
     global _df_optitrack, _path_optitrack
     if _path_optitrack is not None:
         if path_optitrack != _path_optitrack:
@@ -17,10 +17,21 @@ def _get_marker_xyz(path_optitrack: str, seg_number: int, marker_number: int):
     if _df_optitrack is None:
         _df_optitrack = pd.read_csv(path_optitrack, low_memory=False, skiprows=3)
 
+    return _df_optitrack
+
+
+def _list_segments_in_omc_data(path_optitrack: str) -> set[int]:
+    df = _load_df(path_optitrack)
+    return set([int(col[8]) for col in df.columns if "Marker" in col])
+
+
+def _get_marker_xyz(path_optitrack: str, seg_number: int, marker_number: int):
+    df_optitrack = _load_df(path_optitrack)
+
     col = f"Segment_{seg_number}:Marker{marker_number}"
-    x = _df_optitrack[col].iloc[3:].to_numpy()
-    y = _df_optitrack[col + ".1"].iloc[3:].to_numpy()
-    z = _df_optitrack[col + ".2"].iloc[3:].to_numpy()
+    x = df_optitrack[col].iloc[3:].to_numpy()
+    y = df_optitrack[col + ".1"].iloc[3:].to_numpy()
+    z = df_optitrack[col + ".2"].iloc[3:].to_numpy()
 
     return np.stack((x, y, z)).T.astype(np.float64)
 
@@ -104,6 +115,9 @@ def _construct_quat_from_four_markers(
     resample: bool = True,
 ):
     from qmt import quatInterp
+
+    if seg_number not in _list_segments_in_omc_data(path_optitrack):
+        return
 
     setup = marker_imu_setup[f"seg{seg_number}"]
     q_estimate = []
