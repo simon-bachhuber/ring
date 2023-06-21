@@ -9,7 +9,7 @@ from x_xy import base
 T = TypeVar("T")
 ATTR = dict
 
-default_quat = jnp.array([1.0, 0, 0])
+default_quat = jnp.array([1.0, 0, 0, 0])
 default_pos = jnp.zeros((3,))
 default_damping = lambda qd_size, **_: jnp.zeros((qd_size,))
 default_armature = lambda qd_size, **_: jnp.zeros((qd_size,))
@@ -194,7 +194,7 @@ def _arr_equal(a, b):
 def _get_rotation(attr: ATTR):
     rot = attr.get("quat", None)
     if rot is not None:
-        assert "euler" not in attr
+        assert "euler" not in attr, "Can't specify both `quat` and `euler` in xml"
     elif "euler" in attr:
         # we use zyx convention but angles are given
         # in x, y, z in the xml file
@@ -202,7 +202,7 @@ def _get_rotation(attr: ATTR):
         euler_xyz = jnp.deg2rad(attr["euler"])
         rot = base.maths.quat_euler(jnp.flip(euler_xyz), convention="zyx")
     else:
-        rot = jnp.array([1.0, 0, 0, 0])
+        rot = default_quat
     return rot
 
 
