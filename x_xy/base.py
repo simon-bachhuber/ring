@@ -393,15 +393,12 @@ class System(_Base):
 
         return dict_int_slices
 
-    def __eq__(self, other):
-        if isinstance(other, System):
-            return System.deep_equal(dir(self), dir(other))
-        return NotImplemented
-
     @staticmethod
     def deep_equal(a, b):
         if type(a) is not type(b):
             return False
+        if isinstance(a, (System, Link, Geometry, Transform, Motion, Force, Inertia)):
+            return System.deep_equal(a.__dict__, b.__dict__)
         if isinstance(a, dict):
             if a.keys() != b.keys():
                 return False
