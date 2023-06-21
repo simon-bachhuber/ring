@@ -1,3 +1,5 @@
+from .omc import process_omc
+from .omc.utils import render_omc, state_trajectory_omc
 from .parse import parse_system
 from .xml import load_sys_from_str, load_sys_from_xml
 
