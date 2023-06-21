@@ -53,8 +53,8 @@ def process_omc(
         "pos_single_marker": 3
     },
     "seg3": {
-        "xaxis_markers": [[2, 3], [1, 3], [2, 4], [2, 3]],
-        "yaxis_markers": [[1, 3], [1, 4], [1, 2], [3, 4]],
+        "xaxis_markers": [[2, 3], [1, 3], [2, 3]],
+        "yaxis_markers": [[1, 3], [3, 4], [3, 4]],
         "position": [[-0.5, 1], [-1, 0], [1, 0], [1, -1]],
         "imu_rigid": "A0",
         "imu_flex": "A2",

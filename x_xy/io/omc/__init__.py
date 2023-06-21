@@ -68,14 +68,13 @@ def process_omc(
             hz_common,
             verbose,
             imu_offset_time=imu_offset_time,
+            assume_imus_are_in_sync=assume_imus_are_in_sync,
         )
 
         if opt_imu_seg_data is not None:
             data[seg] = opt_imu_seg_data
-
-        if not assume_imus_are_in_sync:
-            # delete previous sync, and re-calculate for each IMU
-            imu_offset_time = None
+        else:
+            print(f"Segment_{seg[-1]} was not found in OMC data.")
 
     # make folder
     path_mat_file = parse_path(p_output + f"/{experiment_name}.mat")
@@ -103,6 +102,7 @@ def _synced_opti_imu_data(
     hz_common,
     verbose: bool = True,
     imu_offset_time: Optional[float] = None,
+    assume_imus_are_in_sync: bool = False,
 ):
     from qmt import syncOptImu
 
@@ -138,10 +138,15 @@ def _synced_opti_imu_data(
 
         # then this IMU was not recording in this trial
         if imu_data is None:
+            print(f"For segment{seg_number} IMU {imu_key} was not recorded.")
             continue
 
         if verbose:
             print(">>> SYNC START (might take 1-2 minutes)")
+
+        if not assume_imus_are_in_sync:
+            # delete previous sync, and re-calculate for each IMU
+            imu_offset_time = None
 
         if imu_offset_time is None:
             sync_info = syncOptImu(
