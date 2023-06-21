@@ -4,7 +4,7 @@
         <geom dim="1 10 4" mass="2" vispy_edge_color="black" vispy_color="white"/>
     </defaults>
     <worldbody>
-        <body name="ry" pos="0 0 0" euler="0 90 0" joint="ry" damping="2">
+        <body name="ry" pos="1 0 0" euler="0 90 0" joint="ry" damping="2"> <!-- NEEDS TO DIFFER FROM test_all_0&2 -> pos 1 0 0 -->
             <geom type="box"/>
 
             <body name="px" joint="px" pos="5.0 0 1">
