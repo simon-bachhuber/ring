@@ -4,6 +4,7 @@ import jax.numpy as jnp
 
 import x_xy
 from x_xy import base
+from x_xy.io.xml import abstract
 
 
 def _find_assert_unique(tree: ElementTree, *keys):
@@ -72,14 +73,6 @@ def _mix_in_defaults(worldbody, default_attrs):
                 attr.update({default_attr: default_attrs[tag][default_attr]})
 
 
-def _vispy_subdict(attr: dict):
-    def delete_prefix(key):
-        len_suffix = len(key.split("_")[0]) + 1
-        return key[len_suffix:]
-
-    return {delete_prefix(k): attr[k] for k in attr if k.split("_")[0] == "vispy"}
-
-
 def _convert_attrs_to_arrays(xml_tree):
     for subtree in xml_tree.iter():
         for k, v in subtree.attrib.items():
@@ -90,44 +83,12 @@ def _convert_attrs_to_arrays(xml_tree):
             subtree.attrib[k] = jnp.squeeze(jnp.array(array))
 
 
-def _get_rotation(attrib: dict):
-    rot = attrib.get("quat", None)
-    if rot is not None:
-        assert "euler" not in attrib
-    elif "euler" in attrib:
-        # we use zyx convention but angles are given
-        # in x, y, z in the xml file
-        # thus flip the order
-        euler_xyz = jnp.deg2rad(attrib["euler"])
-        rot = base.maths.quat_euler(jnp.flip(euler_xyz), convention="zyx")
-    else:
-        rot = jnp.array([1.0, 0, 0, 0])
-    return rot
-
-
 def _extract_geoms_from_body_xml(body, current_link_idx):
-    geom_map = {
-        "box": lambda m, t, l, dim, vispy: base.Box(m, t, l, *dim, vispy),
-        "sphere": lambda m, t, l, dim, vispy: base.Sphere(m, t, l, dim[0], vispy),
-        "cylinder": lambda m, t, l, dim, vispy: base.Cylinder(
-            m, t, l, dim[0], dim[1], vispy
-        ),
-        "capsule": lambda m, t, l, dim, vispy: base.Capsule(
-            m, t, l, dim[0], dim[1], vispy
-        ),
-    }
     link_geoms = []
     for geom_subtree in body.findall("geom"):
-        g_attr = geom_subtree.attrib
-        geom_rot = _get_rotation(g_attr)
-        geom_pos = g_attr.get("pos", jnp.zeros((3,)))
-        geom_t = base.Transform(geom_pos, geom_rot)
-        geom = geom_map[g_attr["type"]](
-            g_attr["mass"],
-            geom_t,
-            current_link_idx,
-            g_attr["dim"],
-            _vispy_subdict(g_attr),
+        attr = geom_subtree.attrib
+        geom = abstract.xml_identifier_to_abstract[attr["type"]].from_xml(
+            attr, current_link_idx
         )
         link_geoms.append(geom)
     return link_geoms
@@ -172,28 +133,25 @@ def load_sys_from_str(xml_str: str):
         link_types[current_link_idx] = current_link_typ
         link_names[current_link_idx] = body.attrib["name"]
 
-        pos = body.attrib.get("pos", jnp.array([0.0, 0, 0]))
-        rot = _get_rotation(body.attrib)
-        links[current_link_idx] = base.Link(base.Transform(pos, rot))
+        transform = abstract.AbsTrans.from_xml(body.attrib)
+        links[current_link_idx] = base.Link(transform)
 
         q_size = base.Q_WIDTHS[current_link_typ]
         qd_size = base.QD_WIDTHS[current_link_typ]
 
-        damping = body.attrib.get("damping", jnp.zeros((qd_size,)))
-        armature = body.attrib.get("armature", jnp.zeros((qd_size,)))
-        stiffness = body.attrib.get("spring_stiff", jnp.zeros((qd_size)))
-        zeropoint = body.attrib.get("spring_zero", None)
+        (
+            damping,
+            armature,
+            stiffness,
+            zeropoint,
+        ) = abstract.AbsDampArmaStiffZero.from_xml(
+            body.attrib, q_size, qd_size, current_link_typ
+        )
 
-        if zeropoint is None:
-            zeropoint = jnp.zeros((q_size))
-            if current_link_typ == "spherical" or current_link_typ == "free":
-                # zeropoint then is unit quaternion and not zeros
-                zeropoint = zeropoint.at[0].set(1.0)
-
-        armatures[current_link_idx] = jnp.atleast_1d(armature)
-        dampings[current_link_idx] = jnp.atleast_1d(damping)
-        spring_stiffnesses[current_link_idx] = jnp.atleast_1d(stiffness)
-        spring_zeropoints[current_link_idx] = jnp.atleast_1d(zeropoint)
+        armatures[current_link_idx] = armature
+        dampings[current_link_idx] = damping
+        spring_stiffnesses[current_link_idx] = stiffness
+        spring_zeropoints[current_link_idx] = zeropoint
 
         geoms[current_link_idx] = _extract_geoms_from_body_xml(body, current_link_idx)
 
