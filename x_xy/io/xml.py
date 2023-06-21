@@ -253,6 +253,8 @@ def system_to_xml_str(sys):
         else:
             return str(obj)
 
+    global_index_map = {qd: sys.idx_map(qd) for qd in ["q", "d"]}
+
     # Define root element
     root = ElementTree.Element("x_xy")
     root.set("model", str(sys.model_name))
@@ -296,19 +298,27 @@ def system_to_xml_str(sys):
         joint = sys.link_types[link_idx]
         quat = sys.links[link_idx].transform1.rot
         pos = sys.links[link_idx].transform1.pos
-        damping = sys.link_damping[link_idx]
-        armature = sys.link_armature[link_idx]
-        spring_stiff = sys.link_spring_stiffness[link_idx]
-        spring_zero = sys.link_spring_zeropoint[link_idx]
+        damping = sys.link_damping[global_index_map["d"][name]]
+        damping_str = to_str(damping)
+        armature = sys.link_armature[global_index_map["d"][name]]
+        armature_str = to_str(armature)
+        spring_stiff = sys.link_spring_stiffness[global_index_map["d"][name]]
+        spring_stiff_str = to_str(spring_stiff)
+        spring_zero = sys.link_spring_zeropoint[global_index_map["q"][name]]
+        spring_zero_str = to_str(spring_zero)
         # Save body attributes to XML element
         body.set('name', to_str(name))
         body.set('joint', to_str(joint))
         body.set('quat', to_str(quat))
         body.set('pos', to_str(pos))
-        body.set('damping', to_str(damping))
-        body.set('armature', to_str(armature))
-        body.set('spring_stiff', to_str(spring_stiff))
-        body.set('spring_zero', to_str(spring_zero))
+        if len(damping_str) > 0:
+            body.set('damping', damping_str)
+        if len(armature_str) > 0:
+            body.set('armature', armature_str)
+        if len(spring_stiff_str) > 0:
+            body.set('spring_stiff', spring_stiff_str)
+        if len(spring_zero_str) > 0:
+            body.set('spring_zero', spring_zero_str)
 
         # Add additional geom elements
         for geom in sys.geoms:
