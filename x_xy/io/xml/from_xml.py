@@ -44,6 +44,8 @@ def _assert_all_tags_attrs_valid(xml_tree):
         "body": [
             "name",
             "pos",
+            "pos_min",  # only used in `augmentations.py`
+            "pos_max",  # only used in `augmentations.py`
             "quat",
             "euler",
             "joint",
@@ -94,8 +96,18 @@ def _extract_geoms_from_body_xml(body, current_link_idx):
     return link_geoms
 
 
+def _initial_setup(xml_tree):
+    _assert_all_tags_attrs_valid(xml_tree)
+    _convert_attrs_to_arrays(xml_tree)
+    default_attrs = _build_defaults_attributes(xml_tree)
+    worldbody = _find_assert_unique(xml_tree, "worldbody")
+    _mix_in_defaults(worldbody, default_attrs)
+    return worldbody
+
+
 def load_sys_from_str(xml_str: str):
     xml_tree = ElementTree.fromstring(xml_str)
+    worldbody = _initial_setup(xml_tree)
 
     # check that <x_xy model="..."> syntax is correct
     assert xml_tree.tag == "x_xy", (
@@ -103,14 +115,7 @@ def load_sys_from_str(xml_str: str):
         " Look up the examples under  x_xy/io/examples/*.xml to get started"
     )
     model_name = xml_tree.attrib.get("model", None)
-
     options = _find_assert_unique(xml_tree, "options").attrib
-    default_attrs = _build_defaults_attributes(xml_tree)
-    worldbody = _find_assert_unique(xml_tree, "worldbody")
-
-    _assert_all_tags_attrs_valid(xml_tree)
-    _convert_attrs_to_arrays(xml_tree)
-    _mix_in_defaults(worldbody, default_attrs)
 
     links = {}
     link_parents = {}
@@ -198,6 +203,10 @@ def load_sys_from_str(xml_str: str):
 
 
 def load_sys_from_xml(xml_path: str):
+    return load_sys_from_str(_load_xml(xml_path))
+
+
+def _load_xml(xml_path: str) -> str:
     with open(xml_path, "r") as f:
         xml_str = f.read()
-    return load_sys_from_str(xml_str)
+    return xml_str
