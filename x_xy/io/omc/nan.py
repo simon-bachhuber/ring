@@ -44,9 +44,21 @@ def _interp_nan_values(arr, interp_fn):
     for start, length in nan_values:
         for i in range(length):
             alpha = (i + 1) / (length + 1)
-            arr[start + i] = interp_fn(arr[[start - 1, start + length]], alpha)
+            left = start - 1 if start != 0 else 0
+            arr[start + i] = interp_fn(arr[[left, start + length]], alpha)
 
-    return arr
+    # now `arr` has no more NaNs except if very first or very last value was NaN
+    for start in range(len(arr)):
+        if np.any(np.isnan(arr[start])):
+            continue
+        break
+
+    for stop in range(len(arr) - 1, -1, -1):
+        if np.any(np.isnan(arr[stop])):
+            continue
+        break
+
+    return arr[start:stop]
 
 
 def _slerp_nan_values(q):

@@ -11,6 +11,8 @@ def _imu_measurements_from_txt(
     hz2,
     resample: bool = True,
     method: str = "cubic",
+    txt_file_delimiter: str = "\t",
+    txt_file_skiprows: int = 4,
 ):
     from pathlib import Path
 
@@ -19,8 +21,8 @@ def _imu_measurements_from_txt(
             Path(path_imu).joinpath(
                 Path(imu_file_prefix + imu_number).with_suffix(".txt")
             ),
-            delimiter="\t",
-            skiprows=4,
+            delimiter=txt_file_delimiter,
+            skiprows=txt_file_skiprows,
         )
     except FileNotFoundError:
         return
