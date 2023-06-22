@@ -19,6 +19,7 @@ from x_xy.io.omc.markers import (
     _construct_pos_from_single_marker,
     _construct_quat_from_four_markers,
 )
+from x_xy.io.omc.utils import autodetermine_imu_freq, autodetermine_optitrack_freq
 from x_xy.utils import parse_path
 
 
@@ -29,8 +30,9 @@ def process_omc(
     path_imu_folder: str,
     path_output_folder: str,
     imu_file_prefix: str = "MT_012102D5-000-000_00B483",
-    hz_optitrack: int = 120,
-    hz_imu: int = 40,
+    imu_file_delimiter: str = "\t",
+    hz_optitrack: Optional[int] = None,
+    hz_imu: Optional[int] = None,
     hz_common: int = 100,
     verbose: bool = True,
     assume_imus_are_in_sync: bool = False,
@@ -63,10 +65,13 @@ def process_omc(
             imu_file_prefix,
             int(seg[-1]),
             marker_imu_setup,
-            hz_imu,
-            hz_optitrack,
+            hz_imu if hz_imu else autodetermine_imu_freq(path_imu),
+            hz_optitrack
+            if hz_optitrack
+            else autodetermine_optitrack_freq(path_optitrack),
             hz_common,
-            verbose,
+            imu_file_delimiter=imu_file_delimiter,
+            verbose=verbose,
             imu_offset_time=imu_offset_time,
             assume_imus_are_in_sync=assume_imus_are_in_sync,
         )
@@ -100,6 +105,7 @@ def _synced_opti_imu_data(
     hz_imus,
     hz_opti,
     hz_common,
+    imu_file_delimiter,
     verbose: bool = True,
     imu_offset_time: Optional[float] = None,
     assume_imus_are_in_sync: bool = False,
@@ -134,6 +140,7 @@ def _synced_opti_imu_data(
             hz_imus,
             hz_common,
             resample=True,
+            txt_file_delimiter=imu_file_delimiter,
         )
 
         # then this IMU was not recording in this trial
