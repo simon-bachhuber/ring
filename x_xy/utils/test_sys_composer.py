@@ -48,6 +48,20 @@ def test_delete_subsystem():
     )
 
 
+def test_tree_equal():
+    sys = x_xy.io.load_example("three_segs/three_seg_seg2")
+    sys_mod_nofield = sys.replace(link_parents=[i + 1 for i in sys.link_parents])
+    sys_mod_field = sys.replace(link_damping=sys.link_damping + 1.0)
+
+    with pytest.raises(AssertionError):
+        assert _tree_equal(sys, sys_mod_nofield)
+
+    with pytest.raises(AssertionError):
+        assert _tree_equal(sys, sys_mod_field)
+
+    assert _tree_equal(sys, sys)
+
+
 def _tree_equal(a, b):
     "Copied from Marcel / Thomas"
     if type(a) is not type(b):
