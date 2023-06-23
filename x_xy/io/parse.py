@@ -16,12 +16,7 @@ def parse_system(sys: base.System) -> base.System:
         assert isinstance(name, str)
 
     for geom in sys.geoms:
-        # TODO
-        # This conflicts which how `sys_composer.delete_subsystem` works
-        # a simple way of solving this, is by making Geoms point to links
-        # by name and not by index
-        pass
-        # assert geom.link_idx in list(range(sys.num_links())) + [-1]
+        assert geom.link_idx in list(range(sys.num_links())) + [-1]
 
     inertia = _parse_system_calculate_inertia(sys)
     sys = sys.replace(links=sys.links.replace(inertia=inertia))

@@ -94,7 +94,7 @@ def inject_system(
 def delete_subsystem(sys: base.System, link_name: str) -> base.System:
     "Cut subsystem starting at `link_name` (inclusive) from tree."
     subsys = _find_subsystem_indices(sys.link_parents, sys.name_to_idx(link_name))
-    keep = jnp.array(list(set(range(sys.num_links())) - set(subsys)))
+    idx_map, keep = _idx_map_and_keepers(sys.link_parents, subsys)
 
     def take(list):
         return [ele for i, ele in enumerate(list) if i in keep]
@@ -122,7 +122,7 @@ def delete_subsystem(sys: base.System, link_name: str) -> base.System:
     d, a, ss, sz = map(jnp.concatenate, (d, a, ss, sz))
 
     new_sys = base.System(
-        take(sys.link_parents),
+        _reindex_parent_array(sys.link_parents, subsys),
         sys.links[keep],
         take(sys.link_types),
         d,
@@ -131,7 +131,11 @@ def delete_subsystem(sys: base.System, link_name: str) -> base.System:
         sz,
         sys.dt,
         sys.dynamic_geometries,
-        [geom for geom in sys.geoms if geom.link_idx in keep],
+        [
+            geom.replace(link_idx=idx_map[geom.link_idx])
+            for geom in sys.geoms
+            if geom.link_idx in keep
+        ],
         sys.gravity,
         sys.integration_method,
         sys.mass_mat_iters,
@@ -148,3 +152,15 @@ def _find_subsystem_indices(parents: list[int], k: int) -> list[int]:
         if p in subsys:
             subsys.append(i)
     return subsys
+
+
+def _idx_map_and_keepers(parents: list[int], subsys: list[int]):
+    num_links = len(parents)
+    keep = jnp.array(list(set(range(num_links)) - set(subsys)))
+    idx_map = dict(zip([-1] + keep.tolist(), range(-1, len(keep))))
+    return idx_map, keep
+
+
+def _reindex_parent_array(parents: list[int], subsys: list[int]) -> list[int]:
+    idx_map, keep = _idx_map_and_keepers(parents, subsys)
+    return [idx_map[p] for i, p in enumerate(parents) if i in keep]
