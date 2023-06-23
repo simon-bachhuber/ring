@@ -14,6 +14,7 @@ import joblib
 import tree_utils
 from scipy.io import savemat
 
+from x_xy.io.omc import postprocess
 from x_xy.io.omc.imus import _imu_measurements_from_txt
 from x_xy.io.omc.markers import (
     _construct_pos_from_single_marker,

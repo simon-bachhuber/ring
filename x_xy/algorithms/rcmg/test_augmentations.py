@@ -2,7 +2,10 @@ import jax
 import numpy as np
 
 import x_xy
-from x_xy.algorithms.rcmg.augmentations import _draw_pos_uniform, randomize_positions
+from x_xy.algorithms.rcmg.augmentations import (
+    _draw_pos_uniform,
+    setup_fn_randomize_positions,
+)
 
 
 def setup_fn_old(key, sys: x_xy.base.System) -> x_xy.base.System:
@@ -36,7 +39,7 @@ def setup_fn_old(key, sys: x_xy.base.System) -> x_xy.base.System:
 
 
 def setup_fn_new(key, sys, xml_path):
-    return randomize_positions(xml_path)(key, sys)
+    return setup_fn_randomize_positions(xml_path)(key, sys)
 
 
 def test_randomize_positions():
