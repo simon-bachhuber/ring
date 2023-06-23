@@ -47,6 +47,12 @@ def test_delete_subsystem():
         delete_subsystem(inject_system(sys2, sys1, at_body="upper"), "seg2"), sys2
     )
 
+    # delete system "in the middle"
+    sys3 = inject_system(inject_system(sys2, sys2, prefix="1"), sys2, prefix="2")
+    assert _tree_equal(
+        delete_subsystem(sys3, "1upper"), inject_system(sys2, sys2, prefix="2")
+    )
+
 
 def test_tree_equal():
     sys = x_xy.io.load_example("three_segs/three_seg_seg2")
