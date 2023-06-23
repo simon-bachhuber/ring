@@ -14,7 +14,7 @@ def omc_to_xs(
     t2: Optional[float] = None,
     eps_frame: Optional[str] = None,
     qinv: bool = True,
-):
+) -> x_xy.base.Transform:
     """Build time-series of maximal coordinates `xs` using `omc_data`.
 
     Args:
