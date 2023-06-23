@@ -6,6 +6,7 @@ from tree_utils import PyTree
 
 from x_xy import base, scan, utils
 from x_xy.algorithms import forward_kinematics_transforms, jcalc
+from x_xy.algorithms.rcmg import augmentations
 
 Generator = Callable[[jax.random.PRNGKey], PyTree]
 SETUP_FN = Callable[[jax.random.PRNGKey, base.System], base.System]

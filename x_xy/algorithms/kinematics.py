@@ -16,19 +16,18 @@ def forward_kinematics_transforms(
         - Updated system object with updated `transform2` and `transform` fields.
     """
 
-    p_to_l = {-1: base.Transform.zero()}
+    eps_to_l = {-1: base.Transform.zero()}
 
-    def update_p_to_l(_, __, q, link, link_idx, parent_idx, joint_type: str):
+    def update_eps_to_l(_, __, q, link, link_idx, parent_idx, joint_type: str):
         transform2 = jcalc.jcalc_transform(joint_type, q, link.joint_params)
         transform = algebra.transform_mul(transform2, link.transform1)
         link = link.replace(transform=transform, transform2=transform2)
-        p_to_l_trafo = algebra.transform_mul(transform, p_to_l[parent_idx])
-        p_to_l[link_idx] = p_to_l_trafo
-        return p_to_l_trafo, link
+        eps_to_l[link_idx] = algebra.transform_mul(transform, eps_to_l[parent_idx])
+        return eps_to_l[link_idx], link
 
-    p_to_l_trafos, updated_links = scan.tree(
+    eps_to_l_trafos, updated_links = scan.tree(
         sys,
-        update_p_to_l,
+        update_eps_to_l,
         "qllll",
         q,
         sys.links,
@@ -37,7 +36,7 @@ def forward_kinematics_transforms(
         sys.link_types,
     )
     sys = sys.replace(links=updated_links)
-    return (p_to_l_trafos, sys)
+    return (eps_to_l_trafos, sys)
 
 
 def forward_kinematics(

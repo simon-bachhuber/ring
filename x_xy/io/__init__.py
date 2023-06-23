@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from .omc import process_omc
-from .omc.utils import render_omc, state_trajectory_omc
+from .omc import postprocess, process_omc
+from .omc.postprocess import omc_to_xs
+from .omc.utils import render_omc
 from .parse import parse_system
 from .xml import load_sys_from_str, load_sys_from_xml
 
