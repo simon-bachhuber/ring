@@ -27,7 +27,7 @@ def setup_fn_randomize_joint_axes(key, sys: x_xy.base.System) -> x_xy.base.Syste
     return sys.replace(links=sys.links.replace(joint_params=joint_axes))
 
 
-def setup_fn_randomize_positions(xml_path: str):
+def setup_fn_randomize_positions(xml_path: str, prefix: str = ""):
     xml_tree = ElementTree.fromstring(_load_xml(xml_path))
     worldbody = _initial_setup(xml_tree)
 
@@ -46,7 +46,7 @@ def setup_fn_randomize_positions(xml_path: str):
         )
 
         if pos_min is not None:
-            pos_min_max[name] = (pos_min, pos_max)
+            pos_min_max[prefix + name] = (pos_min, pos_max)
 
         for subbodies in body.findall("body"):
             process_body(subbodies)
