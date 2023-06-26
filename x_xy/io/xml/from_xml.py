@@ -105,7 +105,7 @@ def _initial_setup(xml_tree):
     return worldbody
 
 
-def load_sys_from_str(xml_str: str):
+def load_sys_from_str(xml_str: str, prefix: str = ""):
     xml_tree = ElementTree.fromstring(xml_str)
     worldbody = _initial_setup(xml_tree)
 
@@ -136,7 +136,7 @@ def load_sys_from_str(xml_str: str):
 
         link_parents[current_link_idx] = parent
         link_types[current_link_idx] = current_link_typ
-        link_names[current_link_idx] = body.attrib["name"]
+        link_names[current_link_idx] = prefix + body.attrib["name"]
 
         transform = abstract.AbsTrans.from_xml(body.attrib)
         links[current_link_idx] = base.Link(transform)
@@ -202,8 +202,8 @@ def load_sys_from_str(xml_str: str):
     return x_xy.io.parse_system(sys)
 
 
-def load_sys_from_xml(xml_path: str):
-    return load_sys_from_str(_load_xml(xml_path))
+def load_sys_from_xml(xml_path: str, prefix: str = ""):
+    return load_sys_from_str(_load_xml(xml_path), prefix=prefix)
 
 
 def _load_xml(xml_path: str) -> str:
