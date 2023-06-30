@@ -4,10 +4,14 @@ import jax
 import jax.numpy as jnp
 
 import x_xy
+from x_xy.algorithms.jcalc import _joint_types
 from x_xy.io.xml.from_xml import _initial_setup, _load_xml
 
 
 def register_rr_joint():
+    if "rr" in _joint_types:
+        return
+
     def _rr_transform(q, params):
         def _rxyz_transform(q, _, axis):
             q = jnp.squeeze(q)
