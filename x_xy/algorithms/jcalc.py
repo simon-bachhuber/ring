@@ -26,6 +26,12 @@ class RCMG_Config:
     pos_min: float = -2.5
     pos_max: float = +2.5
 
+    # used by both `random_angle_*` and `random_pos_*`
+    # only used if `randomized_interpolation` is set
+    cdf_bins_min: int = (5,)
+    # by default equal to `cdf_bins_min`
+    cdf_bins_max: Optional[int] = (None,)
+
     # flags
     randomized_interpolation: bool = False
     range_of_motion_hinge: bool = True
@@ -97,6 +103,8 @@ def _draw_rxyz(
         config.randomized_interpolation,
         config.range_of_motion_hinge if enable_range_of_motion else False,
         config.range_of_motion_hinge_method,
+        config.cdf_bins_min,
+        config.cdf_bins_max,
     )
 
 
@@ -117,6 +125,9 @@ def _draw_pxyz(
         config.T,
         config.Ts,
         max_iter,
+        config.randomized_interpolation,
+        config.cdf_bins_min,
+        config.cdf_bins_max,
     )
 
 
