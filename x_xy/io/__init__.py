@@ -1,20 +1,23 @@
+from pathlib import Path
+
+from .omc import postprocess, process_omc
+from .omc.postprocess import omc_to_xs
+from .omc.utils import render_omc
 from .parse import parse_system
 from .xml import load_sys_from_str, load_sys_from_xml
+
+examples_dir = Path(__file__).parent.joinpath("examples")
 
 
 def load_example(name: str):
     "Load example from examples dir. `name` is without .xml extension."
-    from pathlib import Path
 
-    xml_path = Path(__file__).parent.joinpath(f"examples/{name}.xml")
+    xml_path = examples_dir.joinpath(f"{name}.xml")
     return load_sys_from_xml(xml_path)
 
 
 def list_examples() -> list[str]:
     import os
-    from pathlib import Path
-
-    examples_dir = Path(__file__).parent.joinpath("examples")
 
     def list_of_examples_in_folder(folder):
         return [ex.split(".")[0] for ex in os.listdir(folder)]

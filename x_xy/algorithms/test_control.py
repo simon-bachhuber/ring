@@ -14,7 +14,15 @@ def test_pd_control():
             sys = sys.replace(gravity=sys.gravity * 0.0)
 
         q, xs = x_xy.algorithms.build_generator(
-            sys, x_xy.algorithms.RCMG_Config(T=10.0, dang_max=3.0, t_max=0.5)
+            sys,
+            x_xy.algorithms.RCMG_Config(
+                T=10.0,
+                dang_max=3.0,
+                t_max=0.5,
+                dang_max_free_spherical=jnp.deg2rad(60),
+                t_min=0.15,
+                dpos_max=0.1,
+            ),
         )(jax.random.PRNGKey(1))
 
         jit_step_fn = jax.jit(
