@@ -1,3 +1,5 @@
+from typing import Optional
+
 import jax
 import jax.numpy as jnp
 from jax import random
@@ -19,6 +21,8 @@ def random_angle_over_time(
     randomized_interpolation=False,
     range_of_motion=False,
     range_of_motion_method="uniform",
+    cdf_bins_min: int = 5,
+    cdf_bins_max: Optional[int] = None,
 ):
     def body_fn_outer(val):
         i, t, phi, key_t, key_ang, ANG = val
@@ -62,7 +66,9 @@ def random_angle_over_time(
     # resample
     t = jnp.arange(T, step=Ts)
     if randomized_interpolation:
-        q = cosInterpolateRandomized()(t, ANG[:, 0], ANG[:, 1], consume)
+        q = cosInterpolateRandomized(cdf_bins_min, cdf_bins_max)(
+            t, ANG[:, 0], ANG[:, 1], consume
+        )
     else:
         q = cosInterpolate(t, ANG[:, 0], ANG[:, 1])
 
@@ -75,7 +81,20 @@ def random_angle_over_time(
 
 # APPROVED
 def random_position_over_time(
-    key, POS_0, pos_min, pos_max, dpos_min, dpos_max, t_min, t_max, T, Ts, max_it
+    key,
+    POS_0,
+    pos_min,
+    pos_max,
+    dpos_min,
+    dpos_max,
+    t_min,
+    t_max,
+    T,
+    Ts,
+    max_it,
+    randomized_interpolation=False,
+    cdf_bins_min: int = 5,
+    cdf_bins_max: Optional[int] = None,
 ):
     def body_fn_inner(val):
         i, t, t_pre, x, x_pre, key = val
@@ -128,7 +147,7 @@ def random_position_over_time(
     POS = POS.at[0, 0].set(POS_0)
 
     val_outer = (1, 0.0, 0.0, 0.0, 0.0, key, POS)
-    end, *_, POS = jax.lax.while_loop(cond_fn_outer, body_fn_outer, val_outer)
+    end, *_, consume, POS = jax.lax.while_loop(cond_fn_outer, body_fn_outer, val_outer)
     POS = jnp.where(
         (jnp.arange(len(POS)) < end)[:, None],
         POS,
@@ -137,7 +156,12 @@ def random_position_over_time(
 
     # resample
     t = jnp.arange(T, step=Ts)
-    r = cosInterpolate(t, POS[:, 0], POS[:, 1])
+    if randomized_interpolation:
+        r = cosInterpolateRandomized(cdf_bins_min, cdf_bins_max)(
+            t, POS[:, 0], POS[:, 1], consume
+        )
+    else:
+        r = cosInterpolate(t, POS[:, 0], POS[:, 1])
     return r
 
 
@@ -208,7 +232,31 @@ def _generate_cdf(cdf_bins):
     return __generate_cdf
 
 
-def cosInterpolateRandomized(cdf_bins=5):
+def _generate_cdf_minmax(dy_min, dy_max):
+    assert dy_max >= dy_min
+
+    def __generate_cdf(key):
+        key, consume = random.split(key)
+        cdf_bins = random.randint(consume, (), dy_min, dy_max + 1)
+        mask = jnp.where(jnp.arange(dy_max) < cdf_bins, 1, 0)
+        key, consume = random.split(key)
+        mask = random.permutation(consume, mask)
+        dy = random.uniform(key, (dy_max,), maxval=1.0)
+        dy = dy[jnp.cumsum(mask) - 1]
+        y = jnp.hstack((jnp.array([0.0]), dy))
+        montonous = jnp.cumsum(y)
+        cdf = montonous / montonous[-1]
+        return cdf
+
+    return __generate_cdf
+
+
+def cosInterpolateRandomized(cdf_bins_min: int = 5, cdf_bins_max: Optional[int] = None):
+    if cdf_bins_max is None:
+        generate_cdf = _generate_cdf(cdf_bins_min)
+    else:
+        generate_cdf = _generate_cdf_minmax(cdf_bins_min, cdf_bins_max)
+
     def _cosInterpolateRandomized(x, xp, fp, key):
         i = jnp.clip(jnp.searchsorted(xp, x, side="right"), 1, len(xp) - 1)
         dx = xp[i] - xp[i - 1]
@@ -217,7 +265,7 @@ def cosInterpolateRandomized(cdf_bins=5):
         key, *consume = random.split(key, len(xp) + 1)
         consume = jnp.array(consume).reshape((len(xp), 2))
         consume = consume[i - 1]
-        cdfs = jax.vmap(_generate_cdf(cdf_bins))(consume)
+        cdfs = jax.vmap(generate_cdf)(consume)
         alpha = jax.vmap(_biject_alpha)(alpha, cdfs)
 
         def cos_interpolate(x1, x2, alpha):
