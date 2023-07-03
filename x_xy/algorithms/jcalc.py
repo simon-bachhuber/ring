@@ -28,9 +28,9 @@ class RCMG_Config:
 
     # used by both `random_angle_*` and `random_pos_*`
     # only used if `randomized_interpolation` is set
-    cdf_bins_min: int = (5,)
+    cdf_bins_min: int = 5
     # by default equal to `cdf_bins_min`
-    cdf_bins_max: Optional[int] = (None,)
+    cdf_bins_max: Optional[int] = None
 
     # flags
     randomized_interpolation: bool = False
