@@ -80,7 +80,9 @@ def omc_to_xs(
 
 
 def forward_kinematics_omc(
-    sys: x_xy.base.System, xs: x_xy.base.Transform
+    sys: x_xy.base.System,
+    xs: x_xy.base.Transform,
+    delete_global_translation_rotation: bool = False,
 ) -> x_xy.base.Transform:
     """Perform forward kinematics. Use static transformations (transform1)
     from the `sys`, and extract and use joint transformations from `xs`.
@@ -94,6 +96,8 @@ def forward_kinematics_omc(
         sys (x_xy.base.System): System which defines scan order and `transform1`
         xs (x_xy.base.Transform): The optical motion capture data.
             Obtained using `process_omc` -> `omc_to_xs`
+        delete_global_translation_rotation (bool): If set all transformations
+            to the worldbody are unity.
 
     Returns:
         x_xy.base.Transform: Time-series of eps-to-link transformations
@@ -114,7 +118,10 @@ def forward_kinematics_omc(
         ):
             if link_parent == -1:
                 assert link_type == "free"
-                transform2 = xs[link_idx]
+                if delete_global_translation_rotation:
+                    transform2 = x_xy.base.Transform.zero()
+                else:
+                    transform2 = xs[link_idx]
             else:
                 assert link_type not in ["px", "py", "pz", "free"]
                 transform_opt = x_xy.algebra.transform_mul(
