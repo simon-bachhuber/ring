@@ -91,8 +91,17 @@ def inject_system(
     return parse_system(combined_sys)
 
 
-def delete_subsystem(sys: base.System, link_name: str) -> base.System:
+def delete_subsystem(sys: base.System, link_name: str | list[str]) -> base.System:
     "Cut subsystem starting at `link_name` (inclusive) from tree."
+    if isinstance(link_name, list):
+        for ln in link_name:
+            sys = delete_subsystem(sys, ln)
+        return sys
+
+    assert (
+        link_name in sys.link_names
+    ), f"link {link_name} not found in {sys.link_names}"
+
     subsys = _find_subsystem_indices(sys.link_parents, sys.name_to_idx(link_name))
     idx_map, keep = _idx_map_and_keepers(sys.link_parents, subsys)
 
