@@ -33,7 +33,9 @@ class RCMG_Config:
     cdf_bins_max: Optional[int] = None
 
     # flags
+    # TODO: Rename to `_angle`
     randomized_interpolation: bool = False
+    randomized_interpolation_position: bool = False
     range_of_motion_hinge: bool = True
     range_of_motion_hinge_method: str = "uniform"
 
@@ -125,7 +127,7 @@ def _draw_pxyz(
         config.T,
         config.Ts,
         max_iter,
-        config.randomized_interpolation,
+        config.randomized_interpolation_position,
         config.cdf_bins_min,
         config.cdf_bins_max,
     )
