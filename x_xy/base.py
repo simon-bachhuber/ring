@@ -378,6 +378,7 @@ class System(_Base):
         return self.link_names.index(name)
 
     def idx_to_name(self, idx: int) -> str:
+        assert idx >= 0, "Worldbody index has no name."
         return self.link_names[idx]
 
     def idx_map(self, type: str) -> dict:
@@ -392,6 +393,9 @@ class System(_Base):
         tree(self, f, "ll", self.link_names, list(range(self.num_links())))
 
         return dict_int_slices
+
+    def parent_name(self, name: str) -> str:
+        return self.idx_to_name(self.link_parents[self.name_to_idx(name)])
 
 
 @struct.dataclass
