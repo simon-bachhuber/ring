@@ -301,6 +301,10 @@ N_JOINT_PARAMS: int = 3
 class Link(_Base):
     transform1: Transform
 
+    # only used by `setup_fn_randomize_positions`
+    pos_min: jax.Array = jnp.zeros((3,))
+    pos_max: jax.Array = jnp.zeros((3,))
+
     # these parameters can be used to model joints that have parameters
     # they are directly feed into the `jcalc` routine
     # this array *must* be of shape (N_JOINT_PARAMS,)

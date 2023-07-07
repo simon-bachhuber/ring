@@ -44,8 +44,8 @@ def _assert_all_tags_attrs_valid(xml_tree):
         "body": [
             "name",
             "pos",
-            "pos_min",  # only used in `augmentations.py`
-            "pos_max",  # only used in `augmentations.py`
+            "pos_min",
+            "pos_max",
             "quat",
             "euler",
             "joint",
@@ -139,7 +139,8 @@ def load_sys_from_str(xml_str: str, prefix: str = ""):
         link_names[current_link_idx] = prefix + body.attrib["name"]
 
         transform = abstract.AbsTrans.from_xml(body.attrib)
-        links[current_link_idx] = base.Link(transform)
+        pos_min, pos_max = abstract.AbsPosMinMax.from_xml(body.attrib, transform.pos)
+        links[current_link_idx] = base.Link(transform, pos_min, pos_max)
 
         q_size = base.Q_WIDTHS[current_link_typ]
         qd_size = base.QD_WIDTHS[current_link_typ]
