@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 import jax
@@ -30,6 +31,12 @@ def omc_to_xs(
     Returns:
         x_xy.base.Transform: Time-series of eps-to-link transformations
     """
+
+    if eps_frame == "none":
+        logging.warning(
+            "`eps_frame` set to `none` might lead to problems with artificial IMUs,"
+            " since the gravity vector is assumed to be in positive z-axis in eps-frame"
+        )
 
     # crop time left and right
     if t2 is None:
@@ -83,6 +90,7 @@ def forward_kinematics_omc(
     sys: x_xy.base.System,
     xs: x_xy.base.Transform,
     delete_global_translation_rotation: bool = False,
+    scale_revolute_joint_angles: Optional[float] = None,
 ) -> x_xy.base.Transform:
     """Perform forward kinematics. Use static transformations (transform1)
     from the `sys`, and extract and use joint transformations from `xs`.
@@ -127,7 +135,14 @@ def forward_kinematics_omc(
                 transform_opt = x_xy.algebra.transform_mul(
                     xs[link_idx], x_xy.algebra.transform_inv(xs[link_parent])
                 )
-                transform2 = x_xy.base.Transform.create(rot=transform_opt.rot)
+                transform_opt_rot = transform_opt.rot
+                if scale_revolute_joint_angles is not None:
+                    axis, angle = x_xy.maths.quat_to_rot_axis(transform_opt_rot)
+                    transform_opt_rot = x_xy.maths.quat_rot_axis(
+                        axis, angle * scale_revolute_joint_angles
+                    )
+
+                transform2 = x_xy.base.Transform.create(rot=transform_opt_rot)
 
             transform = x_xy.algebra.transform_mul(transform2, transform1)
             eps_to_l[link_idx] = x_xy.algebra.transform_mul(
