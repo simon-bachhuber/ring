@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import Tuple, TypeVar
 
 import jax
 import jax.numpy as jnp
@@ -77,6 +77,36 @@ class AbsTrans:
             element.set("pos", _to_str(t.pos))
         if not _arr_equal(t.rot, default_quat):
             element.set("quat", _to_str(t.quat))
+
+
+class AbsPosMinMax:
+    @staticmethod
+    def from_xml(attr: ATTR, pos: jax.Array) -> Tuple[jax.Array, jax.Array]:
+        pos_min = attr.get("pos_min", None)
+        pos_max = attr.get("pos_max", None)
+        assert (pos_min is None and pos_max is None) or (
+            pos_min is not None and pos_max is not None
+        ), (
+            f"In link {attr.get('name', 'None')} found only one of `pos_min` "
+            "and `pos_max`, but requires either both or none"
+        )
+        if pos_min is not None:
+            assert not _arr_equal(
+                pos_min, pos_max
+            ), f"In link {attr.get('name', 'None')} "
+            " both `pos_min` and `pos_max` are identical, use `pos` instead."
+
+        if pos_min is None:
+            pos_min = pos_max = pos
+        return pos_min, pos_max
+
+    @staticmethod
+    def to_xml(element: T, pos_min: jax.Array, pos_max: jax.Array):
+        if _arr_equal(pos_min, pos_max):
+            return
+
+        element.set("pos_min", _to_str(pos_min))
+        element.set("pos_max", _to_str(pos_max))
 
 
 def _from_xml_vispy(attr: ATTR):

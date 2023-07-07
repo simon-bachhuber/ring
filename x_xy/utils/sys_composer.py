@@ -1,9 +1,10 @@
 from typing import Optional
 
+import jax
 import jax.numpy as jnp
 from tree_utils import tree_batch
 
-from x_xy import base, scan
+from x_xy import algebra, base, scan
 from x_xy.io import parse_system
 
 
@@ -173,3 +174,172 @@ def _idx_map_and_keepers(parents: list[int], subsys: list[int]):
 def _reindex_parent_array(parents: list[int], subsys: list[int]) -> list[int]:
     idx_map, keep = _idx_map_and_keepers(parents, subsys)
     return [idx_map[p] for i, p in enumerate(parents) if i in keep]
+
+
+def morph_system(sys: base.System, new_parents: list[int]) -> base.System:
+    """Re-orders the graph underlying the system.
+
+    Args:
+        sys (base.System): System to be modified.
+        new_parents (list[int]): Let the i-th entry have value j. Then, after morphing
+            the system the system will be such that the link corresponding to the i-th
+            link in the old system will have as parent the link corresponding to the
+            j-th link in the old system.
+
+    Returns:
+        base.System: Modified system.
+    """
+
+    # check that all `transform1` and `pos_min_max` of links that connect to -1
+    # are set to zero / unity
+    from x_xy.utils import tree_equal
+
+    for i in range(sys.num_links()):
+        if sys.link_parents[i] == -1:
+            link = sys.links[i]
+            assertion_print = f"""Currently morphing systems with non-unity worldbody
+            to link static transformations (e.g. through specifing `pos`, `euler`,
+            `quat` in xml attributes of a body that directly connects to the
+            worldbody) is not supported. The system `{sys.model_name}` and body
+            `{sys.idx_to_name(i)}` violate this."""
+            assert tree_equal(link.transform1, base.Transform.zero()), assertion_print
+            assert tree_equal(link.pos_min, jnp.zeros((3,))), assertion_print
+            assert tree_equal(link.pos_max, jnp.zeros((3,))), assertion_print
+
+    # permutation maps from new index to the old index, so e.g. at index position 0
+    # is in the new system the link with index permutation[0] in the old system
+    permutation, new_parent_array = _get_link_index_permutation_and_parent_array(
+        new_parents
+    )
+    new_to_old_indices = permutation
+    old_to_new_indices = _old_to_new(new_parents)
+
+    def _permute(obj):
+        if isinstance(obj, (base._Base, jax.Array)):
+            return obj[jnp.array(permutation, dtype=jnp.int32)]
+        elif isinstance(obj, list):
+            return [obj[permutation[i]] for i in range(len(obj))]
+        assert False
+
+    # change geom pointers
+    geoms = [
+        geom.replace(
+            link_idx=(permutation[geom.link_idx] if geom.link_idx != -1 else -1)
+        )
+        for geom in sys.geoms
+    ]
+
+    # change `pos_min_max` and `transform1`
+    new_transform1 = []
+    new_pos_min = []
+    new_pos_max = []
+    for i in range(sys.num_links()):
+        old_p = sys.link_parents[i]
+        new_i = old_to_new_indices[i]
+        new_p_new_indices = new_parent_array[new_i]
+        new_p_old_indices = (new_to_old_indices + [-1])[new_p_new_indices]
+
+        t1 = sys.links.transform1[i]
+        pmin = sys.links.pos_min[i]
+        pmax = sys.links.pos_max[i]
+
+        if old_p != new_p_old_indices and new_p_old_indices != -1:
+            t1 = sys.links.transform1[new_p_old_indices]
+            pmin = sys.links.pos_min[new_p_old_indices]
+            pmax = sys.links.pos_max[new_p_old_indices]
+
+            assert (
+                sys.link_parents[new_p_old_indices] == i
+            ), f"""I expexted parent-childs still to be connected with only
+                their relative order inverted but link `{sys.idx_to_name(i)}`
+                and `{sys.idx_to_name(new_p_old_indices)}` are not directly
+                connected."""
+
+            t1 = algebra.transform_inv(t1)
+
+            # TODO
+            # this would break if there exists some relative static
+            # rotation between links
+            pmin *= -1.0
+            pmax *= -1.0
+
+        if new_p_new_indices == -1:
+            t1 = base.Transform.zero()
+            pmin = pmax = jnp.zeros((3,))
+
+        new_transform1.append(t1)
+        new_pos_min.append(pmin)
+        new_pos_max.append(pmax)
+
+    new_transform1 = new_transform1[0].batch(*new_transform1[1:])
+    new_pos_min = jnp.stack(new_pos_min)
+    new_pos_max = jnp.stack(new_pos_max)
+    links = sys.links.replace(
+        transform1=new_transform1, pos_min=new_pos_min, pos_max=new_pos_max
+    )
+
+    # permute those that have an indexing range not directly linked to 'l'
+    d, a, ss, sz = [], [], [], []
+
+    def filter_arrays(_, __, damp, arma, stiff, zero):
+        d.append(damp)
+        a.append(arma)
+        ss.append(stiff)
+        sz.append(zero)
+
+    scan.tree(
+        sys,
+        filter_arrays,
+        "dddq",
+        sys.link_damping,
+        sys.link_armature,
+        sys.link_spring_stiffness,
+        sys.link_spring_zeropoint,
+    )
+
+    d, a, ss, sz = map(lambda list: jnp.concatenate(_permute(list)), (d, a, ss, sz))
+
+    return base.System(
+        new_parent_array,
+        _permute(links),
+        _permute(sys.link_types),
+        d,
+        a,
+        ss,
+        sz,
+        sys.dt,
+        sys.dynamic_geometries,
+        geoms,
+        sys.gravity,
+        sys.integration_method,
+        sys.mass_mat_iters,
+        _permute(sys.link_names),
+        sys.model_name,
+    )
+
+
+def _get_link_index_permutation_and_parent_array(new_parents: list[int]):
+    permutation = _new_to_old(new_parents)
+    old_to_new_indices = _old_to_new(new_parents) + [-1]
+    return permutation, [old_to_new_indices[new_parents[i]] for i in permutation]
+
+
+def _new_to_old(new_parents: list[int]) -> list[int]:
+    new_indices = []
+
+    def find_childs_of(parent: int):
+        for i, p in enumerate(new_parents):
+            if p == parent:
+                new_indices.append(i)
+                find_childs_of(i)
+
+    find_childs_of(-1)
+    return new_indices
+
+
+def _old_to_new(new_parents: list[int]) -> list[int]:
+    old_to_new_indices = []
+    new_to_old_indices = _new_to_old(new_parents)
+    for new in range(len(new_parents)):
+        old_to_new_indices.append(new_to_old_indices.index(new))
+    return old_to_new_indices

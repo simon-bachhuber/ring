@@ -1,10 +1,10 @@
 import jax
-import jax.numpy as jnp
 import numpy as np
 import pytest
 
 import x_xy
-from x_xy.utils import delete_subsystem, inject_system
+from x_xy.utils import delete_subsystem, inject_system, morph_system, tree_equal
+from x_xy.utils.sys_composer import _get_link_index_permutation_and_parent_array
 
 
 def sim(sys):
@@ -41,15 +41,15 @@ def test_delete_subsystem():
     sys1 = x_xy.io.load_example("three_segs/three_seg_seg2")
     sys2 = x_xy.io.load_example("test_double_pendulum")
 
-    assert _tree_equal(delete_subsystem(inject_system(sys1, sys2), "upper"), sys1)
-    assert _tree_equal(delete_subsystem(inject_system(sys2, sys1), "seg2"), sys2)
-    assert _tree_equal(
+    assert tree_equal(delete_subsystem(inject_system(sys1, sys2), "upper"), sys1)
+    assert tree_equal(delete_subsystem(inject_system(sys2, sys1), "seg2"), sys2)
+    assert tree_equal(
         delete_subsystem(inject_system(sys2, sys1, at_body="upper"), "seg2"), sys2
     )
 
     # delete system "in the middle"
     sys3 = inject_system(inject_system(sys2, sys2, prefix="1"), sys2, prefix="2")
-    assert _tree_equal(
+    assert tree_equal(
         delete_subsystem(sys3, "1upper"), inject_system(sys2, sys2, prefix="2")
     )
 
@@ -60,28 +60,62 @@ def test_tree_equal():
     sys_mod_field = sys.replace(link_damping=sys.link_damping + 1.0)
 
     with pytest.raises(AssertionError):
-        assert _tree_equal(sys, sys_mod_nofield)
+        assert tree_equal(sys, sys_mod_nofield)
 
     with pytest.raises(AssertionError):
-        assert _tree_equal(sys, sys_mod_field)
+        assert tree_equal(sys, sys_mod_field)
 
-    assert _tree_equal(sys, sys)
+    assert tree_equal(sys, sys)
 
 
-def _tree_equal(a, b):
-    "Copied from Marcel / Thomas"
-    if type(a) is not type(b):
-        return False
-    if isinstance(a, x_xy.base._Base):
-        return _tree_equal(a.__dict__, b.__dict__)
-    if isinstance(a, dict):
-        if a.keys() != b.keys():
-            return False
-        return all(_tree_equal(a[k], b[k]) for k in a.keys())
-    if isinstance(a, (tuple, list)):
-        if len(a) != len(b):
-            return False
-        return all(_tree_equal(a[i], b[i]) for i in range(len(a)))
-    if isinstance(a, jax.Array):
-        return jnp.array_equal(a, b)
-    return a == b
+def test_morph_graph_functions():
+    list_equal = lambda l1, l2: all([e1 == e2 for e1, e2 in zip(l1, l2)])
+
+    new_parents = [3, 0, 1, -1, 3]
+    per, parent_array = _get_link_index_permutation_and_parent_array(new_parents)
+    assert list_equal(per, [3, 0, 1, 2, 4])
+    assert list_equal(parent_array, [-1, 0, 1, 2, 0])
+
+    # X---|----|
+    #   0 O  5 O --- 6 O
+    #    |-- 1 O --- 2 O
+    #    |     |-- 3 O
+    #    |-- 4 O
+    new_parents = [-1, 0, 1, 1, 0, -1, 5]
+    per, parent_array = _get_link_index_permutation_and_parent_array(new_parents)
+    assert list_equal(per, list(range(7)))
+    assert list_equal(parent_array, new_parents)
+
+    # Node 3 connects to world
+    # Node 5 connects to Node 0
+    new_parents = [1, 3, 1, -1, 0, 0, 5]
+    parent_array_truth = [-1, 0, 1, 2, 2, 4, 1]
+    per_truth = [3, 1, 0, 4, 5, 6, 2]
+
+    per, parent_array = _get_link_index_permutation_and_parent_array(new_parents)
+    assert list_equal(per, per_truth)
+    assert list_equal(parent_array, parent_array_truth)
+
+
+def test_morph():
+    exceptions = ["double_pendulum", "test_sensors", "branched"]
+    for example in x_xy.io.list_examples():
+        print("Example: ", example)
+        sys = x_xy.io.load_example(example)
+
+        if sys.model_name in exceptions:
+            with pytest.raises(AssertionError):
+                sys_re = morph_system(sys, sys.link_parents)
+        else:
+            sys_re = morph_system(sys, sys.link_parents)
+            # this should be a zero operation
+            assert tree_equal(sys, sys_re)
+
+    # Test two known inverses
+    sys = x_xy.io.load_example("three_segs/three_seg_seg2")
+    sys_re = morph_system(morph_system(sys, [1, 2, -1, 0, 3]), [1, 2, -1, 2, 3])
+    assert tree_equal(sys, sys_re)
+
+    sys = x_xy.io.load_example("test_kinematics")
+    sys_re = morph_system(morph_system(sys, [1, -1, 0, 2, 2]), [1, -1, 1, 2, 2])
+    assert tree_equal(sys, sys_re)
