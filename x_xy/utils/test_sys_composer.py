@@ -98,7 +98,7 @@ def test_morph_graph_functions():
 
 
 def test_morph():
-    exceptions = ["double_pendulum", "test_sensors", "branched"]
+    exceptions = ["test_double_pendulum", "test_sensors", "branched"]
     for example in x_xy.io.list_examples():
         print("Example: ", example)
         sys = x_xy.io.load_example(example)
@@ -119,3 +119,12 @@ def test_morph():
     sys = x_xy.io.load_example("test_kinematics")
     sys_re = morph_system(morph_system(sys, [1, -1, 0, 2, 2]), [1, -1, 1, 2, 2])
     assert tree_equal(sys, sys_re)
+
+
+def test_morph_four_seg():
+    sys_seg2 = x_xy.io.load_example("test_morph_system/four_seg_seg2")
+    sys_seg3 = x_xy.io.load_example("test_morph_system/four_seg_seg3")
+    sys_seg3_from_seg2 = morph_system(sys_seg2, [3, 0, 1, -1, 3, 4]).change_model_name(
+        sys_seg3.model_name
+    )
+    assert tree_equal(sys_seg3, sys_seg3_from_seg2)
