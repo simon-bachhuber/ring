@@ -388,8 +388,8 @@ def _per_link_arrays(sys: base.System):
 def _inv_properties(prop: JointProperties):
     return JointProperties(
         algebra.transform_inv(prop.transform1),
-        prop.pos_min * -1.0,
         prop.pos_max * -1.0,
+        prop.pos_min * -1.0,
         prop.link_type,
         prop.link_damping,
         prop.link_armature,

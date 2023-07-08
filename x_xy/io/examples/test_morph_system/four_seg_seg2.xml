@@ -12,7 +12,7 @@
                     <geom type="box" mass="0" dim="0.2 0.2 0.05" vispy_color="orange"/>
                 </body>
             </body>
-            <body name="seg3" joint="ry">
+            <body name="seg3" joint="ry" pos_min="-0.05 -0.5 0.2" pos_max="0.05 -0.2 0.5">
                 <geom type="box" mass="0.1" pos="0.5 0 0" dim="1 0.25 0.2"/>
                 <body name="seg4" joint="rz" pos="1 0 0">
                     <geom type="box" mass="0.1" pos="0.5 0 0" dim="1 0.25 0.2"/>

@@ -122,9 +122,14 @@ def test_morph():
 
 
 def test_morph_four_seg():
+    sys_seg1 = x_xy.io.load_example("test_morph_system/four_seg_seg1")
     sys_seg2 = x_xy.io.load_example("test_morph_system/four_seg_seg2")
     sys_seg3 = x_xy.io.load_example("test_morph_system/four_seg_seg3")
     sys_seg3_from_seg2 = morph_system(sys_seg2, [3, 0, 1, -1, 3, 4]).change_model_name(
         sys_seg3.model_name
     )
+    sys_seg1_from_seg2 = morph_system(sys_seg2, [1, -1, 1, 0, 3, 4]).change_model_name(
+        sys_seg1.model_name
+    )
     assert tree_equal(sys_seg3, sys_seg3_from_seg2)
+    assert tree_equal(sys_seg1, sys_seg1_from_seg2)
