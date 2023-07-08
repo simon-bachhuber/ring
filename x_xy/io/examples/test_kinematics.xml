@@ -1,4 +1,4 @@
-<x_xy model="test_branched">
+<x_xy model="test_kinematics">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
         <geom mass="5" pos="0.2 0.1 0.05" dim="0.4 0.2 0.1" type="box"/>

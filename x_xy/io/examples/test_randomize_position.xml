@@ -1,4 +1,4 @@
-<x_xy model="four_seg_seg2">
+<x_xy model="test_randomize_position">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
         <geom vispy_edge_color="black" vispy_color="1 0.8 0.7 1"/>
