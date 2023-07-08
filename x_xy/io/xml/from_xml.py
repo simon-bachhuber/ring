@@ -105,6 +105,10 @@ def _initial_setup(xml_tree):
     return worldbody
 
 
+DEFAULT_GRAVITY = jnp.array([0, 0, 9.81])
+DEFAULT_DT = 0.01
+
+
 def load_sys_from_str(xml_str: str, prefix: str = ""):
     xml_tree = ElementTree.fromstring(xml_str)
     worldbody = _initial_setup(xml_tree)
@@ -115,7 +119,12 @@ def load_sys_from_str(xml_str: str, prefix: str = ""):
         " Look up the examples under  x_xy/io/examples/*.xml to get started"
     )
     model_name = xml_tree.attrib.get("model", None)
-    options = _find_assert_unique(xml_tree, "options").attrib
+    options = _find_assert_unique(xml_tree, "options")
+    options = (
+        {"gravity": DEFAULT_GRAVITY, "dt": DEFAULT_DT}
+        if options is None
+        else options.attrib
+    )
 
     links = {}
     link_parents = {}
