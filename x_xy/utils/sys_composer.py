@@ -1,4 +1,5 @@
-from typing import Optional
+import logging
+from typing import NamedTuple, Optional
 
 import jax
 import jax.numpy as jnp
@@ -176,8 +177,21 @@ def _reindex_parent_array(parents: list[int], subsys: list[int]) -> list[int]:
     return [idx_map[p] for i, p in enumerate(parents) if i in keep]
 
 
-def morph_system(sys: base.System, new_parents: list[int]) -> base.System:
-    """Re-orders the graph underlying the system.
+class JointProperties(NamedTuple):
+    transform1: base.Transform
+    pos_min: jax.Array
+    pos_max: jax.Array
+    link_type: str
+    link_damping: jax.Array
+    link_armature: jax.Array
+    link_spring_stiffness: jax.Array
+    link_spring_zeropoint: jax.Array
+
+
+def morph_system(
+    sys: base.System, new_parents: list[int], prefix: str = ""
+) -> base.System:
+    """Re-orders the graph underlying the system. Returns a new system.
 
     Args:
         sys (base.System): System to be modified.
@@ -185,6 +199,7 @@ def morph_system(sys: base.System, new_parents: list[int]) -> base.System:
             the system the system will be such that the link corresponding to the i-th
             link in the old system will have as parent the link corresponding to the
             j-th link in the old system.
+        prefix (str): Prefix to prepend to all link names.
 
     Returns:
         base.System: Modified system.
@@ -206,6 +221,28 @@ def morph_system(sys: base.System, new_parents: list[int]) -> base.System:
             assert tree_equal(link.pos_min, jnp.zeros((3,))), assertion_print
             assert tree_equal(link.pos_max, jnp.zeros((3,))), assertion_print
 
+    # warn if there are joints to worldbody that are not of type `free`
+    # does will not be preserved
+    if sys.link_parents.count(-1) > 1:
+        logging.warning(
+            "Multiple bodies connect to worldbody. "
+            "This ambiguity might not be preserved during morphing."
+        )
+    old_link_idx_to_world = sys.link_parents.index(-1)
+    d, a, ss, sz = _per_link_arrays(sys)
+
+    def _get_joint_properties_of(i: int):
+        return JointProperties(
+            sys.links.transform1[i],
+            sys.links.pos_min[i],
+            sys.links.pos_max[i],
+            sys.link_types[i],
+            d[i],
+            a[i],
+            ss[i],
+            sz[i],
+        )
+
     # permutation maps from new index to the old index, so e.g. at index position 0
     # is in the new system the link with index permutation[0] in the old system
     permutation, new_parent_array = _get_link_index_permutation_and_parent_array(
@@ -224,85 +261,67 @@ def morph_system(sys: base.System, new_parents: list[int]) -> base.System:
     # change geom pointers
     geoms = [
         geom.replace(
-            link_idx=(permutation[geom.link_idx] if geom.link_idx != -1 else -1)
+            link_idx=(old_to_new_indices[geom.link_idx] if geom.link_idx != -1 else -1)
         )
         for geom in sys.geoms
     ]
+    # then sort geoms in ascending order
+    geoms.sort(key=lambda geom: geom.link_idx)
 
-    # change `pos_min_max` and `transform1`
-    new_transform1 = []
-    new_pos_min = []
-    new_pos_max = []
+    # swap between
+    joint_properties = []
     for i in range(sys.num_links()):
         old_p = sys.link_parents[i]
         new_i = old_to_new_indices[i]
         new_p_new_indices = new_parent_array[new_i]
         new_p_old_indices = (new_to_old_indices + [-1])[new_p_new_indices]
 
-        t1 = sys.links.transform1[i]
-        pmin = sys.links.pos_min[i]
-        pmax = sys.links.pos_max[i]
+        requires_inv = False
+        if new_p_new_indices == -1:
+            properties_of = old_link_idx_to_world
+        elif old_p != new_p_old_indices:
+            properties_of = new_p_old_indices
+            requires_inv = True
+        else:
+            properties_of = i
+        properties_i = _get_joint_properties_of(properties_of)
 
-        if old_p != new_p_old_indices and new_p_old_indices != -1:
-            t1 = sys.links.transform1[new_p_old_indices]
-            pmin = sys.links.pos_min[new_p_old_indices]
-            pmax = sys.links.pos_max[new_p_old_indices]
-
+        if requires_inv:
             assert (
                 sys.link_parents[new_p_old_indices] == i
             ), f"""I expexted parent-childs still to be connected with only
                 their relative order inverted but link `{sys.idx_to_name(i)}`
                 and `{sys.idx_to_name(new_p_old_indices)}` are not directly
                 connected."""
+            properties_i = _inv_properties(properties_i)
+        joint_properties.append(properties_i)
 
-            t1 = algebra.transform_inv(t1)
-
-            # TODO
-            # this would break if there exists some relative static
-            # rotation between links
-            pmin *= -1.0
-            pmax *= -1.0
-
-        if new_p_new_indices == -1:
-            t1 = base.Transform.zero()
-            pmin = pmax = jnp.zeros((3,))
-
-        new_transform1.append(t1)
-        new_pos_min.append(pmin)
-        new_pos_max.append(pmax)
-
+    unpack = lambda attr: ([getattr(jp, attr) for jp in joint_properties])
+    new_transform1 = unpack("transform1")
     new_transform1 = new_transform1[0].batch(*new_transform1[1:])
-    new_pos_min = jnp.stack(new_pos_min)
-    new_pos_max = jnp.stack(new_pos_max)
-    links = sys.links.replace(
+    new_pos_min = jnp.stack(unpack("pos_min"))
+    new_pos_max = jnp.stack(unpack("pos_max"))
+    new_links = sys.links.replace(
         transform1=new_transform1, pos_min=new_pos_min, pos_max=new_pos_max
+    )
+    new_link_types = unpack("link_type")
+    d, a, ss, sz = map(
+        unpack,
+        (
+            "link_damping",
+            "link_armature",
+            "link_spring_stiffness",
+            "link_spring_zeropoint",
+        ),
     )
 
     # permute those that have an indexing range not directly linked to 'l'
-    d, a, ss, sz = [], [], [], []
-
-    def filter_arrays(_, __, damp, arma, stiff, zero):
-        d.append(damp)
-        a.append(arma)
-        ss.append(stiff)
-        sz.append(zero)
-
-    scan.tree(
-        sys,
-        filter_arrays,
-        "dddq",
-        sys.link_damping,
-        sys.link_armature,
-        sys.link_spring_stiffness,
-        sys.link_spring_zeropoint,
-    )
-
     d, a, ss, sz = map(lambda list: jnp.concatenate(_permute(list)), (d, a, ss, sz))
 
     return base.System(
         new_parent_array,
-        _permute(links),
-        _permute(sys.link_types),
+        _permute(new_links),
+        _permute(new_link_types),
         d,
         a,
         ss,
@@ -343,3 +362,37 @@ def _old_to_new(new_parents: list[int]) -> list[int]:
     for new in range(len(new_parents)):
         old_to_new_indices.append(new_to_old_indices.index(new))
     return old_to_new_indices
+
+
+def _per_link_arrays(sys: base.System):
+    d, a, ss, sz = [], [], [], []
+
+    def filter_arrays(_, __, damp, arma, stiff, zero):
+        d.append(damp)
+        a.append(arma)
+        ss.append(stiff)
+        sz.append(zero)
+
+    scan.tree(
+        sys,
+        filter_arrays,
+        "dddq",
+        sys.link_damping,
+        sys.link_armature,
+        sys.link_spring_stiffness,
+        sys.link_spring_zeropoint,
+    )
+    return d, a, ss, sz
+
+
+def _inv_properties(prop: JointProperties):
+    return JointProperties(
+        algebra.transform_inv(prop.transform1),
+        prop.pos_min * -1.0,
+        prop.pos_max * -1.0,
+        prop.link_type,
+        prop.link_damping,
+        prop.link_armature,
+        prop.link_spring_stiffness,
+        prop.link_spring_zeropoint,
+    )
