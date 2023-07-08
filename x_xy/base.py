@@ -401,6 +401,12 @@ class System(_Base):
     def parent_name(self, name: str) -> str:
         return self.idx_to_name(self.link_parents[self.name_to_idx(name)])
 
+    def add_prefix(self, prefix: str = "") -> "System":
+        return self.replace(link_names=[prefix + name for name in self.link_names])
+
+    def change_model_name(self, name: str) -> "System":
+        return self.replace(model_name=name)
+
 
 @struct.dataclass
 class State(_Base):
