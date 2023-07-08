@@ -318,7 +318,7 @@ def morph_system(
     # permute those that have an indexing range not directly linked to 'l'
     d, a, ss, sz = map(lambda list: jnp.concatenate(_permute(list)), (d, a, ss, sz))
 
-    return base.System(
+    morphed_system = base.System(
         new_parent_array,
         _permute(new_links),
         _permute(new_link_types),
@@ -335,6 +335,7 @@ def morph_system(
         _permute(sys.link_names),
         sys.model_name,
     )
+    return parse_system(morphed_system)
 
 
 def _get_link_index_permutation_and_parent_array(new_parents: list[int]):
