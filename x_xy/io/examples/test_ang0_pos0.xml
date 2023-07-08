@@ -1,0 +1,8 @@
+<x_xy model="test_ang0_pos0">
+    <worldbody>
+        <body name="px" joint="px">
+            <body name="rx" joint="ry">
+            </body>
+        </body>
+    </worldbody>
+</x_xy>

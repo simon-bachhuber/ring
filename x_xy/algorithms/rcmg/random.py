@@ -53,7 +53,7 @@ def random_angle_over_time(
 
     # preallocate ANG array
     ANG = jnp.zeros((int(T // t_min) + 1, 2))
-    ANG = ANG.at[0, 0].set(ANG_0)
+    ANG = ANG.at[0, 1].set(ANG_0)
 
     val_outer = (1, 0.0, ANG_0, key_t, key_ang, ANG)
     end, *_, consume, ANG = jax.lax.while_loop(cond_fn_outer, body_fn_outer, val_outer)
@@ -144,7 +144,7 @@ def random_position_over_time(
 
     # preallocate ANG array
     POS = jnp.zeros((int(T // t_min) + 1, 2))
-    POS = POS.at[0, 0].set(POS_0)
+    POS = POS.at[0, 1].set(POS_0)
 
     val_outer = (1, 0.0, 0.0, 0.0, 0.0, key, POS)
     end, *_, consume, POS = jax.lax.while_loop(cond_fn_outer, body_fn_outer, val_outer)

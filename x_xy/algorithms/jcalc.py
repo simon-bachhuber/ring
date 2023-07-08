@@ -39,6 +39,13 @@ class RCMG_Config:
     range_of_motion_hinge: bool = True
     range_of_motion_hinge_method: str = "uniform"
 
+    # initial value of joints
+    # TODO implement
+    ang0_min: float = 0.0
+    ang0_max: float = 0.0
+    pos0_min: float = 0.0
+    pos0_max: float = 0.0
+
 
 DRAW_FN = Callable[[RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey], jax.Array]
 
@@ -91,7 +98,11 @@ def _draw_rxyz(
     enable_range_of_motion: bool = True,
     use_dang_free: bool = False,
 ) -> jax.Array:
-    ANG_0 = 0.0
+    key_value, consume = jax.random.split(key_value)
+    ANG_0 = jax.random.uniform(consume, minval=config.ang0_min, maxval=config.ang0_max)
+    # `random_angle_over_time` always returns wrapped angles, thus it would be
+    # inconsistent to allow an initial value that is not wrapped
+    ANG_0 = maths.wrap_to_pi(ANG_0)
     return algorithms.random_angle_over_time(
         key_t,
         key_value,
@@ -113,7 +124,8 @@ def _draw_rxyz(
 def _draw_pxyz(
     config: RCMG_Config, key_t: jax.random.PRNGKey, key_value: jax.random.PRNGKey
 ) -> jax.Array:
-    POS_0 = 0.0
+    key_value, consume = jax.random.split(key_value)
+    POS_0 = jax.random.uniform(consume, minval=config.pos0_min, maxval=config.pos0_max)
     max_iter = 100
     return algorithms.random_position_over_time(
         key_value,
