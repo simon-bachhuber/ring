@@ -5,11 +5,15 @@ from typing import Optional
 
 def parse_path(
     path: str,
+    *join_paths: str,
     extension: Optional[str] = None,
     file_exists_ok: bool = True,
     mkdir: bool = True,
 ) -> str:
     path = Path(os.path.expanduser(path))
+
+    for p in join_paths:
+        path = path.joinpath(p)
 
     if extension:
         extension = "." + extension if extension[0] != "." else extension
