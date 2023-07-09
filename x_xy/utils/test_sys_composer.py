@@ -15,7 +15,7 @@ def sim(sys):
 
 
 def test_inject_system():
-    sys1 = x_xy.io.load_example("three_segs/three_seg_seg2")
+    sys1 = x_xy.io.load_example("test_three_seg_seg2")
     sys2 = x_xy.io.load_example("test_double_pendulum")
 
     # these two systems are completely independent from another
@@ -38,7 +38,7 @@ def test_inject_system():
 
 
 def test_delete_subsystem():
-    sys1 = x_xy.io.load_example("three_segs/three_seg_seg2")
+    sys1 = x_xy.io.load_example("test_three_seg_seg2")
     sys2 = x_xy.io.load_example("test_double_pendulum")
 
     assert tree_equal(delete_subsystem(inject_system(sys1, sys2), "upper"), sys1)
@@ -55,7 +55,7 @@ def test_delete_subsystem():
 
 
 def test_tree_equal():
-    sys = x_xy.io.load_example("three_segs/three_seg_seg2")
+    sys = x_xy.io.load_example("test_three_seg_seg2")
     sys_mod_nofield = sys.replace(link_parents=[i + 1 for i in sys.link_parents])
     sys_mod_field = sys.replace(link_damping=sys.link_damping + 1.0)
 
@@ -112,7 +112,7 @@ def test_morph():
             assert tree_equal(sys, sys_re)
 
     # Test two known inverses
-    sys = x_xy.io.load_example("three_segs/three_seg_seg2")
+    sys = x_xy.io.load_example("test_three_seg_seg2")
     sys_re = morph_system(morph_system(sys, [1, 2, -1, 0, 3]), [1, 2, -1, 2, 3])
     assert tree_equal(sys, sys_re)
 

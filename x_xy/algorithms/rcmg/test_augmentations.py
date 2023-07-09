@@ -40,8 +40,7 @@ def setup_fn_old(key, sys: x_xy.base.System) -> x_xy.base.System:
 
 def test_randomize_positions():
     key = jax.random.PRNGKey(1)
-    xml_path = x_xy.io.examples_dir.joinpath("test_randomize_position.xml")
-    sys = x_xy.io.load_sys_from_xml(xml_path)
+    sys = x_xy.io.load_example("test_randomize_position")
 
     # split key once more because the new logic `setup_fn_randomize_positions`
     # randomizes the position for each body even if the body has
