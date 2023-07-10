@@ -4,7 +4,6 @@ import jax
 import jax.numpy as jnp
 import jax.random as jrand
 
-from .basic import wrap_to_pi
 from .safe import safe_norm, safe_normalize
 
 
@@ -58,30 +57,25 @@ def rotate_quat(q: jax.Array, quat: jax.Array):
     return quat_mul(quat, quat_mul(q, quat_inv(quat)))
 
 
+@partial(jnp.vectorize, signature="(3)->(4)")
+def quat_rotvec(rotvec: jax.Array) -> jax.Array:
+    angle = safe_norm(rotvec)
+    angle2 = angle * angle
+    small_scale = 0.5 - angle2 / 48 + angle2 * angle2 / 3840
+    large_scale = jnp.sin(angle / 2) / angle
+    scale = jnp.where(angle <= 1e-3, small_scale, large_scale)
+    return jnp.hstack([jnp.cos(angle / 2), scale * rotvec])
+
+
 @partial(jnp.vectorize, signature="(3),()->(4)")
 def quat_rot_axis(axis: jnp.ndarray, angle: jnp.ndarray) -> jnp.ndarray:
     """Construct a *unit* quaternion that describes rotating around
     `axis` by `angle` (radians).
-
-    This is the interpretation of rotating the vector and *not*
-    the frame.
-    For the interpretation of rotating the frame and *not* the
-    vector, you should use angle -> -angle.
-    NOTE: Usually, we actually want the second interpretation. Think about it,
-    we use quaternions to re-express vectors in other frames. But the
-    vectors stay the same. We only transform them to a common frames.
     """
     assert axis.shape == (3,)
     assert angle.shape == ()
 
-    axis = safe_normalize(axis)
-    # NOTE
-    # 23.04.23
-    # this fixes the issue of prismatic joints being inverted w.r.t.
-    # gravity vector.
-    # The reason is that it inverts the way how revolute joints behave
-    # Such that prismatic joints work by inverting gravity
-    angle *= -1.0
+    angle = _angle_convention_quat_rot_axis(angle)
     s, c = jnp.sin(angle / 2), jnp.cos(angle / 2)
     return jnp.array([c, *(axis * s)])
 
@@ -152,15 +146,46 @@ def quat_euler(angles, intrinsic=True, convention="zyx"):
 @partial(jnp.vectorize, signature="(4)->()")
 def quat_angle(q):
     "Extract rotation angle (radians) of quaternion `q`."
-    phi = 2 * jnp.arctan2(safe_norm(q[1:])[0], q[0])
-    return wrap_to_pi(phi)
+    phi = 2 * jnp.arctan2(safe_norm(q[1:])[0], jnp.abs(q[0]))
+    return phi
+
+
+@partial(jnp.vectorize, signature="(4)->(3)")
+def quat_to_rotvec(q: jax.Array):
+    q = jnp.where(q[0] < 0, -q, q)  # w > 0 to ensure 0 <= angle <= pi
+    angle = quat_angle(q)
+    angle2 = angle * angle
+    small_scale = 2 + angle2 / 12 + 7 * angle2 * angle2 / 2880
+    large_scale = angle / jnp.sin(angle / 2)
+    scale = jnp.where(angle <= 1e-3, small_scale, large_scale)
+    return scale * jnp.array(q[1:]) * _angle_convention_quat_rot_axis(1.0)
 
 
 @partial(jnp.vectorize, signature="(4)->(3),()")
 def quat_to_rot_axis(q):
     "Extract unit-axis and angle from quaternion `q`."
+    q = jnp.where(q[0] < 0, -q, q)
     angle = quat_angle(q)
-    # NOTE: CONVENTION
-    angle *= -1.0
+    angle = _angle_convention_quat_rot_axis(angle)
     axis = safe_normalize(q[1:])
     return axis, angle
+
+
+def _angle_convention_quat_rot_axis(angle):
+    """
+    This is the interpretation of rotating the vector and *not*
+    the frame.
+    For the interpretation of rotating the frame and *not* the
+    vector, you should use angle -> -angle.
+    NOTE: Usually, we actually want the second interpretation. Think about it,
+    we use quaternions to re-express vectors in other frames. But the
+    vectors stay the same. We only transform them to a common frames.
+
+    # NOTE
+    # 23.04.23
+    # this fixes the issue of prismatic joints being inverted w.r.t.
+    # gravity vector.
+    # The reason is that it inverts the way how revolute joints behave
+    # Such that prismatic joints work by inverting gravity
+    """
+    return angle * -1.0

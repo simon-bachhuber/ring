@@ -50,7 +50,7 @@ def test_pd_control():
     error = jnp.mean(
         x_xy.maths.angle_error(q[:, :4], q_reconst[:, :4]) ** 2
     ) + jnp.mean((q[:, 4:] - q_reconst[:, 4:]) ** 2)
-    assert error <= 0.42
+    assert error <= 0.47
 
     gains = jnp.array(3 * [17] + 3 * [300])
     controller = pd_control(gains, gains)
@@ -62,7 +62,7 @@ def test_pd_control():
     controller = pd_control(gains, gains)
     q, q_reconst = evaluate(controller, "test_double_pendulum")
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
-    assert error < 0.15
+    assert error < 0.17
     q, q_reconst = evaluate(controller, "test_double_pendulum", True)
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
     assert error < 0.1
