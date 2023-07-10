@@ -85,6 +85,15 @@ class _Base:
     def __iter__(self):
         raise NotImplementedError
 
+    def repeat(self, repeats, axis=0):
+        return tree_map(lambda x: jnp.repeat(x, repeats, axis), self)
+
+    def ndim(self):
+        return tu.tree_ndim(self)
+
+    def shape(self, axis=0) -> int:
+        return tu.tree_shape(self, axis)
+
 
 @struct.dataclass
 class Transform(_Base):
@@ -98,10 +107,17 @@ class Transform(_Base):
     @classmethod
     def create(cls, pos=None, rot=None):
         assert not (pos is None and rot is None), "One must be given."
+        shape_rot = rot.shape[:-1] if rot is not None else ()
+        shape_pos = pos.shape[:-1] if pos is not None else ()
+
         if pos is None:
-            pos = jnp.zeros((3,))
+            pos = jnp.zeros(shape_rot + (3,))
         if rot is None:
             rot = jnp.array([1.0, 0, 0, 0])
+            rot = jnp.tile(jnp.array([1.0, 0.0, 0.0, 0.0]), shape_pos + (1,))
+
+        assert pos.shape[:-1] == rot.shape[:-1]
+
         return Transform(pos, rot)
 
     @classmethod
