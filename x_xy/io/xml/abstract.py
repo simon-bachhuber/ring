@@ -76,7 +76,7 @@ class AbsTrans:
         if not _arr_equal(t.pos, default_pos):
             element.set("pos", _to_str(t.pos))
         if not _arr_equal(t.rot, default_quat):
-            element.set("quat", _to_str(t.quat))
+            element.set("quat", _to_str(t.rot))
 
 
 class AbsPosMinMax:
