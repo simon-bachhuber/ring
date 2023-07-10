@@ -16,8 +16,8 @@ default_armature = lambda qd_size, **_: jnp.zeros((qd_size,))
 default_stiffness = lambda qd_size, **_: jnp.zeros((qd_size,))
 
 
-def default_zeropoint(q_size, link_typ: str, **_):
-    zeropoint = jnp.zeros((q_size))
+def default_zeropoint(qd_size, link_typ: str, **_):
+    zeropoint = jnp.zeros((qd_size))
     if link_typ == "spherical" or link_typ == "free":
         # zeropoint then is unit quaternion and not zeros
         zeropoint = zeropoint.at[0].set(1.0)
