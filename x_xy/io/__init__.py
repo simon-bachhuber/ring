@@ -1,10 +1,9 @@
 from pathlib import Path
+from typing import Iterator
 
+import x_xy
 from x_xy.utils import parse_path
 
-from .omc import postprocess, process_omc
-from .omc.postprocess import omc_to_xs
-from .omc.utils import render_omc
 from .parse import parse_system
 from .xml import load_sys_from_str, load_sys_from_xml
 
@@ -44,3 +43,8 @@ def list_examples() -> list[str]:
     examples = list(set(examples) - set(FOLDERS) - set(EXCLUDE_FOLDERS))
 
     return examples
+
+
+def list_load_examples() -> Iterator[x_xy.base.System]:
+    for example in list_examples():
+        yield load_example(example)
