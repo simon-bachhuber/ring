@@ -56,7 +56,6 @@ def save_sys_to_xml_str(sys: base.System) -> str:
         geoms = sys.geoms
         for geom in geoms:
             if geom.link_idx == link_idx:
-                print(type(geom))
                 geom_elem = SubElement(body, "geom")
                 abstract_class = abstract.geometry_to_abstract[type(geom)]
                 abstract_class.to_xml(geom_elem, geom)

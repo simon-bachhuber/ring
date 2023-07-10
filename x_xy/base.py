@@ -412,13 +412,13 @@ class System(_Base):
     def deep_equal(a, b):
         if type(a) is not type(b):
             return False
-        if isinstance(a, (System, Link, Geometry, Transform, Motion, Force, Inertia)):
+        if isinstance(a, _Base):
             return System.deep_equal(a.__dict__, b.__dict__)
         if isinstance(a, dict):
             if a.keys() != b.keys():
                 return False
             return all(System.deep_equal(a[k], b[k]) for k in a.keys())
-        if isinstance(a, list):
+        if isinstance(a, (list, tuple)):
             if len(a) != len(b):
                 return False
             return all(System.deep_equal(a[i], b[i]) for i in range(len(a)))

@@ -1,5 +1,6 @@
 import x_xy
 from pathlib import Path
+import logging
 
 from x_xy.base import System
 
@@ -12,14 +13,10 @@ def test_xml_parsing():
 
         sys_to_xml_str = x_xy.io.xml.save_sys_to_xml_str(original_sys)
 
-        print(sys_to_xml_str)
+        logging.debug(sys_to_xml_str)
         compare_sys = x_xy.io.xml.load_sys_from_str(sys_to_xml_str)
 
         assert System.deep_equal(original_sys, compare_sys)
-
-        """ assert System.deep_equal(original_sys, compare_sys), (f"Failed to parse {example_name}.xml \
-                    \n Original: {original_sys} \
-                    \n Parsed: {compare_sys} |END|") """
 
         print(f"Passed {example_name}.xml")
 
