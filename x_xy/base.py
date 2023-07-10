@@ -426,7 +426,7 @@ class System(_Base):
             return jnp.array_equal(a, b)
         return a == b
 
-
+      
 @struct.dataclass
 class State(_Base):
     q: jax.Array
