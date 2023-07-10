@@ -5,7 +5,12 @@ import jax.numpy as jnp
 import jax.random as jrand
 
 from .basic import wrap_to_pi
-from .safe import safe_norm, safe_normalize
+from .safe import safe_arcsin, safe_norm, safe_normalize
+
+
+@partial(jnp.vectorize, signature="(4)->(4)")
+def ensure_positive_w(q):
+    return jnp.where(q[0] < 0, -q, q)
 
 
 def angle_error(q, qhat):
@@ -75,7 +80,7 @@ def quat_rot_axis(axis: jnp.ndarray, angle: jnp.ndarray) -> jnp.ndarray:
     assert angle.shape == ()
 
     axis = safe_normalize(axis)
-    # NOTE
+    # NOTE: CONVENTION
     # 23.04.23
     # this fixes the issue of prismatic joints being inverted w.r.t.
     # gravity vector.
@@ -164,3 +169,39 @@ def quat_to_rot_axis(q):
     angle *= -1.0
     axis = safe_normalize(q[1:])
     return axis, angle
+
+
+@partial(jnp.vectorize, signature="(3)->(4)")
+def euler_to_quat(angles: jnp.ndarray) -> jnp.ndarray:
+    """Converts euler rotations in radians to quaternion."""
+    # this follows the Tait-Bryan intrinsic rotation formalism: x-y'-z''
+    c1, c2, c3 = jnp.cos(angles / 2)
+    s1, s2, s3 = jnp.sin(angles / 2)
+    w = c1 * c2 * c3 - s1 * s2 * s3
+    x = s1 * c2 * c3 + c1 * s2 * s3
+    y = c1 * s2 * c3 - s1 * c2 * s3
+    z = c1 * c2 * s3 + s1 * s2 * c3
+    # NOTE: CONVENTION
+    return quat_inv(jnp.array([w, x, y, z]))
+
+
+@partial(jnp.vectorize, signature="(4)->(3)")
+def quat_to_euler(q: jnp.ndarray) -> jnp.ndarray:
+    """Converts quaternions to euler rotations in radians."""
+    # this follows the Tait-Bryan intrinsic rotation formalism: x-y'-z''
+
+    # NOTE: CONVENTION
+    q = quat_inv(q)
+
+    z = jnp.arctan2(
+        -2 * q[1] * q[2] + 2 * q[0] * q[3],
+        q[1] * q[1] + q[0] * q[0] - q[3] * q[3] - q[2] * q[2],
+    )
+    # TODO: Investigate why quaternions go so big we need to clip.
+    y = safe_arcsin(jnp.clip(2 * q[1] * q[3] + 2 * q[0] * q[2], -1.0, 1.0))
+    x = jnp.arctan2(
+        -2 * q[2] * q[3] + 2 * q[0] * q[1],
+        q[3] * q[3] - q[2] * q[2] - q[1] * q[1] + q[0] * q[0],
+    )
+
+    return jnp.array([x, y, z])
