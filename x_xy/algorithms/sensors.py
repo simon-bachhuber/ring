@@ -111,7 +111,7 @@ def rel_pose(
         sys_xs (base.System): System that defines the stacking order of `xs`.
 
     Returns:
-        dict:
+        dict: Child-to-parent quaternions
     """
     if sys_xs is None:
         sys_xs = sys_scan
