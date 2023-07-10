@@ -3,6 +3,7 @@
 </p>
 
 # `x_xy_v2` -- A *tiny* Kinematic Tree Simulator
+<img src="figures/coverage_badge.svg" height="20" />
 
 `x_xy` is a small package for performing
 - forward dynamics
