@@ -60,7 +60,7 @@ class AbsDampArmaStiffZero:
             ["damping", "armature", "spring_stiff", "spring_zero"],
             [damping, armature, stiffness, zeropoint],
         ):
-            if not _arr_equal(arr, default_fns[key](q_size, qd_size, link_typ)):
+            if not _arr_equal(arr, default_fns[key](q_size=q_size, qd_size=qd_size, link_typ=link_typ)):
                 element.set(key, _to_str(arr))
 
 
@@ -140,7 +140,7 @@ def _to_xml_geom_processing(element: T, geom: base.Geometry) -> None:
     AbsTrans.to_xml(element, geom.transform)
     element.set("mass", _to_str(geom.mass))
     _to_xml_vispy(element, geom)
-    element.set("type", geometry_to_xml_identifier[geom])
+    element.set("type", geometry_to_xml_identifier[type(geom)])
 
 
 class AbsGeomBox:
@@ -156,7 +156,7 @@ class AbsGeomBox:
     @staticmethod
     def to_xml(element: T, geom: base.Box) -> None:
         _to_xml_geom_processing(element, geom)
-        dim = np.array([geom.dim_x, geom.dim_y, geom.dimz])
+        dim = np.array([geom.dim_x, geom.dim_y, geom.dim_z])
         element.set("dim", _to_str(dim))
 
 
