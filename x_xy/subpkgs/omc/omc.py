@@ -26,11 +26,10 @@ from .markers import (
 
 
 def dump_omc(
-    experiment_name: str,
     path_marker_imu_setup_file: str,
     path_optitrack_file: str,
     path_imu_folder: str,
-    path_output_folder: str,
+    path_output: str,
     imu_file_prefix: str = "MT_012102D5-000-000_00B483",
     imu_file_delimiter: str = "\t",
     hz_optitrack: Optional[int] = None,
@@ -38,6 +37,7 @@ def dump_omc(
     hz_common: int = 100,
     verbose: bool = True,
     assume_imus_are_in_sync: bool = False,
+    save_as_matlab: bool = False,
 ):
     try:
         import qmt
@@ -52,7 +52,7 @@ def dump_omc(
     p_setup_file = parse_path(path_marker_imu_setup_file, extension="json")
     path_optitrack = parse_path(path_optitrack_file, extension="csv")
     path_imu = parse_path(path_imu_folder)
-    p_output = parse_path(path_output_folder)
+    p_output = parse_path(path_output, extension="joblib")
 
     with open(p_setup_file) as f:
         marker_imu_setup = json.load(f)
@@ -83,10 +83,9 @@ def dump_omc(
         else:
             print(f"Segment_{seg[-1]} was not found in OMC data.")
 
-    # make folder
-    path_mat_file = parse_path(p_output + f"/{experiment_name}.mat")
-    savemat(path_mat_file, data)
-    joblib.dump(data, p_output + f"/{experiment_name}.joblib")
+    joblib.dump(data, p_output)
+    if save_as_matlab:
+        savemat(parse_path(p_output, extension="mat"), data)
 
 
 def autodetermine_imu_freq(path_imu) -> int:

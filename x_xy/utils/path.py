@@ -15,8 +15,9 @@ def parse_path(
     for p in join_paths:
         path = path.joinpath(p)
 
-    if extension:
-        extension = "." + extension if extension[0] != "." else extension
+    if extension is not None:
+        if extension != "":
+            extension = "." + extension if extension[0] != "." else extension
         path = path.with_suffix(extension)
 
     if not file_exists_ok and os.path.exists(path):
