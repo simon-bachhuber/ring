@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import joblib
 
 import x_xy
-from x_xy.subpkgs import sim2real
+from x_xy.subpkgs import sim2real, sys_composer
 from x_xy.utils import parse_path
 
 
@@ -53,7 +53,7 @@ def load_data(
     key = jax.random.PRNGKey(seed)
 
     imu_attachment = {name: sys.parent_name(name) for name in imu_link_names}
-    sys_noimu = x_xy.utils.delete_subsystem(sys, imu_link_names)
+    sys_noimu = sys_composer.delete_subsystem(sys, imu_link_names)
 
     if use_rcmg:
         assert config is not None
@@ -95,7 +95,10 @@ def load_data(
         xs = sim2real.delete_to_world_pos_rot(sys, xs)
 
     if scale_revolute_joint_angles is not None:
-        xs = sim2real.scale_xs(sys, xs, scale_revolute_joint_angles)
+        tranform1, transform2 = sim2real.unzip_xs(sys, xs)
+        # here we include all positional joints, so no reason to also scale transform1
+        transform2 = sim2real.scale_xs(sys, transform2, scale_revolute_joint_angles)
+        xs = sim2real.zip_xs(sys, tranform1, transform2)
 
     if artificial_imus:
         key, consume = jax.random.split(key)
