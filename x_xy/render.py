@@ -26,6 +26,7 @@ VisualPosOri2 = PyTree
 
 class Scene(ABC):
     _xyz: bool = True
+    _xyz_root: bool = True
 
     """
     Example:
@@ -48,11 +49,15 @@ class Scene(ABC):
     def _render(self) -> jax.Array:
         pass
 
-    def enable_xyz(self) -> None:
+    def enable_xyz(self, enable_root: bool = True) -> None:
         self._xyz = True
+        if enable_root:
+            self._xyz_root = True
 
-    def disable_xyz(self) -> None:
+    def disable_xyz(self, disable_root: bool = True) -> None:
         self._xyz = False
+        if disable_root:
+            self._xyz_root = False
 
     def render(
         self, camera: Optional[Camera | list[Camera]] = None
@@ -118,6 +123,7 @@ class Scene(ABC):
                 # over all visuals since it uses a zip(...)
                 self.geoms.append(None)
 
+        if self._xyz_root:
             # add one final for root frame
             self._add_xyz()
 
@@ -203,6 +209,7 @@ class VispyScene(Scene):
     def __init__(
         self,
         show_cs=True,
+        show_cs_root=True,
         size=(1280, 720),
         camera: scene.cameras.BaseCamera = scene.TurntableCamera(
             elevation=30, distance=6
@@ -222,8 +229,8 @@ class VispyScene(Scene):
                 Defaults to (1280, 720).
             camera (scene.cameras.BaseCamera, optional): The camera angle.
                 Defaults to scene.TurntableCamera( elevation=30, distance=6 ).
-            headless_backend (bool, optional): Headless if the worker can not open windows.
-                Defaults to False.
+            headless_backend (bool, optional): Headless if the worker can not open
+                windows. Defaults to False.
 
         Example:
             >> scene = VispyScene()
@@ -234,7 +241,8 @@ class VispyScene(Scene):
         if headless_backend:
             assert (
                 vispy_backend is None
-            ), "Can only set one backend. Either provide `vispy_backend` or enable `headless_backend`"
+            ), "Can only set one backend. Either provide `vispy_backend` or enable"
+            " `headless_backend`"
 
         self.headless = False
         if headless_backend:
@@ -253,7 +261,7 @@ class VispyScene(Scene):
         if show_cs:
             self.enable_xyz()
         else:
-            self.disable_xyz()
+            self.disable_xyz(not show_cs_root)
 
     def _get_camera(self) -> scene.cameras.BaseCamera:
         return self.view.camera
