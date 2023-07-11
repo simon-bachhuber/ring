@@ -3,11 +3,9 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
-import joblib
 
 import x_xy
 from x_xy.subpkgs import sim2real, sys_composer
-from x_xy.utils import parse_path
 
 
 def _postprocess_exp_data(exp_data: dict, rename: dict = {}, imu_attachment: dict = {}):
@@ -23,7 +21,7 @@ def _postprocess_exp_data(exp_data: dict, rename: dict = {}, imu_attachment: dic
     return exp_data
 
 
-def _imu_data(key, x, sys, imu_attachment):
+def imu_data(key, x, sys, imu_attachment):
     X = {}
     for imu, attachment in imu_attachment.items():
         key, consume = jax.random.split(key)
@@ -33,10 +31,14 @@ def _imu_data(key, x, sys, imu_attachment):
     return X
 
 
+def autodetermine_imu_names(sys) -> list[str]:
+    return [name for name in sys.link_names if name[:3] == "imu"]
+
+
 def load_data(
     sys: x_xy.base.System,
     config: Optional[x_xy.algorithms.RCMG_Config] = None,
-    path_exp_data: Optional[str] = None,
+    exp_data: Optional[dict] = None,
     rename_exp_data: dict = {},
     use_rcmg: bool = False,
     seed: int = 1,
@@ -45,12 +47,15 @@ def load_data(
     artificial_random_transform1: bool = True,
     delete_global_translation_rotation: bool = False,
     scale_revolute_joint_angles: Optional[float] = None,
-    imu_link_names: list[str] = ["imu1", "imu2"],
+    imu_link_names: Optional[list[str]] = None,
     rigid_imus: bool = True,
     t1: float = 0,
     t2: float | None = None,
 ):
     key = jax.random.PRNGKey(seed)
+
+    if imu_link_names is None:
+        imu_link_names = autodetermine_imu_names(sys)
 
     imu_attachment = {name: sys.parent_name(name) for name in imu_link_names}
     sys_noimu = sys_composer.delete_subsystem(sys, imu_link_names)
@@ -63,8 +68,7 @@ def load_data(
             logging.warning("`artificial_transform1` was overwritten to `True`")
             artificial_transform1 = True
     else:
-        assert path_exp_data is not None
-        exp_data = joblib.load(parse_path(path_exp_data, extension="joblib"))
+        assert exp_data is not None
         exp_data = _postprocess_exp_data(exp_data, rename_exp_data, imu_attachment)
         xs = sim2real.xs_from_raw(sys, exp_data, t1, t2, eps_frame=None)
 
@@ -102,7 +106,7 @@ def load_data(
 
     if artificial_imus:
         key, consume = jax.random.split(key)
-        X = _imu_data(consume, xs, sys, imu_attachment)
+        X = imu_data(consume, xs, sys, imu_attachment)
     else:
         rigid_flex = "imu_rigid" if rigid_imus else "imu_flex"
         X = {

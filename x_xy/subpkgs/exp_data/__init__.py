@@ -47,7 +47,7 @@ def load_data(
     if motion_start == motion_stop:
         assert start_for_start and stop_for_stop, "Empty sequence, stop <= start"
 
-    t1 = timings[motion_start]["start" if start_for_start else "stop"] + left_padd
+    t1 = timings[motion_start]["start" if start_for_start else "stop"] - left_padd
     # ensure that t1 >= 0
     t1 = max(t1, 0.0)
     t2 = timings[motion_stop]["stop" if stop_for_stop else "start"] + right_padd
