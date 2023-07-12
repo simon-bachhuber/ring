@@ -426,7 +426,6 @@ class System(_Base):
 
     @staticmethod
     def deep_equal(a, b):
-        print("Comparing: a ", type(a), " b ", type(b))
         if type(a) is not type(b):
             return False
         if isinstance(a, _Base):
