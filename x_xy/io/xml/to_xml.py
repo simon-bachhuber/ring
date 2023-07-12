@@ -66,3 +66,9 @@ def save_sys_to_xml_str(sys: base.System) -> str:
     # Pretty print xml
     xml_str = parseString(tostring(x_xy)).toprettyxml(indent="  ")
     return xml_str
+
+
+def save_sys_to_xml(sys: base.System, xml_path: str) -> None:
+    xml_str = save_sys_to_xml_str(sys)
+    with open(xml_path, "w") as f:
+        f.write(xml_str)
