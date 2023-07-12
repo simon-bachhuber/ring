@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-import jaxlib.xla_extension as jax_xla
 
 import x_xy
 from x_xy.base import System

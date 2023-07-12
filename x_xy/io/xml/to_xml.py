@@ -1,6 +1,3 @@
-import jax.numpy as jnp
-
-
 from x_xy import base
 from x_xy.io.xml import abstract
 from x_xy.io.xml.abstract import _to_str
@@ -40,7 +37,7 @@ def save_sys_to_xml_str(sys: base.System) -> str:
             sys.link_damping[global_index_map["d"][link_name]],
             sys.link_armature[global_index_map["d"][link_name]],
             sys.link_spring_stiffness[global_index_map["d"][link_name]],
-            sys.link_spring_zeropoint[global_index_map["d"][link_name]],
+            sys.link_spring_zeropoint[global_index_map["q"][link_name]],
             base.Q_WIDTHS[link_typ],
             base.QD_WIDTHS[link_typ],
             link_typ,
