@@ -14,10 +14,10 @@ def test_xml_parsing():
 
         sys_to_xml_str = x_xy.io.xml.save_sys_to_xml_str(original_sys)
 
-        print(sys_to_xml_str)
+        logging.debug(sys_to_xml_str)
+
         compare_sys = x_xy.io.xml.load_sys_from_str(sys_to_xml_str)
-        if isinstance(compare_sys.dt, jax_xla.ArrayImpl):
-            print("jax_xla.ArrayImpl:", compare_sys.dt.ndim)
+
         assert System.deep_equal(original_sys, compare_sys)
 
         print(f"Passed {example_name}.xml")
