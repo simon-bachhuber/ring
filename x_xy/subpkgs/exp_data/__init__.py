@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from typing import Optional
 
 import joblib
@@ -19,6 +21,18 @@ def _load_file_path(exp_id: str, extension: str):
 def load_sys(exp_id: str) -> x_xy.base.System:
     xml_path = _load_file_path(exp_id, "xml")
     return x_xy.io.load_sys_from_xml(xml_path)
+
+
+def list_experiments() -> list[str]:
+    exps = []
+    parent = Path(__file__).parent
+    for child in os.listdir(parent):
+        file = parent.joinpath(child)
+        if file.is_dir():
+            if child[:2] != "__":
+                exps.append(child)
+    exps.sort()
+    return exps
 
 
 def load_data(
