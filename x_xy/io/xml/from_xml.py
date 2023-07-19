@@ -5,6 +5,7 @@ import jax.numpy as jnp
 import x_xy
 from x_xy import base
 from x_xy.io.xml import abstract
+from x_xy.utils import parse_path
 
 
 def _find_assert_unique(tree: ElementTree, *keys):
@@ -106,7 +107,7 @@ def _initial_setup(xml_tree):
 
 
 DEFAULT_GRAVITY = jnp.array([0, 0, 9.81])
-DEFAULT_DT = jnp.array(0.01, dtype=float)
+DEFAULT_DT = jnp.array(0.01)
 
 
 def load_sys_from_str(xml_str: str, prefix: str = ""):
@@ -119,12 +120,14 @@ def load_sys_from_str(xml_str: str, prefix: str = ""):
         " Look up the examples under  x_xy/io/examples/*.xml to get started"
     )
     model_name = xml_tree.attrib.get("model", None)
-    options = _find_assert_unique(xml_tree, "options")
-    options = (
-        {"gravity": DEFAULT_GRAVITY, "dt": DEFAULT_DT}
-        if options is None
-        else options.attrib
-    )
+
+    # default options
+    options = {"gravity": DEFAULT_GRAVITY, "dt": DEFAULT_DT}
+    options_xml = _find_assert_unique(xml_tree, "options")
+    options.update({} if options_xml is None else options_xml.attrib)
+
+    # convert scalar array to float
+    options["dt"] = float(options["dt"])
 
     links = {}
     link_parents = {}
@@ -217,6 +220,7 @@ def load_sys_from_xml(xml_path: str, prefix: str = ""):
 
 
 def _load_xml(xml_path: str) -> str:
+    xml_path = parse_path(xml_path, extension="xml")
     with open(xml_path, "r") as f:
         xml_str = f.read()
     return xml_str
