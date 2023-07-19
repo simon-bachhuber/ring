@@ -1,8 +1,9 @@
+from xml.dom.minidom import parseString
+from xml.etree.ElementTree import Element, SubElement, tostring
+
 from x_xy import base
 from x_xy.io.xml import abstract
 from x_xy.io.xml.abstract import _to_str
-from xml.etree.ElementTree import Element, SubElement, tostring
-from xml.dom.minidom import parseString
 
 
 def save_sys_to_xml_str(sys: base.System) -> str:
