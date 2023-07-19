@@ -42,6 +42,8 @@ def list_examples() -> list[str]:
     # exclude subfolders from examples
     examples = list(set(examples) - set(FOLDERS) - set(EXCLUDE_FOLDERS))
 
+    examples.sort()
+
     return examples
 
 
