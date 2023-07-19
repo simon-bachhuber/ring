@@ -60,7 +60,9 @@ class AbsDampArmaStiffZero:
             ["damping", "armature", "spring_stiff", "spring_zero"],
             [damping, armature, stiffness, zeropoint],
         ):
-            if not _arr_equal(arr, default_fns[key](q_size=q_size, qd_size=qd_size, link_typ=link_typ)):
+            if not _arr_equal(
+                arr, default_fns[key](q_size=q_size, qd_size=qd_size, link_typ=link_typ)
+            ):
                 element.set(key, _to_str(arr))
 
 
@@ -110,13 +112,25 @@ class AbsPosMinMax:
 
 
 def _from_xml_vispy(attr: ATTR):
-    "Find all keys starting with `vispy_`, and return subdict without that prefix"
+    """Find all keys starting with `vispy_`, and return subdict without that prefix.
+    Also convert all arrays back to list[float], because of `struct.field(False)`.
+    Otherwise jitted functions with `sys` input will error on second execution, since
+    it can't compare the two vispy_color arrays.
+    """
 
     def delete_prefix(key):
         len_suffix = len(key.split("_")[0]) + 1
         return key[len_suffix:]
 
-    return {delete_prefix(k): attr[k] for k in attr if k.split("_")[0] == "vispy"}
+    dict_no_prefix = {
+        delete_prefix(k): attr[k] for k in attr if k.split("_")[0] == "vispy"
+    }
+
+    # convert arrays -> list[float]
+    to_list = (
+        lambda ele: ele.tolist() if isinstance(ele, (np.ndarray, jax.Array)) else ele
+    )
+    return {key: to_list(value) for key, value in dict_no_prefix.items()}
 
 
 def _to_xml_vispy(element: T, geom: base.Geometry) -> None:
@@ -237,6 +251,10 @@ def _get_rotation(attr: ATTR):
 
 
 def _to_str(obj):
+    if isinstance(obj, list):
+        if all([isinstance(ele, float) for ele in obj]):
+            obj = np.array(obj)
+
     if isinstance(obj, (np.ndarray, jnp.ndarray)):
         if obj.ndim == 0:
             return str(obj)
