@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from x_xy.base import _Base
+from x_xy.base import Geometry, _Base
 
 JIT_WARN = True
 
@@ -30,13 +30,28 @@ def tree_equal(a, b):
     return a == b
 
 
-def sys_compare(sys1, sys2, verbose: bool = True) -> bool:
+def _sys_compare_unsafe(sys1, sys2, verbose: bool, prefix: str) -> bool:
     d1 = sys1.__dict__
     d2 = sys2.__dict__
     for key in d1:
-        if not tree_equal(d1[key], d2[key]):
-            if verbose:
-                print(f"Systems different in attribute `.{key}`")
-                print(f"{d1[key]} NOT EQUAL {d2[key]}")
-            return False
+        if isinstance(d1[key], _Base):
+            if not _sys_compare_unsafe(d1[key], d2[key], verbose, prefix + "." + key):
+                return False
+        elif isinstance(d1[key], list) and isinstance(d1[key][0], Geometry):
+            for ele1, ele2 in zip(d1[key], d2[key]):
+                if not _sys_compare_unsafe(ele1, ele2, verbose, prefix + "." + key):
+                    return False
+        else:
+            if not tree_equal(d1[key], d2[key]):
+                if verbose:
+                    print(f"Systems different in attribute `sys{prefix}.{key}`")
+                    print(f"{d1[key]} NOT EQUAL {d2[key]}")
+                return False
     return True
+
+
+def sys_compare(sys1, sys2, verbose: bool = True):
+    equalA = _sys_compare_unsafe(sys1, sys2, verbose, "")
+    equalB = tree_equal(sys1, sys2)
+    assert equalA == equalB
+    return equalA
