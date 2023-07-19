@@ -27,6 +27,7 @@ VisualPosOri2 = PyTree
 class Scene(ABC):
     _xyz: bool = True
     _xyz_root: bool = True
+    visuals: list[Visual] = []
 
     """
     Example:
@@ -91,7 +92,17 @@ class Scene(ABC):
     def _add_xyz(self) -> Visual:
         raise NotImplementedError
 
+    @abstractmethod
+    def _remove_visual(self, visual: Visual) -> None:
+        pass
+
+    def _remove_all_visuals(self):
+        for visual in self.visuals:
+            self._remove_visual(visual)
+
     def init(self, geoms: list[Geometry]):
+        self._remove_all_visuals()
+
         self.geoms = [geom for geom in geoms]
         self._fresh_init = True
 
@@ -283,6 +294,9 @@ class VispyScene(Scene):
 
     def _add_xyz(self) -> Visual:
         return scene.visuals.XYZAxis(parent=self.view.scene)
+
+    def _remove_visual(self, visual: scene.visuals.VisualNode) -> None:
+        visual.parent = None
 
     @staticmethod
     def _compute_transform_per_visual(
