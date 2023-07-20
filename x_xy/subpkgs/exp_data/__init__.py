@@ -6,10 +6,10 @@ import joblib
 import yaml
 
 import x_xy
-from x_xy.subpkgs import sim2real
+from x_xy.subpkgs import sim2real, sys_composer
 from x_xy.utils import parse_path
 
-from .omc_to_joblib import HZ, exp_dir, omc_to_joblib
+from .omc_to_joblib import HZ, exp_dir
 
 
 def _load_file_path(exp_id: str, extension: str):
@@ -18,9 +18,28 @@ def _load_file_path(exp_id: str, extension: str):
     )
 
 
-def load_sys(exp_id: str) -> x_xy.base.System:
+def _read_yaml(exp_id):
+    with open(_load_file_path(exp_id, "yaml")) as file:
+        yaml_str = yaml.safe_load(file)
+    return yaml_str
+
+
+def load_sys(
+    exp_id: str,
+    morph_yaml_key: Optional[str] = None,
+    delete_after_morph: Optional[list[str]] = None,
+) -> x_xy.base.System:
     xml_path = _load_file_path(exp_id, "xml")
-    return x_xy.io.load_sys_from_xml(xml_path)
+    sys = x_xy.io.load_sys_from_xml(xml_path)
+
+    if morph_yaml_key is not None:
+        new_parents = _read_yaml(exp_id)["morph"][morph_yaml_key]
+        sys = sys_composer.morph_system(sys, new_parents)
+
+    if delete_after_morph is not None:
+        sys = sys_composer.delete_subsystem(sys, delete_after_morph)
+
+    return sys
 
 
 def list_experiments() -> list[str]:
@@ -46,8 +65,7 @@ def load_data(
 ) -> dict:
     trial_data = joblib.load(_load_file_path(exp_id, "joblib"))
 
-    with open(_load_file_path(exp_id, "yaml")) as file:
-        timings = yaml.safe_load(file)
+    timings = _read_yaml(exp_id)["timings"]
 
     if motion_stop is None:
         motion_stop = motion_start

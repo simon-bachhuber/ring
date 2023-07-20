@@ -31,5 +31,7 @@ timings:
     stop: 376.0
   # end of trial
 morph:
-  seg2: ["seg5", "seg1", "seg2", "seg5", -1, "seg2", "seg2", "seg3", "seg3", "seg4"]
-  seg4: ["seg5", "seg1", "seg2", "seg5", "seg3", "seg2", "seg4", "seg3", -1, "seg4"]
+  "seg5": ["seg5", "seg1", -1, "seg5", "seg5", "seg2", "seg2", "seg3", "seg3", "seg4"]
+  "seg2": ["seg5", "seg1", "seg2", "seg5", -1, "seg2", "seg2", "seg3", "seg3", "seg4"]
+  "seg3": ["seg5", "seg1", "seg2", "seg5", "seg3", "seg2", -1, "seg3", "seg3", "seg4"]
+  "seg4": ["seg5", "seg1", "seg2", "seg5", "seg3", "seg2", "seg4", "seg3", -1, "seg4"]
