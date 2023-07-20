@@ -35,6 +35,14 @@ def autodetermine_imu_names(sys) -> list[str]:
     return [name for name in sys.link_names if name[:3] == "imu"]
 
 
+def make_sys_noimu(sys, imu_link_names: Optional[list[str]] = None):
+    if imu_link_names is None:
+        imu_link_names = autodetermine_imu_names(sys)
+    imu_attachment = {name: sys.parent_name(name) for name in imu_link_names}
+    sys_noimu = sys_composer.delete_subsystem(sys, imu_link_names)
+    return sys_noimu, imu_attachment
+
+
 def load_data(
     sys: x_xy.base.System,
     config: Optional[x_xy.algorithms.RCMG_Config] = None,
@@ -54,11 +62,7 @@ def load_data(
 ):
     key = jax.random.PRNGKey(seed)
 
-    if imu_link_names is None:
-        imu_link_names = autodetermine_imu_names(sys)
-
-    imu_attachment = {name: sys.parent_name(name) for name in imu_link_names}
-    sys_noimu = sys_composer.delete_subsystem(sys, imu_link_names)
+    sys_noimu, imu_attachment = make_sys_noimu(sys, imu_link_names)
 
     if use_rcmg:
         assert config is not None
