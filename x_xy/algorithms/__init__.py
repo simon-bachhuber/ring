@@ -17,6 +17,9 @@ from .rcmg import (
     batch_generator,
     build_generator,
     make_normalizer_from_generator,
+    register_rr_joint,
+    setup_fn_randomize_joint_axes,
+    setup_fn_randomize_positions,
 )
 from .rcmg.random import random_angle_over_time, random_position_over_time
 from .sensors import accelerometer, add_noise_bias, gyroscope, imu, rel_pose

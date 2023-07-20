@@ -2,10 +2,16 @@ from typing import Callable
 
 import jax
 import jax.numpy as jnp
-from tree_utils import PyTree, tree_ndim, tree_shape
+import tree_utils
+from tree_utils import PyTree
 
 from x_xy import base, scan, utils
 from x_xy.algorithms import forward_kinematics_transforms, jcalc
+from x_xy.algorithms.rcmg.augmentations import (
+    register_rr_joint,
+    setup_fn_randomize_joint_axes,
+    setup_fn_randomize_positions,
+)
 
 Generator = Callable[[jax.random.PRNGKey], PyTree]
 SETUP_FN = Callable[[jax.random.PRNGKey, base.System], base.System]
@@ -68,7 +74,7 @@ def batch_generator(
         # test if generator is already batched, then this is a no-op
         key = jax.random.PRNGKey(0)
         X, y = generators(key)
-        if tree_ndim(X) > 2:
+        if tree_utils.tree_ndim(X) > 2:
             return generators
 
     if not isinstance(generators, list):
@@ -111,7 +117,7 @@ def make_normalizer_from_generator(
 
     # probe generator for its batchsize
     X, _ = generator(KEY)
-    bs = tree_shape(X)
+    bs = tree_utils.tree_shape(X)
 
     # how often do we have to query the generator
     whole = approx_with_large_batchsize // bs
@@ -120,7 +126,8 @@ def make_normalizer_from_generator(
     for _ in range(whole + 1):
         key, consume = jax.random.split(key)
         Xs.append(generator(consume)[0])
-    Xs = jnp.concatenate(Xs)[:approx_with_large_batchsize]
+    Xs = tree_utils.tree_batch(Xs, True, "jax")
+    Xs = tree_utils.tree_slice(Xs, start=0, slice_size=approx_with_large_batchsize)
 
     # obtain statistics
     mean = jax.tree_map(lambda arr: jnp.mean(arr, axis=(0, 1)), Xs)

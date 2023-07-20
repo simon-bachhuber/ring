@@ -3,12 +3,20 @@ import jax.numpy as jnp
 import tree_utils
 
 import x_xy
-from x_xy.algorithms.rcmg import make_normalizer_from_generator
+from x_xy.algorithms import make_normalizer_from_generator
+
+
+def finalize_fn_full_imu_setup(key, q, x, sys):
+    X = {
+        name: x_xy.algorithms.imu(x.take(sys.name_to_idx(name), 1), sys.gravity, sys.dt)
+        for name in sys.link_names
+    }
+    return X, None
 
 
 def test_normalize():
     sys = x_xy.io.load_example("test_three_seg_seg2")
-    gen = x_xy.algorithms.build_generator(sys)
+    gen = x_xy.algorithms.build_generator(sys, finalize_fn=finalize_fn_full_imu_setup)
     gen = x_xy.algorithms.batch_generator(gen, 50)
 
     normalizer = make_normalizer_from_generator(gen, approx_with_large_batchsize=50)
