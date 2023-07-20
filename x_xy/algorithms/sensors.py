@@ -82,13 +82,20 @@ def imu(
     key: Optional[jax.random.PRNGKey] = None,
     noisy: bool = False,
     smoothen_degree: Optional[int] = None,
+    delay: Optional[int] = None,
 ) -> dict:
     "Simulates a 6D IMU."
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
 
     if smoothen_degree is not None:
         measurements = jax.tree_map(
-            lambda arr: moving_average(arr, smoothen_degree), measurements
+            lambda arr: moving_average(arr, smoothen_degree, delay),
+            measurements,
+        )
+
+    if delay is not None:
+        measurements = jax.tree_map(
+            lambda arr: (jnp.pad(arr, ((delay, 0), (0, 0)))[:-delay]), measurements
         )
 
     if noisy:
