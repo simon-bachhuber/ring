@@ -2,11 +2,10 @@ from typing import Callable
 
 import jax
 import jax.numpy as jnp
-from tree_utils import PyTree
+from tree_utils import PyTree, tree_ndim, tree_shape
 
 from x_xy import base, scan, utils
 from x_xy.algorithms import forward_kinematics_transforms, jcalc
-from x_xy.algorithms.rcmg import augmentations
 
 Generator = Callable[[jax.random.PRNGKey], PyTree]
 SETUP_FN = Callable[[jax.random.PRNGKey, base.System], base.System]
@@ -63,8 +62,15 @@ def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:
 
 
 def batch_generator(
-    generators: Generator | list[Generator], batchsizes: int | list[int]
+    generators: Generator | list[Generator], batchsizes: int | list[int] = 1
 ) -> Generator:
+    if not isinstance(generators, list):
+        # test if generator is already batched, then this is a no-op
+        key = jax.random.PRNGKey(0)
+        X, y = generators(key)
+        if tree_ndim(X) > 2:
+            return generators
+
     if not isinstance(generators, list):
         generators = [generators]
     if not isinstance(batchsizes, list):
@@ -92,3 +98,37 @@ def batch_generator(
         return data
 
     return generator
+
+
+KEY = jax.random.PRNGKey(777)
+
+
+def make_normalizer_from_generator(
+    generator: Generator, approx_with_large_batchsize: int = 512
+) -> Callable:
+    # batch it if it isn't already
+    generator = batch_generator(generator)
+
+    # probe generator for its batchsize
+    X, _ = generator(KEY)
+    bs = tree_shape(X)
+
+    # how often do we have to query the generator
+    whole = approx_with_large_batchsize // bs
+
+    Xs, key = [], KEY
+    for _ in range(whole + 1):
+        key, consume = jax.random.split(key)
+        Xs.append(generator(consume)[0])
+    Xs = jnp.concatenate(Xs)[:approx_with_large_batchsize]
+
+    # obtain statistics
+    mean = jax.tree_map(lambda arr: jnp.mean(arr, axis=(0, 1)), Xs)
+    std = jax.tree_map(lambda arr: jnp.std(arr, axis=(0, 1)), Xs)
+
+    eps = 1e-8
+
+    def normalizer(X):
+        return jax.tree_map(lambda a, b, c: (a - b) / (c + eps), X, mean, std)
+
+    return normalizer
