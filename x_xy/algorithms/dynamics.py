@@ -231,10 +231,12 @@ def forward_dynamics(
 def _strapdown_integration(
     q: base.Quaternion, dang: jax.Array, dt: float
 ) -> base.Quaternion:
-    axis = maths.safe_normalize(dang)
-    angle = maths.safe_norm(dang) * dt
-    angle = jnp.squeeze(angle)
-    return maths.quat_mul(maths.quat_rot_axis(axis, angle), q)
+    dang_norm = jnp.linalg.norm(dang) + 1e-8
+    axis = dang / dang_norm
+    angle = dang_norm * dt
+    q = maths.quat_mul(maths.quat_rot_axis(axis, angle), q)
+    # Roy book says that one should re-normalize after every quaternion step
+    return q / jnp.linalg.norm(q)
 
 
 def _rk4(rhs, x, dt):
