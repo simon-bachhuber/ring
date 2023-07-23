@@ -21,6 +21,12 @@ class RCMG_Config:
     dang_min_free_spherical: float = 0.1
     dang_max_free_spherical: float = 3.0
 
+    # max min allowed actual delta values in radians
+    delta_ang_min: float = 0.0
+    delta_ang_max: float = 2 * jnp.pi
+    delta_ang_min_free_spherical: float = 0.0
+    delta_ang_max_free_spherical: float = 2 * jnp.pi
+
     dpos_min: float = 0.001  # speed of translation
     dpos_max: float = 0.3
     pos_min: float = -2.5
@@ -96,23 +102,28 @@ def _draw_rxyz(
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     enable_range_of_motion: bool = True,
-    use_dang_free: bool = False,
+    free_spherical: bool = False,
 ) -> jax.Array:
     key_value, consume = jax.random.split(key_value)
     ANG_0 = jax.random.uniform(consume, minval=config.ang0_min, maxval=config.ang0_max)
     # `random_angle_over_time` always returns wrapped angles, thus it would be
     # inconsistent to allow an initial value that is not wrapped
     ANG_0 = maths.wrap_to_pi(ANG_0)
+    # only used for `delta_ang_min_max` logic
+    max_iter = 5
     return algorithms.random_angle_over_time(
         key_t,
         key_value,
         ANG_0,
-        config.dang_min_free_spherical if use_dang_free else config.dang_min,
-        config.dang_max_free_spherical if use_dang_free else config.dang_max,
+        config.dang_min_free_spherical if free_spherical else config.dang_min,
+        config.dang_max_free_spherical if free_spherical else config.dang_max,
+        config.delta_ang_min_free_spherical if free_spherical else config.delta_ang_min,
+        config.delta_ang_max_free_spherical if free_spherical else config.delta_ang_max,
         config.t_min,
         config.t_max,
         config.T,
         config.Ts,
+        max_iter,
         config.randomized_interpolation,
         config.range_of_motion_hinge if enable_range_of_motion else False,
         config.range_of_motion_hinge_method,
@@ -153,7 +164,7 @@ def _draw_spherical(
     @jax.vmap
     def draw_euler_angles(key_t, key_value):
         return _draw_rxyz(
-            config, key_t, key_value, enable_range_of_motion=False, use_dang_free=True
+            config, key_t, key_value, enable_range_of_motion=False, free_spherical=True
         )
 
     triple = lambda key: jax.random.split(key, 3)
