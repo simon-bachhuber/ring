@@ -28,6 +28,7 @@ Additionally,
     Note 2: More info: https://vispy.org/installation.html
 
 - `subpkgs/omc` requires `pandas`.
+- `subpkgs/pipeline` requires `matplotlib`.
 
 Typically, this will install `jax` as cpu-only version. CUDA version can be installed with
 > pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
