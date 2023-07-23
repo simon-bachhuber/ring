@@ -18,6 +18,7 @@ def make_generator(
     sys_data: System | list[System],
     sys_noimu: System,
     imu_attachment: dict,
+    return_xs: bool = False,
 ):
     configs, sys_data = _to_list(configs), _to_list(sys_data)
 
@@ -25,7 +26,10 @@ def make_generator(
         def finalize_fn(key, q, x, sys):
             X = pipeline.imu_data(key, x, sys, imu_attachment)
             y = x_xy.algorithms.rel_pose(sys_noimu, x, sys)
-            return X, y
+            if return_xs:
+                return X, y, x
+            else:
+                return X, y
 
         def setup_fn(key, sys):
             key, consume = jax.random.split(key)
