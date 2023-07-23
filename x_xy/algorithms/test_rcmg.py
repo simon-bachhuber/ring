@@ -55,7 +55,6 @@ def test_rcmg():
             bs = 8
             generator = x_xy.algorithms.batch_generator(generator, bs)
 
-            x_xy.utils.disable_jit_warn()
             seed = jax.random.PRNGKey(
                 1,
             )

@@ -3,13 +3,6 @@ import jax.numpy as jnp
 
 from x_xy.base import Geometry, _Base
 
-JIT_WARN = True
-
-
-def disable_jit_warn():
-    global JIT_WARN
-    JIT_WARN = False
-
 
 def tree_equal(a, b):
     "Copied from Marcel / Thomas"
