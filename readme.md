@@ -14,6 +14,10 @@ on a general Kinematic Tree structure.
 
 ## Installation
 
+Supports `Python=3.10` and `Python=3.11`.
+
+Install with `pip` using
+
 `pip install git+https://github.com/SimiPixel/x_xy_v2.git`
 
 Additionally,
@@ -25,7 +29,8 @@ Additionally,
 
 - `subpkgs/omc` requires `pandas`.
 
-    
+Typically, this will install `jax` as cpu-only version. CUDA version can be installed with
+> pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 ## Examples
 Example systems can be found under `x_xy/io/examples`. 
