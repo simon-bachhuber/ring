@@ -177,7 +177,7 @@ def predict(
             sys_render,
             xs_render,
             fps=25,
-            vispy_backend="pyqt6",
+            verbose=verbose,
             **vispy_kwargs,
         )
 
