@@ -2,10 +2,10 @@ from typing import Any, Optional, Sequence, Union
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import tree_utils as tu
 from flax import struct
 from jax.tree_util import tree_map
-import numpy as np
 
 from x_xy import maths
 
@@ -319,13 +319,15 @@ class Link(_Base):
     transform1: Transform
 
     # only used by `setup_fn_randomize_positions`
-    pos_min: jax.Array = jnp.zeros((3,))
-    pos_max: jax.Array = jnp.zeros((3,))
+    pos_min: jax.Array = struct.field(default_factory=lambda: jnp.zeros((3,)))
+    pos_max: jax.Array = struct.field(default_factory=lambda: jnp.zeros((3,)))
 
     # these parameters can be used to model joints that have parameters
     # they are directly feed into the `jcalc` routine
     # this array *must* be of shape (N_JOINT_PARAMS,)
-    joint_params: jax.Array = jnp.zeros((N_JOINT_PARAMS,))
+    joint_params: jax.Array = struct.field(
+        default_factory=lambda: jnp.zeros((N_JOINT_PARAMS,))
+    )
 
     # internal useage
     inertia: Inertia = Inertia.zero()
@@ -375,7 +377,7 @@ class System(_Base):
     # geometries in the system
     geoms: list[Geometry]
     # root / base acceleration offset
-    gravity: jax.Array = jnp.array([0, 0, -9.81])
+    gravity: jax.Array = struct.field(default_factory=lambda: jnp.array([0, 0, -9.81]))
 
     integration_method: str = struct.field(
         False, default_factory=lambda: "semi_implicit_euler"
