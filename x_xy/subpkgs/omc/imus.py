@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from scipy.interpolate import CubicSpline
 
 
@@ -15,6 +14,8 @@ def _imu_measurements_from_txt(
     txt_file_skiprows: int = 4,
 ):
     from pathlib import Path
+
+    import pandas as pd
 
     try:
         df = pd.read_csv(

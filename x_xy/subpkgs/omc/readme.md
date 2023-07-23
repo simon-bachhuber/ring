@@ -1,3 +1,5 @@
+This module requires `pandas`.
+
 This module allows to preprocess Optical Motion Capture (OMC) data by
     
     - re-sampling IMUs and Optitrack to a common frequency,

@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 from .nan import _interp_nan_values, _nan_check, _slerp_nan_values
 
@@ -8,6 +7,8 @@ _path_optitrack = None
 
 
 def _load_df(path_optitrack: str):
+    import pandas as pd
+
     global _df_optitrack, _path_optitrack
     if _path_optitrack is not None:
         if path_optitrack != _path_optitrack:
