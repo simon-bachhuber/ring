@@ -109,7 +109,7 @@ class SystemAdv(base._Base):
     dynamic_geometries: bool = struct.field(False)
 
     # root / base acceleration offset
-    gravity: jax.Array = jnp.array([0, 0, 9.81])
+    gravity: jax.Array = struct.field(default_factory=lambda: jnp.array([0, 0, 9.81]))
 
     @property
     def parent(self) -> jax.Array:
