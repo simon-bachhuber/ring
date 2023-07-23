@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import jax
 from tree_utils import PyTree
@@ -35,3 +35,17 @@ def expand_batchsize(tree: PyTree, pmap_size: int, vmap_size: int) -> PyTree:
         ),
         tree,
     )
+
+
+CPU_ONLY = False
+
+
+def backend(cpu_only: bool = False, n_gpus: Optional[int] = None):
+    "Sets backend for all jax operations (including this library)."
+    global CPU_ONLY
+
+    if cpu_only and not CPU_ONLY:
+        CPU_ONLY = True
+        from jax import config
+
+        config.update("jax_platform_name", "cpu")
