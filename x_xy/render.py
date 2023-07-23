@@ -216,6 +216,7 @@ def _enable_headless_backend():
             return False
 
 
+# old: elevation=30, distance=6
 class VispyScene(Scene):
     def __init__(
         self,
@@ -223,7 +224,7 @@ class VispyScene(Scene):
         show_cs_root=True,
         size=(1280, 720),
         camera: scene.cameras.BaseCamera = scene.TurntableCamera(
-            elevation=30, distance=6
+            elevation=25, distance=4.0, azimuth=25
         ),
         headless_backend: bool = False,
         vispy_backend: Optional[str] = None,
@@ -374,6 +375,7 @@ def animate(
     fps: int = 50,
     fmt: str = "mp4",
     backend: str = "vispy",
+    verbose: bool = True,
     **backend_kwargs,
 ):
     """Make animation from system and trajectory of maximal coordinates. `x`
@@ -398,11 +400,12 @@ def animate(
     _, step = _parse_timestep(sys.dt, fps, N)
 
     frames = []
-    for t in tqdm.tqdm(range(0, N, step), "Rendering frames.."):
+    for t in tqdm.tqdm(range(0, N, step), "Rendering frames..", disable=not verbose):
         scene.update(x[t])
         frames.append(scene.render())
 
-    print(f"DONE. Converting frames to {path} (this might take a while..)")
+    if verbose:
+        print(f"DONE. Converting frames to {path} (this might take a while..)")
     imageio.mimsave(path, frames, format=fmt, fps=fps)
 
 
