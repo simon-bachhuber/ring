@@ -409,8 +409,8 @@ def animate(
         t2 = time.time()
         frames.append(scene.render())
         t3 = time.time()
-        print("Update took: [ms]", (t2 - t1) * 1000)
-        print("Render took: [ms]", (t3 - t2) * 1000)
+        # print("Update took: [ms]", (t2 - t1) * 1000)
+        # print("Render took: [ms]", (t3 - t2) * 1000)
 
     if verbose:
         print(f"DONE. Converting frames to {path} (this might take a while..)")
