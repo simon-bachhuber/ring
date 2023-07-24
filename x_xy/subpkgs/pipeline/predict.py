@@ -177,7 +177,7 @@ def predict(
             sys_render,
             xs_render,
             fps=25,
-            show_pbar=False,
+            show_pbar=True,
             verbose=verbose,
             **vispy_kwargs,
         )
