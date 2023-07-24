@@ -376,6 +376,7 @@ def animate(
     fmt: str = "mp4",
     backend: str = "vispy",
     verbose: bool = True,
+    show_pbar: bool = True,
     **backend_kwargs,
 ):
     """Make animation from system and trajectory of maximal coordinates. `x`
@@ -399,10 +400,17 @@ def animate(
     N = x.pos.shape[0]
     _, step = _parse_timestep(sys.dt, fps, N)
 
+    import time
+
     frames = []
-    for t in tqdm.tqdm(range(0, N, step), "Rendering frames..", disable=not verbose):
+    for t in tqdm.tqdm(range(0, N, step), "Rendering frames..", disable=not show_pbar):
+        t1 = time.time()
         scene.update(x[t])
+        t2 = time.time()
         frames.append(scene.render())
+        t3 = time.time()
+        print("Update took: [ms]", (t2 - t1) * 1000)
+        print("Render took: [ms]", (t3 - t2) * 1000)
 
     if verbose:
         print(f"DONE. Converting frames to {path} (this might take a while..)")
