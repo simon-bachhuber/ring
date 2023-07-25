@@ -44,7 +44,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         self._controls = Controls()
         main_layout.addWidget(self._controls)
-        self._canvas_wrapper = VispyScene(size=CANVAS_SIZE)
+        self._canvas_wrapper = VispyScene(size=CANVAS_SIZE, bgcolor="w")
         main_layout.addWidget(self._canvas_wrapper.canvas.native)
 
         central_widget.setLayout(main_layout)
