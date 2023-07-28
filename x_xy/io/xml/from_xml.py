@@ -127,7 +127,8 @@ def load_sys_from_str(xml_str: str, prefix: str = ""):
     options.update({} if options_xml is None else options_xml.attrib)
 
     # convert scalar array to float
-    options["dt"] = float(options["dt"])
+    # if this is uncommented, it leads to `ConcretizationTypeError`s
+    # options["dt"] = float(options["dt"])
 
     links = {}
     link_parents = {}
