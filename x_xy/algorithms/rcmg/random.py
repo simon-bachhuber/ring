@@ -14,10 +14,13 @@ def random_angle_over_time(
     ANG_0,
     dang_min,
     dang_max,
+    delta_ang_min,
+    delta_ang_max,
     t_min,
     t_max,
     T,
     Ts,
+    max_iter=5,
     randomized_interpolation=False,
     range_of_motion=False,
     range_of_motion_method="uniform",
@@ -37,9 +40,12 @@ def random_angle_over_time(
             range_of_motion_method,
             dang_min,
             dang_max,
+            delta_ang_min,
+            delta_ang_max,
             dt,
             phi,
             consume,
+            max_iter,
         )
 
         ANG_i = jnp.array([[jnp.floor(t / Ts) * Ts, phi]])
@@ -53,7 +59,7 @@ def random_angle_over_time(
 
     # preallocate ANG array
     ANG = jnp.zeros((int(T // t_min) + 1, 2))
-    ANG = ANG.at[0, 0].set(ANG_0)
+    ANG = ANG.at[0, 1].set(ANG_0)
 
     val_outer = (1, 0.0, ANG_0, key_t, key_ang, ANG)
     end, *_, consume, ANG = jax.lax.while_loop(cond_fn_outer, body_fn_outer, val_outer)
@@ -144,7 +150,7 @@ def random_position_over_time(
 
     # preallocate ANG array
     POS = jnp.zeros((int(T // t_min) + 1, 2))
-    POS = POS.at[0, 0].set(POS_0)
+    POS = POS.at[0, 1].set(POS_0)
 
     val_outer = (1, 0.0, 0.0, 0.0, 0.0, key, POS)
     end, *_, consume, POS = jax.lax.while_loop(cond_fn_outer, body_fn_outer, val_outer)
@@ -170,34 +176,61 @@ def _clip_to_pi(phi):
 
 
 def _resolve_range_of_motion(
-    range_of_motion, range_of_motion_method, dang_min, dang_max, dt, prev_phi, key
+    range_of_motion,
+    range_of_motion_method,
+    dang_min,
+    dang_max,
+    delta_ang_min,
+    delta_ang_max,
+    dt,
+    prev_phi,
+    key,
+    max_iter,
 ):
-    key, consume = random.split(key)
+    def _next_phi(key):
+        key, consume = random.split(key)
 
-    if range_of_motion:
-        if range_of_motion_method == "coinflip":
-            probs = jnp.array([0.5, 0.5])
-        elif range_of_motion_method == "uniform":
-            p = 0.5 * (1 - prev_phi / jnp.pi)
-            probs = jnp.array([p, (1 - p)])
+        if range_of_motion:
+            if range_of_motion_method == "coinflip":
+                probs = jnp.array([0.5, 0.5])
+            elif range_of_motion_method == "uniform":
+                p = 0.5 * (1 - prev_phi / jnp.pi)
+                probs = jnp.array([p, (1 - p)])
+            else:
+                raise NotImplementedError
+
+            sign = random.choice(consume, jnp.array([1.0, -1.0]), p=probs)
+            lower = _clip_to_pi(prev_phi + sign * dang_min * dt)
+            upper = _clip_to_pi(prev_phi + sign * dang_max * dt)
+
+            # swap if lower > upper
+            lower, upper = jnp.sort(jnp.hstack((lower, upper)))
+
+            key, consume = random.split(key)
+            return random.uniform(consume, minval=lower, maxval=upper)
+
         else:
-            raise NotImplementedError
+            dphi = random.uniform(consume, minval=dang_min, maxval=dang_max) * dt
+            key, consume = random.split(key)
+            sign = random.choice(consume, jnp.array([1.0, -1.0]))
+            return prev_phi + sign * dphi
 
-        sign = random.choice(consume, jnp.array([1.0, -1.0]), p=probs)
-        lower = _clip_to_pi(prev_phi + sign * dang_min * dt)
-        upper = _clip_to_pi(prev_phi + sign * dang_max * dt)
+    def body_fn(val):
+        key, _, i = val
+        key, consume = jax.random.split(key)
+        next_phi = _next_phi(consume)
+        return key, next_phi, i + 1
 
-        # swap if lower > upper
-        lower, upper = jnp.sort(jnp.hstack((lower, upper)))
+    def cond_fn(val):
+        _, next_phi, i = val
+        delta_phi = jnp.abs(next_phi - prev_phi)
+        # delta is in bounds
+        break_if_true1 = (delta_phi >= delta_ang_min) & (delta_phi <= delta_ang_max)
+        break_if_true2 = i > max_iter
+        return (i == 0) | (~(break_if_true1 | break_if_true2))
 
-        key, consume = random.split(key)
-        return random.uniform(consume, minval=lower, maxval=upper)
-
-    else:
-        dphi = random.uniform(consume, minval=dang_min, maxval=dang_max) * dt
-        key, consume = random.split(key)
-        sign = random.choice(consume, jnp.array([1.0, -1.0]))
-        return prev_phi + sign * dphi
+    # the `prev_phi` here is unused
+    return jax.lax.while_loop(cond_fn, body_fn, (key, prev_phi, 0))[1]
 
 
 def cosInterpolate(x, xp, fp):

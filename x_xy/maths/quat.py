@@ -4,7 +4,13 @@ import jax
 import jax.numpy as jnp
 import jax.random as jrand
 
-from .safe import safe_norm, safe_normalize
+from .basic import wrap_to_pi
+from .safe import safe_arcsin, safe_norm, safe_normalize
+
+
+@partial(jnp.vectorize, signature="(4)->(4)")
+def ensure_positive_w(q):
+    return jnp.where(q[0] < 0, -q, q)
 
 
 def angle_error(q, qhat):
@@ -75,7 +81,14 @@ def quat_rot_axis(axis: jnp.ndarray, angle: jnp.ndarray) -> jnp.ndarray:
     assert axis.shape == (3,)
     assert angle.shape == ()
 
-    angle = _angle_convention_quat_rot_axis(angle)
+    axis = safe_normalize(axis)
+    # NOTE: CONVENTION
+    # 23.04.23
+    # this fixes the issue of prismatic joints being inverted w.r.t.
+    # gravity vector.
+    # The reason is that it inverts the way how revolute joints behave
+    # Such that prismatic joints work by inverting gravity
+    angle *= -1.0
     s, c = jnp.sin(angle / 2), jnp.cos(angle / 2)
     return jnp.array([c, *(axis * s)])
 
@@ -171,21 +184,37 @@ def quat_to_rot_axis(q):
     return axis, angle
 
 
-def _angle_convention_quat_rot_axis(angle):
-    """
-    This is the interpretation of rotating the vector and *not*
-    the frame.
-    For the interpretation of rotating the frame and *not* the
-    vector, you should use angle -> -angle.
-    NOTE: Usually, we actually want the second interpretation. Think about it,
-    we use quaternions to re-express vectors in other frames. But the
-    vectors stay the same. We only transform them to a common frames.
+@partial(jnp.vectorize, signature="(3)->(4)")
+def euler_to_quat(angles: jnp.ndarray) -> jnp.ndarray:
+    """Converts euler rotations in radians to quaternion."""
+    # this follows the Tait-Bryan intrinsic rotation formalism: x-y'-z''
+    c1, c2, c3 = jnp.cos(angles / 2)
+    s1, s2, s3 = jnp.sin(angles / 2)
+    w = c1 * c2 * c3 - s1 * s2 * s3
+    x = s1 * c2 * c3 + c1 * s2 * s3
+    y = c1 * s2 * c3 - s1 * c2 * s3
+    z = c1 * c2 * s3 + s1 * s2 * c3
+    # NOTE: CONVENTION
+    return quat_inv(jnp.array([w, x, y, z]))
 
-    # NOTE
-    # 23.04.23
-    # this fixes the issue of prismatic joints being inverted w.r.t.
-    # gravity vector.
-    # The reason is that it inverts the way how revolute joints behave
-    # Such that prismatic joints work by inverting gravity
-    """
-    return angle * -1.0
+
+@partial(jnp.vectorize, signature="(4)->(3)")
+def quat_to_euler(q: jnp.ndarray) -> jnp.ndarray:
+    """Converts quaternions to euler rotations in radians."""
+    # this follows the Tait-Bryan intrinsic rotation formalism: x-y'-z''
+
+    # NOTE: CONVENTION
+    q = quat_inv(q)
+
+    z = jnp.arctan2(
+        -2 * q[1] * q[2] + 2 * q[0] * q[3],
+        q[1] * q[1] + q[0] * q[0] - q[3] * q[3] - q[2] * q[2],
+    )
+    # TODO: Investigate why quaternions go so big we need to clip.
+    y = safe_arcsin(jnp.clip(2 * q[1] * q[3] + 2 * q[0] * q[2], -1.0, 1.0))
+    x = jnp.arctan2(
+        -2 * q[2] * q[3] + 2 * q[0] * q[1],
+        q[3] * q[3] - q[2] * q[2] - q[1] * q[1] + q[0] * q[0],
+    )
+
+    return jnp.array([x, y, z])

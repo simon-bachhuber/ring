@@ -1,4 +1,4 @@
-<x_xy model="double_pendulum">
+<x_xy model="test_double_pendulum">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
         <geom vispy_edge_color="black" vispy_color="white"/>

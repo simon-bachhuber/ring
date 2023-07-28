@@ -2,7 +2,7 @@ import x_xy
 
 
 def test_sys_idx_map():
-    sys = x_xy.io.load_example("three_segs/three_seg_seg2")
+    sys = x_xy.io.load_example("test_three_seg_seg2")
 
     idx_map_l = sys.idx_map("l")
     idx_map_q = sys.idx_map("q")

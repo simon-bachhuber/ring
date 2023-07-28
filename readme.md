@@ -3,6 +3,7 @@
 </p>
 
 # `x_xy_v2` -- A *tiny* Kinematic Tree Simulator
+<img src="figures/coverage_badge.svg" height="20" />
 
 `x_xy` is a small package for performing
 - forward dynamics
@@ -11,33 +12,28 @@
 
 on a general Kinematic Tree structure. 
 
-It uses nothing but JAX (and flax.struct).
-
-It's meant to be minimalistic and simple. It uses spatial vectors and implements algorithms as proposed by Roy Featherstone. Nameing is heavily inspired by `brax`.
-
-It currently does *not* support
-- collisions (i.e. every body is (sort of) transparent)
-
-and probably won't in the near future.
-
 ## Installation
+
+Supports `Python=3.10` and `Python=3.11`.
+
+Install with `pip` using
 
 `pip install git+https://github.com/SimiPixel/x_xy_v2.git`
 
 Additionally,
-- `render.py` requires a vispy-backend (one is enough). 
+- `render.py` requires a vispy backend (e.g. `pip install pyqt6`).
 
-Good options are
-    
-    on linux:
-        - PyQT5 (via e.g. pip)
-        - EGL (headless) (via e.g. apt)
-    on m1 mac:
-        - PyQT6 (via e.g. pip)
+    Note 1: On a headless node with a Nvidia GPU it works without any backend.
 
-    More info: https://vispy.org/installation.html
+    Note 2: More info: https://vispy.org/installation.html
+
+- `subpkgs/omc` requires `pandas`.
+- `subpkgs/pipeline` requires `matplotlib`.
+
+Typically, this will install `jax` as cpu-only version. CUDA version can be installed with
+> pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 ## Examples
 Example systems can be found under `x_xy/io/examples`. 
 
-Additionally, there are some simple example scripts available on the wiki https://github.com/SimiPixel/x_xy_v2/wiki.
+Additionally, there are some simple example scripts available on the [wiki](https://github.com/SimiPixel/x_xy_v2/wiki). 

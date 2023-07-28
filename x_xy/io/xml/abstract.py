@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import Tuple, TypeVar
 
 import jax
 import jax.numpy as jnp
@@ -60,7 +60,9 @@ class AbsDampArmaStiffZero:
             ["damping", "armature", "spring_stiff", "spring_zero"],
             [damping, armature, stiffness, zeropoint],
         ):
-            if not _arr_equal(arr, default_fns[key](q_size, qd_size, link_typ)):
+            if not _arr_equal(
+                arr, default_fns[key](q_size=q_size, qd_size=qd_size, link_typ=link_typ)
+            ):
                 element.set(key, _to_str(arr))
 
 
@@ -76,17 +78,59 @@ class AbsTrans:
         if not _arr_equal(t.pos, default_pos):
             element.set("pos", _to_str(t.pos))
         if not _arr_equal(t.rot, default_quat):
-            element.set("quat", _to_str(t.quat))
+            element.set("quat", _to_str(t.rot))
+
+
+class AbsPosMinMax:
+    @staticmethod
+    def from_xml(attr: ATTR, pos: jax.Array) -> Tuple[jax.Array, jax.Array]:
+        pos_min = attr.get("pos_min", None)
+        pos_max = attr.get("pos_max", None)
+        assert (pos_min is None and pos_max is None) or (
+            pos_min is not None and pos_max is not None
+        ), (
+            f"In link {attr.get('name', 'None')} found only one of `pos_min` "
+            "and `pos_max`, but requires either both or none"
+        )
+        if pos_min is not None:
+            assert not _arr_equal(
+                pos_min, pos_max
+            ), f"In link {attr.get('name', 'None')} "
+            " both `pos_min` and `pos_max` are identical, use `pos` instead."
+
+        if pos_min is None:
+            pos_min = pos_max = pos
+        return pos_min, pos_max
+
+    @staticmethod
+    def to_xml(element: T, pos_min: jax.Array, pos_max: jax.Array):
+        if _arr_equal(pos_min, pos_max):
+            return
+
+        element.set("pos_min", _to_str(pos_min))
+        element.set("pos_max", _to_str(pos_max))
 
 
 def _from_xml_vispy(attr: ATTR):
-    "Find all keys starting with `vispy_`, and return subdict without that prefix"
+    """Find all keys starting with `vispy_`, and return subdict without that prefix.
+    Also convert all arrays back to list[float], because of `struct.field(False)`.
+    Otherwise jitted functions with `sys` input will error on second execution, since
+    it can't compare the two vispy_color arrays.
+    """
 
     def delete_prefix(key):
         len_suffix = len(key.split("_")[0]) + 1
         return key[len_suffix:]
 
-    return {delete_prefix(k): attr[k] for k in attr if k.split("_")[0] == "vispy"}
+    dict_no_prefix = {
+        delete_prefix(k): attr[k] for k in attr if k.split("_")[0] == "vispy"
+    }
+
+    # convert arrays -> list[float]
+    to_list = (
+        lambda ele: ele.tolist() if isinstance(ele, (np.ndarray, jax.Array)) else ele
+    )
+    return {key: to_list(value) for key, value in dict_no_prefix.items()}
 
 
 def _to_xml_vispy(element: T, geom: base.Geometry) -> None:
@@ -110,7 +154,7 @@ def _to_xml_geom_processing(element: T, geom: base.Geometry) -> None:
     AbsTrans.to_xml(element, geom.transform)
     element.set("mass", _to_str(geom.mass))
     _to_xml_vispy(element, geom)
-    element.set("type", geometry_to_xml_identifier[geom])
+    element.set("type", geometry_to_xml_identifier[type(geom)])
 
 
 class AbsGeomBox:
@@ -126,7 +170,7 @@ class AbsGeomBox:
     @staticmethod
     def to_xml(element: T, geom: base.Box) -> None:
         _to_xml_geom_processing(element, geom)
-        dim = np.array([geom.dim_x, geom.dim_y, geom.dimz])
+        dim = np.array([geom.dim_x, geom.dim_y, geom.dim_z])
         element.set("dim", _to_str(dim))
 
 
@@ -207,6 +251,10 @@ def _get_rotation(attr: ATTR):
 
 
 def _to_str(obj):
+    if isinstance(obj, list):
+        if all([isinstance(ele, float) for ele in obj]):
+            obj = np.array(obj)
+
     if isinstance(obj, (np.ndarray, jnp.ndarray)):
         if obj.ndim == 0:
             return str(obj)

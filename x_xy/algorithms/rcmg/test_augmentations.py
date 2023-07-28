@@ -38,16 +38,19 @@ def setup_fn_old(key, sys: x_xy.base.System) -> x_xy.base.System:
     return sys.replace(links=sys.links.replace(transform1=ts))
 
 
-def setup_fn_new(key, sys, xml_path):
-    return setup_fn_randomize_positions(xml_path)(key, sys)
-
-
 def test_randomize_positions():
     key = jax.random.PRNGKey(1)
-    xml_path = x_xy.io.examples_dir.joinpath("test_four_seg_seg2.xml")
-    sys = x_xy.io.load_sys_from_xml(xml_path)
+    sys = x_xy.io.load_example("test_randomize_position")
 
-    pos_old = setup_fn_old(key, sys).links.transform1.pos
-    pos_new = setup_fn_new(key, sys, xml_path).links.transform1.pos
+    # split key once more because the new logic `setup_fn_randomize_positions`
+    # randomizes the position for each body even if the body has
+    # no explicit `pos_min` and `pos_max` given in the xml
+    # this is the case here for the body `seg2`
+    # i.e. this is the split for `seg2` relative to `worldbody`
+    internal_key, *_ = jax.random.split(key, 4)
+    # then comes `seg1` relative to `seg2`
+    pos_old = setup_fn_old(internal_key, sys).links.transform1.pos
+
+    pos_new = setup_fn_randomize_positions(key, sys).links.transform1.pos
 
     np.testing.assert_array_equal(pos_old, pos_new)
