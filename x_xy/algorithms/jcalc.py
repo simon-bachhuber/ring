@@ -39,14 +39,12 @@ class RCMG_Config:
     cdf_bins_max: Optional[int] = None
 
     # flags
-    # TODO: Rename to `_angle`
-    randomized_interpolation: bool = False
+    randomized_interpolation_angle: bool = False
     randomized_interpolation_position: bool = False
     range_of_motion_hinge: bool = True
     range_of_motion_hinge_method: str = "uniform"
 
     # initial value of joints
-    # TODO implement
     ang0_min: float = 0.0
     ang0_max: float = 0.0
     pos0_min: float = 0.0
@@ -124,7 +122,7 @@ def _draw_rxyz(
         config.T,
         config.Ts,
         max_iter,
-        config.randomized_interpolation,
+        config.randomized_interpolation_angle,
         config.range_of_motion_hinge if enable_range_of_motion else False,
         config.range_of_motion_hinge_method,
         config.cdf_bins_min,
