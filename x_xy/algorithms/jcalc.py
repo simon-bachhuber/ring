@@ -87,6 +87,10 @@ def _spherical_transform(q, _):
     return base.Transform.create(rot=q)
 
 
+def _p3d_transform(q, _):
+    return base.Transform.create(pos=q)
+
+
 mrx = base.Motion.create(ang=jnp.array([1.0, 0, 0]))
 mry = base.Motion.create(ang=jnp.array([0.0, 1, 0]))
 mrz = base.Motion.create(ang=jnp.array([0.0, 0, 1]))
@@ -131,7 +135,7 @@ def _draw_rxyz(
 
 
 def _draw_pxyz(
-    config: RCMG_Config, key_t: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey
 ) -> jax.Array:
     key_value, consume = jax.random.split(key_value)
     POS_0 = jax.random.uniform(consume, minval=config.pos0_min, maxval=config.pos0_max)
@@ -171,14 +175,21 @@ def _draw_spherical(
     return q
 
 
+def _draw_p3d(
+    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+) -> jax.Array:
+    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key))(
+        jax.random.split(key_value, 3)
+    )
+    return pos.T
+
+
 def _draw_free(
     config: RCMG_Config, key_t: jax.random.PRNGKey, key_value: jax.random.PRNGKey
 ) -> jax.Array:
     key_value1, key_value2 = jax.random.split(key_value)
     q = _draw_spherical(config, key_t, key_value1)
-    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key))(
-        jax.random.split(key_value2, 3)
-    ).T
+    pos = _draw_p3d(config, None, key_value2)
     return jnp.concatenate((q, pos), axis=1)
 
 
@@ -191,6 +202,7 @@ _joint_types = {
     "free": JointModel(_free_transform, [mrx, mry, mrz, mpx, mpy, mpz], _draw_free),
     "frozen": JointModel(_frozen_transform, [], _draw_frozen),
     "spherical": JointModel(_spherical_transform, [mrx, mry, mrz], _draw_spherical),
+    "p3d": JointModel(_p3d_transform, [mpx, mpy, mpz], _draw_p3d),
     "rx": JointModel(
         lambda q, _: _rxyz_transform(q, _, jnp.array([1.0, 0, 0])), [mrx], _draw_rxyz
     ),
