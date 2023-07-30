@@ -104,13 +104,20 @@ def random_position_over_time(
 ):
     def body_fn_inner(val):
         i, t, t_pre, x, x_pre, key = val
+        dt = t - t_pre
 
-        def sample_dx(key):
+        def sample_dx_squared(key):
             key, consume = random.split(key)
             dx = (
                 random.uniform(consume) * (2 * dpos_max * t_max**2)
                 - dpos_max * t_max**2
             )
+            return key, dx
+
+        def sample_dx(key):
+            key, consume1, consume2 = random.split(key, 3)
+            sign = random.choice(consume1, jnp.array([-1.0, 1.0]))
+            dx = sign * random.uniform(consume2, minval=dpos_min, maxval=dpos_max) * dt
             return key, dx
 
         key, dx = jax.lax.cond(i > max_it, (lambda key: (key, 0.0)), sample_dx, key)
@@ -120,7 +127,8 @@ def random_position_over_time(
 
     def cond_fn_inner(val):
         i, t, t_pre, x, x_pre, key = val
-        dpos = abs((x - x_pre) / ((t - t_pre) ** 2))
+        dpos_squared = abs((x - x_pre) / ((t - t_pre) ** 2))  # noqa: F841
+        dpos = jnp.abs((x - x_pre) / (t - t_pre))
         break_if_true1 = (
             (dpos < dpos_max) & (dpos > dpos_min) & (x >= pos_min) & (x <= pos_max)
         )

@@ -6,6 +6,7 @@ import joblib
 import yaml
 
 import x_xy
+from x_xy.algorithms.rcmg import replace_free_with_cor
 from x_xy.subpkgs import sim2real, sys_composer
 from x_xy.utils import parse_path
 
@@ -38,6 +39,7 @@ def load_sys(
     morph_yaml_key: Optional[str] = None,
     delete_after_morph: Optional[list[str]] = None,
     replace_rxyz_with_rr: bool = False,
+    cor: bool = False,
 ) -> x_xy.base.System:
     xml_path = _load_file_path(exp_id, "xml")
     sys = x_xy.io.load_sys_from_xml(xml_path)
@@ -55,6 +57,9 @@ def load_sys(
 
     if delete_after_morph is not None:
         sys = sys_composer.delete_subsystem(sys, delete_after_morph)
+
+    if cor:
+        sys = replace_free_with_cor(sys)
 
     return sys
 

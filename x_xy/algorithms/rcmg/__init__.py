@@ -9,6 +9,7 @@ from x_xy import base, scan, utils
 from x_xy.algorithms import forward_kinematics_transforms, jcalc
 from x_xy.algorithms.rcmg.augmentations import (
     register_rr_joint,
+    replace_free_with_cor,
     setup_fn_randomize_joint_axes,
     setup_fn_randomize_positions,
 )

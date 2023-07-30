@@ -2,6 +2,7 @@ from typing import Callable, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 import x_xy
 from x_xy import base, maths
@@ -72,6 +73,7 @@ def predict(
         ts = jnp.arange(0.0, T_plot, step=sys.dt)
         N = len(ts)
         fig, axes = plt.subplots(len(yhat), 3, figsize=(10, 3 * len(yhat)))
+        axes = np.atleast_2d(axes)
         for row, link_name in enumerate(yhat.keys()):
             euler_angles_hat = jnp.rad2deg(maths.quat_to_euler(yhat[link_name]))
             euler_angles = (
