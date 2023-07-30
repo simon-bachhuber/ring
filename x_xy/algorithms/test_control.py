@@ -50,7 +50,7 @@ def test_pd_control():
     error = jnp.mean(
         x_xy.maths.angle_error(q[:, :4], q_reconst[:, :4]) ** 2
     ) + jnp.mean((q[:, 4:] - q_reconst[:, 4:]) ** 2)
-    assert error <= 0.47
+    assert error <= 0.42
 
     gains = jnp.array(3 * [17] + 3 * [300])
     controller = pd_control(gains, gains)
@@ -62,13 +62,9 @@ def test_pd_control():
     controller = pd_control(gains, gains)
     q, q_reconst = evaluate(controller, "test_double_pendulum")
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
-<<<<<<< HEAD
-    assert error < 0.17
-=======
     # TODO investigate why errors are higher are upgrading python, jax, and cuda
     # assert error < 0.15
     assert error < 0.31
->>>>>>> f8be04de13340d1e7c94c1f9e5f9b043e60f9962
     q, q_reconst = evaluate(controller, "test_double_pendulum", True)
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
     assert error < 0.1
