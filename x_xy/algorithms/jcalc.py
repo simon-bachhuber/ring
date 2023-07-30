@@ -50,6 +50,14 @@ class RCMG_Config:
     pos0_min: float = 0.0
     pos0_max: float = 0.0
 
+    # cor (center of rotation) custom fields
+    cor_t_min: float = 0.1
+    cor_t_max: float = 2.0
+    cor_dpos_min: float = 0.00001
+    cor_dpos_max: float = 0.1
+    cor_pos_min: float = -0.3
+    cor_pos_max: float = 0.3
+
 
 DRAW_FN = Callable[[RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey], jax.Array]
 
@@ -135,7 +143,10 @@ def _draw_rxyz(
 
 
 def _draw_pxyz(
-    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+    config: RCMG_Config,
+    _: jax.random.PRNGKey,
+    key_value: jax.random.PRNGKey,
+    cor: bool = False,
 ) -> jax.Array:
     key_value, consume = jax.random.split(key_value)
     POS_0 = jax.random.uniform(consume, minval=config.pos0_min, maxval=config.pos0_max)
@@ -143,12 +154,12 @@ def _draw_pxyz(
     return algorithms.random_position_over_time(
         key_value,
         POS_0,
-        config.pos_min,
-        config.pos_max,
-        config.dpos_min,
-        config.dpos_max,
-        config.t_min,
-        config.t_max,
+        config.cor_pos_min if cor else config.pos_min,
+        config.cor_pos_max if cor else config.pos_max,
+        config.cor_dpos_min if cor else config.dpos_min,
+        config.cor_dpos_max if cor else config.dpos_max,
+        config.cor_t_min if cor else config.t_min,
+        config.cor_t_max if cor else config.t_max,
         config.T,
         config.Ts,
         max_iter,
@@ -175,13 +186,25 @@ def _draw_spherical(
     return q
 
 
-def _draw_p3d(
-    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+def _draw_p3d_and_cor(
+    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey, cor: bool
 ) -> jax.Array:
-    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key))(
+    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key, cor))(
         jax.random.split(key_value, 3)
     )
     return pos.T
+
+
+def _draw_p3d(
+    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+) -> jax.Array:
+    return _draw_p3d_and_cor(config, _, key_value, cor=False)
+
+
+def _draw_cor(
+    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+) -> jax.Array:
+    return _draw_p3d_and_cor(config, _, key_value, cor=True)
 
 
 def _draw_free(
@@ -203,6 +226,7 @@ _joint_types = {
     "frozen": JointModel(_frozen_transform, [], _draw_frozen),
     "spherical": JointModel(_spherical_transform, [mrx, mry, mrz], _draw_spherical),
     "p3d": JointModel(_p3d_transform, [mpx, mpy, mpz], _draw_p3d),
+    "cor": JointModel(_p3d_transform, [mpx, mpy, mpz], _draw_cor),
     "rx": JointModel(
         lambda q, _: _rxyz_transform(q, _, jnp.array([1.0, 0, 0])), [mrx], _draw_rxyz
     ),

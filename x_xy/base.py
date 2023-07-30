@@ -340,6 +340,8 @@ Q_WIDTHS = {
     "frozen": 0,
     "spherical": 4,
     "p3d": 3,
+    # center of rotation, a `p3d` joint with custom parameter fields in `RMCG_Config`
+    "cor": 3,
     "px": 1,
     "py": 1,
     "pz": 1,
@@ -352,6 +354,7 @@ QD_WIDTHS = {
     "frozen": 0,
     "spherical": 3,
     "p3d": 3,
+    "cor": 3,
     "px": 1,
     "py": 1,
     "pz": 1,
