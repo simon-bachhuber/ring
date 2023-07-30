@@ -6,16 +6,13 @@ from x_xy.algorithms import JointModel, register_new_joint_type
 from x_xy.algorithms.jcalc import _draw_rxyz, _joint_types
 from x_xy.io import load_sys_from_str
 
-NEW_WORLD = "new_world_due_to_cor"
+NEW_WORLD = "floating_base"
 _wrapper_sys_xml = rf"""
 <x_xy>
     <options gravity="0 0 9.81" dt="0.01"/>
     <worldbody>
-        <body name="global_translation" joint="p3d">
-            <body name="global_rotation" joint="spherical">
-                <body name="{NEW_WORLD}" joint="cor">
-                </body>
-            </body>
+        <body name="free" joint="free">
+            <body name="{NEW_WORLD}" joint="cor"/>
         </body>
     </worldbody>
 </x_xy>
