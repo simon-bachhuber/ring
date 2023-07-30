@@ -2,6 +2,7 @@ from typing import Any, Optional, Sequence, Union
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import tree_utils as tu
 from flax import struct
 from jax.tree_util import tree_map
@@ -79,11 +80,20 @@ class _Base:
     def batch_dim(self) -> int:
         return tu.tree_shape(self)
 
-    def tranpose(self, axes: Sequence[int]) -> Any:
+    def transpose(self, axes: Sequence[int]) -> Any:
         return tree_map(lambda x: jnp.transpose(x, axes), self)
 
     def __iter__(self):
         raise NotImplementedError
+
+    def repeat(self, repeats, axis=0):
+        return tree_map(lambda x: jnp.repeat(x, repeats, axis), self)
+
+    def ndim(self):
+        return tu.tree_ndim(self)
+
+    def shape(self, axis=0) -> int:
+        return tu.tree_shape(self, axis)
 
 
 @struct.dataclass
@@ -98,10 +108,17 @@ class Transform(_Base):
     @classmethod
     def create(cls, pos=None, rot=None):
         assert not (pos is None and rot is None), "One must be given."
+        shape_rot = rot.shape[:-1] if rot is not None else ()
+        shape_pos = pos.shape[:-1] if pos is not None else ()
+
         if pos is None:
-            pos = jnp.zeros((3,))
+            pos = jnp.zeros(shape_rot + (3,))
         if rot is None:
             rot = jnp.array([1.0, 0, 0, 0])
+            rot = jnp.tile(jnp.array([1.0, 0.0, 0.0, 0.0]), shape_pos + (1,))
+
+        assert pos.shape[:-1] == rot.shape[:-1]
+
         return Transform(pos, rot)
 
     @classmethod
@@ -309,10 +326,16 @@ N_JOINT_PARAMS: int = 3
 class Link(_Base):
     transform1: Transform
 
+    # only used by `setup_fn_randomize_positions`
+    pos_min: jax.Array = struct.field(default_factory=lambda: jnp.zeros((3,)))
+    pos_max: jax.Array = struct.field(default_factory=lambda: jnp.zeros((3,)))
+
     # these parameters can be used to model joints that have parameters
     # they are directly feed into the `jcalc` routine
     # this array *must* be of shape (N_JOINT_PARAMS,)
-    joint_params: jax.Array = jnp.zeros((N_JOINT_PARAMS,))
+    joint_params: jax.Array = struct.field(
+        default_factory=lambda: jnp.zeros((N_JOINT_PARAMS,))
+    )
 
     # internal useage
     inertia: Inertia = Inertia.zero()
@@ -324,6 +347,9 @@ Q_WIDTHS = {
     "free": 7,
     "frozen": 0,
     "spherical": 4,
+    "p3d": 3,
+    # center of rotation, a `p3d` joint with custom parameter fields in `RMCG_Config`
+    "cor": 3,
     "px": 1,
     "py": 1,
     "pz": 1,
@@ -335,6 +361,8 @@ QD_WIDTHS = {
     "free": 6,
     "frozen": 0,
     "spherical": 3,
+    "p3d": 3,
+    "cor": 3,
     "px": 1,
     "py": 1,
     "pz": 1,
@@ -362,7 +390,7 @@ class System(_Base):
     # geometries in the system
     geoms: list[Geometry]
     # root / base acceleration offset
-    gravity: jax.Array = jnp.array([0, 0, -9.81])
+    gravity: jax.Array = struct.field(default_factory=lambda: jnp.array([0, 0, -9.81]))
 
     integration_method: str = struct.field(
         False, default_factory=lambda: "semi_implicit_euler"
@@ -386,6 +414,7 @@ class System(_Base):
         return self.link_names.index(name)
 
     def idx_to_name(self, idx: int) -> str:
+        assert idx >= 0, "Worldbody index has no name."
         return self.link_names[idx]
 
     def idx_map(self, type: str) -> dict:
@@ -400,6 +429,33 @@ class System(_Base):
         tree(self, f, "ll", self.link_names, list(range(self.num_links())))
 
         return dict_int_slices
+
+    def parent_name(self, name: str) -> str:
+        return self.idx_to_name(self.link_parents[self.name_to_idx(name)])
+
+    def add_prefix(self, prefix: str = "") -> "System":
+        return self.replace(link_names=[prefix + name for name in self.link_names])
+
+    def change_model_name(self, name: str) -> "System":
+        return self.replace(model_name=name)
+
+    @staticmethod
+    def deep_equal(a, b):
+        if type(a) is not type(b):
+            return False
+        if isinstance(a, _Base):
+            return System.deep_equal(a.__dict__, b.__dict__)
+        if isinstance(a, dict):
+            if a.keys() != b.keys():
+                return False
+            return all(System.deep_equal(a[k], b[k]) for k in a.keys())
+        if isinstance(a, (list, tuple)):
+            if len(a) != len(b):
+                return False
+            return all(System.deep_equal(a[i], b[i]) for i in range(len(a)))
+        if isinstance(a, (np.ndarray, jnp.ndarray, jax.Array)):
+            return jnp.array_equal(a, b)
+        return a == b
 
 
 @struct.dataclass

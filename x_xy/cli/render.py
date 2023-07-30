@@ -75,8 +75,6 @@ def _simulate(
 
 
 def main():
-    x_xy.utils.disable_jit_warn()
-
     p = argparse.ArgumentParser(
         "cli-render",
         description="""Simulates and renders a system.

@@ -81,9 +81,22 @@ def imu(
     dt: float,
     key: Optional[jax.random.PRNGKey] = None,
     noisy: bool = False,
+    smoothen_degree: Optional[int] = None,
+    delay: Optional[int] = None,
 ) -> dict:
     "Simulates a 6D IMU."
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
+
+    if smoothen_degree is not None:
+        measurements = jax.tree_map(
+            lambda arr: moving_average(arr, smoothen_degree, delay),
+            measurements,
+        )
+
+    if delay is not None:
+        measurements = jax.tree_map(
+            lambda arr: (jnp.pad(arr, ((delay, 0), (0, 0)))[:-delay]), measurements
+        )
 
     if noisy:
         assert key is not None, "For noisy sensors random seed `key` must be provided."
@@ -105,14 +118,14 @@ def rel_pose(
         sys_xs (base.System): System that defines the stacking order of `xs`.
 
     Returns:
-        dict:
+        dict: Child-to-parent quaternions
     """
     if sys_xs is None:
         sys_xs = sys_scan
 
     if xs.pos.ndim == 3:
         # swap (n_timesteps, n_links) axes
-        xs = xs.tranpose([1, 0, 2])
+        xs = xs.transpose([1, 0, 2])
 
     assert xs.batch_dim() == sys_xs.num_links()
 
@@ -141,3 +154,19 @@ def rel_pose(
     )
 
     return y
+
+
+def moving_average(arr, window: int = 7):
+    assert window % 2 == 1
+    assert window > 1, "Window size of 1 would be a no-op"
+    arr_smooth = jnp.zeros((len(arr) + window - 1,) + arr.shape[1:])
+    half_window = (window - 1) // 2
+    arr_padded = arr_smooth.at[half_window : (len(arr) + half_window)].set(arr)
+    arr_padded = arr_padded.at[:half_window].set(arr[0])
+    arr_padded = arr_padded.at[-half_window:].set(arr[-1])
+
+    for i in range(-half_window, half_window + 1):
+        rolled = jnp.roll(arr_padded, i, axis=0)
+        arr_smooth += rolled
+    arr_smooth = arr_smooth / window
+    return arr_smooth[half_window : (len(arr) + half_window)]

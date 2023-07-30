@@ -27,6 +27,8 @@ VisualPosOri2 = PyTree
 
 class Scene(ABC):
     _xyz: bool = True
+    _xyz_root: bool = True
+    visuals: list[Visual] = []
 
     """
     Example:
@@ -49,11 +51,15 @@ class Scene(ABC):
     def _render(self) -> jax.Array:
         pass
 
-    def enable_xyz(self) -> None:
+    def enable_xyz(self, enable_root: bool = True) -> None:
         self._xyz = True
+        if enable_root:
+            self._xyz_root = True
 
-    def disable_xyz(self) -> None:
+    def disable_xyz(self, disable_root: bool = True) -> None:
         self._xyz = False
+        if disable_root:
+            self._xyz_root = False
 
     def render(
         self, camera: Optional[Camera | list[Camera]] = None
@@ -87,7 +93,17 @@ class Scene(ABC):
     def _add_xyz(self) -> Visual:
         raise NotImplementedError
 
+    @abstractmethod
+    def _remove_visual(self, visual: Visual) -> None:
+        pass
+
+    def _remove_all_visuals(self):
+        for visual in self.visuals:
+            self._remove_visual(visual)
+
     def init(self, geoms: list[Geometry]):
+        self._remove_all_visuals()
+
         self.geoms = [geom for geom in geoms]
         self._fresh_init = True
 
@@ -119,6 +135,7 @@ class Scene(ABC):
                 # over all visuals since it uses a zip(...)
                 self.geoms.append(None)
 
+        if self._xyz_root:
             # add one final for root frame
             self._add_xyz()
 
@@ -182,34 +199,15 @@ def _compile_staticmethod(static_method, x, geom_transform, geom_link_idx):
     )
 
 
-def _enable_headless_backend():
-    import vispy
-
-    try:
-        vispy.use("egl")
-        return True
-    except RuntimeError:
-        try:
-            vispy.use("osmesa")
-            return True
-        except RuntimeError:
-            print(
-                "Headless mode requires either `egl` or `osmesa` as backends for vispy",
-                "Couldn't find neither. Falling back to interactive mode.",
-            )
-            return False
-
-
 class VispyScene(Scene):
     def __init__(
         self,
         show_cs=True,
+        show_cs_root=True,
         size=(1280, 720),
         camera: scene.cameras.BaseCamera = scene.TurntableCamera(
-            elevation=30, distance=6
+            elevation=25, distance=4.0, azimuth=25
         ),
-        headless_backend: bool = False,
-        vispy_backend: Optional[str] = None,
         **kwargs,
     ):
         """Scene which can be rendered.
@@ -219,12 +217,12 @@ class VispyScene(Scene):
                 len(geoms) == number of links in system
             show_cs (bool, optional): Show coordinate system of links.
                 Defaults to True.
+            show_cs_root (bool, optional): Show coordinate system of earth frame.
+                Defaults to True.
             size (tuple, optional): Width and height of rendered image.
                 Defaults to (1280, 720).
             camera (scene.cameras.BaseCamera, optional): The camera angle.
                 Defaults to scene.TurntableCamera( elevation=30, distance=6 ).
-            headless_backend (bool, optional): Headless if the worker can not open windows.
-                Defaults to False.
 
         Example:
             >> scene = VispyScene()
@@ -232,20 +230,6 @@ class VispyScene(Scene):
             >> scene.update(state.x)
             >> image = scene.render()
         """
-        if headless_backend:
-            assert (
-                vispy_backend is None
-            ), "Can only set one backend. Either provide `vispy_backend` or enable`headless_backend`"
-
-        self.headless = False
-        if headless_backend:
-            # returns `True` if successfully found backend
-            self.headless = _enable_headless_backend()
-        if vispy_backend is not None:
-            import vispy
-
-            vispy.use(vispy_backend)
-
         self.canvas = scene.SceneCanvas(
             keys="interactive", size=size, show=True, **kwargs
         )
@@ -254,7 +238,7 @@ class VispyScene(Scene):
         if show_cs:
             self.enable_xyz()
         else:
-            self.disable_xyz()
+            self.disable_xyz(not show_cs_root)
 
     def _create_visual_element(self, geom: Geometry, **kwargs):
         if isinstance(geom, Box):
@@ -311,6 +295,9 @@ class VispyScene(Scene):
     def _add_xyz(self) -> Visual:
         return scene.visuals.XYZAxis(parent=self.view.scene)
 
+    def _remove_visual(self, visual: scene.visuals.VisualNode) -> None:
+        visual.parent = None
+
     @staticmethod
     def _compute_transform_per_visual(
         x_links: base.Transform,
@@ -345,49 +332,15 @@ class VispyScene(Scene):
         visual.transform.matrix = transform
 
 
-def _parse_timestep(timestep: float, fps: int, N: int):
-    assert 1 / timestep > fps, "The `fps` is too high for the simulated timestep"
-    fps_simu = int(1 / timestep)
-    assert (fps_simu % fps) == 0, "The `fps` does not align with the timestep"
-    T = N * timestep
-    step = int(fps_simu / fps)
-    return T, step
-
-
-def _data_checks(n_links, data_pos, data_rot):
-    assert (
-        data_pos.ndim == data_rot.ndim == 3
-    ), "Expected shape = (n_timesteps, n_links, 3/4)"
-    assert (
-        data_pos.shape[1] == data_rot.shape[1] == n_links
-    ), "Number of links does not match"
-
-
-def _infer_extension_from_path(path: Path) -> Optional[str]:
-    ext = path.suffix
-    # fmt starts after the . e.g. .mp4
-    return ext[1:] if len(ext) > 0 else None
-
-
-SCENE_BACKENDS = {
-    "vispy": VispyScene,
-}
-
-
-def _make_scene(sys: base.System, backend: str, **backend_kwargs) -> Scene:
-    scene = SCENE_BACKENDS[backend](**backend_kwargs)
-    scene.init(sys.geoms)
-    return scene
-
-
 def animate(
     path: Union[str, Path],
     sys: base.System,
     x: base.Transform,
     fps: int = 50,
     fmt: str = "mp4",
-    backend: str = "vispy",
-    **backend_kwargs,
+    verbose: bool = True,
+    show_pbar: bool = True,
+    **kwargs,
 ):
     """Make animation from system and trajectory of maximal coordinates. `x`
     are stacked in time along 0th-axis.
@@ -404,18 +357,19 @@ def animate(
     if file_fmt is None:
         path = path.with_suffix("." + fmt)
 
-    scene = _make_scene(sys, backend, **backend_kwargs)
+    scene = _init_vispy_scene(sys, **kwargs)
     _data_checks(sys.num_links(), x.pos, x.rot)
 
     N = x.pos.shape[0]
     _, step = _parse_timestep(sys.dt, fps, N)
 
     frames = []
-    for t in tqdm.tqdm(range(0, N, step), "Rendering frames.."):
+    for t in tqdm.tqdm(range(0, N, step), "Rendering frames..", disable=not show_pbar):
         scene.update(x[t])
         frames.append(scene.render())
 
-    print(f"DONE. Converting frames to {path} (this might take a while..)")
+    if verbose:
+        print(f"DONE. Converting frames to {path} (this might take a while..)")
     imageio.mimsave(path, frames, format=fmt, fps=fps)
 
 
@@ -426,8 +380,7 @@ class Window:
         x: base.Transform,
         fps: int = 50,
         show_fps: bool = False,
-        backend: str = "vispy",
-        **backend_kwargs,
+        **kwargs,
     ):
         """Open an interactive Window that plays back the pre-computed trajectory.
 
@@ -438,7 +391,7 @@ class Window:
             fps (int, optional): Frame-rate. Defaults to 50.
         """
         self._x = x
-        self._scene = _make_scene(sys, backend, **backend_kwargs)
+        self._scene = _init_vispy_scene(sys, **kwargs)
         _data_checks(sys.num_links(), x.pos, x.rot)
 
         self.N = x.pos.shape[0]
@@ -493,8 +446,7 @@ def gui(
     x: base.Transform,
     fps: int = 50,
     show_fps: bool = False,
-    backend: str = "vispy",
-    **backend_kwargs,
+    **kwargs,
 ):
     """Open an interactive Window that plays back the pre-computed trajectory.
 
@@ -507,11 +459,59 @@ def gui(
     if tree_utils.tree_ndim(x) == 2:
         x = x.batch()
 
-    window = Window(sys, x, fps, show_fps, backend, **backend_kwargs)
+    window = Window(sys, x, fps, show_fps, **kwargs)
     window.open()
 
 
-def probe(sys, **backend_kwargs):
+def probe(sys, **kwargs):
     state = base.State.create(sys)
     _, state = x_xy.algorithms.forward_kinematics(sys, state)
-    gui(sys, state.x, **backend_kwargs)
+    gui(sys, state.x, **kwargs)
+
+
+def _parse_timestep(timestep: float, fps: int, N: int):
+    assert 1 / timestep > fps, "The `fps` is too high for the simulated timestep"
+    fps_simu = int(1 / timestep)
+    assert (fps_simu % fps) == 0, "The `fps` does not align with the timestep"
+    T = N * timestep
+    step = int(fps_simu / fps)
+    return T, step
+
+
+def _data_checks(n_links, data_pos, data_rot):
+    assert (
+        data_pos.ndim == data_rot.ndim == 3
+    ), "Expected shape = (n_timesteps, n_links, 3/4)"
+    assert (
+        data_pos.shape[1] == data_rot.shape[1] == n_links
+    ), "Number of links does not match"
+
+
+def _infer_extension_from_path(path: Path) -> Optional[str]:
+    ext = path.suffix
+    # fmt starts after the . e.g. .mp4
+    return ext[1:] if len(ext) > 0 else None
+
+
+def _init_vispy_scene(sys: base.System, **kwargs) -> Scene:
+    scene = VispyScene(**kwargs)
+    scene.init(sys.geoms)
+    return scene
+
+
+def _enable_headless_backend():
+    import vispy
+
+    try:
+        vispy.use("egl")
+        return True
+    except RuntimeError:
+        try:
+            vispy.use("osmesa")
+            return True
+        except RuntimeError:
+            print(
+                "Headless mode requires either `egl` or `osmesa` as backends for vispy",
+                "Couldn't find neither. Falling back to interactive mode.",
+            )
+            return False

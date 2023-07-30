@@ -1,0 +1,9 @@
+<x_xy model="test_ang0_pos0">
+    <worldbody>
+        <body name="px" joint="px">
+            <body name="rx" joint="ry">
+                <geom type="box" mass="10" pos="0.5 0 0" dim="1 0.25 0.2"/>
+            </body>
+        </body>
+    </worldbody>
+</x_xy>

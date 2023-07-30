@@ -10,6 +10,16 @@ from .jcalc import (
     register_new_joint_type,
 )
 from .kinematics import forward_kinematics, forward_kinematics_transforms
-from .random import random_angle_over_time, random_position_over_time
-from .rcmg import FINALIZE_FN, SETUP_FN, Generator, batch_generator, build_generator
+from .rcmg import (
+    FINALIZE_FN,
+    SETUP_FN,
+    Generator,
+    batch_generator,
+    build_generator,
+    make_normalizer_from_generator,
+    register_rr_joint,
+    setup_fn_randomize_joint_axes,
+    setup_fn_randomize_positions,
+)
+from .rcmg.random import random_angle_over_time, random_position_over_time
 from .sensors import accelerometer, add_noise_bias, gyroscope, imu, rel_pose

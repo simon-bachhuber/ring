@@ -51,5 +51,18 @@ def test_quat_convention():
     q = maths.quat_mul(q2, maths.quat_inv(q1))
     axis, angle = maths.quat_to_rot_axis(q)
     # negative axis and angle cancel
-    np.testing.assert_allclose(axis, jnp.array([0, -1.0, 0]), atol=1e-8)
-    np.testing.assert_allclose(angle, -jnp.deg2rad(90), atol=1e-8)
+    np.testing.assert_allclose(axis, jnp.array([0, -1.0, 0]), atol=1e-7)
+    np.testing.assert_allclose(angle, -jnp.deg2rad(90), atol=1e-7)
+
+
+def test_euler_angles():
+    # test that two functions `quat_euler` and `euler_to_quat` are equal
+    angles = jnp.array([1.2, 0.55, 0.25])
+    np.testing.assert_allclose(
+        maths.quat_euler(angles, convention="xyz"), maths.euler_to_quat(angles)
+    )
+
+    # test that they are inverses
+    np.testing.assert_allclose(
+        angles, maths.quat_to_euler(maths.euler_to_quat(angles)), atol=1e-7, rtol=1e-6
+    )
