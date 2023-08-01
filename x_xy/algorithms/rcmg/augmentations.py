@@ -13,6 +13,7 @@ _wrapper_sys_xml = rf"""
     <worldbody>
         <body name="free" joint="free">
             <body name="{NEW_WORLD}" joint="cor"/>
+            <geom type="xyz"/>
         </body>
     </worldbody>
 </x_xy>

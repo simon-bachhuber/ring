@@ -225,7 +225,22 @@ class AbsGeomCapsule:
         element.set("dim", _to_str(dim))
 
 
-_ags = [AbsGeomBox, AbsGeomSphere, AbsGeomCylinder, AbsGeomCapsule]
+class AbsGeomXYZ:
+    xml_geom_type: str = "xyz"
+    geometry: base.Geometry = base.XYZ
+
+    @staticmethod
+    def from_xml(geom_attr: ATTR, link_idx: int) -> base.XYZ:
+        # TODO; implement custom length of coordinate system indicators
+        del geom_attr
+        return base.XYZ.create(link_idx)
+
+    @staticmethod
+    def to_xml(element: T, geom: base.XYZ):
+        element.set("type", geometry_to_xml_identifier[type(geom)])
+
+
+_ags = [AbsGeomBox, AbsGeomSphere, AbsGeomCylinder, AbsGeomCapsule, AbsGeomXYZ]
 geometry_to_xml_identifier = {ag.geometry: ag.xml_geom_type for ag in _ags}
 xml_identifier_to_abstract = {ag.xml_geom_type: ag for ag in _ags}
 geometry_to_abstract = {ag.geometry: ag for ag in _ags}

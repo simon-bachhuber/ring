@@ -225,6 +225,16 @@ class Geometry(_Base):
 
 
 @struct.dataclass
+class XYZ(Geometry):
+    @classmethod
+    def create(cls, link_idx: int):
+        return cls(0.0, Transform.zero(), link_idx)
+
+    def get_it_3x3(self) -> jax.Array:
+        return jnp.zeros((3, 3))
+
+
+@struct.dataclass
 class Sphere(Geometry):
     radius: jax.Array
     vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
