@@ -16,7 +16,7 @@ from vispy.scene import MatrixTransform
 
 import x_xy
 from x_xy import algebra, base, maths
-from x_xy.base import Box, Capsule, Cylinder, Geometry, Sphere
+from x_xy.base import XYZ, Box, Capsule, Cylinder, Geometry, Sphere
 
 Camera = TypeVar("Camera")
 Visual = TypeVar("Visual")
@@ -120,6 +120,8 @@ class Scene(ABC):
                 visual = self._add_cylinder(geom)
             elif isinstance(geom, Capsule):
                 visual = self._add_capsule(geom)
+            elif isinstance(geom, XYZ):
+                visual = self._add_xyz()
             else:
                 raise Exception(f"Unknown geom type: {type(geom)}")
             self.visuals.append(visual)
@@ -201,7 +203,7 @@ def _compile_staticmethod(static_method, x, geom_transform, geom_link_idx):
 class VispyScene(Scene):
     def __init__(
         self,
-        show_cs=True,
+        show_cs=False,
         show_cs_root=True,
         size=(1280, 720),
         camera: scene.cameras.BaseCamera = scene.TurntableCamera(

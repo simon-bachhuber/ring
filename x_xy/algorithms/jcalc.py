@@ -28,7 +28,7 @@ class RCMG_Config:
     delta_ang_max_free_spherical: float = 2 * jnp.pi
 
     dpos_min: float = 0.001  # speed of translation
-    dpos_max: float = 0.3
+    dpos_max: float = 0.7
     pos_min: float = -2.5
     pos_max: float = +2.5
 
@@ -51,12 +51,12 @@ class RCMG_Config:
     pos0_max: float = 0.0
 
     # cor (center of rotation) custom fields
-    cor_t_min: float = 0.1
+    cor_t_min: float = 0.2
     cor_t_max: float = 2.0
     cor_dpos_min: float = 0.00001
-    cor_dpos_max: float = 0.1
-    cor_pos_min: float = -0.3
-    cor_pos_max: float = 0.3
+    cor_dpos_max: float = 0.5
+    cor_pos_min: float = -0.4
+    cor_pos_max: float = 0.4
 
 
 DRAW_FN = Callable[[RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey], jax.Array]
