@@ -14,6 +14,7 @@ from .rcmg import (
     FINALIZE_FN,
     SETUP_FN,
     Generator,
+    Normalizer,
     batch_generator,
     build_generator,
     make_normalizer_from_generator,
