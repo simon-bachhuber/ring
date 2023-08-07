@@ -41,6 +41,10 @@ def test_initial_ang_pos_values():
     assert np.all((q[0] > c) & (q[0] < d))
 
 
+def _dang_max(t: jax.Array) -> jax.Array:
+    return jnp.where(t < 0.5, 1.0, 2.0)
+
+
 def test_rcmg():
     for example in x_xy.io.list_examples():
         sys = x_xy.io.load_example(example)
@@ -49,7 +53,9 @@ def test_rcmg():
                 T=1.0,
                 cdf_bins_min=cdf_bins_min,
                 cdf_bins_max=cdf_bins_max,
-                randomized_interpolation=True,
+                randomized_interpolation_angle=True,
+                # this tests `TimeDependentFloat`-logic
+                dang_max=_dang_max,
             )
             generator = x_xy.algorithms.build_generator(sys, config)
             bs = 8

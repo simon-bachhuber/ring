@@ -6,31 +6,34 @@ import jax.numpy as jnp
 
 from x_xy import algebra, algorithms, base, maths
 
+Float = jax.Array
+TimeDependentFloat = Callable[[Float], Float]
+
 
 @dataclass
 class RCMG_Config:
     T: float = 60.0  # length of random motion
     Ts: float = 0.01  # sampling rate
     t_min: float = 0.05  # min time between two generated angles
-    t_max: float = 0.30  # max time ..
+    t_max: float | TimeDependentFloat = 0.30  # max time ..
 
-    dang_min: float = 0.1  # minimum angular velocity in rad/s
-    dang_max: float = 3.0  # maximum angular velocity in rad/s
+    dang_min: float | TimeDependentFloat = 0.1  # minimum angular velocity in rad/s
+    dang_max: float | TimeDependentFloat = 3.0  # maximum angular velocity in rad/s
 
     # minimum angular velocity of euler angles used for `free and spherical joints`
-    dang_min_free_spherical: float = 0.1
-    dang_max_free_spherical: float = 3.0
+    dang_min_free_spherical: float | TimeDependentFloat = 0.1
+    dang_max_free_spherical: float | TimeDependentFloat = 3.0
 
     # max min allowed actual delta values in radians
-    delta_ang_min: float = 0.0
-    delta_ang_max: float = 2 * jnp.pi
-    delta_ang_min_free_spherical: float = 0.0
-    delta_ang_max_free_spherical: float = 2 * jnp.pi
+    delta_ang_min: float | TimeDependentFloat = 0.0
+    delta_ang_max: float | TimeDependentFloat = 2 * jnp.pi
+    delta_ang_min_free_spherical: float | TimeDependentFloat = 0.0
+    delta_ang_max_free_spherical: float | TimeDependentFloat = 2 * jnp.pi
 
-    dpos_min: float = 0.001  # speed of translation
-    dpos_max: float = 0.7
-    pos_min: float = -2.5
-    pos_max: float = +2.5
+    dpos_min: float | TimeDependentFloat = 0.001  # speed of translation
+    dpos_max: float | TimeDependentFloat = 0.7
+    pos_min: float | TimeDependentFloat = -2.5
+    pos_max: float | TimeDependentFloat = +2.5
 
     # used by both `random_angle_*` and `random_pos_*`
     # only used if `randomized_interpolation` is set
@@ -52,11 +55,11 @@ class RCMG_Config:
 
     # cor (center of rotation) custom fields
     cor_t_min: float = 0.2
-    cor_t_max: float = 2.0
-    cor_dpos_min: float = 0.00001
-    cor_dpos_max: float = 0.5
-    cor_pos_min: float = -0.4
-    cor_pos_max: float = 0.4
+    cor_t_max: float | TimeDependentFloat = 2.0
+    cor_dpos_min: float | TimeDependentFloat = 0.00001
+    cor_dpos_max: float | TimeDependentFloat = 0.5
+    cor_pos_min: float | TimeDependentFloat = -0.4
+    cor_pos_max: float | TimeDependentFloat = 0.4
 
 
 DRAW_FN = Callable[[RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey], jax.Array]

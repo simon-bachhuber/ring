@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Callable, Optional
 
 import jax
 import jax.numpy as jnp
@@ -6,47 +6,55 @@ from jax import random
 
 from x_xy import maths
 
+from ..jcalc import Float, TimeDependentFloat
+
+
+def _to_float(scalar: Float | TimeDependentFloat, t: Float) -> Float:
+    if isinstance(scalar, Callable):
+        return scalar(t)
+    return scalar
+
 
 # APPROVED
 def random_angle_over_time(
-    key_t,
-    key_ang,
-    ANG_0,
-    dang_min,
-    dang_max,
-    delta_ang_min,
-    delta_ang_max,
-    t_min,
-    t_max,
-    T,
-    Ts,
-    max_iter=5,
-    randomized_interpolation=False,
-    range_of_motion=False,
-    range_of_motion_method="uniform",
+    key_t: random.PRNGKey,
+    key_ang: random.PRNGKey,
+    ANG_0: float,
+    dang_min: float | TimeDependentFloat,
+    dang_max: float | TimeDependentFloat,
+    delta_ang_min: float | TimeDependentFloat,
+    delta_ang_max: float | TimeDependentFloat,
+    t_min: float,
+    t_max: float | TimeDependentFloat,
+    T: float,
+    Ts: float,
+    max_iter: int = 5,
+    randomized_interpolation: bool = False,
+    range_of_motion: bool = False,
+    range_of_motion_method: str = "uniform",
     cdf_bins_min: int = 5,
     cdf_bins_max: Optional[int] = None,
-):
+) -> jax.Array:
     def body_fn_outer(val):
         i, t, phi, key_t, key_ang, ANG = val
 
         key_t, consume = random.split(key_t)
-        dt = random.uniform(consume, minval=t_min, maxval=t_max)
-        t += dt
+        dt = random.uniform(consume, minval=t_min, maxval=_to_float(t_max, t))
 
         key_ang, consume = random.split(key_ang)
         phi = _resolve_range_of_motion(
             range_of_motion,
             range_of_motion_method,
-            dang_min,
-            dang_max,
-            delta_ang_min,
-            delta_ang_max,
+            _to_float(dang_min, t),
+            _to_float(dang_max, t),
+            _to_float(delta_ang_min, t),
+            _to_float(delta_ang_max, t),
             dt,
             phi,
             consume,
             max_iter,
         )
+        t += dt
 
         ANG_i = jnp.array([[jnp.floor(t / Ts) * Ts, phi]])
         ANG = jax.lax.dynamic_update_slice_in_dim(ANG, ANG_i, start_index=i, axis=0)
@@ -87,21 +95,21 @@ def random_angle_over_time(
 
 # APPROVED
 def random_position_over_time(
-    key,
-    POS_0,
-    pos_min,
-    pos_max,
-    dpos_min,
-    dpos_max,
-    t_min,
-    t_max,
-    T,
-    Ts,
-    max_it,
-    randomized_interpolation=False,
+    key: random.PRNGKey,
+    POS_0: float,
+    pos_min: float | TimeDependentFloat,
+    pos_max: float | TimeDependentFloat,
+    dpos_min: float | TimeDependentFloat,
+    dpos_max: float | TimeDependentFloat,
+    t_min: float,
+    t_max: float | TimeDependentFloat,
+    T: float,
+    Ts: float,
+    max_it: int,
+    randomized_interpolation: bool = False,
     cdf_bins_min: int = 5,
     cdf_bins_max: Optional[int] = None,
-):
+) -> jax.Array:
     def body_fn_inner(val):
         i, t, t_pre, x, x_pre, key = val
         dt = t - t_pre
@@ -117,7 +125,15 @@ def random_position_over_time(
         def sample_dx(key):
             key, consume1, consume2 = random.split(key, 3)
             sign = random.choice(consume1, jnp.array([-1.0, 1.0]))
-            dx = sign * random.uniform(consume2, minval=dpos_min, maxval=dpos_max) * dt
+            dx = (
+                sign
+                * random.uniform(
+                    consume2,
+                    minval=_to_float(dpos_min, t_pre),
+                    maxval=_to_float(dpos_max, t_pre),
+                )
+                * dt
+            )
             return key, dx
 
         key, dx = jax.lax.cond(i > max_it, (lambda key: (key, 0.0)), sample_dx, key)
@@ -127,10 +143,14 @@ def random_position_over_time(
 
     def cond_fn_inner(val):
         i, t, t_pre, x, x_pre, key = val
-        dpos_squared = abs((x - x_pre) / ((t - t_pre) ** 2))  # noqa: F841
+        # this was used before as `dpos`, i don't know why i used a square here?
+        # dpos = abs((x - x_pre) / ((t - t_pre) ** 2))  # noqa: F841
         dpos = jnp.abs((x - x_pre) / (t - t_pre))
         break_if_true1 = (
-            (dpos < dpos_max) & (dpos > dpos_min) & (x >= pos_min) & (x <= pos_max)
+            (dpos < _to_float(dpos_max, t_pre))
+            & (dpos > _to_float(dpos_min, t_pre))
+            & (x >= _to_float(pos_min, t_pre))
+            & (x <= _to_float(pos_max, t_pre))
         )
         break_if_true2 = i > max_it
         return ~(break_if_true1 | break_if_true2)
@@ -138,7 +158,7 @@ def random_position_over_time(
     def body_fn_outer(val):
         i, t, t_pre, x, x_pre, key, POS = val
         key, consume = random.split(key)
-        t += random.uniform(consume, minval=t_min, maxval=t_max)
+        t += random.uniform(consume, minval=t_min, maxval=_to_float(t_max, t_pre))
 
         # that zero resets the max_it count
         val_inner = (0, t, t_pre, x, x_pre, key)
