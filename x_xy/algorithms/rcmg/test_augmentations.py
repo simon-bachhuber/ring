@@ -4,6 +4,7 @@ import numpy as np
 import x_xy
 from x_xy.algorithms.rcmg.augmentations import (
     _draw_pos_uniform,
+    replace_free_with_cor,
     setup_fn_randomize_positions,
 )
 
@@ -54,3 +55,9 @@ def test_randomize_positions():
     pos_new = setup_fn_randomize_positions(key, sys).links.transform1.pos
 
     np.testing.assert_array_equal(pos_old, pos_new)
+
+
+def test_cor():
+    sys = x_xy.io.load_example("test_three_seg_seg2")
+    for fb in [False, True]:
+        replace_free_with_cor(sys, fb)

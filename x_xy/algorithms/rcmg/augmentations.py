@@ -33,7 +33,7 @@ def replace_free_with_cor(
     sys: base.System, show_cs_floating_base: bool = True
 ) -> base.System:
     sys = _freeze_free_joints(sys)
-    wrapper_sys = load_sys_from_str(_wrapper_sys_xml)
+    wrapper_sys = load_sys_from_str(_wrapper_sys_xml(show_cs_floating_base))
     # TODO
     from x_xy.subpkgs import sys_composer
 
