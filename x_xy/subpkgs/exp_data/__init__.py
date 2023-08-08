@@ -40,6 +40,7 @@ def load_sys(
     delete_after_morph: Optional[list[str]] = None,
     replace_rxyz_with_rr: bool = False,
     cor: bool = False,
+    show_cs_floating_base: bool = True,
 ) -> x_xy.base.System:
     xml_path = _load_file_path(exp_id, "xml")
     sys = x_xy.io.load_sys_from_xml(xml_path)
@@ -59,7 +60,7 @@ def load_sys(
         sys = sys_composer.delete_subsystem(sys, delete_after_morph)
 
     if cor:
-        sys = replace_free_with_cor(sys)
+        sys = replace_free_with_cor(sys, show_cs_floating_base=show_cs_floating_base)
 
     return sys
 
