@@ -48,8 +48,8 @@ class RCMG_Config:
     range_of_motion_hinge_method: str = "uniform"
 
     # initial value of joints
-    ang0_min: float = 0.0
-    ang0_max: float = 0.0
+    ang0_min: float = -jnp.pi
+    ang0_max: float = jnp.pi
     pos0_min: float = 0.0
     pos0_max: float = 0.0
 
