@@ -1,4 +1,4 @@
-import logging
+import warnings
 from typing import Optional
 
 import jax
@@ -69,7 +69,7 @@ def load_data(
         key, consume = jax.random.split(key)
         _, xs = x_xy.algorithms.build_generator(sys, config)(consume)
         if not artificial_transform1:
-            logging.warning("`artificial_transform1` was overwritten to `True`")
+            warnings.warn("`artificial_transform1` was overwritten to `True`")
             artificial_transform1 = True
     else:
         assert exp_data is not None
@@ -78,7 +78,7 @@ def load_data(
 
     if artificial_transform1:
         if not artificial_imus:
-            logging.warning("`artificial_imus` was overwritten to `True`")
+            warnings.warn("`artificial_imus` was overwritten to `True`")
             artificial_imus = True
         key, consume = jax.random.split(key)
 

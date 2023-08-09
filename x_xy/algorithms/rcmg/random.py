@@ -1,3 +1,4 @@
+import warnings
 from typing import Callable, Optional
 
 import jax
@@ -66,6 +67,7 @@ def random_angle_over_time(
         return t <= T
 
     # preallocate ANG array
+    _warn_huge_preallocation(t_min, T)
     ANG = jnp.zeros((int(T // t_min) + 1, 2))
     ANG = ANG.at[0, 1].set(ANG_0)
 
@@ -176,7 +178,8 @@ def random_position_over_time(
         i, t, t_pre, x, x_pre, key, POS = val
         return t <= T
 
-    # preallocate ANG array
+    # preallocate POS array
+    _warn_huge_preallocation(t_min, T)
     POS = jnp.zeros((int(T // t_min) + 1, 2))
     POS = POS.at[0, 1].set(POS_0)
 
@@ -197,6 +200,20 @@ def random_position_over_time(
     else:
         r = cosInterpolate(t, POS[:, 0], POS[:, 1])
     return r
+
+
+_PREALLOCATION_WARN_LIMIT = 6000
+
+
+def _warn_huge_preallocation(t_min, T):
+    N = int(T // t_min) + 1
+    if N > _PREALLOCATION_WARN_LIMIT:
+        warnings.warn(
+            f"The combination of `T`={T} and `t_min`={t_min} requires preallocating an "
+            f"array with axis-length of {N} which is larger than the warn limit of "
+            f"{_PREALLOCATION_WARN_LIMIT}. This might lead to large memory requirements"
+            " and/or large jit-times, consider reducing `t_min`."
+        )
 
 
 def _clip_to_pi(phi):

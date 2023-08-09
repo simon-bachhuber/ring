@@ -1,4 +1,4 @@
-import logging
+import warnings
 from typing import Optional, Tuple
 
 import jax
@@ -43,7 +43,7 @@ def xs_from_raw(
     """
 
     if eps_frame == "none":
-        logging.warning(
+        warnings.warn(
             "`eps_frame` set to `none` might lead to problems with artificial IMUs,"
             " since the gravity vector is assumed to be in positive z-axis in eps-frame"
         )
@@ -106,22 +106,22 @@ def match_xs(sys: System, xs: Transform, sys_xs: System) -> Transform:
     """
     _checks_time_series_of_xs(sys_xs, xs)
 
-    # disable logging temporarily because otherwise it will warn because of the usage
+    # disable warnings temporarily because otherwise it will warn because of the usage
     # of `eps_frame` = 'none'
-    logging.disable(logging.WARNING)
-    xs_small = xs_from_raw(
-        sys,
-        {
-            name: {
-                "pos": xs.pos[:, sys_xs.name_to_idx(name)],
-                "quat": xs.rot[:, sys_xs.name_to_idx(name)],
-            }
-            for name in sys_xs.link_names
-        },
-        eps_frame="none",
-        qinv=False,
-    )
-    logging.disable(logging.INFO)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        xs_small = xs_from_raw(
+            sys,
+            {
+                name: {
+                    "pos": xs.pos[:, sys_xs.name_to_idx(name)],
+                    "quat": xs.rot[:, sys_xs.name_to_idx(name)],
+                }
+                for name in sys_xs.link_names
+            },
+            eps_frame="none",
+            qinv=False,
+        )
     return xs_small
 
 
