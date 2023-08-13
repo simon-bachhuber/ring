@@ -22,6 +22,7 @@ def make_generator(
     imu_attachment: dict,
     return_xs: bool = False,
     normalizer: Optional[Normalizer] = None,
+    randomize_positions: bool = True,
 ):
     configs, sys_data = _to_list(configs), _to_list(sys_data)
 
@@ -39,8 +40,12 @@ def make_generator(
                 return X, y
 
         def setup_fn(key, sys):
-            key, consume = jax.random.split(key)
-            sys = x_xy.algorithms.setup_fn_randomize_positions(consume, sys)
+            if randomize_positions:
+                key, consume = jax.random.split(key)
+                sys = x_xy.algorithms.setup_fn_randomize_positions(consume, sys)
+            # this just randomizes the joint axes, this random joint-axes
+            # is only used if the joint type is `rr`
+            # this is why there is no boolean `randomize_jointaxes` argument
             key, consume = jax.random.split(key)
             sys = x_xy.algorithms.setup_fn_randomize_joint_axes(consume, sys)
             return sys
