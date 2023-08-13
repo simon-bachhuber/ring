@@ -1,3 +1,5 @@
+import warnings
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -42,7 +44,11 @@ def test_forward_kinematics_omc():
                 qrand, qrand_inv = qrand_inv, qrand
 
             sys = x_xy.io.load_sys_from_str(sys_str)
-            xs_omc = sim2real.xs_from_raw(sys, omc_data, qinv=qinv, eps_frame=eps_frame)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                xs_omc = sim2real.xs_from_raw(
+                    sys, omc_data, qinv=qinv, eps_frame=eps_frame
+                )
             t1_omc, t2_omc = sim2real.unzip_xs(sys, xs_omc)
             t1_sys = sys.links.transform1
 
