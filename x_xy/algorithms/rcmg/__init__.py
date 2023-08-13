@@ -110,6 +110,7 @@ def batch_generator(
 
 
 KEY = jax.random.PRNGKey(777)
+KEY_PERMUTATION = jax.random.PRNGKey(888)
 
 
 def make_normalizer_from_generator(
@@ -132,6 +133,10 @@ def make_normalizer_from_generator(
         key, consume = jax.random.split(key)
         Xs.append(generator(consume)[0])
     Xs = tree_utils.tree_batch(Xs, True, "jax")
+    # permute 0-th axis, since batchsize of generator might be larger than
+    # `approx_with_large_batchsize`, then we would not get a representative
+    # subsample otherwise
+    Xs = jax.tree_map(lambda arr: jax.random.permutation(KEY_PERMUTATION, arr), Xs)
     Xs = tree_utils.tree_slice(Xs, start=0, slice_size=approx_with_large_batchsize)
 
     # obtain statistics
