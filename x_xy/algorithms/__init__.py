@@ -4,6 +4,7 @@ from .dynamics import compute_mass_matrix, forward_dynamics, inverse_dynamics, s
 from .jcalc import (
     JointModel,
     RCMG_Config,
+    concat_configs,
     jcalc_motion,
     jcalc_tau,
     jcalc_transform,
