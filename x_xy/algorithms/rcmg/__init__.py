@@ -1,3 +1,4 @@
+import math
 from typing import Callable
 
 import jax
@@ -126,10 +127,10 @@ def make_normalizer_from_generator(
     bs = tree_utils.tree_shape(X)
 
     # how often do we have to query the generator
-    whole = approx_with_large_batchsize // bs
+    number_of_gen_calls = math.ceil(approx_with_large_batchsize / bs)
 
     Xs, key = [], KEY
-    for _ in range(whole + 1):
+    for _ in range(number_of_gen_calls):
         key, consume = jax.random.split(key)
         Xs.append(generator(consume)[0])
     Xs = tree_utils.tree_batch(Xs, True, "jax")
