@@ -1,10 +1,31 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pytest
 
 import x_xy
 from x_xy.algorithms import RCMG_Config, batch_generator, build_generator
-from x_xy.maths import wrap_to_pi
+from x_xy.maths import unit_quats_like, wrap_to_pi
+
+
+@pytest.mark.parametrize("N,seed", [(1, 0), (1, 1), (5, 0), (5, 1)])
+def test_batch_generator(N: int, seed: int):
+    sys = x_xy.io.load_example("test_free")
+    config1 = RCMG_Config(ang0_min=0.0, ang0_max=0.0)
+    config2 = RCMG_Config()
+    gen1 = build_generator(sys, config1)
+    gen2 = build_generator(sys, config2)
+    gen = batch_generator([gen1, gen2, gen1], [N, N, N])
+    q, _ = gen(jax.random.PRNGKey(seed))
+
+    arr_eq = lambda a, b: np.testing.assert_allclose(
+        q[a:b, 0, :4], unit_quats_like(q[a:b, 0, :4])
+    )
+
+    arr_eq(0, N)
+    with pytest.raises(AssertionError):
+        arr_eq(N, 2 * N)
+    arr_eq(2 * N, 3 * N)
 
 
 def test_initial_ang_pos_values():
