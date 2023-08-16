@@ -1,4 +1,4 @@
-import logging
+import warnings
 from typing import NamedTuple
 
 import jax.numpy as jnp
@@ -109,7 +109,7 @@ def _identify_sys_checks(sys: base.System) -> None:
     # warn if there are joints to worldbody that are not of type `free`
     # those will not be preserved
     if sys.link_parents.count(-1) > 1:
-        logging.warning(
+        warnings.warn(
             "Multiple bodies connect to worldbody. "
             "This ambiguity might not be preserved during morphing."
         )

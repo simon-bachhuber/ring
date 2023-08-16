@@ -7,13 +7,16 @@ from x_xy.algorithms.jcalc import _draw_rxyz, _joint_types
 from x_xy.io import load_sys_from_str
 
 NEW_WORLD = "floating_base"
-_wrapper_sys_xml = rf"""
+
+
+def _wrapper_sys_xml(show_cs_floating_base: bool):
+    return rf"""
 <x_xy>
     <options gravity="0 0 9.81" dt="0.01"/>
     <worldbody>
         <body name="free" joint="free">
             <body name="{NEW_WORLD}" joint="cor"/>
-            <geom type="xyz"/>
+            {'<geom type="xyz"/>' if show_cs_floating_base else ''}
         </body>
     </worldbody>
 </x_xy>
@@ -26,9 +29,11 @@ def _freeze_free_joints(sys: base.System) -> base.System:
     )
 
 
-def replace_free_with_cor(sys: base.System) -> base.System:
+def replace_free_with_cor(
+    sys: base.System, show_cs_floating_base: bool = True
+) -> base.System:
     sys = _freeze_free_joints(sys)
-    wrapper_sys = load_sys_from_str(_wrapper_sys_xml)
+    wrapper_sys = load_sys_from_str(_wrapper_sys_xml(show_cs_floating_base))
     # TODO
     from x_xy.subpkgs import sys_composer
 
