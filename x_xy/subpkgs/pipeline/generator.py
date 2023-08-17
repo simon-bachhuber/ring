@@ -1,9 +1,14 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import jax
 
 import x_xy
-from x_xy.algorithms import Normalizer, RCMG_Config
+from x_xy.algorithms import (
+    Generator,
+    Normalizer,
+    RCMG_Config,
+    make_normalizer_from_generator,
+)
 from x_xy.base import System
 from x_xy.subpkgs import pipeline
 
@@ -21,11 +26,27 @@ def make_generator(
     sys_noimu: System,
     imu_attachment: dict,
     return_xs: bool = False,
-    normalizer: Optional[Normalizer] = None,
+    normalize: bool = False,
     randomize_positions: bool = True,
     random_s2s_ori: bool = False,
     noisy_imus: bool = True,
-):
+) -> Tuple[Generator, Optional[Normalizer]]:
+    normalizer = None
+    if normalize:
+        gen, _ = make_generator(
+            configs,
+            bs,
+            sys_data,
+            sys_noimu,
+            imu_attachment,
+            return_xs,
+            False,
+            randomize_positions,
+            random_s2s_ori,
+            noisy_imus,
+        )
+        normalizer = make_normalizer_from_generator(gen)
+
     configs, sys_data = _to_list(configs), _to_list(sys_data)
 
     def _make_generator(sys, config):
@@ -73,4 +94,4 @@ def make_generator(
 
     assert (bs // len(gens)) > 0, f"Batchsize too small. Must be at least {len(gens)}"
     batchsizes = len(gens) * [bs // len(gens)]
-    return x_xy.algorithms.batch_generator(gens, batchsizes)
+    return x_xy.algorithms.batch_generator(gens, batchsizes), normalizer
