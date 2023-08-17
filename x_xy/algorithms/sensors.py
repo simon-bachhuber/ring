@@ -94,7 +94,7 @@ def imu(
         # segment-to-sensor where this transform is only rotational
         key, consume = jax.random.split(key)
         xs_s2s = base.Transform.create(rot=maths.quat_random(consume))
-        xs = jax.vmap(algebra.transform_mul)(xs_s2s.repeat(xs.shape()), xs)
+        xs = jax.vmap(algebra.transform_mul, in_axes=(None, 0))(xs_s2s, xs)
 
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
 
