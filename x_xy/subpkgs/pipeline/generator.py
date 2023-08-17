@@ -23,12 +23,21 @@ def make_generator(
     return_xs: bool = False,
     normalizer: Optional[Normalizer] = None,
     randomize_positions: bool = True,
+    random_s2s_ori: bool = False,
+    noisy_imus: bool = True,
 ):
     configs, sys_data = _to_list(configs), _to_list(sys_data)
 
     def _make_generator(sys, config):
         def finalize_fn(key, q, x, sys):
-            X = pipeline.imu_data(key, x, sys, imu_attachment)
+            X = pipeline.imu_data(
+                key,
+                x,
+                sys,
+                imu_attachment,
+                noisy=noisy_imus,
+                random_s2s_ori=random_s2s_ori,
+            )
             y = x_xy.algorithms.rel_pose(sys_noimu, x, sys)
 
             if normalizer is not None:

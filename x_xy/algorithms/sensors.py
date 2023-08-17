@@ -3,7 +3,7 @@ from typing import Optional
 import jax
 import jax.numpy as jnp
 
-from x_xy import base, maths, scan
+from x_xy import algebra, base, maths, scan
 
 
 def accelerometer(xs: base.Transform, gravity: jax.Array, dt: float) -> jax.Array:
@@ -83,15 +83,32 @@ def imu(
     noisy: bool = False,
     smoothen_degree: Optional[int] = None,
     delay: Optional[int] = None,
+    random_s2s_ori: bool = False,
 ) -> dict:
-    "Simulates a 6D IMU."
+    "Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu."
+    assert xs.ndim() == 2
+
+    if random_s2s_ori:
+        assert key is not None, "`random_s2s_ori` requires a random seed via `key`"
+        # `xs` are now from eps-to-segment, so add another final rotation from
+        # segment-to-sensor where this transform is only rotational
+        key, consume = jax.random.split(key)
+        xs_s2s = base.Transform.create(rot=maths.quat_random(consume))
+        xs = jax.vmap(algebra.transform_mul)(xs_s2s.repeat(xs.shape()), xs)
+
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
 
     if smoothen_degree is not None:
         measurements = jax.tree_map(
-            lambda arr: moving_average(arr, smoothen_degree, delay),
+            lambda arr: moving_average(arr, smoothen_degree),
             measurements,
         )
+
+        # if you low-pass filter the imu measurements through a moving average which
+        # effectively uses future values, then it also makes sense to delay the imu
+        # measurements by this amount such that no future information is used
+        if delay is None:
+            delay = smoothen_degree
 
     if delay is not None:
         measurements = jax.tree_map(
@@ -156,7 +173,8 @@ def rel_pose(
     return y
 
 
-def moving_average(arr, window: int = 7):
+def moving_average(arr: jax.Array, window: int) -> jax.Array:
+    "Padds with left and right values of array."
     assert window % 2 == 1
     assert window > 1, "Window size of 1 would be a no-op"
     arr_smooth = jnp.zeros((len(arr) + window - 1,) + arr.shape[1:])
