@@ -35,7 +35,7 @@ def predict(
     render_prediction: bool = True,
     render_path: str = "animation.mp4",
     verbose: bool = True,
-    T_plot: float = 20.0,
+    T_plot: float = 60.0,
     **vispy_kwargs,
 ):
     import matplotlib.pyplot as plt
