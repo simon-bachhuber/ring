@@ -4,6 +4,7 @@ from .dynamics import compute_mass_matrix, forward_dynamics, inverse_dynamics, s
 from .jcalc import (
     JointModel,
     RCMG_Config,
+    concat_configs,
     jcalc_motion,
     jcalc_tau,
     jcalc_transform,
@@ -14,6 +15,7 @@ from .rcmg import (
     FINALIZE_FN,
     SETUP_FN,
     Generator,
+    Normalizer,
     batch_generator,
     build_generator,
     make_normalizer_from_generator,

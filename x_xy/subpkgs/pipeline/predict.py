@@ -3,6 +3,7 @@ from typing import Callable, Optional, Tuple
 import jax
 import jax.numpy as jnp
 import numpy as np
+import tree_utils
 
 import x_xy
 from x_xy import base, maths
@@ -35,13 +36,13 @@ def predict(
     render_prediction: bool = True,
     render_path: str = "animation.mp4",
     verbose: bool = True,
-    T_plot: float = 20.0,
     **vispy_kwargs,
 ):
     import matplotlib.pyplot as plt
 
     rnno = rnno_fn(sys)
 
+    X_3d = tree_utils.to_3d_if_2d(X, strict=True)
     # TODO
     # right now the key used in init can be hardcoded because
     # i am always using a state which is non-stochastic and
@@ -50,13 +51,14 @@ def predict(
         jax.random.PRNGKey(
             1,
         ),
-        X,
+        X_3d,
     )
 
     if params is None:
         params = initial_params
 
-    yhat, _ = rnno.apply(params, state, X)
+    yhat = rnno.apply(params, tree_utils.add_batch_dim(state), X_3d)[0]
+    yhat = tree_utils.to_2d_if_3d(yhat, strict=True)
     metrics = {}
     warmup = int(error_warmup_time / sys.dt)
     if y is not None:
@@ -70,8 +72,8 @@ def predict(
             print(metrics)
 
     if plot:
-        ts = jnp.arange(0.0, T_plot, step=sys.dt)
-        N = len(ts)
+        T = tree_utils.tree_shape(y) * sys.dt
+        ts = jnp.arange(0.0, T, step=sys.dt)
         fig, axes = plt.subplots(len(yhat), 3, figsize=(10, 3 * len(yhat)))
         axes = np.atleast_2d(axes)
         for row, link_name in enumerate(yhat.keys()):
@@ -84,9 +86,9 @@ def predict(
 
             for col, xyz in enumerate(["x", "y", "z"]):
                 axis = axes[row, col]
-                axis.plot(ts, euler_angles_hat[:N, col], label="prediction")
+                axis.plot(ts, euler_angles_hat[:, col], label="prediction")
                 if euler_angles is not None:
-                    axis.plot(ts, euler_angles[:N, col], label="truth")
+                    axis.plot(ts, euler_angles[:, col], label="truth")
                 axis.grid(True)
                 axis.set_title(link_name + "_" + xyz)
                 axis.set_xlabel("time [s]")

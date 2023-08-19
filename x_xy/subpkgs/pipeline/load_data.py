@@ -1,4 +1,4 @@
-import logging
+import warnings
 from typing import Optional
 
 import jax
@@ -21,12 +21,19 @@ def _postprocess_exp_data(exp_data: dict, rename: dict = {}, imu_attachment: dic
     return exp_data
 
 
-def imu_data(key, x, sys, imu_attachment):
+def imu_data(
+    key, x, sys, imu_attachment: dict, noisy: bool = True, random_s2s_ori: bool = False
+) -> dict:
     X = {}
     for imu, attachment in imu_attachment.items():
         key, consume = jax.random.split(key)
         X[attachment] = x_xy.algorithms.imu(
-            x.take(sys.name_to_idx(imu), 1), sys.gravity, sys.dt, consume, True
+            x.take(sys.name_to_idx(imu), 1),
+            sys.gravity,
+            sys.dt,
+            consume,
+            noisy=noisy,
+            random_s2s_ori=random_s2s_ori,
         )
     return X
 
@@ -69,7 +76,7 @@ def load_data(
         key, consume = jax.random.split(key)
         _, xs = x_xy.algorithms.build_generator(sys, config)(consume)
         if not artificial_transform1:
-            logging.warning("`artificial_transform1` was overwritten to `True`")
+            warnings.warn("`artificial_transform1` was overwritten to `True`")
             artificial_transform1 = True
     else:
         assert exp_data is not None
@@ -78,7 +85,7 @@ def load_data(
 
     if artificial_transform1:
         if not artificial_imus:
-            logging.warning("`artificial_imus` was overwritten to `True`")
+            warnings.warn("`artificial_imus` was overwritten to `True`")
             artificial_imus = True
         key, consume = jax.random.split(key)
 

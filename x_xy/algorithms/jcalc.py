@@ -1,10 +1,13 @@
-from dataclasses import dataclass, field
-from typing import Callable, Optional
+from dataclasses import dataclass, field, replace
+from typing import Callable, Optional, get_type_hints
 
 import jax
 import jax.numpy as jnp
 
 from x_xy import algebra, algorithms, base, maths
+
+Float = jax.Array
+TimeDependentFloat = Callable[[Float], Float]
 
 
 @dataclass
@@ -12,25 +15,25 @@ class RCMG_Config:
     T: float = 60.0  # length of random motion
     Ts: float = 0.01  # sampling rate
     t_min: float = 0.05  # min time between two generated angles
-    t_max: float = 0.30  # max time ..
+    t_max: float | TimeDependentFloat = 0.30  # max time ..
 
-    dang_min: float = 0.1  # minimum angular velocity in rad/s
-    dang_max: float = 3.0  # maximum angular velocity in rad/s
+    dang_min: float | TimeDependentFloat = 0.1  # minimum angular velocity in rad/s
+    dang_max: float | TimeDependentFloat = 3.0  # maximum angular velocity in rad/s
 
     # minimum angular velocity of euler angles used for `free and spherical joints`
-    dang_min_free_spherical: float = 0.1
-    dang_max_free_spherical: float = 3.0
+    dang_min_free_spherical: float | TimeDependentFloat = 0.1
+    dang_max_free_spherical: float | TimeDependentFloat = 3.0
 
     # max min allowed actual delta values in radians
-    delta_ang_min: float = 0.0
-    delta_ang_max: float = 2 * jnp.pi
-    delta_ang_min_free_spherical: float = 0.0
-    delta_ang_max_free_spherical: float = 2 * jnp.pi
+    delta_ang_min: float | TimeDependentFloat = 0.0
+    delta_ang_max: float | TimeDependentFloat = 2 * jnp.pi
+    delta_ang_min_free_spherical: float | TimeDependentFloat = 0.0
+    delta_ang_max_free_spherical: float | TimeDependentFloat = 2 * jnp.pi
 
-    dpos_min: float = 0.001  # speed of translation
-    dpos_max: float = 0.7
-    pos_min: float = -2.5
-    pos_max: float = +2.5
+    dpos_min: float | TimeDependentFloat = 0.001  # speed of translation
+    dpos_max: float | TimeDependentFloat = 0.7
+    pos_min: float | TimeDependentFloat = -2.5
+    pos_max: float | TimeDependentFloat = +2.5
 
     # used by both `random_angle_*` and `random_pos_*`
     # only used if `randomized_interpolation` is set
@@ -45,18 +48,64 @@ class RCMG_Config:
     range_of_motion_hinge_method: str = "uniform"
 
     # initial value of joints
-    ang0_min: float = 0.0
-    ang0_max: float = 0.0
+    ang0_min: float = -jnp.pi
+    ang0_max: float = jnp.pi
     pos0_min: float = 0.0
     pos0_max: float = 0.0
 
     # cor (center of rotation) custom fields
     cor_t_min: float = 0.2
-    cor_t_max: float = 2.0
-    cor_dpos_min: float = 0.00001
-    cor_dpos_max: float = 0.5
-    cor_pos_min: float = -0.4
-    cor_pos_max: float = 0.4
+    cor_t_max: float | TimeDependentFloat = 2.0
+    cor_dpos_min: float | TimeDependentFloat = 0.00001
+    cor_dpos_max: float | TimeDependentFloat = 0.5
+    cor_pos_min: float | TimeDependentFloat = -0.4
+    cor_pos_max: float | TimeDependentFloat = 0.4
+
+
+def _find_interval(t: jax.Array, boundaries: jax.Array):
+    """Find the interval of `boundaries` between which `t` lies.
+
+    Args:
+        t: Scalar float (e.g. time)
+        boundaries: Array of floats
+
+    Example: (from `test_jcalc.py`)
+        >> _find_interval(1.5, jnp.array([0.0, 1.0, 2.0])) -> 2
+        >> _find_interval(0.5, jnp.array([0.0])) -> 1
+        >> _find_interval(-0.5, jnp.array([0.0])) -> 0
+    """
+    assert boundaries.ndim == 1
+
+    @jax.vmap
+    def leq_than_boundary(boundary: jax.Array):
+        return jnp.where(t >= boundary, 1, 0)
+
+    return jnp.sum(leq_than_boundary(boundaries))
+
+
+def concat_configs(configs: list[RCMG_Config], boundaries: list[float]) -> RCMG_Config:
+    assert len(configs) == (
+        len(boundaries) + 1
+    ), "length of `boundaries` should be one less than length of `configs`"
+    boundaries = jnp.array(boundaries, dtype=float)
+
+    def new_value(field: str):
+        scalar_options = jnp.array([getattr(c, field) for c in configs])
+
+        def scalar(t):
+            return jax.lax.dynamic_index_in_dim(
+                scalar_options, _find_interval(t, boundaries), keepdims=False
+            )
+
+        return scalar
+
+    hints = get_type_hints(RCMG_Config())
+    is_time_dependent_field = lambda key: hints[key] == (float | TimeDependentFloat)
+    time_dependent_fields = [
+        key for key in RCMG_Config().__dict__ if is_time_dependent_field(key)
+    ]
+    changes = {field: new_value(field) for field in time_dependent_fields}
+    return replace(configs[0], **changes)
 
 
 DRAW_FN = Callable[[RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey], jax.Array]

@@ -1,3 +1,4 @@
+import math
 from typing import Callable
 
 import jax
@@ -6,7 +7,8 @@ import tree_utils
 from tree_utils import PyTree
 
 from x_xy import base, scan, utils
-from x_xy.algorithms import forward_kinematics_transforms, jcalc
+from x_xy.algorithms import RCMG_Config, forward_kinematics_transforms
+from x_xy.algorithms.jcalc import _joint_types
 from x_xy.algorithms.rcmg.augmentations import (
     register_rr_joint,
     replace_free_with_cor,
@@ -17,15 +19,16 @@ from x_xy.algorithms.rcmg.augmentations import (
 Generator = Callable[[jax.random.PRNGKey], PyTree]
 SETUP_FN = Callable[[jax.random.PRNGKey, base.System], base.System]
 FINALIZE_FN = Callable[[jax.Array, jax.Array, base.Transform, base.System], PyTree]
+Normalizer = Callable[[PyTree], PyTree]
 
 
 def build_generator(
     sys: base.System,
-    config: jcalc.RCMG_Config = jcalc.RCMG_Config(),
+    config: RCMG_Config = RCMG_Config(),
     setup_fn: SETUP_FN = lambda key, sys: sys,
     finalize_fn: FINALIZE_FN = lambda key, q, x, sys: (q, x),
 ) -> Generator:
-    def generator(key: jax.random.PRNGKey) -> dict:
+    def generator(key: jax.random.PRNGKey) -> PyTree:
         nonlocal sys
         # modified system
         key_start, consume = jax.random.split(key)
@@ -38,7 +41,7 @@ def build_generator(
             if key is None:
                 key = key_start
             key, key_t, key_value = jax.random.split(key, 3)
-            draw_fn = jcalc._joint_types[link_type].rcmg_draw_fn
+            draw_fn = _joint_types[link_type].rcmg_draw_fn
             if draw_fn is None:
                 raise Exception(f"The joint type {link_type} has no draw fn specified.")
             q_link = draw_fn(config, key_t, key_value)
@@ -108,11 +111,14 @@ def batch_generator(
 
 
 KEY = jax.random.PRNGKey(777)
+KEY_PERMUTATION = jax.random.PRNGKey(888)
 
 
 def make_normalizer_from_generator(
     generator: Generator, approx_with_large_batchsize: int = 512
-) -> Callable:
+) -> Normalizer:
+    """`generator` is expected to return `X, y`. Then, this function returns a pure
+    function that normalizes `X`."""
     # batch it if it isn't already
     generator = batch_generator(generator)
 
@@ -121,13 +127,17 @@ def make_normalizer_from_generator(
     bs = tree_utils.tree_shape(X)
 
     # how often do we have to query the generator
-    whole = approx_with_large_batchsize // bs
+    number_of_gen_calls = math.ceil(approx_with_large_batchsize / bs)
 
     Xs, key = [], KEY
-    for _ in range(whole + 1):
+    for _ in range(number_of_gen_calls):
         key, consume = jax.random.split(key)
         Xs.append(generator(consume)[0])
     Xs = tree_utils.tree_batch(Xs, True, "jax")
+    # permute 0-th axis, since batchsize of generator might be larger than
+    # `approx_with_large_batchsize`, then we would not get a representative
+    # subsample otherwise
+    Xs = jax.tree_map(lambda arr: jax.random.permutation(KEY_PERMUTATION, arr), Xs)
     Xs = tree_utils.tree_slice(Xs, start=0, slice_size=approx_with_large_batchsize)
 
     # obtain statistics
