@@ -168,7 +168,7 @@ class AbsGeomSphere:
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Sphere:
         mass, trafo, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
-        radius = geom_attr["dim"][0]
+        radius = geom_attr["dim"].item()
         return base.Sphere(mass, trafo, link_idx, color, edge_color, radius)
 
     @staticmethod
