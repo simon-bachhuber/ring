@@ -93,7 +93,13 @@ def batch_generator(
     pmap, vmap = utils.distribute_batchsize(bs_total)
     batch_arr = batch_arr.reshape((pmap, vmap))
 
-    @jax.pmap
+    pmap_trafo = jax.pmap
+    # single GPU node, then do jit + vmap instead of pmap
+    # this allows e.g. better NAN debugging capabilities
+    if pmap == 1:
+        pmap_trafo = lambda f: jax.jit(jax.vmap(f))
+
+    @pmap_trafo
     @jax.vmap
     def _generator(key, which_gen: int):
         return jax.lax.switch(which_gen, generators, key)
