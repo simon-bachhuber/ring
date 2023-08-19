@@ -1,9 +1,7 @@
-from vispy.visuals import CompoundVisual
-from vispy.geometry.meshdata import MeshData
-from vispy.scene.visuals import create_visual_node, Mesh
-
-
 import numpy as np
+from vispy.geometry.meshdata import MeshData
+from vispy.scene.visuals import Mesh, create_visual_node
+from vispy.visuals import CompoundVisual, IsosurfaceVisual
 
 
 class DoubleMeshVisual(CompoundVisual):
@@ -40,8 +38,6 @@ class DoubleMeshVisual(CompoundVisual):
 
     def _transform_changed(self, event=None):
         super()._transform_changed(event)
-        print(self.transforms.visual_transform)
-        print(self._faces.transforms.visual_transform)
         self.light_dir = self._faces.transforms.visual_transform.map(
             np.array([1, 0, 0, 1])
         )[:3]
@@ -138,7 +134,9 @@ class SphereVisual(DoubleMeshVisual):
 Sphere = create_visual_node(SphereVisual)
 
 
-def box_mesh(dim_x: float, dim_y: float, dim_z: float) -> tuple[np.ndarray, np.ndarray]:
+def box_mesh(
+    dim_x: float, dim_y: float, dim_z: float
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     verts = np.array(
         [
             (-dim_x, -dim_y, -dim_z),
@@ -216,7 +214,7 @@ Box = create_visual_node(BoxVisual)
 def cylinder_mesh(
     radius: float,
     length: float,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     cols = 8
     rows = max(4 * int(length), 3) + 2
 
