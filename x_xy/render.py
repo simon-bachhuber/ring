@@ -13,6 +13,7 @@ import tree_utils
 from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
+from vispy.scene import visuals as vispy_visuals
 
 import x_xy
 from x_xy import algebra, base, maths, visuals
@@ -267,12 +268,12 @@ class VispyScene(Scene):
         )
 
     def _add_sphere(self, sphere: Sphere) -> Visual:
-        return visuals.Sphere(
+        return vispy_visuals.Sphere(
             sphere.radius,
             parent=self.view.scene,
             color=sphere.color,
             edge_color=sphere.edge_color,
-            # method="ico",
+            shading="smooth",
         )
 
     def _add_cylinder(self, cyl: Cylinder) -> Visual:
