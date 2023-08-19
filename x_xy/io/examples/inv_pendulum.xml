@@ -1,7 +1,7 @@
 <x_xy model="inv_pendulum">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
-        <geom vispy_edge_color="black" vispy_color="white"/>
+        <geom edge_color="black" color="white"/>
     </defaults>
     <worldbody>
         <body name="cart" joint="px" damping="0.01">

@@ -223,9 +223,14 @@ class Geometry(_Base):
     transform: Transform
     link_idx: int
 
+    color: Any = struct.field(pytree_node=False)
+    edge_color: Any = struct.field(pytree_node=False)
+
 
 @struct.dataclass
 class XYZ(Geometry):
+    # TODO: possibly subclass this of _Base? does this need a mass, transform, and
+    # link_idx? maybe just transform?
     @classmethod
     def create(cls, link_idx: int):
         return cls(0.0, Transform.zero(), link_idx)
@@ -236,9 +241,6 @@ class XYZ(Geometry):
 
 @struct.dataclass
 class Sphere(Geometry):
-    color: Any = struct.field(pytree_node=False)
-    edge_color: Any = struct.field(pytree_node=False)
-
     radius: float
 
     def get_it_3x3(self) -> jax.Array:
@@ -248,9 +250,6 @@ class Sphere(Geometry):
 
 @struct.dataclass
 class Box(Geometry):
-    color: Any = struct.field(pytree_node=False)
-    edge_color: Any = struct.field(pytree_node=False)
-
     dim_x: float
     dim_y: float
     dim_z: float
@@ -277,9 +276,6 @@ class Box(Geometry):
 class Cylinder(Geometry):
     """Length is along x-axis."""
 
-    color: Any = struct.field(pytree_node=False)
-    edge_color: Any = struct.field(pytree_node=False)
-
     radius: float
     length: float
 
@@ -297,9 +293,6 @@ class Cylinder(Geometry):
 @struct.dataclass
 class Capsule(Geometry):
     """Length is along x-axis."""
-
-    color: Any = struct.field(pytree_node=False)
-    edge_color: Any = struct.field(pytree_node=False)
 
     radius: float
     length: float
