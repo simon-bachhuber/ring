@@ -1,9 +1,8 @@
-from typing import Optional, TypeVar, Union
-
 import time
 from abc import ABC, abstractmethod, abstractstaticmethod
 from functools import partial
 from pathlib import Path
+from typing import Optional, TypeVar, Union
 
 import imageio
 import jax
