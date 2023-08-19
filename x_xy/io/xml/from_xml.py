@@ -84,24 +84,6 @@ def _convert_attrs_to_arrays(xml_tree):
             subtree.attrib[k] = jnp.squeeze(jnp.array(array))
 
 
-# def _get_rotation(attrib: dict):
-#     if "quat" in attrib and "euler" in attrib:
-#         raise RuntimeError("Can't specify both quat and euler")
-
-#     if "quat" in attrib:
-#         rot = attrib.get("quat", None)
-#     elif "euler" in attrib:
-#         # we use zyx convention but angles are given
-#         # in x, y, z in the xml file
-#         # thus flip the order
-#         euler_xyz = jnp.deg2rad(attrib["euler"])
-#         rot = base.maths.quat_euler(jnp.flip(euler_xyz), convention="zyx")
-#     else:
-#         rot = jnp.array([1.0, 0, 0, 0])
-
-#     return rot
-
-
 def _extract_geoms_from_body_xml(body, current_link_idx):
     link_geoms = []
 
