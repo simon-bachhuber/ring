@@ -133,27 +133,34 @@ def _from_xml_vispy(attr: ATTR):
     return {key: to_list(value) for key, value in dict_no_prefix.items()}
 
 
-def _to_xml_vispy(element: T, geom: base.Geometry) -> None:
+def _to_xml_colors(element: T, geom: base.Geometry) -> None:
     "Copy pasted from you"
     # Add vispy kwargs if they exist
-    if hasattr(geom, ("vispy_kwargs")):
-        for key, value in geom.vispy_kwargs.items():
-            element.set(f"vispy_{key}", _to_str(value))
+    # if hasattr(geom, ("vispy_kwargs")):
+    #     for key, value in geom.vispy_kwargs.items():
+    #         element.set(f"vispy_{key}", _to_str(value))
+    if hasattr(geom, ("color")):
+        element.set("color", _to_str(geom["color"]))
+
+    if hasattr(geom, ("edge_color")):
+        element.set("edge_color", _to_str(geom["edge_color"]))
 
 
 def _from_xml_geom_attr_processing(geom_attr: ATTR):
     "Common processing used by all geometries"
     m = geom_attr["mass"]
     t = AbsTrans.from_xml(geom_attr)
-    vispy = _from_xml_vispy(geom_attr)
-    return m, t, vispy
+    # vispy = _from_xml_vispy(geom_attr)
+    color = geom_attr.get("color", None)
+    edge_color = geom_attr.get("edge_color", None)
+    return m, t, color, edge_color
 
 
 def _to_xml_geom_processing(element: T, geom: base.Geometry) -> None:
     "Common processing used by all geometries"
     AbsTrans.to_xml(element, geom.transform)
     element.set("mass", _to_str(geom.mass))
-    _to_xml_vispy(element, geom)
+    _to_xml_colors(element, geom)
     element.set("type", geometry_to_xml_identifier[type(geom)])
 
 
@@ -163,9 +170,9 @@ class AbsGeomBox:
 
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Box:
-        m, t, vispy = _from_xml_geom_attr_processing(geom_attr)
+        m, t, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         dims = [geom_attr["dim"][i] for i in range(3)]
-        return base.Box(m, t, link_idx, *dims, vispy)
+        return base.Box(m, t, link_idx, color, edge_color, *dims)
 
     @staticmethod
     def to_xml(element: T, geom: base.Box) -> None:
@@ -180,9 +187,9 @@ class AbsGeomSphere:
 
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Sphere:
-        m, t, vispy = _from_xml_geom_attr_processing(geom_attr)
+        m, t, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         radius = geom_attr["dim"][0]
-        return base.Sphere(m, t, link_idx, radius, vispy)
+        return base.Sphere(m, t, link_idx, color, edge_color, radius)
 
     @staticmethod
     def to_xml(element: T, geom: base.Sphere) -> None:
@@ -197,9 +204,9 @@ class AbsGeomCylinder:
 
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Cylinder:
-        m, t, vispy = _from_xml_geom_attr_processing(geom_attr)
+        m, t, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         dims = [geom_attr["dim"][i] for i in range(2)]
-        return base.Cylinder(m, t, link_idx, *dims, vispy)
+        return base.Cylinder(m, t, link_idx, color, edge_color, *dims)
 
     @staticmethod
     def to_xml(element: T, geom: base.Cylinder) -> None:
@@ -214,9 +221,9 @@ class AbsGeomCapsule:
 
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Capsule:
-        m, t, vispy = _from_xml_geom_attr_processing(geom_attr)
+        m, t, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         dims = [geom_attr["dim"][i] for i in range(2)]
-        return base.Capsule(m, t, link_idx, *dims, vispy)
+        return base.Capsule(m, t, link_idx, color, edge_color, *dims)
 
     @staticmethod
     def to_xml(element: T, geom: base.Capsule) -> None:
@@ -240,7 +247,13 @@ class AbsGeomXYZ:
         element.set("type", geometry_to_xml_identifier[type(geom)])
 
 
-_ags = [AbsGeomBox, AbsGeomSphere, AbsGeomCylinder, AbsGeomCapsule, AbsGeomXYZ]
+_ags = [
+    AbsGeomBox,
+    AbsGeomSphere,
+    AbsGeomCylinder,
+    AbsGeomCapsule,
+    AbsGeomXYZ,
+]
 geometry_to_xml_identifier = {ag.geometry: ag.xml_geom_type for ag in _ags}
 xml_identifier_to_abstract = {ag.xml_geom_type: ag for ag in _ags}
 geometry_to_abstract = {ag.geometry: ag for ag in _ags}
