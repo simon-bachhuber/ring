@@ -44,8 +44,6 @@ def list_examples() -> list[str]:
 
     examples.sort()
 
-    examples = sorted(examples)
-
     return examples
 
 
