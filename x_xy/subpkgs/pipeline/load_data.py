@@ -21,12 +21,19 @@ def _postprocess_exp_data(exp_data: dict, rename: dict = {}, imu_attachment: dic
     return exp_data
 
 
-def imu_data(key, x, sys, imu_attachment):
+def imu_data(
+    key, x, sys, imu_attachment: dict, noisy: bool = True, random_s2s_ori: bool = False
+) -> dict:
     X = {}
     for imu, attachment in imu_attachment.items():
         key, consume = jax.random.split(key)
         X[attachment] = x_xy.algorithms.imu(
-            x.take(sys.name_to_idx(imu), 1), sys.gravity, sys.dt, consume, True
+            x.take(sys.name_to_idx(imu), 1),
+            sys.gravity,
+            sys.dt,
+            consume,
+            noisy=noisy,
+            random_s2s_ori=random_s2s_ori,
         )
     return X
 
