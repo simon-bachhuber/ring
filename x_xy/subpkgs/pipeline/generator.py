@@ -23,8 +23,8 @@ def make_generator(
     configs: RCMG_Config | list[RCMG_Config],
     bs: int,
     sys_data: System | list[System],
-    sys_noimu: System,
-    imu_attachment: dict,
+    sys_noimu: Optional[System] = None,
+    imu_attachment: Optional[dict] = None,
     return_xs: bool = False,
     normalize: bool = False,
     randomize_positions: bool = True,
@@ -48,6 +48,14 @@ def make_generator(
         normalizer = make_normalizer_from_generator(gen)
 
     configs, sys_data = _to_list(configs), _to_list(sys_data)
+
+    if sys_noimu is None:
+        sys_noimu, _imu_attachment = pipeline.make_sys_noimu(sys_data[0])
+        if imu_attachment is None:
+            imu_attachment = _imu_attachment
+
+    assert sys_noimu is not None
+    assert imu_attachment is not None
 
     def _make_generator(sys, config):
         def finalize_fn(key, q, x, sys):
