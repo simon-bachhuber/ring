@@ -260,12 +260,14 @@ class Box(Geometry):
             1
             / 12
             * self.mass
-            * jnp.array(
-                [
-                    [self.dim_y**2 + self.dim_z**2, 0, 0],
-                    [0, self.dim_x**2 + self.dim_z**2, 0],
-                    [0, 0, self.dim_x**2 + self.dim_y**2],
-                ]
+            * jnp.diag(
+                jnp.array(
+                    [
+                        self.dim_y**2 + self.dim_z**2,
+                        self.dim_x**2 + self.dim_z**2,
+                        self.dim_x**2 + self.dim_y**2,
+                    ]
+                )
             )
         )
         return it_3x3
@@ -287,13 +289,7 @@ class Cylinder(Geometry):
             1
             / 12
             * self.mass
-            * jnp.array(
-                [
-                    [6 * self.radius**2, 0, 0],
-                    [0, radius_dir, 0],
-                    [0, 0, radius_dir],
-                ]
-            )
+            * jnp.diag(jnp.array([6 * self.radius**2, radius_dir, radius_dir]))
         )
         return it_3x3
 
@@ -326,7 +322,8 @@ class Capsule(Geometry):
         )
         I_b = (0.5 * m_cyl + 0.4 * m_cap) * r**2
 
-        return jnp.array([[I_b, 0, 0], [0, I_a, 0], [0, 0, I_a]])
+        # return jnp.array([[I_b, 0, 0], [0, I_a, 0], [0, 0, I_a]])
+        return jnp.diag(jnp.array([I_b, I_a, I_a]))
 
 
 N_JOINT_PARAMS: int = 3
