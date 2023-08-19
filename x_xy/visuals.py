@@ -8,14 +8,6 @@ class DoubleMeshVisual(CompoundVisual):
     _lines: Mesh
     _faces: Mesh
 
-    @property
-    def light_dir(self):
-        return self._faces.shading_filter.light_dir
-
-    @light_dir.setter
-    def light_dir(self, light_dir):
-        self._faces.shading_filter.light_dir = light_dir
-
     def __init__(self, verts, edges, faces, *, color=None, edge_color=None):
         # if color is None:
         #     color = (0.5, 0.5, 1, 1)
@@ -35,13 +27,6 @@ class DoubleMeshVisual(CompoundVisual):
         self._faces.set_gl_state(
             polygon_offset_fill=True, polygon_offset=(1, 1), depth_test=True
         )
-
-    def _transform_changed(self, event=None):
-        super()._transform_changed(event)
-        self.light_dir = self._faces.transforms.visual_transform.map(
-            np.array([1, 0, 0, 1])
-        )[:3]
-        self.light_dir = np.array([1, 0, 0])
 
 
 def box_mesh(

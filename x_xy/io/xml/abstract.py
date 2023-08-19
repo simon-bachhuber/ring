@@ -113,10 +113,7 @@ class AbsPosMinMax:
 
 def _to_xml_colors(element: T, geom: base.Geometry) -> None:
     "Copy pasted from you"
-    # Add vispy kwargs if they exist
-    # if hasattr(geom, ("vispy_kwargs")):
-    #     for key, value in geom.vispy_kwargs.items():
-    #         element.set(f"vispy_{key}", _to_str(value))
+
     if hasattr(geom, "color") and geom.color is not None:
         element.set("color", _to_str(geom.color))
 

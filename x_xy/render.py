@@ -242,12 +242,6 @@ class VispyScene(Scene):
         else:
             self.disable_xyz(not show_cs_root)
 
-    def _create_visual_element(self, geom: Geometry, **kwargs):
-        if isinstance(geom, Box):
-            return scene.visuals.Box(
-                geom.dim_x, geom.dim_z, geom.dim_y, parent=self.view.scene, **kwargs
-            )
-
     def _set_camera(self, camera: scene.cameras.BaseCamera) -> None:
         self.view.camera = camera
 

@@ -60,8 +60,6 @@ def _assert_all_tags_attrs_valid(xml_tree):
     for subtree in xml_tree.iter():
         assert subtree.tag in list([key for key in valid_attrs])
         for attr in subtree.attrib:
-            # if subtree.tag == "geom" and attr.split("_")[0] == "vispy":
-            #     continue
             assert attr in valid_attrs[subtree.tag], f"attr {attr} not a valid attr"
 
 
@@ -105,36 +103,17 @@ def _convert_attrs_to_arrays(xml_tree):
 
 
 def _extract_geoms_from_body_xml(body, current_link_idx):
-    # geom_map = {
-    #     "box": base.Box,
-    #     "sphere": base.Sphere,
-    #     "cylinder": base.Cylinder,
-    #     "capsule": base.Capsule,
-    # }
     link_geoms = []
-    # for geom_subtree in body.findall("geom"):
-    #     g_attr = geom_subtree.attrib
 
-    #     geom_rot = _get_rotation(g_attr)
-    #     geom_pos = g_attr.get("pos", jnp.zeros((3,)))
-    #     transform = base.Transform(geom_pos, geom_rot)
-
-    #     dims = [float(x) for x in jnp.atleast_1d(g_attr["dim"])]
-
-    #     geom = geom_map[g_attr["type"]](
-    #         g_attr["mass"],
-    #         transform,
-    #         current_link_idx,
-    #         g_attr.get("color", None),
-    #         g_attr.get("edge_color", None),
-    #         *dims,
-    #     )
     for geom_subtree in body.findall("geom"):
         attr = geom_subtree.attrib
+
         geom = abstract.xml_identifier_to_abstract[attr["type"]].from_xml(
             attr, current_link_idx
         )
+
         link_geoms.append(geom)
+
     return link_geoms
 
 
