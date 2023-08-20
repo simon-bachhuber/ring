@@ -159,18 +159,11 @@ def capsule_mesh(radius: float, length: float, offset: bool = True) -> MeshData:
         radius * np.cos(phi[-sphere_rows:, None]) - cyl_length / 2
     )
 
-    # th = (np.arange(cols) * 2 * np.pi / cols).reshape(1, cols)
     th = (np.linspace(0, 2 * np.pi, cols))[None, :]
 
     if offset:
         # rotate each row by 1/2 column
         th = th + (np.pi / cols) * np.arange(total_rows)[:, None]
-
-    # s = np.empty((2 * rows + cyl_rows, 1))
-
-    # s[:rows, 0] = radius * np.sin(phi[:rows])
-    # s[rows:-rows, 0] = radius
-    # s[-rows:, 0] = radius * np.sin(phi[-rows:])
 
     verts[..., 1] = radius * np.cos(th)
     verts[..., 2] = radius * np.sin(th)
@@ -178,8 +171,7 @@ def capsule_mesh(radius: float, length: float, offset: bool = True) -> MeshData:
     verts[:sphere_rows, :, 1:3] *= np.sin(phi[:sphere_rows, None, None])
     verts[-sphere_rows:, :, 1:3] *= np.sin(phi[-sphere_rows:, None, None])
 
-    # remove redundant vertices from top and bottom
-    verts = verts.reshape(-1, 3)  # [cols - 1 : -(cols - 1)]
+    verts = verts.reshape(-1, 3)
 
     # compute faces
     faces = np.empty(((total_rows - 1) * cols * 2, 3), dtype=np.uint32)
@@ -197,16 +189,6 @@ def capsule_mesh(radius: float, length: float, offset: bool = True) -> MeshData:
 
         faces[start : start + cols] = rowtemplate1 + row * cols
         faces[start + cols : start + (cols * 2)] = rowtemplate2 + row * cols
-
-    # cut off zero-area triangles at top
-    # faces = faces[cols:]
-
-    # adjust for redundant vertices that were removed from top
-    # vmin = cols - 1
-    # faces[faces < vmin] = vmin
-    # faces -= vmin
-    # vmax = verts.shape[0] - 1
-    # faces[faces > vmax] = vmax
 
     mesh = MeshData(vertices=verts, faces=faces)
 
