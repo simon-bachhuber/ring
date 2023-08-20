@@ -126,7 +126,12 @@ def _from_xml_geom_attr_processing(geom_attr: ATTR):
     trafo = AbsTrans.from_xml(geom_attr)
 
     color = geom_attr.get("color", None)
+    if isinstance(color, jax.Array):
+        color = tuple(color.tolist())
+
     edge_color = geom_attr.get("edge_color", None)
+    if isinstance(edge_color, jax.Array):
+        edge_color = tuple(edge_color.tolist())
 
     return mass, trafo, color, edge_color
 
