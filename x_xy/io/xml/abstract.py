@@ -111,19 +111,15 @@ class AbsPosMinMax:
         element.set("pos_max", _to_str(pos_max))
 
 
-def _to_xml_colors(element: T, geom: base.Geometry) -> None:
-    if hasattr(geom, "color") and geom.color is not None:
-        element.set("color", _to_str(geom.color))
-
-    if hasattr(geom, "edge_color") and geom.edge_color is not None:
-        element.set("edge_color", _to_str(geom.edge_color))
-
-
 def _from_xml_geom_attr_processing(geom_attr: ATTR):
     "Common processing used by all geometries"
 
     mass = geom_attr["mass"]
     trafo = AbsTrans.from_xml(geom_attr)
+
+    # convert arrays to tuple[float], because of `struct.field(False)`
+    # Otherwise jitted functions with `sys` input will error on second execution, since
+    # it can't compare the two vispy_color arrays.
 
     color = geom_attr.get("color", None)
     if isinstance(color, jax.Array):
@@ -139,8 +135,15 @@ def _from_xml_geom_attr_processing(geom_attr: ATTR):
 def _to_xml_geom_processing(element: T, geom: base.Geometry) -> None:
     "Common processing used by all geometries"
     AbsTrans.to_xml(element, geom.transform)
+
     element.set("mass", _to_str(geom.mass))
-    _to_xml_colors(element, geom)
+
+    if geom.color is not None:
+        element.set("color", _to_str(geom.color))
+
+    if geom.edge_color is not None:
+        element.set("edge_color", _to_str(geom.edge_color))
+
     element.set("type", geometry_to_xml_identifier[type(geom)])
 
 
