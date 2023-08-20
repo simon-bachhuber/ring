@@ -14,6 +14,9 @@ Vector = jax.Array
 Quaternion = jax.Array
 
 
+Color = Optional[str | tuple[float, float, float]]
+
+
 class _Base:
     """Base functionality of all spatial datatypes.
     Copied and modified from https://github.com/google/brax/blob/main/brax/v2/base.py
@@ -223,8 +226,8 @@ class Geometry(_Base):
     transform: Transform
     link_idx: int
 
-    color: Any = struct.field(pytree_node=False)
-    edge_color: Any = struct.field(pytree_node=False)
+    color: Color = struct.field(pytree_node=False)
+    edge_color: Color = struct.field(pytree_node=False)
 
 
 @struct.dataclass
