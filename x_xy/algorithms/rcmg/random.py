@@ -206,12 +206,15 @@ def random_position_over_time(
             t, POS[:, 0], POS[:, 1], consume
         )
     else:
-        if interpolation_method != "cosine":
-            warnings.warn(
-                f"You have select interpolation method {interpolation_method}. "
-                "Differnt choices of interpolation method are only available if "
-                "`randomized_interpolation` is set."
-            )
+        # TODO
+        # Don't warn for position trajectories, i don't care about them as much
+        if False:
+            if interpolation_method != "cosine":
+                warnings.warn(
+                    f"You have select interpolation method {interpolation_method}. "
+                    "Differnt choices of interpolation method are only available if "
+                    "`randomized_interpolation` is set."
+                )
         r = cosInterpolate(t, POS[:, 0], POS[:, 1])
     return r
 
