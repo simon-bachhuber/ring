@@ -87,6 +87,9 @@ def box_mesh(
 
 
 class BoxVisual(DoubleMeshVisual):
+    # NOTE: need a custom BoxVisual class, since vispy.scene.visuals.Box does not
+    # support shading
+
     def __init__(
         self, dim_x: float, dim_y: float, dim_z: float, *, color=None, edge_color=None
     ):

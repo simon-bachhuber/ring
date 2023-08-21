@@ -14,7 +14,7 @@ Vector = jax.Array
 Quaternion = jax.Array
 
 
-Color = Optional[str | tuple[float, float, float]]
+Color = Optional[str | tuple[float, float, float] | tuple[float, float, float, float]]
 
 
 class _Base:
