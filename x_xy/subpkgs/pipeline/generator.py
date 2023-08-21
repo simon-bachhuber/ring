@@ -30,6 +30,7 @@ def make_generator(
     randomize_positions: bool = True,
     random_s2s_ori: bool = False,
     noisy_imus: bool = True,
+    quasi_physical_imus: bool = False,
 ) -> Tuple[Generator, Optional[Normalizer]]:
     normalizer = None
     if normalize:
@@ -66,6 +67,7 @@ def make_generator(
                 imu_attachment,
                 noisy=noisy_imus,
                 random_s2s_ori=random_s2s_ori,
+                quasi_physical=quasi_physical_imus,
             )
             y = x_xy.algorithms.rel_pose(sys_noimu, x, sys)
 

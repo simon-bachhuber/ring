@@ -22,7 +22,15 @@ def _postprocess_exp_data(exp_data: dict, rename: dict = {}, imu_attachment: dic
 
 
 def imu_data(
-    key, x, sys, imu_attachment: dict, noisy: bool = True, random_s2s_ori: bool = False
+    key,
+    x,
+    sys,
+    imu_attachment: dict,
+    noisy: bool = True,
+    random_s2s_ori: bool = False,
+    delay=None,
+    smoothen_degree=None,
+    quasi_physical: bool = False,
 ) -> dict:
     X = {}
     for imu, attachment in imu_attachment.items():
@@ -34,6 +42,9 @@ def imu_data(
             consume,
             noisy=noisy,
             random_s2s_ori=random_s2s_ori,
+            delay=delay,
+            smoothen_degree=smoothen_degree,
+            quasi_physical=quasi_physical,
         )
     return X
 
@@ -58,6 +69,10 @@ def load_data(
     use_rcmg: bool = False,
     seed: int = 1,
     artificial_imus: bool = False,
+    noisy_imus: bool = True,
+    imu_delay=None,
+    imu_smoothen_degree=None,
+    quasi_physical=False,
     artificial_transform1: bool = False,
     artificial_random_transform1: bool = True,
     delete_global_translation_rotation: bool = False,
@@ -117,7 +132,16 @@ def load_data(
 
     if artificial_imus:
         key, consume = jax.random.split(key)
-        X = imu_data(consume, xs, sys, imu_attachment)
+        X = imu_data(
+            consume,
+            xs,
+            sys,
+            imu_attachment,
+            noisy=noisy_imus,
+            delay=imu_delay,
+            smoothen_degree=imu_smoothen_degree,
+            quasi_physical=quasi_physical,
+        )
     else:
         rigid_flex = "imu_rigid" if rigid_imus else "imu_flex"
         X = {
