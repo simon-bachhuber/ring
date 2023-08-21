@@ -262,7 +262,7 @@ def _get_rotation(attr: ATTR):
 
 
 def _to_str(obj):
-    if isinstance(obj, list):
+    if isinstance(obj, list) or isinstance(obj, tuple):
         if all([isinstance(ele, float) for ele in obj]):
             obj = np.array(obj)
 

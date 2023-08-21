@@ -3,12 +3,16 @@ from vispy.geometry.meshdata import MeshData
 from vispy.scene.visuals import Mesh, create_visual_node
 from vispy.visuals import CompoundVisual, TubeVisual
 
+from x_xy.base import Color
+
 
 class DoubleMeshVisual(CompoundVisual):
     _lines: Mesh
     _faces: Mesh
 
-    def __init__(self, verts, edges, faces, *, color=None, edge_color=None):
+    def __init__(
+        self, verts, edges, faces, *, color: Color = None, edge_color: Color = None
+    ):
         # if color is None:
         #     color = (0.5, 0.5, 1, 1)
 
@@ -91,7 +95,13 @@ class BoxVisual(DoubleMeshVisual):
     # support shading
 
     def __init__(
-        self, dim_x: float, dim_y: float, dim_z: float, *, color=None, edge_color=None
+        self,
+        dim_x: float,
+        dim_y: float,
+        dim_z: float,
+        *,
+        color: Color = None,
+        edge_color: Color = None
     ):
         dim_x = float(dim_x)
         dim_y = float(dim_y)
@@ -110,7 +120,14 @@ Box = create_visual_node(BoxVisual)
 
 
 class CylinderVisual(TubeVisual):
-    def __init__(self, radius: float, length: float, *, color=None, edge_color=None):
+    def __init__(
+        self,
+        radius: float,
+        length: float,
+        *,
+        color: Color = None,
+        edge_color: Color = None
+    ):
         radius = float(radius)
         length = float(length)
 
@@ -199,7 +216,14 @@ def capsule_mesh(radius: float, length: float, offset: bool = True) -> MeshData:
 
 
 class CapsuleVisual(DoubleMeshVisual):
-    def __init__(self, radius: float, length: float, *, color=None, edge_color=None):
+    def __init__(
+        self,
+        radius: float,
+        length: float,
+        *,
+        color: Color = None,
+        edge_color: Color = None
+    ):
         radius = float(radius)
         length = float(length)
 
