@@ -229,7 +229,7 @@ def _quasi_physical_simulation_beautiful(
 
 
 def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
-    damp, stiff, mass = 0.1, 3.0, 0.002
+    damp, stiff, mass = 0.01, 1, 100
 
     def step_dynamics(state, zeropoint):
         pos, vel = state
@@ -242,7 +242,7 @@ def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
 
     zero_vel = jnp.zeros_like(xs.pos[0])
     state = (xs.pos[0], zero_vel)
-    zeropoint_vel = jnp.vstack((zero_vel, jnp.jnp.diff(xs.pos) / dt))
+    zeropoint_vel = jnp.vstack((zero_vel, jnp.diff(xs.pos, axis=0) / dt))
     zeropoint = (xs.pos, zeropoint_vel)
     _, pos = jax.lax.scan(step_dynamics, state, zeropoint)
     return xs.replace(pos=pos)
