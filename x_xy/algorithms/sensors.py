@@ -217,10 +217,13 @@ _quasi_physical_sys_str = r"""
 def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
     sys = load_sys_from_str(_quasi_physical_sys_str).replace(dt=dt)
 
+    print("COMPILE `quasi_physical`")
+
+    # .replace(link_spring_zeropoint=x.pos)
     def step_dynamics(state: base.State, x):
-        state = step(sys.replace(link_spring_zeropoint=x.pos), state)
+        state = step(sys, state)
         return state, state.q
 
     state = base.State.create(sys, q=xs.pos[0])
-    _, pos = jax.lax.scan(step_dynamics, state, xs, unroll=xs.shape())
+    _, pos = jax.lax.scan(step_dynamics, state, xs)
     return xs.replace(pos=pos)
