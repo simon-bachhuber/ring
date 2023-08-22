@@ -1,7 +1,7 @@
 <x_xy model="all_2">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
-        <geom dim="1 10 4" mass="2" vispy_edge_color="black" vispy_color="white"/>
+        <geom dim="1 10 4" mass="2" edge_color="black" color="white"/>
     </defaults>
     <worldbody>
         <body name="worldbody-bookkeeping" joint="frozen">

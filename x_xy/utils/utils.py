@@ -38,7 +38,7 @@ def _sys_compare_unsafe(sys1, sys2, verbose: bool, prefix: str) -> bool:
             if not tree_equal(d1[key], d2[key]):
                 if verbose:
                     print(f"Systems different in attribute `sys{prefix}.{key}`")
-                    print(f"{d1[key]} NOT EQUAL {d2[key]}")
+                    print(f"{repr(d1[key])} NOT EQUAL {repr(d2[key])}")
                 return False
     return True
 

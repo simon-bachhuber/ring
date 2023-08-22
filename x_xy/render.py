@@ -13,9 +13,10 @@ import tree_utils
 from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
+from vispy.scene import visuals as vispy_visuals
 
 import x_xy
-from x_xy import algebra, base, maths
+from x_xy import algebra, base, maths, visuals
 from x_xy.base import XYZ, Box, Capsule, Cylinder, Geometry, Sphere
 
 Camera = TypeVar("Camera")
@@ -77,16 +78,16 @@ class Scene(ABC):
             images.append(self._render())
         return images
 
-    def _add_box(self, geom: Box) -> Visual:
+    def _add_box(self, box: Box) -> Visual:
         raise NotImplementedError
 
-    def _add_sphere(self, geom: Sphere) -> Visual:
+    def _add_sphere(self, sphere: Sphere) -> Visual:
         raise NotImplementedError
 
-    def _add_cylinder(self, geom: Cylinder) -> Visual:
+    def _add_cylinder(self, cyl: Cylinder) -> Visual:
         raise NotImplementedError
 
-    def _add_capsule(self, geom: Capsule) -> Visual:
+    def _add_capsule(self, cap: Capsule) -> Visual:
         raise NotImplementedError
 
     def _add_xyz(self) -> Visual:
@@ -241,22 +242,50 @@ class VispyScene(Scene):
         else:
             self.disable_xyz(not show_cs_root)
 
-    def _get_camera(self) -> scene.cameras.BaseCamera:
-        return self.view.camera
-
     def _set_camera(self, camera: scene.cameras.BaseCamera) -> None:
         self.view.camera = camera
+
+    def _get_camera(self) -> scene.cameras.BaseCamera:
+        return self.view.camera
 
     def _render(self) -> jax.Array:
         return self.canvas.render(alpha=True)
 
-    def _add_box(self, geom: base.Box):
-        return scene.visuals.Box(
-            geom.dim_x,
-            geom.dim_z,
-            geom.dim_y,
+    def _add_box(self, box: Box) -> Visual:
+        return visuals.Box(
+            box.dim_x,
+            box.dim_z,
+            box.dim_y,
             parent=self.view.scene,
-            **geom.vispy_kwargs,
+            color=box.color,
+            edge_color=box.edge_color,
+        )
+
+    def _add_sphere(self, sphere: Sphere) -> Visual:
+        return vispy_visuals.Sphere(
+            sphere.radius,
+            parent=self.view.scene,
+            color=sphere.color,
+            edge_color=sphere.edge_color,
+            shading="smooth",
+        )
+
+    def _add_cylinder(self, cyl: Cylinder) -> Visual:
+        return visuals.Cylinder(
+            cyl.radius,
+            cyl.length,
+            parent=self.view.scene,
+            color=cyl.color,
+            edge_color=cyl.edge_color,
+        )
+
+    def _add_capsule(self, cap: Capsule) -> Visual:
+        return visuals.Capsule(
+            cap.radius,
+            cap.length,
+            parent=self.view.scene,
+            color=cap.color,
+            edge_color=cap.edge_color,
         )
 
     def _add_xyz(self) -> Visual:
