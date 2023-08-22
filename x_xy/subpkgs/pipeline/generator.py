@@ -30,7 +30,8 @@ def make_generator(
     randomize_positions: bool = True,
     random_s2s_ori: bool = False,
     noisy_imus: bool = True,
-    quasi_physical_imus: bool = False,
+    quasi_physical: bool | list[bool] = False,
+    smoothen_degree: Optional[int] = None,
 ) -> Tuple[Generator, Optional[Normalizer]]:
     normalizer = None
     if normalize:
@@ -45,6 +46,8 @@ def make_generator(
             randomize_positions,
             random_s2s_ori,
             noisy_imus,
+            quasi_physical,
+            smoothen_degree,
         )
         normalizer = make_normalizer_from_generator(gen)
 
@@ -58,7 +61,7 @@ def make_generator(
     assert sys_noimu is not None
     assert imu_attachment is not None
 
-    def _make_generator(sys, config):
+    def _make_generator(sys, config, quasi_physical: bool):
         def finalize_fn(key, q, x, sys):
             X = pipeline.imu_data(
                 key,
@@ -67,7 +70,9 @@ def make_generator(
                 imu_attachment,
                 noisy=noisy_imus,
                 random_s2s_ori=random_s2s_ori,
-                quasi_physical=quasi_physical_imus,
+                quasi_physical=quasi_physical,
+                delay=0,
+                smoothen_degree=smoothen_degree if not quasi_physical else None,
             )
             y = x_xy.algorithms.rel_pose(sys_noimu, x, sys)
 
@@ -100,7 +105,8 @@ def make_generator(
     gens = []
     for sys in sys_data:
         for config in configs:
-            gens.append(_make_generator(sys, config))
+            for qp in _to_list(quasi_physical):
+                gens.append(_make_generator(sys, config, qp))
 
     assert (bs // len(gens)) > 0, f"Batchsize too small. Must be at least {len(gens)}"
     batchsizes = len(gens) * [bs // len(gens)]
