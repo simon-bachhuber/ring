@@ -233,12 +233,16 @@ def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
 
     def step_dynamics(state, zeropoint):
         pos, vel = state
-        acc = (-damp * vel + stiff * (zeropoint - pos)) / mass
+        zeropoint_pos, zeropoint_vel = zeropoint
+        acc = (damp * (zeropoint_vel - vel) + stiff * (zeropoint_pos - pos)) / mass
         vel += dt * acc
         # semi-implicit, so use already next velocity
         pos += dt * dt
         return (pos, vel), pos
 
-    state = (xs.pos[0], jnp.zeros_like(xs.pos[0]))
-    _, pos = jax.lax.scan(step_dynamics, state, xs.pos)
+    zero_vel = jnp.zeros_like(xs.pos[0])
+    state = (xs.pos[0], zero_vel)
+    zeropoint_vel = jnp.vstack((zero_vel, jnp.jnp.diff(xs.pos) / dt))
+    zeropoint = (xs.pos, zeropoint_vel)
+    _, pos = jax.lax.scan(step_dynamics, state, zeropoint)
     return xs.replace(pos=pos)
