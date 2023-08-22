@@ -222,5 +222,5 @@ def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
         return state, state.q
 
     state = base.State.create(sys, q=xs.pos[0])
-    _, pos = jax.lax.scan(step_dynamics, state, xs)
+    _, pos = jax.lax.scan(step_dynamics, state, xs, unroll=xs.shape())
     return xs.replace(pos=pos)
