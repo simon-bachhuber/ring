@@ -214,16 +214,31 @@ _quasi_physical_sys_str = r"""
 """
 
 
-def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
+def _quasi_physical_simulation_beautiful(
+    xs: base.Transform, dt: float
+) -> base.Transform:
     sys = load_sys_from_str(_quasi_physical_sys_str).replace(dt=dt)
 
-    print("COMPILE `quasi_physical`")
-
-    # .replace(link_spring_zeropoint=x.pos)
     def step_dynamics(state: base.State, x):
-        state = step(sys, state)
+        state = step(sys.replace(link_spring_zeropoint=x.pos), state)
         return state, state.q
 
     state = base.State.create(sys, q=xs.pos[0])
     _, pos = jax.lax.scan(step_dynamics, state, xs)
+    return xs.replace(pos=pos)
+
+
+def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
+    damp, stiff, mass = 0.1, 3.0, 0.002
+
+    def step_dynamics(state, zeropoint):
+        pos, vel = state
+        acc = (-damp * vel + stiff * (zeropoint - pos)) / mass
+        vel += dt * acc
+        # semi-implicit, so use already next velocity
+        pos += dt * dt
+        return (pos, vel), pos
+
+    state = (xs.pos[0], jnp.zeros_like(xs.pos[0]))
+    _, pos = jax.lax.scan(step_dynamics, state, xs.pos)
     return xs.replace(pos=pos)
