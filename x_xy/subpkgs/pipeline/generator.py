@@ -71,7 +71,6 @@ def make_generator(
                 noisy=noisy_imus,
                 random_s2s_ori=random_s2s_ori,
                 quasi_physical=quasi_physical,
-                delay=0,
                 smoothen_degree=smoothen_degree if not quasi_physical else None,
             )
             y = x_xy.algorithms.rel_pose(sys_noimu, x, sys)
