@@ -17,7 +17,7 @@ def test_xml_parsing():
 
         compare_sys = x_xy.io.xml.load_sys_from_str(sys_to_xml_str)
 
-        assert sys_compare(original_sys, compare_sys)
+        assert sys_compare(original_sys, compare_sys), f"Failed {example_name}.xml"
 
         print(f"Passed {example_name}.xml")
 
