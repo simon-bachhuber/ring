@@ -87,6 +87,4 @@ def _draw_pos_uniform(key, pos_min, pos_max):
 
 @jax.vmap
 def _draw_random_joint_axis(key):
-    J = jax.random.uniform(key, (3,), minval=-1.0, maxval=1.0)
-    Jnorm = jax.numpy.linalg.norm(J)
-    return J / Jnorm
+    return maths.rotate(jnp.array([1.0, 0, 0]), maths.quat_random(key))

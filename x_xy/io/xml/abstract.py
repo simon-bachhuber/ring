@@ -111,49 +111,39 @@ class AbsPosMinMax:
         element.set("pos_max", _to_str(pos_max))
 
 
-def _from_xml_vispy(attr: ATTR):
-    """Find all keys starting with `vispy_`, and return subdict without that prefix.
-    Also convert all arrays back to list[float], because of `struct.field(False)`.
-    Otherwise jitted functions with `sys` input will error on second execution, since
-    it can't compare the two vispy_color arrays.
-    """
-
-    def delete_prefix(key):
-        len_suffix = len(key.split("_")[0]) + 1
-        return key[len_suffix:]
-
-    dict_no_prefix = {
-        delete_prefix(k): attr[k] for k in attr if k.split("_")[0] == "vispy"
-    }
-
-    # convert arrays -> list[float]
-    to_list = (
-        lambda ele: ele.tolist() if isinstance(ele, (np.ndarray, jax.Array)) else ele
-    )
-    return {key: to_list(value) for key, value in dict_no_prefix.items()}
-
-
-def _to_xml_vispy(element: T, geom: base.Geometry) -> None:
-    "Copy pasted from you"
-    # Add vispy kwargs if they exist
-    if hasattr(geom, ("vispy_kwargs")):
-        for key, value in geom.vispy_kwargs.items():
-            element.set(f"vispy_{key}", _to_str(value))
-
-
 def _from_xml_geom_attr_processing(geom_attr: ATTR):
     "Common processing used by all geometries"
-    m = geom_attr["mass"]
-    t = AbsTrans.from_xml(geom_attr)
-    vispy = _from_xml_vispy(geom_attr)
-    return m, t, vispy
+
+    mass = geom_attr["mass"]
+    trafo = AbsTrans.from_xml(geom_attr)
+
+    # convert arrays to tuple[float], because of `struct.field(False)`
+    # Otherwise jitted functions with `sys` input will error on second execution, since
+    # it can't compare the two vispy_color arrays.
+
+    color = geom_attr.get("color", None)
+    if isinstance(color, jax.Array):
+        color = tuple(color.tolist())
+
+    edge_color = geom_attr.get("edge_color", None)
+    if isinstance(edge_color, jax.Array):
+        edge_color = tuple(edge_color.tolist())
+
+    return mass, trafo, color, edge_color
 
 
 def _to_xml_geom_processing(element: T, geom: base.Geometry) -> None:
     "Common processing used by all geometries"
     AbsTrans.to_xml(element, geom.transform)
+
     element.set("mass", _to_str(geom.mass))
-    _to_xml_vispy(element, geom)
+
+    if geom.color is not None:
+        element.set("color", _to_str(geom.color))
+
+    if geom.edge_color is not None:
+        element.set("edge_color", _to_str(geom.edge_color))
+
     element.set("type", geometry_to_xml_identifier[type(geom)])
 
 
@@ -163,9 +153,9 @@ class AbsGeomBox:
 
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Box:
-        m, t, vispy = _from_xml_geom_attr_processing(geom_attr)
+        mass, trafo, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         dims = [geom_attr["dim"][i] for i in range(3)]
-        return base.Box(m, t, link_idx, *dims, vispy)
+        return base.Box(mass, trafo, link_idx, color, edge_color, *dims)
 
     @staticmethod
     def to_xml(element: T, geom: base.Box) -> None:
@@ -180,9 +170,9 @@ class AbsGeomSphere:
 
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Sphere:
-        m, t, vispy = _from_xml_geom_attr_processing(geom_attr)
-        radius = geom_attr["dim"][0]
-        return base.Sphere(m, t, link_idx, radius, vispy)
+        mass, trafo, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
+        radius = geom_attr["dim"].item()
+        return base.Sphere(mass, trafo, link_idx, color, edge_color, radius)
 
     @staticmethod
     def to_xml(element: T, geom: base.Sphere) -> None:
@@ -197,9 +187,9 @@ class AbsGeomCylinder:
 
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Cylinder:
-        m, t, vispy = _from_xml_geom_attr_processing(geom_attr)
+        mass, trafo, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         dims = [geom_attr["dim"][i] for i in range(2)]
-        return base.Cylinder(m, t, link_idx, *dims, vispy)
+        return base.Cylinder(mass, trafo, link_idx, color, edge_color, *dims)
 
     @staticmethod
     def to_xml(element: T, geom: base.Cylinder) -> None:
@@ -214,9 +204,9 @@ class AbsGeomCapsule:
 
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Capsule:
-        m, t, vispy = _from_xml_geom_attr_processing(geom_attr)
+        mass, trafo, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         dims = [geom_attr["dim"][i] for i in range(2)]
-        return base.Capsule(m, t, link_idx, *dims, vispy)
+        return base.Capsule(mass, trafo, link_idx, color, edge_color, *dims)
 
     @staticmethod
     def to_xml(element: T, geom: base.Capsule) -> None:
@@ -240,7 +230,13 @@ class AbsGeomXYZ:
         element.set("type", geometry_to_xml_identifier[type(geom)])
 
 
-_ags = [AbsGeomBox, AbsGeomSphere, AbsGeomCylinder, AbsGeomCapsule, AbsGeomXYZ]
+_ags = [
+    AbsGeomBox,
+    AbsGeomSphere,
+    AbsGeomCylinder,
+    AbsGeomCapsule,
+    AbsGeomXYZ,
+]
 geometry_to_xml_identifier = {ag.geometry: ag.xml_geom_type for ag in _ags}
 xml_identifier_to_abstract = {ag.xml_geom_type: ag for ag in _ags}
 geometry_to_abstract = {ag.geometry: ag for ag in _ags}
@@ -266,7 +262,7 @@ def _get_rotation(attr: ATTR):
 
 
 def _to_str(obj):
-    if isinstance(obj, list):
+    if isinstance(obj, list) or isinstance(obj, tuple):
         if all([isinstance(ele, float) for ele in obj]):
             obj = np.array(obj)
 

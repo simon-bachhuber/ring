@@ -377,8 +377,6 @@ def _semi_implicit_euler_integration(
 
 _integration_methods = {
     "semi_implicit_euler": _semi_implicit_euler_integration,
-    "runge_kutta_4": _runge_kutta_4_integration,
-    "runge_kutta_2": _runge_kutta_2_integration,
 }
 
 
@@ -403,18 +401,14 @@ def step(
 
     sys = sys.replace(dt=sys.dt / n_substeps)
 
-    def substep(state, _):
-        nonlocal sys
+    for _ in range(n_substeps):
         # update kinematics before stepping; this means that the `x` in `state`
         # will lag one step behind but otherwise we would have to return
         # the system object which would be awkward
-        sys_updated, state = algorithms.kinematics.forward_kinematics(sys, state)
-        state = _integration_methods[sys.integration_method.lower()](
-            sys_updated, state, taus
-        )
-        return state, _
+        sys, state = algorithms.kinematics.forward_kinematics(sys, state)
+        state = _integration_methods[sys.integration_method.lower()](sys, state, taus)
 
-    return jax.lax.scan(substep, state, None, length=n_substeps)[0]
+    return state
 
 
 def _inv_approximate(a: jax.Array, a_inv: jax.Array, num_iter: int = 10) -> jax.Array:

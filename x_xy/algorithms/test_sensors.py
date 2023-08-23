@@ -93,7 +93,7 @@ def test_rel_pose():
     <x_xy model="test_sensors">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
-        <geom vispy_edge_color="black" vispy_color="white"/>
+        <geom edge_color="black" color="white"/>
     </defaults>
     <worldbody>
         <body name="hinge" pos="0 0 0" euler="0 90 0" joint="ry">

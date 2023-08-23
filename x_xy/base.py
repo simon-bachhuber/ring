@@ -14,6 +14,9 @@ Vector = jax.Array
 Quaternion = jax.Array
 
 
+Color = Optional[str | tuple[float, float, float] | tuple[float, float, float, float]]
+
+
 class _Base:
     """Base functionality of all spatial datatypes.
     Copied and modified from https://github.com/google/brax/blob/main/brax/v2/base.py
@@ -223,12 +226,17 @@ class Geometry(_Base):
     transform: Transform
     link_idx: int
 
+    color: Color = struct.field(pytree_node=False)
+    edge_color: Color = struct.field(pytree_node=False)
+
 
 @struct.dataclass
 class XYZ(Geometry):
+    # TODO: possibly subclass this of _Base? does this need a mass, transform, and
+    # link_idx? maybe just transform?
     @classmethod
     def create(cls, link_idx: int):
-        return cls(0.0, Transform.zero(), link_idx)
+        return cls(0.0, Transform.zero(), link_idx, None, None)
 
     def get_it_3x3(self) -> jax.Array:
         return jnp.zeros((3, 3))
@@ -236,8 +244,7 @@ class XYZ(Geometry):
 
 @struct.dataclass
 class Sphere(Geometry):
-    radius: jax.Array
-    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
+    radius: float
 
     def get_it_3x3(self) -> jax.Array:
         it_3x3 = 2 / 5 * self.mass * self.radius**2 * jnp.eye(3)
@@ -246,22 +253,23 @@ class Sphere(Geometry):
 
 @struct.dataclass
 class Box(Geometry):
-    dim_x: jax.Array
-    dim_y: jax.Array
-    dim_z: jax.Array
-    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
+    dim_x: float
+    dim_y: float
+    dim_z: float
 
     def get_it_3x3(self) -> jax.Array:
         it_3x3 = (
             1
             / 12
             * self.mass
-            * jnp.array(
-                [
-                    [self.dim_y**2 + self.dim_z**2, 0, 0],
-                    [0, self.dim_x**2 + self.dim_z**2, 0],
-                    [0, 0, self.dim_x**2 + self.dim_y**2],
-                ]
+            * jnp.diag(
+                jnp.array(
+                    [
+                        self.dim_y**2 + self.dim_z**2,
+                        self.dim_x**2 + self.dim_z**2,
+                        self.dim_x**2 + self.dim_y**2,
+                    ]
+                )
             )
         )
         return it_3x3
@@ -271,9 +279,8 @@ class Box(Geometry):
 class Cylinder(Geometry):
     """Length is along x-axis."""
 
-    radius: jax.Array
-    length: jax.Array
-    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
+    radius: float
+    length: float
 
     def get_it_3x3(self) -> jax.Array:
         radius_dir = 3 * self.radius**2 + self.length**2
@@ -281,13 +288,7 @@ class Cylinder(Geometry):
             1
             / 12
             * self.mass
-            * jnp.array(
-                [
-                    [6 * self.radius**2, 0, 0],
-                    [0, radius_dir, 0],
-                    [0, 0, radius_dir],
-                ]
-            )
+            * jnp.diag(jnp.array([6 * self.radius**2, radius_dir, radius_dir]))
         )
         return it_3x3
 
@@ -296,9 +297,8 @@ class Cylinder(Geometry):
 class Capsule(Geometry):
     """Length is along x-axis."""
 
-    radius: jax.Array
-    length: jax.Array
-    vispy_kwargs: dict = struct.field(False, default_factory=lambda: {})
+    radius: float
+    length: float
 
     def get_it_3x3(self) -> jax.Array:
         """https://github.com/thomasmarsh/ODE/blob/master/ode/src/mass.cpp#L141"""
@@ -318,7 +318,8 @@ class Capsule(Geometry):
         )
         I_b = (0.5 * m_cyl + 0.4 * m_cap) * r**2
 
-        return jnp.array([[I_b, 0, 0], [0, I_a, 0], [0, 0, I_a]])
+        # return jnp.array([[I_b, 0, 0], [0, I_a, 0], [0, 0, I_a]])
+        return jnp.diag(jnp.array([I_b, I_a, I_a]))
 
 
 N_JOINT_PARAMS: int = 3
