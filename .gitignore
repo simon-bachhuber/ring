@@ -1,3 +1,5 @@
+figures/example.png
+
 *.egg-info
 __pycache__
 .vscode

@@ -13,7 +13,6 @@ import tree_utils
 from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
-from vispy.scene import visuals as vispy_visuals
 
 import x_xy
 from x_xy import algebra, base, maths, visuals
@@ -256,36 +255,35 @@ class VispyScene(Scene):
             box.dim_x,
             box.dim_z,
             box.dim_y,
-            parent=self.view.scene,
             color=box.color,
             edge_color=box.edge_color,
+            parent=self.view.scene,
         )
 
     def _add_sphere(self, sphere: Sphere) -> Visual:
-        return vispy_visuals.Sphere(
+        return visuals.Sphere(
             sphere.radius,
-            parent=self.view.scene,
             color=sphere.color,
             edge_color=sphere.edge_color,
-            shading="smooth",
+            parent=self.view.scene,
         )
 
     def _add_cylinder(self, cyl: Cylinder) -> Visual:
         return visuals.Cylinder(
             cyl.radius,
             cyl.length,
-            parent=self.view.scene,
             color=cyl.color,
             edge_color=cyl.edge_color,
+            parent=self.view.scene,
         )
 
     def _add_capsule(self, cap: Capsule) -> Visual:
         return visuals.Capsule(
             cap.radius,
             cap.length,
-            parent=self.view.scene,
             color=cap.color,
             edge_color=cap.edge_color,
+            parent=self.view.scene,
         )
 
     def _add_xyz(self) -> Visual:
@@ -366,7 +364,11 @@ def animate(
 
     if verbose:
         print(f"DONE. Converting frames to {path} (this might take a while..)")
-    imageio.mimsave(path, frames, format=fmt, fps=fps)
+
+    if len(frames) == 1 and (fmt == "jpg" or fmt == "png"):
+        imageio.imsave(path, frames[0], format=fmt)
+    else:
+        imageio.mimsave(path, frames, format=fmt, fps=fps)
 
 
 class Window:

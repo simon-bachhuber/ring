@@ -6,6 +6,8 @@ import jax.numpy as jnp
 import x_xy
 from x_xy import render
 from x_xy.algorithms import dynamics
+from x_xy.base import State
+from x_xy.io.xml.from_xml import load_sys_from_str
 
 
 def test_animate(pytest=True):
@@ -41,6 +43,34 @@ def test_animate(pytest=True):
         render.animate(filename, sys, xs, fmt=fmt)
         if pytest:
             os.system(f"rm animation.{fmt}")
+
+
+def test_shapes():
+    sys_str = """
+<x_xy model="shape_test">
+    <options gravity="0 0 9.81" dt="0.01" />
+    <worldbody>
+        <geom type="sphere" mass="1" pos="0 0 0" dim="0.3" color="white" />
+        <geom type="box" mass="1" pos="-1 0 0" quat="1 0 1 0" dim="1 0.3 0.2" color="0.8 0.3 1 0" />
+        <geom type="cylinder" mass="1" pos="1 0 0.5" quat="0.75 0 0 0.25" dim="0.3 1" color="0.2 0.8 0.5" />
+        <geom type="capsule" mass="1" pos="0 0 -1" dim="0.3 2" />
+
+        <body name="dummy" pos="0 0 0" quat="1 0 0 0" joint="ry" />
+    </worldbody>
+</x_xy>
+    """
+
+    sys = load_sys_from_str(sys_str)
+
+    state = State.create(sys, q=None)
+
+    step_fn = jax.jit(dynamics.step)
+
+    state = step_fn(sys, state, jnp.zeros_like(state.qd))
+
+    x = state.x.batch()
+
+    render.animate("figures/example.png", sys, x, fmt="png")
 
 
 if __name__ == "__main__":
