@@ -229,15 +229,15 @@ def _quasi_physical_simulation_beautiful(
 
 
 _constants = {
-    "qp_damp": 1e-4,
-    "qp_stiff": 1e-2,
+    "qp_damp": 7.0,
+    "qp_stif": 125.0,
 }
 
 
 def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
     mass = 1.0
     damp = _constants["qp_damp"]
-    stif = _constants["qp_stiff"]
+    stif = _constants["qp_stif"]
 
     def step_dynamics(state, zeropoint):
         pos, vel = state
@@ -245,7 +245,7 @@ def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
         acc = (damp * (zeropoint_vel - vel) + stif * (zeropoint_pos - pos)) / mass
         vel += dt * acc
         # semi-implicit, so use already next velocity
-        pos += dt * dt
+        pos += dt * vel
         return (pos, vel), pos
 
     zero_vel = jnp.zeros_like(xs.pos[0])
