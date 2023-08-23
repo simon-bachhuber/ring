@@ -44,6 +44,7 @@ class RCMG_Config:
     # flags
     randomized_interpolation_angle: bool = False
     randomized_interpolation_position: bool = False
+    interpolation_method: str = "cosine"
     range_of_motion_hinge: bool = True
     range_of_motion_hinge_method: str = "uniform"
 
@@ -188,6 +189,7 @@ def _draw_rxyz(
         config.range_of_motion_hinge_method,
         config.cdf_bins_min,
         config.cdf_bins_max,
+        config.interpolation_method,
     )
 
 
@@ -215,6 +217,7 @@ def _draw_pxyz(
         config.randomized_interpolation_position,
         config.cdf_bins_min,
         config.cdf_bins_max,
+        config.interpolation_method,
     )
 
 

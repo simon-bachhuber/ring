@@ -35,6 +35,7 @@ def random_angle_over_time(
     range_of_motion_method: str = "uniform",
     cdf_bins_min: int = 5,
     cdf_bins_max: Optional[int] = None,
+    interpolation_method: str = "cosine",
 ) -> jax.Array:
     def body_fn_outer(val):
         i, t, phi, key_t, key_ang, ANG = val
@@ -82,10 +83,16 @@ def random_angle_over_time(
     # resample
     t = jnp.arange(T, step=Ts)
     if randomized_interpolation:
-        q = cosInterpolateRandomized(cdf_bins_min, cdf_bins_max)(
+        q = interpolate(cdf_bins_min, cdf_bins_max, method=interpolation_method)(
             t, ANG[:, 0], ANG[:, 1], consume
         )
     else:
+        if interpolation_method != "cosine":
+            warnings.warn(
+                f"You have select interpolation method {interpolation_method}. "
+                "Differnt choices of interpolation method are only available if "
+                "`randomized_interpolation` is set."
+            )
         q = cosInterpolate(t, ANG[:, 0], ANG[:, 1])
 
     # if range_of_motion is true, then it is wrapped already
@@ -111,6 +118,7 @@ def random_position_over_time(
     randomized_interpolation: bool = False,
     cdf_bins_min: int = 5,
     cdf_bins_max: Optional[int] = None,
+    interpolation_method: str = "cosine",
 ) -> jax.Array:
     def body_fn_inner(val):
         i, t, t_pre, x, x_pre, key = val
@@ -194,10 +202,19 @@ def random_position_over_time(
     # resample
     t = jnp.arange(T, step=Ts)
     if randomized_interpolation:
-        r = cosInterpolateRandomized(cdf_bins_min, cdf_bins_max)(
+        r = interpolate(cdf_bins_min, cdf_bins_max, method=interpolation_method)(
             t, POS[:, 0], POS[:, 1], consume
         )
     else:
+        # TODO
+        # Don't warn for position trajectories, i don't care about them as much
+        if False:
+            if interpolation_method != "cosine":
+                warnings.warn(
+                    f"You have select interpolation method {interpolation_method}. "
+                    "Differnt choices of interpolation method are only available if "
+                    "`randomized_interpolation` is set."
+                )
         r = cosInterpolate(t, POS[:, 0], POS[:, 1])
     return r
 
@@ -299,43 +316,49 @@ def _biject_alpha(alpha, cdf):
     return (1 - a) * cdf[left_idx] + a * cdf[left_idx + 1]
 
 
-def _generate_cdf(cdf_bins):
-    def __generate_cdf(key):
-        samples = random.uniform(key, (cdf_bins,), maxval=1.0)
-        samples = jnp.hstack((jnp.array([0.0]), samples))
-        montonous = jnp.cumsum(samples)
-        cdf = montonous / montonous[-1]
-        return cdf
-
-    return __generate_cdf
-
-
-def _generate_cdf_minmax(dy_min, dy_max):
-    assert dy_max >= dy_min
-
-    def __generate_cdf(key):
-        key, consume = random.split(key)
-        cdf_bins = random.randint(consume, (), dy_min, dy_max + 1)
-        mask = jnp.where(jnp.arange(dy_max) < cdf_bins, 1, 0)
-        key, consume = random.split(key)
-        mask = random.permutation(consume, mask)
-        dy = random.uniform(key, (dy_max,), maxval=1.0)
-        dy = dy[jnp.cumsum(mask) - 1]
-        y = jnp.hstack((jnp.array([0.0]), dy))
-        montonous = jnp.cumsum(y)
-        cdf = montonous / montonous[-1]
-        return cdf
-
-    return __generate_cdf
-
-
-def cosInterpolateRandomized(cdf_bins_min: int = 5, cdf_bins_max: Optional[int] = None):
+def _generate_cdf(cdf_bins_min, cdf_bins_max=None):
     if cdf_bins_max is None:
-        generate_cdf = _generate_cdf(cdf_bins_min)
-    else:
-        generate_cdf = _generate_cdf_minmax(cdf_bins_min, cdf_bins_max)
 
-    def _cosInterpolateRandomized(x, xp, fp, key):
+        def _generate_cdf_min_eq_max(cdf_bins):
+            def __generate_cdf(key):
+                samples = random.uniform(key, (cdf_bins,), minval=1e-6, maxval=1.0)
+                samples = jnp.hstack((jnp.array([0.0]), samples))
+                montonous = jnp.cumsum(samples)
+                cdf = montonous / montonous[-1]
+                return cdf
+
+            return __generate_cdf
+
+        return _generate_cdf_min_eq_max(cdf_bins=cdf_bins_min)
+
+    def _generate_cdf_min_uneq_max(dy_min, dy_max):
+        assert dy_max >= dy_min
+
+        def __generate_cdf(key):
+            key, consume = random.split(key)
+            cdf_bins = random.randint(consume, (), dy_min, dy_max + 1)
+            mask = jnp.where(jnp.arange(dy_max) < cdf_bins, 1, 0)
+            key, consume = random.split(key)
+            mask = random.permutation(consume, mask)
+            dy = random.uniform(key, (dy_max,), minval=1e-6, maxval=1.0)
+            dy = dy[jnp.cumsum(mask) - 1]
+            y = jnp.hstack((jnp.array([0.0]), dy))
+            montonous = jnp.cumsum(y)
+            cdf = montonous / montonous[-1]
+            return cdf
+
+        return __generate_cdf
+
+    return _generate_cdf_min_uneq_max(cdf_bins_min, cdf_bins_max)
+
+
+def interpolate(
+    cdf_bins_min: int = 1, cdf_bins_max: Optional[int] = None, method: str = "cosine"
+):
+    "Interpolation with random alpha projection (disabled by default)."
+    generate_cdf = _generate_cdf(cdf_bins_min, cdf_bins_max)
+
+    def _interpolate(x, xp, fp, key):
         i = jnp.clip(jnp.searchsorted(xp, x, side="right"), 1, len(xp) - 1)
         dx = xp[i] - xp[i - 1]
         alpha = (x - xp[i - 1]) / dx
@@ -346,14 +369,19 @@ def cosInterpolateRandomized(cdf_bins_min: int = 5, cdf_bins_max: Optional[int] 
         cdfs = jax.vmap(generate_cdf)(consume)
         alpha = jax.vmap(_biject_alpha)(alpha, cdfs)
 
-        def cos_interpolate(x1, x2, alpha):
+        def two_point_interp(x1, x2, alpha):
             """x2 > x1"""
-            return (x1 + x2) / 2 + (x1 - x2) / 2 * jnp.cos(alpha * jnp.pi)
+            if method == "cosine":
+                return (x1 + x2) / 2 + (x1 - x2) / 2 * jnp.cos(alpha * jnp.pi)
+            elif method == "linear":
+                return (1 - alpha) * x1 + alpha * x2
+            else:
+                raise NotImplementedError
 
         f = jnp.where(
-            (dx == 0), fp[i], jax.vmap(cos_interpolate)(fp[i - 1], fp[i], alpha)
+            (dx == 0), fp[i], jax.vmap(two_point_interp)(fp[i - 1], fp[i], alpha)
         )
         f = jnp.where(x > xp[-1], fp[-1], f)
         return f
 
-    return _cosInterpolateRandomized
+    return _interpolate

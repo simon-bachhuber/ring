@@ -5,6 +5,9 @@ import jax.numpy as jnp
 
 from x_xy import algebra, base, maths, scan
 
+from ..io import load_sys_from_str
+from .dynamics import step
+
 
 def accelerometer(xs: base.Transform, gravity: jax.Array, dt: float) -> jax.Array:
     """Compute measurements of an accelerometer that follows a frame which moves along
@@ -84,8 +87,13 @@ def imu(
     smoothen_degree: Optional[int] = None,
     delay: Optional[int] = None,
     random_s2s_ori: bool = False,
+    quasi_physical: bool = False,
 ) -> dict:
-    "Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu."
+    """Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu.
+    NOTE: `smoothen_degree` is used as window size for moving average.
+    NOTE: If `smoothen_degree` is given, and `delay` is not, then delay is chosen
+    such moving average window is delayed to just be causal.
+    """
     assert xs.ndim() == 2
 
     if random_s2s_ori:
@@ -95,6 +103,9 @@ def imu(
         key, consume = jax.random.split(key)
         xs_s2s = base.Transform.create(rot=maths.quat_random(consume))
         xs = jax.vmap(algebra.transform_mul, in_axes=(None, 0))(xs_s2s, xs)
+
+    if quasi_physical:
+        xs = _quasi_physical_simulation(xs, dt)
 
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
 
@@ -108,9 +119,10 @@ def imu(
         # effectively uses future values, then it also makes sense to delay the imu
         # measurements by this amount such that no future information is used
         if delay is None:
-            delay = smoothen_degree
+            half_window = (smoothen_degree - 1) // 2
+            delay = half_window
 
-    if delay is not None:
+    if delay is not None and delay > 0:
         measurements = jax.tree_map(
             lambda arr: (jnp.pad(arr, ((delay, 0), (0, 0)))[:-delay]), measurements
         )
@@ -188,3 +200,57 @@ def moving_average(arr: jax.Array, window: int) -> jax.Array:
         arr_smooth += rolled
     arr_smooth = arr_smooth / window
     return arr_smooth[half_window : (len(arr) + half_window)]
+
+
+_quasi_physical_sys_str = r"""
+<x_xy>
+    <options gravity="0 0 0"/>
+    <worldbody>
+        <body name="IMU" joint="p3d" damping="0.1 0.1 0.1" spring_stiff="3 3 3">
+            <geom type="box" mass="0.002" dim="0.01 0.01 0.01"/>
+        </body>
+    </worldbody>
+</x_xy>
+"""
+
+
+def _quasi_physical_simulation_beautiful(
+    xs: base.Transform, dt: float
+) -> base.Transform:
+    sys = load_sys_from_str(_quasi_physical_sys_str).replace(dt=dt)
+
+    def step_dynamics(state: base.State, x):
+        state = step(sys.replace(link_spring_zeropoint=x.pos), state)
+        return state, state.q
+
+    state = base.State.create(sys, q=xs.pos[0])
+    _, pos = jax.lax.scan(step_dynamics, state, xs)
+    return xs.replace(pos=pos)
+
+
+_constants = {
+    "qp_damp": 7.0,
+    "qp_stif": 125.0,
+}
+
+
+def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
+    mass = 1.0
+    damp = _constants["qp_damp"]
+    stif = _constants["qp_stif"]
+
+    def step_dynamics(state, zeropoint):
+        pos, vel = state
+        zeropoint_pos, zeropoint_vel = zeropoint
+        acc = (damp * (zeropoint_vel - vel) + stif * (zeropoint_pos - pos)) / mass
+        vel += dt * acc
+        # semi-implicit, so use already next velocity
+        pos += dt * vel
+        return (pos, vel), pos
+
+    zero_vel = jnp.zeros_like(xs.pos[0])
+    state = (xs.pos[0], zero_vel)
+    zeropoint_vel = jnp.vstack((zero_vel, jnp.diff(xs.pos, axis=0) / dt))
+    zeropoint = (xs.pos, zeropoint_vel)
+    _, pos = jax.lax.scan(step_dynamics, state, zeropoint)
+    return xs.replace(pos=pos)
