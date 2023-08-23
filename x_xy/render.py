@@ -34,8 +34,8 @@ class Scene(ABC):
     Example:
         >> renderer = Renderer()
         >> renderer.init(sys.geoms)
-        >> for x in xs:
-        >>   renderer.update(x)
+        >> for t in range(xs.shape()):
+        >>   renderer.update(xs[t])
         >>   image = renderer.render()
     """
 
