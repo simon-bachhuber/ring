@@ -10,7 +10,7 @@ from x_xy.base import Color
 # vertex density per unit length
 _vectices_per_unit_length = 10
 
-_default_color = "purple"
+_default_color = (1, 0.8, 0.7, 1)
 
 
 class DoubleMeshVisual(CompoundVisual):
