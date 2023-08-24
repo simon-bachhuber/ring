@@ -258,6 +258,20 @@ def _resolve_range_of_motion(
             elif range_of_motion_method == "uniform":
                 p = 0.5 * (1 - prev_phi / jnp.pi)
                 probs = jnp.array([p, (1 - p)])
+            elif range_of_motion_method[:7] == "sigmoid":
+                scale = 1.5
+                provided_params = range_of_motion_method.split("-")
+                if len(provided_params) == 2:
+                    scale = float(provided_params[-1])
+                hardcut = jnp.pi - 0.01
+                p = jnp.where(
+                    prev_phi > hardcut,
+                    0.0,
+                    jnp.where(
+                        prev_phi < -hardcut, 1.0, jax.nn.sigmoid(-scale * prev_phi)
+                    ),
+                )
+                probs = jnp.array([p, (1 - p)])
             else:
                 raise NotImplementedError
 
