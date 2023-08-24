@@ -338,6 +338,16 @@ def _animate_image(
     scene.update(x)
     frame = scene.render()
 
+    # remove alpha channel
+    if fmt == "jpg" and frame.shape[-1] == 4:
+        alpha = frame[..., 3]
+
+        # assumes frame is u8
+        if np.any(alpha != 255):
+            raise Exception("jpg does not support alpha")
+
+        frame = frame[..., :3]
+
     if verbose:
         print(f"Converting frames to {path} (this might take a while..)")
 
