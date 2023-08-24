@@ -2,7 +2,7 @@ import time
 from abc import ABC, abstractmethod, abstractstaticmethod
 from functools import partial
 from pathlib import Path
-from typing import Optional, TypeVar, Union
+from typing import Optional, Sequence, TypeVar, Union
 
 import imageio
 import jax
@@ -10,6 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 import tqdm
 import tree_utils
+from scipy.__config__ import show
 from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
@@ -326,12 +327,52 @@ class VispyScene(Scene):
         visual.transform.matrix = transform
 
 
+def _animate_image(
+    path: Union[str, Path],
+    x: base.Transform,
+    scene: Scene,
+    *,
+    fmt: Optional[str] = None,
+    verbose: bool = True,
+):
+    scene.update(x)
+    frame = scene.render()
+
+    if verbose:
+        print(f"Converting frames to {path} (this might take a while..)")
+
+    imageio.imsave(path, frame, format=fmt)
+
+
+def _animate_video(
+    path: Union[str, Path],
+    xs: list[base.Transform],
+    scene: Scene,
+    fps: int,
+    N: int,
+    step: int,
+    *,
+    show_pbar=True,
+    fmt: Optional[str] = None,
+    verbose: bool = True,
+):
+    frames = []
+    for t in tqdm.tqdm(range(0, N, step), "Rendering frames..", disable=not show_pbar):
+        scene.update(xs[t])
+        frames.append(scene.render())
+
+    if verbose:
+        print(f"DONE. Converting frames to {path} (this might take a while..)")
+
+    imageio.mimsave(path, frames, format=fmt, fps=fps)
+
+
 def animate(
     path: Union[str, Path],
     sys: base.System,
-    x: base.Transform,
+    xs: base.Transform | Sequence[base.Transform],
     fps: int = 50,
-    fmt: str = "mp4",
+    fmt: Optional[str] = None,
     verbose: bool = True,
     show_pbar: bool = True,
     **kwargs,
@@ -342,33 +383,59 @@ def animate(
     path = Path(path)
     file_fmt = _infer_extension_from_path(path)
 
-    if file_fmt is not None:
+    if file_fmt is not None and fmt is not None:
         assert (
             file_fmt == fmt.lower()
         ), f"""The chosen filename `{path.name}` and required fmt `{fmt}`
         are inconsistent."""
-
-    if file_fmt is None:
+    elif file_fmt is None and fmt is not None:
         path = path.with_suffix("." + fmt)
+    elif fmt is None and file_fmt is not None:
+        fmt = file_fmt
+    else:
+        raise ValueError("neither fmt nor path extension given, can't infer format")
 
     scene = _init_vispy_scene(sys, **kwargs)
-    _data_checks(sys.num_links(), x.pos, x.rot)
 
-    N = x.pos.shape[0]
-    _, step = _parse_timestep(sys.dt, fps, N)
+    n_links = sys.num_links()
 
-    frames = []
-    for t in tqdm.tqdm(range(0, N, step), "Rendering frames..", disable=not show_pbar):
-        scene.update(x[t])
-        frames.append(scene.render())
+    def data_check(x):
+        assert x.pos.ndim == x.rot.ndim == 2, "Expected shape = (n_links, 3/4)"
+        assert (
+            x.pos.shape[0] == x.rot.shape[0] == n_links
+        ), "Number of links does not match"
 
-    if verbose:
-        print(f"DONE. Converting frames to {path} (this might take a while..)")
+    if fmt in ["jpg", "png"]:
+        # image fmts
 
-    if len(frames) == 1 and (fmt == "jpg" or fmt == "png"):
-        imageio.imsave(path, frames[0], format=fmt)
+        if isinstance(xs, base.Transform):
+            x = xs
+        else:
+            x = xs[0]
+
+        data_check(x)
+
+        _animate_image(path, x, scene, fmt=fmt, verbose=verbose)
+
+    elif fmt in ["mp4"]:
+        # video fmts
+
+        if isinstance(xs, base.Transform):
+            xs = [xs]
+        else:
+            xs = list(xs)
+
+        for x in xs:
+            data_check(x)
+
+        N = len(xs)
+        _, step = _parse_timestep(sys.dt, fps, N)
+
+        _animate_video(
+            path, xs, scene, fps, N, step, show_pbar=show_pbar, fmt=fmt, verbose=verbose
+        )
     else:
-        imageio.mimsave(path, frames, format=fmt, fps=fps)
+        raise ValueError(f"fmt {fmt} is not implement")
 
 
 class Window:
