@@ -190,12 +190,5 @@ def predict(
 
 
 def _geoms_replace_color(sys, color):
-    def _update_color_in_dict(vispy_kwargs):
-        vispy_kwargs = vispy_kwargs.copy()
-        vispy_kwargs["color"] = color
-        return vispy_kwargs
-
-    geoms = [
-        g.replace(vispy_kwargs=_update_color_in_dict(g.vispy_kwargs)) for g in sys.geoms
-    ]
+    geoms = [g.replace(color=color) for g in sys.geoms]
     return sys.replace(geoms=geoms)
