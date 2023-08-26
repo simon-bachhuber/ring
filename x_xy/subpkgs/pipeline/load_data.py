@@ -76,6 +76,8 @@ def load_data(
     artificial_transform1: bool = False,
     artificial_random_transform1: bool = True,
     delete_global_translation_rotation: bool = False,
+    randomize_global_translation_rotation: bool = False,
+    cor: bool = False,
     scale_revolute_joint_angles: Optional[float] = None,
     imu_link_names: Optional[list[str]] = None,
     rigid_imus: bool = True,
@@ -86,22 +88,27 @@ def load_data(
 
     sys_noimu, imu_attachment = make_sys_noimu(sys, imu_link_names)
 
+    if (
+        artificial_transform1
+        or use_rcmg
+        or delete_global_translation_rotation
+        or randomize_global_translation_rotation
+        or scale_revolute_joint_angles
+    ):
+        if not artificial_imus:
+            warnings.warn("`artificial_transform1` was overwritten to `True`")
+            artificial_transform1 = True
+
     if use_rcmg:
         assert config is not None
         key, consume = jax.random.split(key)
         _, xs = x_xy.algorithms.build_generator(sys, config)(consume)
-        if not artificial_transform1:
-            warnings.warn("`artificial_transform1` was overwritten to `True`")
-            artificial_transform1 = True
     else:
         assert exp_data is not None
         exp_data = _postprocess_exp_data(exp_data, rename_exp_data, imu_attachment)
         xs = sim2real.xs_from_raw(sys, exp_data, t1, t2, eps_frame=None)
 
     if artificial_transform1:
-        if not artificial_imus:
-            warnings.warn("`artificial_imus` was overwritten to `True`")
-            artificial_imus = True
         key, consume = jax.random.split(key)
 
         transform1_static = sys.links.transform1
@@ -116,6 +123,9 @@ def load_data(
         transform1_static = transform1_static.batch().repeat(xs.shape())
 
         transform1_pos, transform2_rot = sim2real.unzip_xs(sys, xs)
+        # TODO does not support `cor` function argument here; it should also pick
+        # `transform1_pos` if connected to `floating-base`
+
         # pick `transform1_pos` only if connected to worldbody
         cond = jnp.array(sys.link_parents) == -1
         transform1 = _pick_from_transforms(cond, transform1_pos, transform1_static)
@@ -123,6 +133,10 @@ def load_data(
 
     if delete_global_translation_rotation:
         xs = sim2real.delete_to_world_pos_rot(sys, xs)
+
+    if randomize_global_translation_rotation:
+        key, consume = jax.random.split(key)
+        xs = sim2real.randomize_to_world_pos_rot(consume, sys, xs, config, cor)
 
     if scale_revolute_joint_angles is not None:
         tranform1, transform2 = sim2real.unzip_xs(sys, xs)
