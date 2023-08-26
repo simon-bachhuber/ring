@@ -38,6 +38,13 @@ def predict(
     verbose: bool = True,
     **vispy_kwargs,
 ):
+    """
+    NOTE: If you are encountering the error that the rendered frames are 1x1 pixels
+    large and this function is executed from a jupyter notebook, you may have to force
+    vispy to use the PyQT6 backend prior to calling this function, i.e. call
+    >>> import vispy; vispy.use("pyqt6")
+    in the first cell of the notebook.
+    """
     import matplotlib.pyplot as plt
 
     rnno = rnno_fn(sys)
