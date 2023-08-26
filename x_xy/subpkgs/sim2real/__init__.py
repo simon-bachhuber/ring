@@ -7,7 +7,10 @@ import tree_utils
 
 import x_xy
 from x_xy import algebra, maths, scan
+from x_xy.algorithms import RCMG_Config, build_generator
+from x_xy.algorithms.rcmg.augmentations import NEW_WORLD, _wrapper_sys_xml
 from x_xy.base import System, Transform
+from x_xy.io import load_sys_from_str
 
 
 def xs_from_raw(
@@ -210,23 +213,59 @@ def delete_to_world_pos_rot(sys: System, xs: Transform) -> Transform:
     """
     _checks_time_series_of_xs(sys, xs)
 
-    @jax.vmap
-    def _delete_to_world_pos_rot(xs):
-        def f(_, __, i: int, p: int):
-            x_link = xs[i]
-            if p == -1:
-                x_link = Transform.zero()
-            return x_link
+    zero_trafo = Transform.zero((xs.shape(),))
+    for i, p in enumerate(sys.link_parents):
+        if p == -1:
+            xs = _overwrite_transform_of_link_then_update(sys, xs, zero_trafo, i)
+    return xs
 
-        return scan.tree(
-            sys,
-            f,
-            "ll",
-            list(range(sys.num_links())),
-            sys.link_parents,
-        )
 
-    return _delete_to_world_pos_rot(xs)
+def randomize_to_world_pos_rot(
+    key: jax.Array, sys: System, xs: Transform, config: RCMG_Config, cor: bool = False
+) -> Transform:
+    """Replace the transforms of all links that connect to the worldbody
+    by randomize transforms.
+
+    Args:
+        key (jax.Array): PRNG Key.
+        sys (System): System only used for structure (in scan.tree).
+        xs (Transform): Time-series of transforms to be modified.
+        config (RCMG_Config): Defines the randomization.
+        cor (bool): Whether or not to randomize the center of rotation.
+
+    Returns:
+        Transform: Time-series of modified transforms.
+    """
+    _checks_time_series_of_xs(sys, xs)
+    assert sys.link_parents.count(-1) == 1, "Found multiple connections to world"
+
+    from x_xy.subpkgs import sys_composer
+
+    free_sys = load_sys_from_str(_wrapper_sys_xml(show_cs_floating_base=False))
+    link_name = NEW_WORLD
+    if not cor:
+        free_sys = sys_composer.delete_subsystem(free_sys, NEW_WORLD)
+        link_name = "free"
+    _, xs_free = build_generator(free_sys, config)(key)
+    xs_free = xs_free.take(free_sys.name_to_idx(link_name), axis=1)
+    link_idx_to_world = sys.link_parents.index(-1)
+    return _overwrite_transform_of_link_then_update(sys, xs, xs_free, link_idx_to_world)
+
+
+def _overwrite_transform_of_link_then_update(
+    sys: System, xs: Transform, xs_new_link: Transform, new_link_idx: int
+):
+    """Replace transform and then perform forward kinematics."""
+    assert xs_new_link.ndim() == (xs.ndim() - 1) == 2
+    transform1, transform2 = unzip_xs(sys, xs)
+    transform1 = _replace_transform_of_link(transform1, xs_new_link, new_link_idx)
+    zero_trafo = Transform.zero((xs_new_link.shape(),))
+    transform2 = _replace_transform_of_link(transform2, zero_trafo, new_link_idx)
+    return zip_xs(sys, transform1, transform2)
+
+
+def _replace_transform_of_link(xs: Transform, xs_new_link: Transform, link_idx):
+    return xs.transpose((1, 0, 2)).index_set(link_idx, xs_new_link).transpose((1, 0, 2))
 
 
 def scale_xs(
