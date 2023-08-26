@@ -34,6 +34,8 @@ def replace_free_with_cor(
 ) -> base.System:
     sys = _freeze_free_joints(sys)
     wrapper_sys = load_sys_from_str(_wrapper_sys_xml(show_cs_floating_base))
+    wrapper_sys = wrapper_sys.change_model_name(sys.model_name)
+    wrapper_sys = wrapper_sys.replace(gravity=sys.gravity, dt=sys.dt)
     # TODO
     from x_xy.subpkgs import sys_composer
 
