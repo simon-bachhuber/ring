@@ -72,8 +72,13 @@ def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:
 
 
 def batch_generator(
-    generators: Generator | list[Generator], batchsizes: int | list[int] = 1
+    generators: Generator | list[Generator],
+    batchsizes: int | list[int] = 1,
+    stochastic: bool = False,
 ) -> Generator:
+    """Create a large generator by stacking multiple generators lazily.
+    NOTE: If `stochastic` then `batchsizes` must be a single integer.
+    """
     if not isinstance(generators, list):
         # test if generator is already batched, then this is a no-op
         key = jax.random.PRNGKey(0)
@@ -83,15 +88,20 @@ def batch_generator(
 
     if not isinstance(generators, list):
         generators = [generators]
-    if not isinstance(batchsizes, list):
-        batchsizes = [batchsizes]
 
-    assert len(generators) == len(batchsizes)
+    if stochastic:
+        assert isinstance(batchsizes, int)
+        bs_total = batchsizes
+        pmap, vmap = utils.distribute_batchsize(bs_total)
+    else:
+        if not isinstance(batchsizes, list):
+            batchsizes = [batchsizes]
+        assert len(generators) == len(batchsizes)
 
-    batch_arr = _build_batch_matrix(batchsizes)
-    bs_total = len(batch_arr)
-    pmap, vmap = utils.distribute_batchsize(bs_total)
-    batch_arr = batch_arr.reshape((pmap, vmap))
+        batch_arr_nonstoch = _build_batch_matrix(batchsizes)
+        bs_total = len(batch_arr_nonstoch)
+        pmap, vmap = utils.distribute_batchsize(bs_total)
+        batch_arr_nonstoch = batch_arr_nonstoch.reshape((pmap, vmap))
 
     pmap_trafo = jax.pmap
     # single GPU node, then do jit + vmap instead of pmap
@@ -105,6 +115,14 @@ def batch_generator(
         return jax.lax.switch(which_gen, generators, key)
 
     def generator(key):
+        if stochastic:
+            key, consume = jax.random.split(key)
+            batch_arr = jax.random.choice(
+                consume, jnp.arange(len(generators)), shape=(pmap, vmap)
+            )
+        else:
+            batch_arr = batch_arr_nonstoch
+
         pmap_vmap_keys = jax.random.split(key, bs_total).reshape((pmap, vmap, 2))
         data = _generator(pmap_vmap_keys, batch_arr)
 
