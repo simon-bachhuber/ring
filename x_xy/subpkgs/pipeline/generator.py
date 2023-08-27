@@ -32,6 +32,7 @@ def make_generator(
     noisy_imus: bool = True,
     quasi_physical: bool | list[bool] = False,
     smoothen_degree: Optional[int] = None,
+    stochastic: bool = False,
 ) -> Tuple[Generator, Optional[Normalizer]]:
     normalizer = None
     if normalize:
@@ -48,6 +49,7 @@ def make_generator(
             noisy_imus,
             quasi_physical,
             smoothen_degree,
+            stochastic,
         )
         normalizer = make_normalizer_from_generator(gen)
 
@@ -107,6 +109,11 @@ def make_generator(
             for qp in _to_list(quasi_physical):
                 gens.append(_make_generator(sys, config, qp))
 
-    assert (bs // len(gens)) > 0, f"Batchsize too small. Must be at least {len(gens)}"
-    batchsizes = len(gens) * [bs // len(gens)]
-    return x_xy.algorithms.batch_generator(gens, batchsizes), normalizer
+    if stochastic:
+        return x_xy.algorithms.batch_generator(gens, bs, stochastic=True), normalizer
+    else:
+        assert (
+            bs // len(gens)
+        ) > 0, f"Batchsize too small. Must be at least {len(gens)}"
+        batchsizes = len(gens) * [bs // len(gens)]
+        return x_xy.algorithms.batch_generator(gens, batchsizes), normalizer
