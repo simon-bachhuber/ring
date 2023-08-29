@@ -303,6 +303,46 @@ def scale_xs(
     return _scale_xs(xs)
 
 
+def project_xs(sys: System, transform2: Transform) -> Transform:
+    """Project transforms into the physically feasible subspace as defined by the
+    joints in the system."""
+    _checks_time_series_of_xs(sys, transform2)
+
+    _str2idx = {"x": 0, "y": 1, "z": 2}
+
+    @jax.vmap
+    def _project_xs(transform2):
+        def f(_, __, i: int, link_type: str):
+            t = transform2[i]
+            rot, pos = jnp.array([1.0, 0, 0, 0]), jnp.zeros((3,))
+
+            if link_type in ["rx", "ry", "rz"]:
+                angles = maths.quat_to_euler(t.rot)
+                idx = _str2idx[link_type[1]]
+                proj_angles = jnp.zeros((3,)).at[idx].set(angles[idx])
+                rot = maths.euler_to_quat(proj_angles)
+            elif link_type in ["px", "py", "pz"]:
+                idx = _str2idx[link_type[1]]
+                pos = pos.at[idx].set(t.pos[idx])
+            elif link_type == "spherical":
+                rot = t.rot
+            elif link_type in ["p3d", "cor"]:
+                pos = t.pos
+            elif link_type == "free":
+                pos, rot = t.pos, t.rot
+            elif link_type in ["rr", "frozen"]:
+                warnings.warn(
+                    f"`{link_type}`-joint-types can currently not be projected."
+                )
+            else:
+                raise NotImplementedError
+            return Transform(pos=pos, rot=rot)
+
+        return scan.tree(sys, f, "ll", list(range(sys.num_links())), sys.link_types)
+
+    return _project_xs(transform2)
+
+
 def _scale_transform_based_on_type(x: Transform, link_type: str, factor: float):
     pos, rot = x.pos, x.rot
     if link_type in ["px", "py", "pz", "free"]:

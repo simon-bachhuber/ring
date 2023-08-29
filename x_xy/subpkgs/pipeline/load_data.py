@@ -67,7 +67,8 @@ def load_data(
     exp_data: Optional[dict] = None,
     rename_exp_data: dict = {},
     use_rcmg: bool = False,
-    seed: int = 1,
+    seed_rcmg: int = 1,
+    seed_t1: int = 2,
     artificial_imus: bool = False,
     noisy_imus: bool = True,
     imu_delay=None,
@@ -79,13 +80,12 @@ def load_data(
     randomize_global_translation_rotation: bool = False,
     cor: bool = False,
     scale_revolute_joint_angles: Optional[float] = None,
+    project_joint_angles: bool = False,
     imu_link_names: Optional[list[str]] = None,
     rigid_imus: bool = True,
     t1: float = 0,
     t2: float | None = None,
 ):
-    key = jax.random.PRNGKey(seed)
-
     sys_noimu, imu_attachment = make_sys_noimu(sys, imu_link_names)
 
     if (
@@ -96,20 +96,21 @@ def load_data(
         or scale_revolute_joint_angles
     ):
         if not artificial_imus:
-            warnings.warn("`artificial_transform1` was overwritten to `True`")
-            artificial_transform1 = True
+            warnings.warn("`artificial_imus` was overwritten to `True`")
+            artificial_imus = True
 
     if use_rcmg:
         assert config is not None
-        key, consume = jax.random.split(key)
-        _, xs = x_xy.algorithms.build_generator(sys, config)(consume)
+        _, xs = x_xy.algorithms.build_generator(sys, config)(
+            jax.random.PRNGKey(seed_rcmg)
+        )
     else:
         assert exp_data is not None
         exp_data = _postprocess_exp_data(exp_data, rename_exp_data, imu_attachment)
         xs = sim2real.xs_from_raw(sys, exp_data, t1, t2, eps_frame=None)
 
     if artificial_transform1:
-        key, consume = jax.random.split(key)
+        key, consume = jax.random.split(jax.random.PRNGKey(seed_t1))
 
         transform1_static = sys.links.transform1
         if artificial_random_transform1:
@@ -130,6 +131,11 @@ def load_data(
         cond = jnp.array(sys.link_parents) == -1
         transform1 = _pick_from_transforms(cond, transform1_pos, transform1_static)
         xs = sim2real.zip_xs(sys, transform1, transform2_rot)
+
+    if project_joint_angles:
+        transform1_pos, transform2_rot = sim2real.unzip_xs(sys, xs)
+        transform2_rot = sim2real.project_xs(sys, transform2_rot)
+        xs = sim2real.zip_xs(sys, transform1_pos, transform2_rot)
 
     if delete_global_translation_rotation:
         xs = sim2real.delete_to_world_pos_rot(sys, xs)
