@@ -1,9 +1,10 @@
+from jax import random as jrand
 import numpy as np
 import pytest
-from jax import random as jrand
 
-from x_xy.algorithms import random_angle_over_time, random_position_over_time
-from x_xy.algorithms.rcmg.random import _resolve_range_of_motion
+from x_xy.algorithms import random_angle_over_time
+from x_xy.algorithms import random_position_over_time
+from x_xy.algorithms.rcmg._random import _resolve_range_of_motion
 
 
 @pytest.mark.parametrize(
