@@ -1,20 +1,24 @@
 import math
+import random
 from typing import Callable
 
 import jax
 import jax.numpy as jnp
+from tqdm import tqdm
 import tree_utils
 from tree_utils import PyTree
+from tree_utils import tree_batch
 
-from x_xy import base, scan, utils
-from x_xy.algorithms import RCMG_Config, forward_kinematics_transforms
+from x_xy import base
+from x_xy import scan
+from x_xy import utils
+from x_xy.algorithms import forward_kinematics_transforms
+from x_xy.algorithms import RCMG_Config
 from x_xy.algorithms.jcalc import _joint_types
-from x_xy.algorithms.rcmg.augmentations import (
-    register_rr_joint,
-    replace_free_with_cor,
-    setup_fn_randomize_joint_axes,
-    setup_fn_randomize_positions,
-)
+from x_xy.algorithms.rcmg.augmentations import register_rr_joint
+from x_xy.algorithms.rcmg.augmentations import replace_free_with_cor
+from x_xy.algorithms.rcmg.augmentations import setup_fn_randomize_joint_axes
+from x_xy.algorithms.rcmg.augmentations import setup_fn_randomize_positions
 
 Generator = Callable[[jax.random.PRNGKey], PyTree]
 SETUP_FN = Callable[[jax.random.PRNGKey, base.System], base.System]
@@ -86,16 +90,14 @@ def batch_generator(
         if tree_utils.tree_ndim(X) > 2:
             return generators
 
-    if not isinstance(generators, list):
-        generators = [generators]
+    generators = _to_list(generators)
 
     if stochastic:
         assert isinstance(batchsizes, int)
         bs_total = batchsizes
         pmap, vmap = utils.distribute_batchsize(bs_total)
     else:
-        if not isinstance(batchsizes, list):
-            batchsizes = [batchsizes]
+        batchsizes = _to_list(batchsizes)
         assert len(generators) == len(batchsizes)
 
         batch_arr_nonstoch = _build_batch_matrix(batchsizes)
@@ -130,6 +132,47 @@ def batch_generator(
         data = utils.merge_batchsize(data, pmap, vmap)
 
         return data
+
+    return generator
+
+
+def offline_generator(
+    generators: Generator | list[Generator],
+    sizes: int | list[int],
+    batchsize: int,
+    shuffle: bool = True,
+    drop_last: bool = True,
+    seed: int = 1,
+    store_on_cpu: bool = True,
+) -> Generator:
+    """Eagerly create a large precomputed generator by calling multiple generators
+    and stacking their output."""
+    assert drop_last, "Not `drop_last` is currently not implemented."
+    generators, sizes = _to_list(generators), _to_list(sizes)
+    assert len(generators) == len(sizes)
+
+    key = jax.random.PRNGKey(seed)
+    data = []
+    for gen, size in tqdm(zip(generators, sizes), desc="offline generator"):
+        key, consume = jax.random.split(key)
+        sample = batch_generator(gen, size)(consume)
+        if store_on_cpu:
+            sample = jax.device_put(sample, jax.devices("cpu")[0])
+        data.extend([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
+
+    N, i = len(data) // batchsize, 0
+    random.seed(seed)
+
+    def generator(key: jax.Array):
+        nonlocal i
+        del key
+        if shuffle and i == 0:
+            random.shuffle(data)
+
+        start, stop = i * batchsize, (i + 1) * batchsize
+        batch = tree_batch(data[start:stop], backend="jax")
+        i = (i + 1) % N
+        return batch
 
     return generator
 
@@ -174,3 +217,9 @@ def make_normalizer_from_generator(
         return jax.tree_map(lambda a, b, c: (a - b) / (c + eps), X, mean, std)
 
     return normalizer
+
+
+def _to_list(obj):
+    if not isinstance(obj, list):
+        return [obj]
+    return obj
