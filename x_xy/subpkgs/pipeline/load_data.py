@@ -156,8 +156,9 @@ def load_data(
         exp_data = _postprocess_exp_data(exp_data, rename_exp_data, imu_attachment)
         xs = sim2real.xs_from_raw(sys, exp_data, t1, t2, eps_frame=None)
 
+    key = jax.random.PRNGKey(seed_t1)
     if artificial_transform1:
-        key, consume = jax.random.split(jax.random.PRNGKey(seed_t1))
+        key, consume = jax.random.split(key)
 
         transform1_static = sys.links.transform1
         if artificial_random_transform1:
