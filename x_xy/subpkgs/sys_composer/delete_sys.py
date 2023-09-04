@@ -1,6 +1,8 @@
 import jax.numpy as jnp
+import tree_utils
 
-from x_xy import base, scan
+from x_xy import base
+from x_xy import scan
 from x_xy.io import parse_system
 
 
@@ -45,7 +47,7 @@ def delete_subsystem(sys: base.System, link_name: str | list[str]) -> base.Syste
 
     new_sys = base.System(
         _reindex_parent_array(sys.link_parents, subsys),
-        sys.links[keep],
+        tree_utils.tree_indices(sys.links, jnp.array(keep, dtype=int)),
         take(sys.link_types),
         d,
         a,
@@ -78,8 +80,8 @@ def _find_subsystem_indices(parents: list[int], k: int) -> list[int]:
 
 def _idx_map_and_keepers(parents: list[int], subsys: list[int]):
     num_links = len(parents)
-    keep = jnp.array(list(set(range(num_links)) - set(subsys)))
-    idx_map = dict(zip([-1] + keep.tolist(), range(-1, len(keep))))
+    keep = list(set(range(num_links)) - set(subsys))
+    idx_map = dict(zip([-1] + keep, range(-1, len(keep))))
     return idx_map, keep
 
 
