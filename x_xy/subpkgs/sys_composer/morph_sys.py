@@ -3,10 +3,13 @@ from typing import NamedTuple
 import jax
 import jax.numpy as jnp
 
-from x_xy import algebra, base, scan
-from x_xy.io import parse_system
+from x_xy import algebra
+from x_xy import base
+from x_xy import parse_system
+from x_xy import scan
 
-from .identify_sys import Neighbourhood, identify_system
+from .identify_sys import identify_system
+from .identify_sys import Neighbourhood
 
 
 class JointProperties(NamedTuple):

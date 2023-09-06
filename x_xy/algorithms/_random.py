@@ -1,13 +1,14 @@
-import warnings
 from typing import Callable, Optional
+import warnings
 
 import jax
-import jax.numpy as jnp
 from jax import random
+import jax.numpy as jnp
 
 from x_xy import maths
 
-from ..jcalc import Float, TimeDependentFloat
+Float = jax.Array
+TimeDependentFloat = Callable[[Float], Float]
 
 
 def _to_float(scalar: Float | TimeDependentFloat, t: Float) -> Float:

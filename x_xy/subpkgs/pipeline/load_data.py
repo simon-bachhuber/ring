@@ -5,8 +5,6 @@ import jax
 import jax.numpy as jnp
 
 import x_xy
-from x_xy.base import System
-from x_xy.scan import tree
 from x_xy.subpkgs import sim2real
 from x_xy.subpkgs import sys_composer
 
@@ -42,7 +40,7 @@ def imu_data(
         if segment in inv_imu_attachment:
             imu = inv_imu_attachment[segment]
             key, consume = jax.random.split(key)
-            imu_measurements = x_xy.algorithms.imu(
+            imu_measurements = x_xy.imu(
                 xs.take(sys_xs.name_to_idx(imu), 1),
                 sys_xs.gravity,
                 sys_xs.dt,
@@ -72,7 +70,7 @@ def imu_data(
     return X
 
 
-def joint_axes_data(sys: System, N: int) -> dict[dict[str, jax.Array]]:
+def joint_axes_data(sys: x_xy.System, N: int) -> dict[dict[str, jax.Array]]:
     "`sys` should be `sys_noimu`. `N` is number of timesteps"
     xaxis = jnp.array([1.0, 0, 0])
     yaxis = jnp.array([0.0, 1, 0])
@@ -89,7 +87,9 @@ def joint_axes_data(sys: System, N: int) -> dict[dict[str, jax.Array]]:
             joint_axes = xaxis
         X[name] = {"joint_axes": joint_axes}
 
-    tree(sys, f, "lll", sys.link_names, sys.link_types, sys.links.joint_params)
+    x_xy.scan_tree(
+        sys, f, "lll", sys.link_names, sys.link_types, sys.links.joint_params
+    )
     X = jax.tree_map(lambda arr: jnp.repeat(arr[None], N, axis=0), X)
     return X
 
@@ -98,7 +98,7 @@ def autodetermine_imu_names(sys) -> list[str]:
     return [name for name in sys.link_names if name[:3] == "imu"]
 
 
-def make_sys_noimu(sys, imu_link_names: Optional[list[str]] = None):
+def make_sys_noimu(sys: x_xy.System, imu_link_names: Optional[list[str]] = None):
     "Returns, e.g., imu_attachment = {'imu1': 'seg1', 'imu2': 'seg3'}"
     if imu_link_names is None:
         imu_link_names = autodetermine_imu_names(sys)
@@ -108,8 +108,8 @@ def make_sys_noimu(sys, imu_link_names: Optional[list[str]] = None):
 
 
 def load_data(
-    sys: System,
-    config: Optional[x_xy.algorithms.RCMG_Config] = None,
+    sys: x_xy.System,
+    config: Optional[x_xy.RCMG_Config] = None,
     exp_data: Optional[dict] = None,
     rename_exp_data: dict = {},
     use_rcmg: bool = False,
@@ -148,9 +148,7 @@ def load_data(
 
     if use_rcmg:
         assert config is not None
-        _, xs = x_xy.algorithms.build_generator(sys, config)(
-            jax.random.PRNGKey(seed_rcmg)
-        )
+        _, xs = x_xy.build_generator(sys, config)(jax.random.PRNGKey(seed_rcmg))
     else:
         assert exp_data is not None
         exp_data = _postprocess_exp_data(exp_data, rename_exp_data, imu_attachment)
@@ -162,11 +160,9 @@ def load_data(
 
         transform1_static = sys.links.transform1
         if artificial_random_transform1:
-            transform1_static = (
-                x_xy.algorithms.rcmg.augmentations.setup_fn_randomize_positions(
-                    consume, sys
-                ).links.transform1
-            )
+            transform1_static = x_xy.rcmg.augmentations.setup_fn_randomize_positions(
+                consume, sys
+            ).links.transform1
 
         # has no time-axis yet, so repeat in time
         transform1_static = transform1_static.batch().repeat(xs.shape())
@@ -240,7 +236,7 @@ def load_data(
         for segment in X:
             X[segment].update(X_joint_axes[segment])
 
-    y = x_xy.algorithms.rel_pose(sys_noimu, xs, sys)
+    y = x_xy.rel_pose(sys_noimu, xs, sys)
 
     return X, y, xs
 

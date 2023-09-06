@@ -12,13 +12,10 @@ from tree_utils import tree_batch
 from x_xy import base
 from x_xy import scan
 from x_xy import utils
-from x_xy.algorithms import forward_kinematics_transforms
-from x_xy.algorithms import RCMG_Config
-from x_xy.algorithms.jcalc import _joint_types
-from x_xy.algorithms.rcmg.augmentations import register_rr_joint
-from x_xy.algorithms.rcmg.augmentations import replace_free_with_cor
-from x_xy.algorithms.rcmg.augmentations import setup_fn_randomize_joint_axes
-from x_xy.algorithms.rcmg.augmentations import setup_fn_randomize_positions
+
+from .jcalc import _joint_types
+from .jcalc import RCMG_Config
+from .kinematics import forward_kinematics_transforms
 
 Generator = Callable[[jax.random.PRNGKey], PyTree]
 SETUP_FN = Callable[[jax.random.PRNGKey, base.System], base.System]

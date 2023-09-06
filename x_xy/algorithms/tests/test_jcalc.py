@@ -3,15 +3,13 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from x_xy.algorithms import RCMG_Config, build_generator, concat_configs
-from x_xy.io import load_example
-
-from .jcalc import _find_interval
+import x_xy
+from x_xy.algorithms.jcalc import _find_interval
 
 
 @pytest.mark.parametrize("T,seed", [(10.0, 0), (20.0, 0), (10.0, 1), (20.0, 1)])
 def test_concat_configs(T, seed):
-    nomotion_config = RCMG_Config(
+    nomotion_config = x_xy.RCMG_Config(
         dang_min=0.0,
         dang_max=0.0,
         dang_max_free_spherical=0.0,
@@ -19,12 +17,14 @@ def test_concat_configs(T, seed):
         dpos_min=0.0,
         dpos_max=0.0,
     )
-    motion_config = RCMG_Config()
+    motion_config = x_xy.RCMG_Config()
 
-    sys = load_example("test_free")
-    q, x = build_generator(
+    sys = x_xy.load_example("test_free")
+    q, x = x_xy.build_generator(
         sys,
-        concat_configs([nomotion_config, motion_config, nomotion_config], [T, 2 * T]),
+        x_xy.concat_configs(
+            [nomotion_config, motion_config, nomotion_config], [T, 2 * T]
+        ),
     )(jax.random.PRNGKey(seed))
 
     def array_eq(a: int, b: int):

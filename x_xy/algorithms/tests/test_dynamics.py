@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import numpy as np
 
 import x_xy
-from x_xy import algorithms, base
+from x_xy import base
 
 xml_str_2_link_w_inertia = r"""
 <x_xy>
@@ -29,10 +29,10 @@ def test_inverse_dynamics_and_mass_matrix():
     qd = jnp.array([0.0, 0])
     qdd = qd
     state = base.State.create(sys, q, qd)
-    sys, state = algorithms.kinematics.forward_kinematics(sys, state)
+    sys, state = x_xy.forward_kinematics(sys, state)
 
-    C = jax.jit(algorithms.inverse_dynamics)(sys, state.qd, qdd)
-    H = jax.jit(algorithms.compute_mass_matrix)(sys)
+    C = jax.jit(x_xy.inverse_dynamics)(sys, state.qd, qdd)
+    H = jax.jit(x_xy.compute_mass_matrix)(sys)
 
     np.testing.assert_allclose(
         C, np.array([196.20001, -98.100006], dtype=np.float32), atol=1e-4, rtol=1e-6

@@ -2,8 +2,8 @@ import jax.numpy as jnp
 import tree_utils
 
 from x_xy import base
+from x_xy import parse_system
 from x_xy import scan
-from x_xy.io import parse_system
 
 
 def delete_subsystem(sys: base.System, link_name: str | list[str]) -> base.System:

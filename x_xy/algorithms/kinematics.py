@@ -2,8 +2,11 @@ from typing import Tuple
 
 import jax
 
-from x_xy import algebra, base, scan
-from x_xy.algorithms import jcalc
+from x_xy import algebra
+from x_xy import base
+from x_xy import scan
+
+from .jcalc import jcalc_transform
 
 
 def forward_kinematics_transforms(
@@ -19,7 +22,7 @@ def forward_kinematics_transforms(
     eps_to_l = {-1: base.Transform.zero()}
 
     def update_eps_to_l(_, __, q, link, link_idx, parent_idx, joint_type: str):
-        transform2 = jcalc.jcalc_transform(joint_type, q, link.joint_params)
+        transform2 = jcalc_transform(joint_type, q, link.joint_params)
         transform = algebra.transform_mul(transform2, link.transform1)
         link = link.replace(transform=transform, transform2=transform2)
         eps_to_l[link_idx] = algebra.transform_mul(transform, eps_to_l[parent_idx])

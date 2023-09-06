@@ -7,7 +7,7 @@ import x_xy
 
 def _simulate_imus(qd: float, no_grav: bool = False):
     T = 1.0
-    sys = x_xy.io.load_example("test_sensors")
+    sys = x_xy.load_example("test_sensors")
     assert sys.model_name == "test_sensors"
 
     if no_grav:
@@ -23,16 +23,12 @@ def _simulate_imus(qd: float, no_grav: bool = False):
     xs = []
     tau = jnp.zeros_like(state.qd)
     for _ in range(int(T / sys.dt)):
-        state = jax.jit(x_xy.algorithms.step)(sys, state, tau)
+        state = jax.jit(x_xy.step)(sys, state, tau)
         xs.append(state.x)
     xs = xs[0].batch(*xs[1:])
 
-    imu1 = x_xy.algorithms.imu(
-        xs.take(sys.name_to_idx("imu1"), axis=1), sys.gravity, sys.dt
-    )
-    imu2 = x_xy.algorithms.imu(
-        xs.take(sys.name_to_idx("imu2"), axis=1), sys.gravity, sys.dt
-    )
+    imu1 = x_xy.imu(xs.take(sys.name_to_idx("imu1"), axis=1), sys.gravity, sys.dt)
+    imu2 = x_xy.imu(xs.take(sys.name_to_idx("imu2"), axis=1), sys.gravity, sys.dt)
     return imu1, imu2
 
 
@@ -73,7 +69,7 @@ def test_imu():
 
 
 def test_rel_pose():
-    sys = x_xy.io.load_example("test_sensors")
+    sys = x_xy.load_example("test_sensors")
     qs = x_xy.maths.quat_random(
         jax.random.PRNGKey(
             1,
@@ -81,7 +77,7 @@ def test_rel_pose():
         (3,),
     )
     xs = x_xy.base.Transform.create(rot=qs)
-    y = x_xy.algorithms.rel_pose(sys, xs)
+    y = x_xy.rel_pose(sys, xs)
 
     assert "hinge" not in y
 
@@ -106,9 +102,7 @@ def test_rel_pose():
     </x_xy>
     """
 
-    y = x_xy.algorithms.rel_pose(
-        x_xy.io.load_sys_from_str(sys_different_anchor), xs, sys
-    )
+    y = x_xy.rel_pose(x_xy.load_sys_from_str(sys_different_anchor), xs, sys)
     assert "hinge" not in y
     np.testing.assert_array_equal(y["imu2"], qrel(qs[0], qs[2]))
     np.testing.assert_array_equal(y["imu1"], qrel(qs[2], qs[1]))

@@ -4,10 +4,14 @@ import jax
 import jax.numpy as jnp
 
 from x_xy import algebra
-from x_xy import algorithms
 from x_xy import base
 from x_xy import maths
 from x_xy import scan
+
+from .jcalc import _joint_types
+from .jcalc import jcalc_motion
+from .jcalc import jcalc_tau
+from .kinematics import forward_kinematics
 
 
 def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Array:
@@ -19,9 +23,7 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
     vel, acc, fs = {}, {}, {}
 
     def forward_scan(_, __, link_idx, parent_idx, link_type, qd, qdd, p_to_l_trafo, it):
-        vJ, aJ = algorithms.jcalc_motion(link_type, qd), algorithms.jcalc_motion(
-            link_type, qdd
-        )
+        vJ, aJ = jcalc_motion(link_type, qd), jcalc_motion(link_type, qdd)
 
         t = lambda m: algebra.transform_motion(p_to_l_trafo, m)
 
@@ -54,7 +56,7 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
     taus = []
 
     def backwards_scan(_, __, link_idx, parent_idx, link_type, l_to_p_trafo):
-        tau = algorithms.jcalc_tau(link_type, fs[link_idx])
+        tau = jcalc_tau(link_type, fs[link_idx])
         taus.insert(0, tau)
         if parent_idx != -1:
             fs[parent_idx] = fs[parent_idx] + algebra.transform_force(
@@ -111,7 +113,7 @@ def compute_mass_matrix(sys: base.System) -> jax.Array:
     # Now we go into matrix mode
 
     def _jcalc_motion_matrix(i: int):
-        list_motion = algorithms.jcalc._joint_types[sys.link_types[i]].motion
+        list_motion = _joint_types[sys.link_types[i]].motion
         if len(list_motion) == 0:
             # joint is frozen
             return None
@@ -303,7 +305,7 @@ def step(
         # update kinematics before stepping; this means that the `x` in `state`
         # will lag one step behind but otherwise we would have to return
         # the system object which would be awkward
-        sys, state = algorithms.kinematics.forward_kinematics(sys, state)
+        sys, state = forward_kinematics(sys, state)
         state = _integration_methods[sys.integration_method.lower()](sys, state, taus)
 
     return state

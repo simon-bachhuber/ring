@@ -3,7 +3,10 @@ from typing import Optional
 import jax
 import jax.numpy as jnp
 
-from x_xy import algebra, base, maths, scan
+from x_xy import algebra
+from x_xy import base
+from x_xy import maths
+from x_xy import scan
 
 from ..io import load_sys_from_str
 from .dynamics import step

@@ -3,7 +3,6 @@ import jax.numpy as jnp
 import numpy as np
 
 import x_xy
-from x_xy.algorithms import pd_control
 
 
 def test_pd_control():
@@ -25,9 +24,7 @@ def test_pd_control():
             ),
         )(jax.random.PRNGKey(1))
 
-        jit_step_fn = jax.jit(
-            lambda sys, state, tau: x_xy.algorithms.step(sys, state, tau, 1)
-        )
+        jit_step_fn = jax.jit(lambda sys, state, tau: x_xy.step(sys, state, tau, 1))
 
         q_reconst = []
         N = len(q)
@@ -45,7 +42,7 @@ def test_pd_control():
         return q, q_reconst
 
     gains = jnp.array(3 * [10_000] + 5 * [250])
-    controller = pd_control(gains, gains * 0.1)
+    controller = x_xy.pd_control(gains, gains * 0.1)
     q, q_reconst = evaluate(controller, "test_control")
     error = jnp.mean(
         x_xy.maths.angle_error(q[:, :4], q_reconst[:, :4]) ** 2
@@ -53,13 +50,13 @@ def test_pd_control():
     assert error <= 0.42
 
     gains = jnp.array(3 * [17] + 3 * [300])
-    controller = pd_control(gains, gains)
+    controller = x_xy.pd_control(gains, gains)
     q, q_reconst = evaluate(controller, "test_free")
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
     assert error <= 0.5
 
     gains = jnp.array([300.0, 300])
-    controller = pd_control(gains, gains)
+    controller = x_xy.pd_control(gains, gains)
     q, q_reconst = evaluate(controller, "test_double_pendulum")
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
     # TODO investigate why errors are higher after upgrading python, jax, and cuda

@@ -1,21 +1,22 @@
 from pathlib import Path
 
 import jax
-import numpy as np
 from jax import random
+import numpy as np
 from PyQt6 import QtWidgets
 from vispy.app import use_app
 
 from x_xy import base
-from x_xy.algorithms import forward_kinematics
-from x_xy.algorithms.rcmg.augmentations import (
-    register_rr_joint,
-    setup_fn_randomize_joint_axes,
-    setup_fn_randomize_positions,
-)
-from x_xy.io import list_examples, load_example, load_sys_from_xml
+from x_xy import forward_kinematics
+from x_xy import list_examples
+from x_xy import load_example
+from x_xy import load_sys_from_xml
+from x_xy import register_rr_joint
+from x_xy import setup_fn_randomize_joint_axes
+from x_xy import setup_fn_randomize_positions
 from x_xy.render import VispyScene
-from x_xy.subpkgs import exp_data, sys_composer
+from x_xy.subpkgs import exp_data
+from x_xy.subpkgs import sys_composer
 
 forward_kinematics = jax.jit(forward_kinematics)
 register_rr_joint()
