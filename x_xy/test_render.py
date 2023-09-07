@@ -38,7 +38,7 @@ def test_animate():
         state = step_fn(sys, state, jnp.zeros_like(state.qd))
         xs.append(state.x)
 
-    fmts = ["gif"]
+    fmts = ["mp4"]
 
     if is_pytest():
         fmts += ["gif"]
@@ -67,7 +67,7 @@ def test_shapes():
 
     sys = load_sys_from_str(sys_str)
 
-    state = State.create(sys, q=None)
+    state = State.create(sys)
 
     step_fn = jax.jit(dynamics.step)
 
