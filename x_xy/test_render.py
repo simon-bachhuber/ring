@@ -78,5 +78,4 @@ def test_shapes():
 
 
 if __name__ == "__main__":
-    # test_animate()
-    test_shapes()
+    test_animate()
