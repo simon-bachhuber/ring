@@ -2,10 +2,11 @@ from xml.etree import ElementTree
 
 import jax.numpy as jnp
 
-import x_xy
 from x_xy import base
-from x_xy.io.xml import abstract
 from x_xy.utils import parse_path
+
+from . import abstract
+from ..parse import parse_system
 
 
 def _find_assert_unique(tree: ElementTree, *keys):
@@ -215,7 +216,7 @@ def load_sys_from_str(xml_str: str, prefix: str = ""):
         model_name=model_name,
     )
 
-    return x_xy.io.parse_system(sys)
+    return parse_system(sys)
 
 
 def load_sys_from_xml(xml_path: str, prefix: str = ""):

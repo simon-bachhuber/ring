@@ -1,11 +1,14 @@
 from types import SimpleNamespace
 
+from flax import struct
 import jax
 import jax.numpy as jnp
-from flax import struct
 
-import x_xy
-from x_xy import base, maths, scan
+from x_xy import base
+from x_xy import maths
+from x_xy import scan
+
+from .dynamics import step as dynamics_step
 
 qrel = lambda q1, q2: maths.quat_mul(q1, maths.quat_inv(q2))
 
@@ -195,7 +198,7 @@ def unroll_dynamics_pd_control(
     def step(carry, _):
         state, cs = carry
         cs, taus = controller.apply(cs, sys, state)
-        state = x_xy.algorithms.step(sys, state, taus)
+        state = dynamics_step(sys, state, taus)
         carry = (state, cs)
         return carry, state
 

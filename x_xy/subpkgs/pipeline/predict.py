@@ -6,8 +6,10 @@ import numpy as np
 import tree_utils
 
 import x_xy
-from x_xy import base, maths
-from x_xy.subpkgs import sim2real, sys_composer
+from x_xy import base
+from x_xy import maths
+from x_xy.subpkgs import sim2real
+from x_xy.subpkgs import sys_composer
 
 X = Y = PARAMS = STATE = dict
 
@@ -38,6 +40,13 @@ def predict(
     verbose: bool = True,
     **vispy_kwargs,
 ):
+    """
+    NOTE: If you are encountering the error that the rendered frames are 1x1 pixels
+    large and this function is executed from a jupyter notebook, you may have to force
+    vispy to use the PyQT6 backend prior to calling this function, i.e. call
+    >>> import vispy; vispy.use("pyqt6")
+    in the first cell of the notebook.
+    """
     import matplotlib.pyplot as plt
 
     rnno = rnno_fn(sys)
@@ -64,9 +73,7 @@ def predict(
     if y is not None:
         for link_name in y:
             metrics[f"mae_deg_{link_name}"] = jnp.mean(
-                jnp.rad2deg(x_xy.maths.angle_error(y[link_name], yhat[link_name]))[
-                    warmup:
-                ]
+                jnp.rad2deg(maths.angle_error(y[link_name], yhat[link_name]))[warmup:]
             )
         if verbose:
             print(metrics)
@@ -111,9 +118,7 @@ def predict(
 
             # `yhat` are child-to-parent transforms, but we need parent-to-child
             # this dictonary has now all links that don't connect to worldbody
-            transform2hat_rot = jax.tree_map(
-                lambda quat: x_xy.maths.quat_inv(quat), yhat
-            )
+            transform2hat_rot = jax.tree_map(lambda quat: maths.quat_inv(quat), yhat)
 
             transform1, transform2 = sim2real.unzip_xs(
                 sys, sim2real.match_xs(sys, xs, sys_xs)
@@ -123,9 +128,7 @@ def predict(
             transform2hat = []
             for i, name in enumerate(sys.link_names):
                 if name in transform2hat_rot:
-                    transform2_name = x_xy.base.Transform.create(
-                        rot=transform2hat_rot[name]
-                    )
+                    transform2_name = x_xy.Transform.create(rot=transform2hat_rot[name])
                 else:
                     transform2_name = transform2.take(i, axis=1)
                 transform2hat.append(transform2_name)
@@ -176,7 +179,7 @@ def predict(
                 assert tree_equal(xs_render, xs_render_simple)
             xs_render = xs_render_simple
 
-        x_xy.render.animate(
+        x_xy.animate(
             render_path,
             sys_render,
             xs_render,
@@ -190,12 +193,5 @@ def predict(
 
 
 def _geoms_replace_color(sys, color):
-    def _update_color_in_dict(vispy_kwargs):
-        vispy_kwargs = vispy_kwargs.copy()
-        vispy_kwargs["color"] = color
-        return vispy_kwargs
-
-    geoms = [
-        g.replace(vispy_kwargs=_update_color_in_dict(g.vispy_kwargs)) for g in sys.geoms
-    ]
+    geoms = [g.replace(color=color) for g in sys.geoms]
     return sys.replace(geoms=geoms)

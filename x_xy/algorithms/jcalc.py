@@ -1,13 +1,18 @@
-from dataclasses import dataclass, field, replace
-from typing import Callable, Optional, get_type_hints
+from dataclasses import dataclass
+from dataclasses import field
+from dataclasses import replace
+from typing import Callable, get_type_hints, Optional
 
 import jax
 import jax.numpy as jnp
 
-from x_xy import algebra, algorithms, base, maths
+from x_xy import algebra
+from x_xy import base
+from x_xy import maths
 
-Float = jax.Array
-TimeDependentFloat = Callable[[Float], Float]
+from ._random import random_angle_over_time
+from ._random import random_position_over_time
+from ._random import TimeDependentFloat
 
 
 @dataclass
@@ -171,7 +176,7 @@ def _draw_rxyz(
     ANG_0 = maths.wrap_to_pi(ANG_0)
     # only used for `delta_ang_min_max` logic
     max_iter = 5
-    return algorithms.random_angle_over_time(
+    return random_angle_over_time(
         key_t,
         key_value,
         ANG_0,
@@ -202,7 +207,7 @@ def _draw_pxyz(
     key_value, consume = jax.random.split(key_value)
     POS_0 = jax.random.uniform(consume, minval=config.pos0_min, maxval=config.pos0_max)
     max_iter = 100
-    return algorithms.random_position_over_time(
+    return random_position_over_time(
         key_value,
         POS_0,
         config.cor_pos_min if cor else config.pos_min,

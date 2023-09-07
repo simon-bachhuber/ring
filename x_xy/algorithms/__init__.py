@@ -1,27 +1,34 @@
-from . import dynamics, jcalc, kinematics, sensors
-from .control import pd_control, unroll_dynamics_pd_control
-from .dynamics import compute_mass_matrix, forward_dynamics, inverse_dynamics, step
-from .jcalc import (
-    JointModel,
-    RCMG_Config,
-    concat_configs,
-    jcalc_motion,
-    jcalc_tau,
-    jcalc_transform,
-    register_new_joint_type,
-)
-from .kinematics import forward_kinematics, forward_kinematics_transforms
-from .rcmg import (
-    FINALIZE_FN,
-    SETUP_FN,
-    Generator,
-    Normalizer,
-    batch_generator,
-    build_generator,
-    make_normalizer_from_generator,
-    register_rr_joint,
-    setup_fn_randomize_joint_axes,
-    setup_fn_randomize_positions,
-)
-from .rcmg.random import random_angle_over_time, random_position_over_time
-from .sensors import accelerometer, add_noise_bias, gyroscope, imu, rel_pose
+from ._random import random_angle_over_time
+from ._random import random_position_over_time
+from .augmentations import register_rr_joint
+from .augmentations import replace_free_with_cor
+from .augmentations import setup_fn_randomize_joint_axes
+from .augmentations import setup_fn_randomize_positions
+from .control import pd_control
+from .control import unroll_dynamics_pd_control
+from .dynamics import compute_mass_matrix
+from .dynamics import forward_dynamics
+from .dynamics import inverse_dynamics
+from .dynamics import step
+from .generator import batch_generator
+from .generator import build_generator
+from .generator import FINALIZE_FN
+from .generator import Generator
+from .generator import make_normalizer_from_generator
+from .generator import Normalizer
+from .generator import offline_generator
+from .generator import SETUP_FN
+from .jcalc import concat_configs
+from .jcalc import jcalc_motion
+from .jcalc import jcalc_tau
+from .jcalc import jcalc_transform
+from .jcalc import JointModel
+from .jcalc import RCMG_Config
+from .jcalc import register_new_joint_type
+from .kinematics import forward_kinematics
+from .kinematics import forward_kinematics_transforms
+from .sensors import accelerometer
+from .sensors import add_noise_bias
+from .sensors import gyroscope
+from .sensors import imu
+from .sensors import rel_pose

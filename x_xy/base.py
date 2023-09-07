@@ -1,11 +1,11 @@
 from typing import Any, Optional, Sequence, Union
 
+from flax import struct
 import jax
 import jax.numpy as jnp
+from jax.tree_util import tree_map
 import numpy as np
 import tree_utils as tu
-from flax import struct
-from jax.tree_util import tree_map
 
 from x_xy import maths
 
@@ -224,7 +224,7 @@ class Inertia(_Base):
 class Geometry(_Base):
     mass: jax.Array
     transform: Transform
-    link_idx: int
+    link_idx: int = struct.field(pytree_node=False)
 
     color: Color = struct.field(pytree_node=False)
     edge_color: Color = struct.field(pytree_node=False)

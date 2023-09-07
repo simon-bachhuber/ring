@@ -7,7 +7,7 @@ from x_xy import maths
 
 
 def test_forward_kinematics_transforms():
-    sys = x_xy.io.load_example("test_kinematics")
+    sys = x_xy.load_example("test_kinematics")
     q = [
         jnp.array([1, 0, 0, 0, 1, 1, 1.0]),
         jnp.pi / 2,
@@ -17,7 +17,7 @@ def test_forward_kinematics_transforms():
     ]
     q = list(map(jnp.atleast_1d, q))
     q = jnp.concatenate(q)
-    ts, sys = jax.jit(x_xy.algorithms.forward_kinematics_transforms)(sys, q)
+    ts, sys = jax.jit(x_xy.forward_kinematics_transforms)(sys, q)
 
     # position ok
     assert tu.tree_close(ts.take(4).pos, jnp.array([2.0, 2, 1]))

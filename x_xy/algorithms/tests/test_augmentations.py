@@ -2,11 +2,7 @@ import jax
 import numpy as np
 
 import x_xy
-from x_xy.algorithms.rcmg.augmentations import (
-    _draw_pos_uniform,
-    replace_free_with_cor,
-    setup_fn_randomize_positions,
-)
+from x_xy.algorithms.augmentations import _draw_pos_uniform
 
 
 def setup_fn_old(key, sys: x_xy.base.System) -> x_xy.base.System:
@@ -41,7 +37,7 @@ def setup_fn_old(key, sys: x_xy.base.System) -> x_xy.base.System:
 
 def test_randomize_positions():
     key = jax.random.PRNGKey(1)
-    sys = x_xy.io.load_example("test_randomize_position")
+    sys = x_xy.load_example("test_randomize_position")
 
     # split key once more because the new logic `setup_fn_randomize_positions`
     # randomizes the position for each body even if the body has
@@ -52,12 +48,12 @@ def test_randomize_positions():
     # then comes `seg1` relative to `seg2`
     pos_old = setup_fn_old(internal_key, sys).links.transform1.pos
 
-    pos_new = setup_fn_randomize_positions(key, sys).links.transform1.pos
+    pos_new = x_xy.setup_fn_randomize_positions(key, sys).links.transform1.pos
 
     np.testing.assert_array_equal(pos_old, pos_new)
 
 
 def test_cor():
-    sys = x_xy.io.load_example("test_three_seg_seg2")
+    sys = x_xy.load_example("test_three_seg_seg2")
     for fb in [False, True]:
-        replace_free_with_cor(sys, fb)
+        x_xy.replace_free_with_cor(sys, fb)

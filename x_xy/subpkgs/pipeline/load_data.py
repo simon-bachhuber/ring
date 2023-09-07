@@ -1,11 +1,12 @@
-import warnings
 from typing import Optional
+import warnings
 
 import jax
 import jax.numpy as jnp
 
 import x_xy
-from x_xy.subpkgs import sim2real, sys_composer
+from x_xy.subpkgs import sim2real
+from x_xy.subpkgs import sys_composer
 
 
 def _postprocess_exp_data(exp_data: dict, rename: dict = {}, imu_attachment: dict = {}):
@@ -23,29 +24,73 @@ def _postprocess_exp_data(exp_data: dict, rename: dict = {}, imu_attachment: dic
 
 def imu_data(
     key,
-    x,
-    sys,
-    imu_attachment: dict,
+    xs,
+    sys_xs,
     noisy: bool = True,
     random_s2s_ori: bool = False,
     delay=None,
     smoothen_degree=None,
     quasi_physical: bool = False,
 ) -> dict:
+    sys_noimu, imu_attachment = make_sys_noimu(sys_xs)
+    inv_imu_attachment = {val: key for key, val in imu_attachment.items()}
     X = {}
-    for imu, attachment in imu_attachment.items():
-        key, consume = jax.random.split(key)
-        X[attachment] = x_xy.algorithms.imu(
-            x.take(sys.name_to_idx(imu), 1),
-            sys.gravity,
-            sys.dt,
-            consume,
-            noisy=noisy,
-            random_s2s_ori=random_s2s_ori,
-            delay=delay,
-            smoothen_degree=smoothen_degree,
-            quasi_physical=quasi_physical,
-        )
+    N = xs.shape()
+    for segment in sys_noimu.link_names:
+        if segment in inv_imu_attachment:
+            imu = inv_imu_attachment[segment]
+            key, consume = jax.random.split(key)
+            imu_measurements = x_xy.imu(
+                xs.take(sys_xs.name_to_idx(imu), 1),
+                sys_xs.gravity,
+                sys_xs.dt,
+                consume,
+                noisy=noisy,
+                random_s2s_ori=random_s2s_ori,
+                delay=delay,
+                smoothen_degree=smoothen_degree,
+                quasi_physical=quasi_physical,
+            )
+        else:
+            imu_measurements = {
+                "acc": jnp.zeros(
+                    (
+                        N,
+                        3,
+                    )
+                ),
+                "gyr": jnp.zeros(
+                    (
+                        N,
+                        3,
+                    )
+                ),
+            }
+        X[segment] = imu_measurements
+    return X
+
+
+def joint_axes_data(sys: x_xy.System, N: int) -> dict[dict[str, jax.Array]]:
+    "`sys` should be `sys_noimu`. `N` is number of timesteps"
+    xaxis = jnp.array([1.0, 0, 0])
+    yaxis = jnp.array([0.0, 1, 0])
+    zaxis = jnp.array([0.0, 0, 1])
+    id_to_axis = {"x": xaxis, "y": yaxis, "z": zaxis}
+    X = {}
+
+    def f(_, __, name, link_type, joint_params):
+        if link_type in ["rx", "ry", "rz"]:
+            joint_axes = id_to_axis[link_type[1]]
+        elif link_type == "rr":
+            joint_axes = joint_params
+        else:
+            joint_axes = xaxis
+        X[name] = {"joint_axes": joint_axes}
+
+    x_xy.scan_tree(
+        sys, f, "lll", sys.link_names, sys.link_types, sys.links.joint_params
+    )
+    X = jax.tree_map(lambda arr: jnp.repeat(arr[None], N, axis=0), X)
     return X
 
 
@@ -53,7 +98,8 @@ def autodetermine_imu_names(sys) -> list[str]:
     return [name for name in sys.link_names if name[:3] == "imu"]
 
 
-def make_sys_noimu(sys, imu_link_names: Optional[list[str]] = None):
+def make_sys_noimu(sys: x_xy.System, imu_link_names: Optional[list[str]] = None):
+    "Returns, e.g., imu_attachment = {'imu1': 'seg1', 'imu2': 'seg3'}"
     if imu_link_names is None:
         imu_link_names = autodetermine_imu_names(sys)
     imu_attachment = {name: sys.parent_name(name) for name in imu_link_names}
@@ -62,12 +108,13 @@ def make_sys_noimu(sys, imu_link_names: Optional[list[str]] = None):
 
 
 def load_data(
-    sys: x_xy.base.System,
-    config: Optional[x_xy.algorithms.RCMG_Config] = None,
+    sys: x_xy.System,
+    config: Optional[x_xy.RCMG_Config] = None,
     exp_data: Optional[dict] = None,
     rename_exp_data: dict = {},
     use_rcmg: bool = False,
-    seed: int = 1,
+    seed_rcmg: int = 1,
+    seed_t1: int = 2,
     artificial_imus: bool = False,
     noisy_imus: bool = True,
     imu_delay=None,
@@ -76,53 +123,70 @@ def load_data(
     artificial_transform1: bool = False,
     artificial_random_transform1: bool = True,
     delete_global_translation_rotation: bool = False,
+    randomize_global_translation_rotation: bool = False,
+    cor: bool = False,
     scale_revolute_joint_angles: Optional[float] = None,
+    project_joint_angles: bool = False,
     imu_link_names: Optional[list[str]] = None,
     rigid_imus: bool = True,
     t1: float = 0,
     t2: float | None = None,
+    virtual_input_joint_axes: bool = False,
 ):
-    key = jax.random.PRNGKey(seed)
-
     sys_noimu, imu_attachment = make_sys_noimu(sys, imu_link_names)
+
+    if (
+        artificial_transform1
+        or use_rcmg
+        or delete_global_translation_rotation
+        or randomize_global_translation_rotation
+        or scale_revolute_joint_angles
+    ):
+        if not artificial_imus:
+            warnings.warn("`artificial_imus` was overwritten to `True`")
+            artificial_imus = True
 
     if use_rcmg:
         assert config is not None
-        key, consume = jax.random.split(key)
-        _, xs = x_xy.algorithms.build_generator(sys, config)(consume)
-        if not artificial_transform1:
-            warnings.warn("`artificial_transform1` was overwritten to `True`")
-            artificial_transform1 = True
+        _, xs = x_xy.build_generator(sys, config)(jax.random.PRNGKey(seed_rcmg))
     else:
         assert exp_data is not None
         exp_data = _postprocess_exp_data(exp_data, rename_exp_data, imu_attachment)
         xs = sim2real.xs_from_raw(sys, exp_data, t1, t2, eps_frame=None)
 
+    key = jax.random.PRNGKey(seed_t1)
     if artificial_transform1:
-        if not artificial_imus:
-            warnings.warn("`artificial_imus` was overwritten to `True`")
-            artificial_imus = True
         key, consume = jax.random.split(key)
 
         transform1_static = sys.links.transform1
         if artificial_random_transform1:
-            transform1_static = (
-                x_xy.algorithms.rcmg.augmentations.setup_fn_randomize_positions(
-                    consume, sys
-                ).links.transform1
-            )
+            transform1_static = x_xy.rcmg.augmentations.setup_fn_randomize_positions(
+                consume, sys
+            ).links.transform1
 
         # has no time-axis yet, so repeat in time
         transform1_static = transform1_static.batch().repeat(xs.shape())
 
         transform1_pos, transform2_rot = sim2real.unzip_xs(sys, xs)
+        # TODO does not support `cor` function argument here; it should also pick
+        # `transform1_pos` if connected to `floating-base`
+
         # pick `transform1_pos` only if connected to worldbody
         cond = jnp.array(sys.link_parents) == -1
         transform1 = _pick_from_transforms(cond, transform1_pos, transform1_static)
         xs = sim2real.zip_xs(sys, transform1, transform2_rot)
 
+    if project_joint_angles:
+        transform1_pos, transform2_rot = sim2real.unzip_xs(sys, xs)
+        transform2_rot = sim2real.project_xs(sys, transform2_rot)
+        xs = sim2real.zip_xs(sys, transform1_pos, transform2_rot)
+
     if delete_global_translation_rotation:
         xs = sim2real.delete_to_world_pos_rot(sys, xs)
+
+    if randomize_global_translation_rotation:
+        key, consume = jax.random.split(key)
+        xs = sim2real.randomize_to_world_pos_rot(consume, sys, xs, config, cor)
 
     if scale_revolute_joint_angles is not None:
         tranform1, transform2 = sim2real.unzip_xs(sys, xs)
@@ -130,13 +194,13 @@ def load_data(
         transform2 = sim2real.scale_xs(sys, transform2, scale_revolute_joint_angles)
         xs = sim2real.zip_xs(sys, tranform1, transform2)
 
+    N = xs.shape()
     if artificial_imus:
         key, consume = jax.random.split(key)
         X = imu_data(
             consume,
             xs,
             sys,
-            imu_attachment,
             noisy=noisy_imus,
             delay=imu_delay,
             smoothen_degree=imu_smoothen_degree,
@@ -144,15 +208,35 @@ def load_data(
         )
     else:
         rigid_flex = "imu_rigid" if rigid_imus else "imu_flex"
-        X = {
-            attachment: {
-                key: exp_data[attachment][rigid_flex][key] for key in ["acc", "gyr"]
-            }
-            for attachment in imu_attachment.values()
-        }
+        X = {}
+        for segment in sys_noimu.link_names:
+            if segment in imu_attachment.values():
+                X[segment] = {
+                    key: exp_data[segment][rigid_flex][key] for key in ["acc", "gyr"]
+                }
+            else:
+                X[segment] = {
+                    "acc": jnp.zeros(
+                        (
+                            N,
+                            3,
+                        )
+                    ),
+                    "gyr": jnp.zeros(
+                        (
+                            N,
+                            3,
+                        )
+                    ),
+                }
         X = sim2real._crop_sequence(X, sys.dt, t1, t2)
 
-    y = x_xy.algorithms.rel_pose(sys_noimu, xs, sys)
+    if virtual_input_joint_axes:
+        X_joint_axes = joint_axes_data(sys_noimu, N)
+        for segment in X:
+            X[segment].update(X_joint_axes[segment])
+
+    y = x_xy.rel_pose(sys_noimu, xs, sys)
 
     return X, y, xs
 

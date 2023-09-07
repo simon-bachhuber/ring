@@ -24,7 +24,7 @@ class DoubleMeshVisual(CompoundVisual):
             color = _default_color
 
         if color is not None:
-            self._faces = Mesh(verts, faces, color=color, shading="smooth")
+            self._faces = Mesh(verts, faces, color=color, shading=None)
             self.light_dir = np.array([0, -1, 0])
         else:
             self._faces = Mesh()

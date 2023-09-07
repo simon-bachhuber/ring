@@ -3,7 +3,15 @@ from typing import Optional, Tuple
 import jax
 import jax.numpy as jnp
 
-from x_xy import algebra, algorithms, base, maths, scan
+from x_xy import algebra
+from x_xy import base
+from x_xy import maths
+from x_xy import scan
+
+from .jcalc import _joint_types
+from .jcalc import jcalc_motion
+from .jcalc import jcalc_tau
+from .kinematics import forward_kinematics
 
 
 def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Array:
@@ -15,9 +23,7 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
     vel, acc, fs = {}, {}, {}
 
     def forward_scan(_, __, link_idx, parent_idx, link_type, qd, qdd, p_to_l_trafo, it):
-        vJ, aJ = algorithms.jcalc_motion(link_type, qd), algorithms.jcalc_motion(
-            link_type, qdd
-        )
+        vJ, aJ = jcalc_motion(link_type, qd), jcalc_motion(link_type, qdd)
 
         t = lambda m: algebra.transform_motion(p_to_l_trafo, m)
 
@@ -50,7 +56,7 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
     taus = []
 
     def backwards_scan(_, __, link_idx, parent_idx, link_type, l_to_p_trafo):
-        tau = algorithms.jcalc_tau(link_type, fs[link_idx])
+        tau = jcalc_tau(link_type, fs[link_idx])
         taus.insert(0, tau)
         if parent_idx != -1:
             fs[parent_idx] = fs[parent_idx] + algebra.transform_force(
@@ -107,7 +113,7 @@ def compute_mass_matrix(sys: base.System) -> jax.Array:
     # Now we go into matrix mode
 
     def _jcalc_motion_matrix(i: int):
-        list_motion = algorithms.jcalc._joint_types[sys.link_types[i]].motion
+        list_motion = _joint_types[sys.link_types[i]].motion
         if len(list_motion) == 0:
             # joint is frozen
             return None
@@ -239,112 +245,6 @@ def _strapdown_integration(
     return q / jnp.linalg.norm(q)
 
 
-def _rk4(rhs, x, dt):
-    h = dt
-    k1 = rhs(x)
-    k2 = rhs(x + k1 * (h / 2))
-    k3 = rhs(x + k2 * (h / 2))
-    k4 = rhs(x + k3 * h)
-    dx = (k1 + k2 * 2 + k3 * 2 + k4) * (1 / 6)
-    return x + dx * dt
-
-
-def _runge_kutta_4_integration(
-    sys: base.System, state: base.State, taus: jax.Array
-) -> base.State:
-    def integrate_q_qd(q, qd, qdd, dt):
-        q_next = []
-
-        def q_integrate(_, __, q, qd, typ):
-            if typ == "free":
-                quat_next = _strapdown_integration(q[:4], qd[:3], dt)
-                pos_next = q[4:] + qd[4:] * dt
-                q_next_i = jnp.concatenate((quat_next, pos_next))
-            else:
-                q_next_i = q + dt * qd
-            q_next.append(q_next_i)
-
-        scan.tree(sys, q_integrate, "qdl", q, qd, sys.link_types)
-        q_next = jnp.concatenate(q_next)
-        return q_next, qd + qdd * dt
-
-    for_dyn = lambda sys, q, qd: forward_dynamics(sys, q, qd, taus, state.mass_mat_inv)
-
-    # k1
-    qd_k1 = state.qd
-    qdd_k1, mass_mat_inv_next = for_dyn(sys, state.q, state.qd)
-
-    # k2
-    q_k2, qd_k2 = integrate_q_qd(state.q, qd_k1, qdd_k1, sys.dt * 0.5)
-    _, sys = algorithms.kinematics.forward_kinematics_transforms(sys, q_k2)
-    qdd_k2, _ = for_dyn(sys, q_k2, qd_k2)
-
-    # k3
-    q_k3, qd_k3 = integrate_q_qd(state.q, qd_k2, qdd_k2, sys.dt * 0.5)
-    _, sys = algorithms.kinematics.forward_kinematics_transforms(sys, q_k3)
-    qdd_k3, _ = for_dyn(sys, q_k3, qd_k3)
-
-    # k4
-    q_k4, qd_k4 = integrate_q_qd(state.q, qd_k3, qdd_k3, sys.dt)
-    _, sys = algorithms.kinematics.forward_kinematics_transforms(sys, q_k4)
-    qdd_k4, _ = for_dyn(sys, q_k4, qd_k4)
-
-    # average over k`s
-    reduce = lambda k1, k2, k3, k4: (k1 + 2 * k2 + 2 * k3 + k4) * (1 / 6)
-    mqd, mqdd = reduce(qd_k1, qd_k2, qd_k3, qd_k4), reduce(
-        qdd_k1, qdd_k2, qdd_k3, qdd_k4
-    )
-
-    # forward integrate with averaged delta
-    q, qd = integrate_q_qd(state.q, mqd, mqdd, sys.dt)
-
-    # update mass matrix inverse
-    state = state.replace(q=q, qd=qd, mass_mat_inv=mass_mat_inv_next)
-    return state
-
-
-def _runge_kutta_2_integration(
-    sys: base.System, state: base.State, taus: jax.Array
-) -> base.State:
-    def integrate_q_qd(q, qd, qdd, dt):
-        q_next = []
-
-        def q_integrate(_, __, q, qd, typ):
-            if typ == "free":
-                quat_next = _strapdown_integration(q[:4], qd[:3], dt)
-                pos_next = q[4:] + qd[4:] * dt
-                q_next_i = jnp.concatenate((quat_next, pos_next))
-            else:
-                q_next_i = q + dt * qd
-            q_next.append(q_next_i)
-
-        scan.tree(sys, q_integrate, "qdl", q, qd, sys.link_types)
-        q_next = jnp.concatenate(q_next)
-        return q_next, qd + qdd * dt
-
-    for_dyn = lambda sys, q, qd: forward_dynamics(sys, q, qd, taus, state.mass_mat_inv)
-
-    # k1
-    qd_k1 = state.qd
-    qdd_k1, mass_mat_inv_next = for_dyn(sys, state.q, state.qd)
-
-    # k2
-    q_k2, qd_k2 = integrate_q_qd(state.q, qd_k1, qdd_k1, sys.dt)
-    _, sys = algorithms.kinematics.forward_kinematics_transforms(sys, q_k2)
-    qdd_k2, _ = for_dyn(sys, q_k2, qd_k2)
-
-    # average over k`s
-    reduce = lambda k1, k2: (k1 + k2) * (1 / 2)
-    mqd, mqdd = reduce(qd_k1, qd_k2), reduce(qdd_k1, qdd_k2)
-
-    # forward integrate with averaged delta
-    q, qd = integrate_q_qd(state.q, mqd, mqdd, sys.dt)
-
-    # update mass matrix inverse
-    state = state.replace(q=q, qd=qd, mass_mat_inv=mass_mat_inv_next)
-    return state
-
-
 def _semi_implicit_euler_integration(
     sys: base.System, state: base.State, taus: jax.Array
 ) -> base.State:
@@ -397,7 +297,7 @@ def step(
     assert sys.qd_size() == state.qd.size == taus.size
     assert (
         sys.integration_method.lower() == "semi_implicit_euler"
-    ), "Currently Runge-Kutta methods are broken."
+    ), "Currently, nothing else then `semi_implicit_euler` implemented."
 
     sys = sys.replace(dt=sys.dt / n_substeps)
 
@@ -405,7 +305,7 @@ def step(
         # update kinematics before stepping; this means that the `x` in `state`
         # will lag one step behind but otherwise we would have to return
         # the system object which would be awkward
-        sys, state = algorithms.kinematics.forward_kinematics(sys, state)
+        sys, state = forward_kinematics(sys, state)
         state = _integration_methods[sys.integration_method.lower()](sys, state, taus)
 
     return state

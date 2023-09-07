@@ -3,13 +3,12 @@ import numpy as np
 import pytest
 
 import x_xy
-from x_xy.subpkgs.sys_composer import (
-    delete_subsystem,
-    identify_system,
-    inject_system,
-    morph_system,
-)
-from x_xy.utils import sys_compare, tree_equal
+from x_xy.subpkgs.sys_composer import delete_subsystem
+from x_xy.subpkgs.sys_composer import identify_system
+from x_xy.subpkgs.sys_composer import inject_system
+from x_xy.subpkgs.sys_composer import morph_system
+from x_xy.utils import sys_compare
+from x_xy.utils import tree_equal
 
 
 def sim(sys):
@@ -57,6 +56,9 @@ def test_delete_subsystem():
     assert tree_equal(
         delete_subsystem(sys3, "1upper"), inject_system(sys2, sys2, prefix="2")
     )
+
+    # test jit
+    jax.jit(delete_subsystem, static_argnums=1)(inject_system(sys1, sys2), "upper")
 
 
 def test_tree_equal():

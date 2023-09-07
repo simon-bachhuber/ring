@@ -3,7 +3,7 @@ from typing import Optional
 from tree_utils import tree_batch
 
 from x_xy import base
-from x_xy.io import parse_system
+from x_xy import parse_system
 
 
 # TODO

@@ -1,10 +1,14 @@
 import jax
 import jax.numpy as jnp
 
-from x_xy import base, maths
-from x_xy.algorithms import JointModel, register_new_joint_type
-from x_xy.algorithms.jcalc import _draw_rxyz, _joint_types
-from x_xy.io import load_sys_from_str
+from x_xy import base
+from x_xy import maths
+
+from ..io import load_sys_from_str
+from .jcalc import _draw_rxyz
+from .jcalc import _joint_types
+from .jcalc import JointModel
+from .jcalc import register_new_joint_type
 
 NEW_WORLD = "floating_base"
 
@@ -34,6 +38,8 @@ def replace_free_with_cor(
 ) -> base.System:
     sys = _freeze_free_joints(sys)
     wrapper_sys = load_sys_from_str(_wrapper_sys_xml(show_cs_floating_base))
+    wrapper_sys = wrapper_sys.change_model_name(sys.model_name)
+    wrapper_sys = wrapper_sys.replace(gravity=sys.gravity, dt=sys.dt)
     # TODO
     from x_xy.subpkgs import sys_composer
 

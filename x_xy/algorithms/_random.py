@@ -1,13 +1,14 @@
-import warnings
 from typing import Callable, Optional
+import warnings
 
 import jax
-import jax.numpy as jnp
 from jax import random
+import jax.numpy as jnp
 
 from x_xy import maths
 
-from ..jcalc import Float, TimeDependentFloat
+Float = jax.Array
+TimeDependentFloat = Callable[[Float], Float]
 
 
 def _to_float(scalar: Float | TimeDependentFloat, t: Float) -> Float:
@@ -257,6 +258,20 @@ def _resolve_range_of_motion(
                 probs = jnp.array([0.5, 0.5])
             elif range_of_motion_method == "uniform":
                 p = 0.5 * (1 - prev_phi / jnp.pi)
+                probs = jnp.array([p, (1 - p)])
+            elif range_of_motion_method[:7] == "sigmoid":
+                scale = 1.5
+                provided_params = range_of_motion_method.split("-")
+                if len(provided_params) == 2:
+                    scale = float(provided_params[-1])
+                hardcut = jnp.pi - 0.01
+                p = jnp.where(
+                    prev_phi > hardcut,
+                    0.0,
+                    jnp.where(
+                        prev_phi < -hardcut, 1.0, jax.nn.sigmoid(-scale * prev_phi)
+                    ),
+                )
                 probs = jnp.array([p, (1 - p)])
             else:
                 raise NotImplementedError
