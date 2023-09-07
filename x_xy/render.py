@@ -2,7 +2,7 @@ import time
 from abc import ABC, abstractmethod, abstractstaticmethod
 from functools import partial
 from pathlib import Path
-from typing import Optional, TypeVar, Union
+from typing import Optional, Sequence, TypeVar, Union
 
 import imageio
 import jax
@@ -13,7 +13,6 @@ import tree_utils
 from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
-from vispy.scene import visuals as vispy_visuals
 
 import x_xy
 from x_xy import algebra, base, maths, visuals
@@ -256,36 +255,35 @@ class VispyScene(Scene):
             box.dim_x,
             box.dim_z,
             box.dim_y,
-            parent=self.view.scene,
             color=box.color,
             edge_color=box.edge_color,
+            parent=self.view.scene,
         )
 
     def _add_sphere(self, sphere: Sphere) -> Visual:
-        return vispy_visuals.Sphere(
+        return visuals.Sphere(
             sphere.radius,
-            parent=self.view.scene,
             color=sphere.color,
             edge_color=sphere.edge_color,
-            shading="smooth",
+            parent=self.view.scene,
         )
 
     def _add_cylinder(self, cyl: Cylinder) -> Visual:
         return visuals.Cylinder(
             cyl.radius,
             cyl.length,
-            parent=self.view.scene,
             color=cyl.color,
             edge_color=cyl.edge_color,
+            parent=self.view.scene,
         )
 
     def _add_capsule(self, cap: Capsule) -> Visual:
         return visuals.Capsule(
             cap.radius,
             cap.length,
-            parent=self.view.scene,
             color=cap.color,
             edge_color=cap.edge_color,
+            parent=self.view.scene,
         )
 
     def _add_xyz(self) -> Visual:
@@ -328,45 +326,129 @@ class VispyScene(Scene):
         visual.transform.matrix = transform
 
 
-def animate(
+def _animate_image(
     path: Union[str, Path],
-    sys: base.System,
     x: base.Transform,
-    fps: int = 50,
-    fmt: str = "mp4",
+    scene: Scene,
+    *,
+    fmt: Optional[str] = None,
     verbose: bool = True,
-    show_pbar: bool = True,
-    **kwargs,
 ):
-    """Make animation from system and trajectory of maximal coordinates. `x`
-    are stacked in time along 0th-axis.
-    """
-    path = Path(path)
-    file_fmt = _infer_extension_from_path(path)
+    scene.update(x)
+    frame = scene.render()
 
-    if file_fmt is not None:
-        assert (
-            file_fmt == fmt.lower()
-        ), f"""The chosen filename `{path.name}` and required fmt `{fmt}`
-        are inconsistent."""
+    # remove alpha channel
+    if fmt == "jpg" and frame.shape[-1] == 4:
+        alpha = frame[..., 3]
 
-    if file_fmt is None:
-        path = path.with_suffix("." + fmt)
+        # assumes frame is u8
+        if np.any(alpha != 255):
+            raise Exception("jpg does not support alpha")
 
-    scene = _init_vispy_scene(sys, **kwargs)
-    _data_checks(sys.num_links(), x.pos, x.rot)
+        frame = frame[..., :3]
 
-    N = x.pos.shape[0]
-    _, step = _parse_timestep(sys.dt, fps, N)
+    if verbose:
+        print(f"Converting frames to {path} (this might take a while..)")
 
+    imageio.imsave(path, frame, format=fmt)
+
+
+def _animate_video(
+    path: Union[str, Path],
+    xs: list[base.Transform],
+    scene: Scene,
+    fps: int,
+    N: int,
+    step: int,
+    *,
+    show_pbar=True,
+    fmt: Optional[str] = None,
+    verbose: bool = True,
+):
     frames = []
     for t in tqdm.tqdm(range(0, N, step), "Rendering frames..", disable=not show_pbar):
-        scene.update(x[t])
+        scene.update(xs[t])
         frames.append(scene.render())
 
     if verbose:
         print(f"DONE. Converting frames to {path} (this might take a while..)")
+
     imageio.mimsave(path, frames, format=fmt, fps=fps)
+
+
+def animate(
+    path: Union[str, Path],
+    sys: base.System,
+    xs: base.Transform | Sequence[base.Transform],
+    fps: int = 50,
+    fmt: Optional[str] = None,
+    verbose: bool = True,
+    show_pbar: bool = True,
+    **kwargs,
+):
+    """
+    Make animation from system and trajectory of maximal coordinates. `xs` is either
+    a single base.Transform object for images or a Sequence of base.Transform objects
+    for a video format. The desired output format can be either inferred implicitely
+    from the extension of `path` or set explicitely using the `fmt` parameter. Mismatch
+    between the two is an error.
+    """
+    path = Path(path)
+    file_fmt = _infer_extension_from_path(path)
+
+    if file_fmt is not None and fmt is not None:
+        assert (
+            file_fmt == fmt.lower()
+        ), f"""The chosen filename `{path.name}` and required fmt `{fmt}`
+        are inconsistent."""
+    elif file_fmt is None and fmt is not None:
+        path = path.with_suffix("." + fmt)
+    elif fmt is None and file_fmt is not None:
+        fmt = file_fmt
+    else:
+        raise ValueError("neither fmt nor path extension given, can't infer format")
+
+    scene = _init_vispy_scene(sys, **kwargs)
+
+    n_links = sys.num_links()
+
+    def data_check(x):
+        assert x.pos.ndim == x.rot.ndim == 2, "Expected shape = (n_links, 3/4)"
+        assert (
+            x.pos.shape[0] == x.rot.shape[0] == n_links
+        ), "Number of links does not match"
+
+    if fmt in ["jpg", "png"]:
+        # image fmts
+
+        if isinstance(xs, base.Transform):
+            x = xs
+        else:
+            x = xs[0]
+
+        data_check(x)
+
+        _animate_image(path, x, scene, fmt=fmt, verbose=verbose)
+
+    elif fmt in ["mp4", "gif"]:
+        # video fmts
+
+        if isinstance(xs, base.Transform):
+            xs = [xs]
+        else:
+            xs = list(xs)
+
+        for x in xs:
+            data_check(x)
+
+        N = len(xs)
+        _, step = _parse_timestep(sys.dt, fps, N)
+
+        _animate_video(
+            path, xs, scene, fps, N, step, show_pbar=show_pbar, fmt=fmt, verbose=verbose
+        )
+    else:
+        raise ValueError(f"fmt {fmt} is not implement")
 
 
 class Window:

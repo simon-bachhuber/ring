@@ -1,9 +1,16 @@
 import numpy as np
 from vispy.geometry.meshdata import MeshData
 from vispy.scene.visuals import Mesh, create_visual_node
-from vispy.visuals import CompoundVisual, TubeVisual
+from vispy.visuals import CompoundVisual
+from vispy.visuals import SphereVisual as _SphereVisual
+from vispy.visuals import TubeVisual
 
 from x_xy.base import Color
+
+# vertex density per unit length
+_vectices_per_unit_length = 10
+
+_default_color = (1, 0.8, 0.7, 1)
 
 
 class DoubleMeshVisual(CompoundVisual):
@@ -13,8 +20,8 @@ class DoubleMeshVisual(CompoundVisual):
     def __init__(
         self, verts, edges, faces, *, color: Color = None, edge_color: Color = None
     ):
-        # if color is None:
-        #     color = (0.5, 0.5, 1, 1)
+        if color is None and edge_color is None:
+            color = _default_color
 
         if color is not None:
             self._faces = Mesh(verts, faces, color=color, shading=None)
@@ -31,6 +38,30 @@ class DoubleMeshVisual(CompoundVisual):
         self._faces.set_gl_state(
             polygon_offset_fill=True, polygon_offset=(1, 1), depth_test=True
         )
+
+
+class SphereVisual(_SphereVisual):
+    def __init__(self, radius: float, color: Color = None, edge_color: Color = None):
+        if color is None and edge_color is None:
+            color = _default_color
+
+        radius = float(radius)
+
+        num_rows = max(int(np.pi * radius * _vectices_per_unit_length), 10)
+        num_cols = max(int(2 * np.pi * radius * _vectices_per_unit_length), 20)
+
+        super().__init__(
+            radius,
+            color=color,
+            edge_color=edge_color,
+            rows=num_rows,
+            cols=num_cols,
+            method="latitude",
+            shading="smooth",
+        )
+
+
+Sphere = create_visual_node(SphereVisual)
 
 
 def box_mesh(
@@ -128,13 +159,17 @@ class CylinderVisual(TubeVisual):
         color: Color = None,
         edge_color: Color = None
     ):
+        if color is None and edge_color is None:
+            color = _default_color
+
         radius = float(radius)
         length = float(length)
 
-        num_points = min(100 * int(length), 100)
+        num_length_points = 10 * max(int(length * _vectices_per_unit_length), 10)
+        num_radial_points = max(int(2 * np.pi * radius * _vectices_per_unit_length), 20)
 
-        points = np.zeros((num_points, 3))
-        points[:, 0] = np.linspace(-length / 2, length / 2, num_points)
+        points = np.zeros((num_length_points, 3))
+        points[:, 0] = np.linspace(-length / 2, length / 2, num_length_points)
 
         self.radius = radius
         self.length = length
@@ -142,6 +177,7 @@ class CylinderVisual(TubeVisual):
         super().__init__(
             points,
             radius,
+            tube_points=num_radial_points,
             closed=True,
             color=color,
             shading="smooth",
@@ -155,60 +191,69 @@ def capsule_mesh(radius: float, length: float, offset: bool = True) -> MeshData:
     if length < 2 * radius:
         raise ValueError("length must be at least 2 * radius")
 
-    sphere_rows = max(8 * int(radius), 5)
+    # number of cap vertices in x direction
+    num_sphere_rows = max(int(radius * _vectices_per_unit_length), 10)
 
-    cols = 8
-
+    # length without caps
     cyl_length = length - 2 * radius
-    cyl_rows = max(4 * int(cyl_length), 3)
+    # number of cylinder vertices in x direction
+    num_cyl_rows = max(int(cyl_length * _vectices_per_unit_length), 10)
 
-    total_rows = 2 * sphere_rows + cyl_rows
+    num_total_rows = 2 * num_sphere_rows + num_cyl_rows
 
-    verts = np.empty((total_rows, cols, 3), dtype=np.float32)
+    # number of radial vertices
+    num_cols = max(int(2 * np.pi * radius * _vectices_per_unit_length), 20)
 
-    # compute vertices
-    phi = np.linspace(0.0, np.pi, 2 * sphere_rows)
+    verts = np.empty((num_total_rows, num_cols, 3), dtype=np.float32)
 
-    verts[:sphere_rows, :, 0] = (
-        radius * np.cos(phi[:sphere_rows, None]) + cyl_length / 2
-    )
-    verts[sphere_rows:-sphere_rows, :, 0] = np.linspace(
-        -cyl_length / 2, cyl_length / 2, cyl_rows
+    # polar angle
+    theta_top = np.linspace(0.0, np.pi / 2, num_sphere_rows)
+    theta_bottom = np.linspace(np.pi / 2, np.pi, num_sphere_rows)
+
+    # fill in x coordinate
+    verts[:num_sphere_rows, :, 0] = radius * np.cos(theta_top[:, None]) + cyl_length / 2
+
+    verts[num_sphere_rows:-num_sphere_rows, :, 0] = np.linspace(
+        -cyl_length / 2, cyl_length / 2, num_cyl_rows
     )[::-1, None]
-    verts[-sphere_rows:, :, 0] = (
-        radius * np.cos(phi[-sphere_rows:, None]) - cyl_length / 2
+
+    verts[-num_sphere_rows:, :, 0] = (
+        radius * np.cos(theta_bottom[:, None]) - cyl_length / 2
     )
 
-    th = (np.linspace(0, 2 * np.pi, cols))[None, :]
+    # azimuth angle
+    phi = (np.linspace(0, 2 * np.pi, num_cols))[None, :]
 
     if offset:
         # rotate each row by 1/2 column
-        th = th + (np.pi / cols) * np.arange(total_rows)[:, None]
+        phi = phi + (np.pi / num_cols) * np.arange(num_total_rows)[:, None]
 
-    verts[..., 1] = radius * np.cos(th)
-    verts[..., 2] = radius * np.sin(th)
+    # y and z coordinates
+    verts[..., 1] = radius * np.cos(phi)
+    verts[..., 2] = radius * np.sin(phi)
 
-    verts[:sphere_rows, :, 1:3] *= np.sin(phi[:sphere_rows, None, None])
-    verts[-sphere_rows:, :, 1:3] *= np.sin(phi[-sphere_rows:, None, None])
+    # for caps: bend inwards to close
+    verts[:num_sphere_rows, :, 1:3] *= np.sin(theta_top[:, None, None])
+    verts[-num_sphere_rows:, :, 1:3] *= np.sin(theta_bottom[:, None, None])
 
     verts = verts.reshape(-1, 3)
 
     # compute faces
-    faces = np.empty(((total_rows - 1) * cols * 2, 3), dtype=np.uint32)
+    faces = np.empty(((num_total_rows - 1) * num_cols * 2, 3), dtype=np.uint32)
 
     rowtemplate1 = (
-        (np.arange(cols).reshape(cols, 1) + np.array([[0, 1, 0]])) % cols
-    ) + np.array([[cols, 0, 0]])
+        (np.arange(num_cols).reshape(num_cols, 1) + np.array([[0, 1, 0]])) % num_cols
+    ) + np.array([[num_cols, 0, 0]])
 
     rowtemplate2 = (
-        (np.arange(cols).reshape(cols, 1) + np.array([[1, 1, 0]])) % cols
-    ) + np.array([[cols, 0, cols]])
+        (np.arange(num_cols).reshape(num_cols, 1) + np.array([[1, 1, 0]])) % num_cols
+    ) + np.array([[num_cols, 0, num_cols]])
 
-    for row in range(total_rows - 1):
-        start = row * cols * 2
+    for row in range(num_total_rows - 1):
+        start = row * num_cols * 2
 
-        faces[start : start + cols] = rowtemplate1 + row * cols
-        faces[start + cols : start + (cols * 2)] = rowtemplate2 + row * cols
+        faces[start : start + num_cols] = rowtemplate1 + row * num_cols
+        faces[start + num_cols : start + (num_cols * 2)] = rowtemplate2 + row * num_cols
 
     mesh = MeshData(vertices=verts, faces=faces)
 
