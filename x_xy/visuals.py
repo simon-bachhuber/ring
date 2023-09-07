@@ -168,9 +168,6 @@ class CylinderVisual(TubeVisual):
         num_length_points = 10 * max(int(length * _vectices_per_unit_length), 10)
         num_radial_points = max(int(2 * np.pi * radius * _vectices_per_unit_length), 20)
 
-        print(num_length_points)
-        print(num_radial_points)
-
         points = np.zeros((num_length_points, 3))
         points[:, 0] = np.linspace(-length / 2, length / 2, num_length_points)
 

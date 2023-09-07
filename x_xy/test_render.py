@@ -10,7 +10,11 @@ from x_xy.base import State
 from x_xy.io.xml.from_xml import load_sys_from_str
 
 
-def test_animate(pytest=True):
+def is_pytest():
+    return "PYTEST_CURRENT_TEST" in os.environ
+
+
+def test_animate():
     dt = 1e-2
     filename = "animation"
     xml = "test_double_pendulum"
@@ -22,9 +26,10 @@ def test_animate(pytest=True):
 
     state = x_xy.base.State.create(sys, q, qd)
 
-    T = 10
-    if pytest:
+    if is_pytest():
         T = 1
+    else:
+        T = 10
 
     step_fn = jax.jit(dynamics.step)
 
@@ -33,15 +38,15 @@ def test_animate(pytest=True):
         state = step_fn(sys, state, jnp.zeros_like(state.qd))
         xs.append(state.x)
 
-    xs = xs[0].batch(*xs[1:])
+    fmts = ["gif"]
 
-    fmts = ["mp4"]
-    if pytest:
+    if is_pytest():
         fmts += ["gif"]
 
     for fmt in fmts:
         render.animate(filename, sys, xs, fmt=fmt)
-        if pytest:
+
+        if is_pytest():
             os.system(f"rm animation.{fmt}")
 
 
@@ -58,7 +63,7 @@ def test_shapes():
         <body name="dummy" pos="0 0 0" quat="1 0 0 0" joint="ry" />
     </worldbody>
 </x_xy>
-    """
+    """  # noqa: E501
 
     sys = load_sys_from_str(sys_str)
 
@@ -68,10 +73,10 @@ def test_shapes():
 
     state = step_fn(sys, state, jnp.zeros_like(state.qd))
 
-    x = state.x.batch()
+    # x = state.x.batch()
 
-    render.animate("figures/example.png", sys, x, fmt="png")
+    render.animate("figures/example.png", sys, state.x, fmt="png")
 
 
 if __name__ == "__main__":
-    test_animate(pytest=False)
+    test_animate()

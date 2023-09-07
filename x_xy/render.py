@@ -10,7 +10,6 @@ import jax.numpy as jnp
 import numpy as np
 import tqdm
 import tree_utils
-from scipy.__config__ import show
 from tree_utils import PyTree, tree_batch
 from vispy import app, scene
 from vispy.scene import MatrixTransform
@@ -427,7 +426,7 @@ def animate(
 
         _animate_image(path, x, scene, fmt=fmt, verbose=verbose)
 
-    elif fmt in ["mp4"]:
+    elif fmt in ["mp4", "gif"]:
         # video fmts
 
         if isinstance(xs, base.Transform):
