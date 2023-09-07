@@ -1,12 +1,14 @@
 from collections import defaultdict
 
+from flax import struct
 import jax
 import jax.numpy as jnp
 import numpy as np
 import tree_utils
-from flax import struct
 
-from x_xy import base, scan
+import x_xy
+
+from . import base
 
 
 def load_ant():
@@ -39,7 +41,7 @@ def test_tree():
             qds.append(qd)
             return sum_of_link_idxs[link]
 
-        x = scan.tree(
+        x = x_xy.scan_sys(
             sys,
             f,
             "llqd",
@@ -71,7 +73,7 @@ def test_tree():
             qds.append(qd)
             return sum_of_link_idxs[link]
 
-        x = scan.tree(
+        x = x_xy.scan_sys(
             sys,
             f,
             "llqd",
@@ -132,14 +134,14 @@ def SKIP_test_scan_adv():
         link = jnp.array(link)
         return (link, link + parent)
 
-    ys = scan.scan_links(
+    ys = x_xy.scan.scan_links(
         sys, f, (jnp.array(0), jnp.array(0)), list(range(sys.N)), reverse=True
     )
 
     link_indices = jnp.arange(sys.N)
     tree_utils.tree_close(ys, (link_indices, jnp.array([36, 3, 2, 7, 4, 11, 6, 15, 8])))
 
-    ys = scan.scan_links(
+    ys = x_xy.scan.scan_links(
         sys, f, (jnp.array(0), jnp.array(0)), list(range(sys.N)), reverse=False
     )
 
@@ -155,7 +157,7 @@ def SKIP_test_scan_adv():
 
     @jax.jit
     def jit_scan(sys):
-        ys = scan.scan_links(
+        ys = x_xy.scan.scan_links(
             sys,
             f,
             (jnp.array(0), jnp.array([0])),

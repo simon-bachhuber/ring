@@ -422,14 +422,14 @@ class System(_Base):
 
     def idx_map(self, type: str) -> dict:
         "type: is either `l` or `q` or `d`"
-        from x_xy.scan import tree
+        from x_xy import scan_sys
 
         dict_int_slices = {}
 
         def f(_, idx_map, name: str, link_idx: int):
             dict_int_slices[name] = idx_map[type](link_idx)
 
-        tree(self, f, "ll", self.link_names, list(range(self.num_links())))
+        scan_sys(self, f, "ll", self.link_names, list(range(self.num_links())))
 
         return dict_int_slices
 
@@ -463,15 +463,39 @@ class System(_Base):
 
 @struct.dataclass
 class State(_Base):
+    """The static and dynamic state of a system in minimal and maximal coordinates.
+    Use `.create()` to create this object.
+
+    Args:
+        q (jax.Array): System state in minimal coordinates (equals `sys.q_size()`)
+        qd (jax.Array): System velocity in minimal coordinates (equals `sys.qd_size()`)
+        x: (Transform): Maximal coordinates of all links. From epsilon-to-link.
+        mass_mat_inv (jax.Array): Inverse of the mass matrix. Internal usage.
+    """
+
     q: jax.Array
     qd: jax.Array
     x: Transform
     mass_mat_inv: jax.Array
 
     @classmethod
-    def create(cls, sys: System, q=None, qd=None):
+    def create(
+        cls, sys: System, q: Optional[jax.Array] = None, qd: Optional[jax.Array] = None
+    ):
+        """Create state of system.
+
+        Args:
+            sys (System): The system for which to create a state.
+            q (jax.Array, optional): The joint values of the system. Defaults to None.
+            Which then defaults to zeros.
+            qd (jax.Array, optional): The joint velocities of the system.
+            Defaults to None. Which then defaults to zeros.
+
+        Returns:
+            (State): Create State object.
+        """
         # to avoid circular imports
-        from x_xy import scan
+        from x_xy import scan_sys
 
         if q is None:
             q = jnp.zeros((sys.q_size(),))
@@ -484,7 +508,7 @@ class State(_Base):
                     q_idxs_link = idx_map["q"](link_idx)
                     q = q.at[q_idxs_link.start].set(1.0)
 
-            scan.tree(
+            scan_sys(
                 sys,
                 replace_by_unit_quat,
                 "ll",

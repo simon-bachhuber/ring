@@ -4,8 +4,14 @@ import jax.random as jrand
 import numpy as np
 import tree_utils as tu
 
-from x_xy import algebra, base, maths
-from x_xy.base import Force, Inertia, Motion, Transform
+from x_xy import algebra
+from x_xy import maths
+from x_xy.base import Force
+from x_xy.base import Inertia
+from x_xy.base import Motion
+from x_xy.base import Transform
+
+from .. import base
 
 """Tests that compare directly to matrix implementations of the same operations."""
 

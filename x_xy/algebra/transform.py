@@ -1,6 +1,7 @@
 import jax.numpy as jnp
 
-from x_xy import base, maths
+from .. import base
+from .. import maths
 
 
 def transform_mul(t2: base.Transform, t1: base.Transform) -> base.Transform:

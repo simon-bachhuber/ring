@@ -2,10 +2,10 @@ from xml.etree import ElementTree
 
 import jax.numpy as jnp
 
-from x_xy import base
 from x_xy.utils import parse_path
 
 from . import abstract
+from ... import base
 from ..parse import parse_system
 
 
@@ -113,7 +113,16 @@ DEFAULT_GRAVITY = jnp.array([0, 0, 9.81])
 DEFAULT_DT = jnp.array(0.01)
 
 
-def load_sys_from_str(xml_str: str, prefix: str = ""):
+def load_sys_from_str(xml_str: str, prefix: str = "") -> base.System:
+    """Load system from string input.
+
+    Args:
+        xml_str (str): XML Presentation of the system.
+        prefix (str, optional): Prefix to add to all link names. Defaults to "".
+
+    Returns:
+        base.System: Loaded system.
+    """
     xml_tree = ElementTree.fromstring(xml_str)
     worldbody = _initial_setup(xml_tree)
 

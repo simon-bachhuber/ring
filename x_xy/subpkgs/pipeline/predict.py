@@ -6,10 +6,11 @@ import numpy as np
 import tree_utils
 
 import x_xy
-from x_xy import base
 from x_xy import maths
 from x_xy.subpkgs import sim2real
 from x_xy.subpkgs import sys_composer
+
+from ... import base
 
 X = Y = PARAMS = STATE = dict
 

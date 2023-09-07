@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 
-from x_xy import base
+from .. import base
 
 
 def inertia_mul_motion(it: base.Inertia, m: base.Motion) -> base.Force:

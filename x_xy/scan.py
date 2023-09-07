@@ -7,7 +7,9 @@ import tree_utils
 from . import base
 
 
-def tree(sys: base.System, f: Callable, in_types: str, *args, reverse: bool = False):
+def scan_sys(
+    sys: base.System, f: Callable, in_types: str, *args, reverse: bool = False
+):
     """Scan `f` along each link in system whilst carrying along state.
 
     Args:

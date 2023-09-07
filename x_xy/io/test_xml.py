@@ -25,7 +25,7 @@ def test_xml_parsing():
         orig_sys = x_xy.io.xml.load_sys_from_xml(
             Path(__file__).parent.joinpath(xml_path)
         )
-        exported_xml = x_xy.io.xml.save_sys_to_xml_str(orig_sys)
+        exported_xml = x_xy.io.xml.save_sys_to_str(orig_sys)
         new_sys = x_xy.io.xml.load_sys_from_str(exported_xml)
         return new_sys
 

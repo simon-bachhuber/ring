@@ -4,10 +4,10 @@ from flax import struct
 import jax
 import jax.numpy as jnp
 
-from x_xy import base
 from x_xy import maths
-from x_xy import scan
 
+from .. import base
+from ..scan import scan_sys
 from .dynamics import step as dynamics_step
 
 qrel = lambda q1, q2: maths.quat_mul(q1, maths.quat_inv(q2))
@@ -87,7 +87,7 @@ def pd_control(P: jax.Array, D: jax.Array):
             P_as_dict[name] = P_link
             D_as_dict[name] = D_link
 
-        scan.tree(sys, f, "qlldd", q_ref.T, sys.link_names, sys.link_types, P, D)
+        scan_sys(sys, f, "qlldd", q_ref.T, sys.link_names, sys.link_types, P, D)
         return PDControllerState(0, q_qd_ref, P_as_dict, D_as_dict)
 
     def apply(
@@ -138,7 +138,7 @@ def pd_control(P: jax.Array, D: jax.Array):
             tau = P_link * P_term + D_link * D_term
             taus = taus.at[idx_map["d"](idx)].set(tau)
 
-        scan.tree(
+        scan_sys(
             sys,
             f,
             "lllqd",
@@ -174,7 +174,7 @@ def _sys_large_damping(sys: base.System) -> base.System:
             return
         damping = damping.at[a:b].set(DAMPING_SPHERICAL)
 
-    scan.tree(sys, f, "ll", sys.link_types, list(range(sys.num_links())))
+    scan_sys(sys, f, "ll", sys.link_types, list(range(sys.num_links())))
     return sys.replace(link_damping=damping)
 
 

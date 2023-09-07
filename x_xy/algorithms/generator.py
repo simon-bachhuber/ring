@@ -9,10 +9,10 @@ import tree_utils
 from tree_utils import PyTree
 from tree_utils import tree_batch
 
-from x_xy import base
-from x_xy import scan
 from x_xy import utils
 
+from .. import base
+from ..scan import scan_sys
 from .jcalc import _joint_types
 from .jcalc import RCMG_Config
 from .kinematics import forward_kinematics_transforms
@@ -51,7 +51,7 @@ def build_generator(
             q_list.append(q_link)
             return key
 
-        keys = scan.tree(sys_mod, draw_q, "l", sys.link_types)
+        keys = scan_sys(sys_mod, draw_q, "l", sys.link_types)
         # stack of keys; only the last key is unused
         key = keys[-1]
 

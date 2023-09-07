@@ -1,8 +1,24 @@
 site_name: x_xy
 site_url: https://x_xy.com/
+site_description: The documentation for the x_xy software library.
+
 nav:
-  - Home: index.md
-  - API Reference: api.md
+  - 'index.md'
+  - Basic API: 
+    - System: api/system.md
+    - State: api/state.md
+    - Transform: api/transform.md
+    - Generator: api/generator.md
+    - Rendering: api/rendering.md
+  - Advanced API: 
+    - Register New Joint Types: api/register_joint_types.md
+    - subpkgs.exp_data: api/exp_data.md
+    - subpkgs.sim2real: api/sim2real.md
+    - subpkgs.sys_composer: api/sys_composer.md
+  - API (everything else):
+    - algebra.md
+    - base.md
+
 theme:
     name: material
     features:
@@ -25,14 +41,36 @@ theme:
           toggle:
              icon: material/weather-sunny
              name: Switch to light mode
+
+markdown_extensions:
+    - pymdownx.arithmatex:  # Render LaTeX via MathJax
+        generic: true
+    - pymdownx.superfences  # Seems to enable syntax highlighting when used with the Material theme.
+    - pymdownx.details  # Allowing hidden expandable regions denoted by ???
+    - pymdownx.snippets:  # Include one Markdown file into another
+        base_path: docs
+    - admonition
+    - toc:
+        permalink: "¤"  # Adds a clickable permalink to each section heading
+        toc_depth: 4  # Prevents h5, h6 (i.e. methods) from showing up in the TOC.
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
 plugins:
-- search
-- mkdocstrings:
-    handlers:
-      python:
-        options:
-          heading_level: 3
-          show_root_toc_entry: false
-          docstring_section_style: list
-          show_signature_annotations: true
-          signature_crossrefs: true
+    - search  # default search plugin; needs manually re-enabling when using any other plugins
+    - autorefs  # Cross-links to headings
+    - mkdocstrings:
+        default_handler: python
+        handlers:
+            python:
+                options:
+                    show_root_heading: true
+                    show_root_full_path: false
+                    show_if_no_docstring: false
+                    show_signature_annotations: false
+                    members_order: source  # order methods according to their order of definition in the source code, not alphabetical order
+                    heading_level: 4  # Makes everything top-level be <h4>. Child entries will be <h5> etc., but because of toc_depth, above, (deliberately) won't appear in the TOC.
+                    show_bases: false

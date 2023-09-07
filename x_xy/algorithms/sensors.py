@@ -4,11 +4,11 @@ import jax
 import jax.numpy as jnp
 
 from x_xy import algebra
-from x_xy import base
 from x_xy import maths
-from x_xy import scan
 
+from .. import base
 from ..io import load_sys_from_str
+from ..scan import scan_sys
 from .dynamics import step
 
 
@@ -181,7 +181,7 @@ def rel_pose(
 
         y[name_i] = qrel(q1, q2)
 
-    scan.tree(
+    scan_sys(
         sys_scan, pose_child_to_parent, "ll", sys_scan.link_names, sys_scan.link_parents
     )
 

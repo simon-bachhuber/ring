@@ -3,9 +3,9 @@ from typing import Tuple
 import jax
 
 from x_xy import algebra
-from x_xy import base
-from x_xy import scan
 
+from .. import base
+from ..scan import scan_sys
 from .jcalc import jcalc_transform
 
 
@@ -28,7 +28,7 @@ def forward_kinematics_transforms(
         eps_to_l[link_idx] = algebra.transform_mul(transform, eps_to_l[parent_idx])
         return eps_to_l[link_idx], link
 
-    eps_to_l_trafos, updated_links = scan.tree(
+    eps_to_l_trafos, updated_links = scan_sys(
         sys,
         update_eps_to_l,
         "qllll",

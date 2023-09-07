@@ -4,10 +4,10 @@ import jax
 import jax.numpy as jnp
 
 from x_xy import algebra
-from x_xy import base
 from x_xy import parse_system
-from x_xy import scan
+from x_xy import scan_sys
 
+from ... import base
 from .identify_sys import identify_system
 from .identify_sys import Neighbourhood
 
@@ -177,7 +177,7 @@ def _per_link_arrays(sys: base.System):
         ss.append(stiff)
         sz.append(zero)
 
-    scan.tree(
+    scan_sys(
         sys,
         filter_arrays,
         "dddq",

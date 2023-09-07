@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 
-from x_xy import base
+from .. import base
 
 
 def motion_dot(m: base.Motion, f: base.Force) -> base.Scalar:

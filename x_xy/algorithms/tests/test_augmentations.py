@@ -5,7 +5,7 @@ import x_xy
 from x_xy.algorithms.augmentations import _draw_pos_uniform
 
 
-def setup_fn_old(key, sys: x_xy.base.System) -> x_xy.base.System:
+def setup_fn_old(key, sys: x_xy.System) -> x_xy.System:
     def replace_pos(transforms, new_pos, name: str):
         i = sys.name_to_idx(name)
         return transforms.index_set(i, transforms[i].replace(pos=new_pos))

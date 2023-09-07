@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from x_xy import base
+from ... import base
 
 T = TypeVar("T")
 ATTR = dict

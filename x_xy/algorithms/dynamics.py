@@ -4,10 +4,10 @@ import jax
 import jax.numpy as jnp
 
 from x_xy import algebra
-from x_xy import base
 from x_xy import maths
-from x_xy import scan
 
+from .. import base
+from ..scan import scan_sys
 from .jcalc import _joint_types
 from .jcalc import jcalc_motion
 from .jcalc import jcalc_tau
@@ -40,7 +40,7 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
         )
         fs[link_idx] = f
 
-    scan.tree(
+    scan_sys(
         sys,
         forward_scan,
         "lllddll",
@@ -63,7 +63,7 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
                 l_to_p_trafo, fs[link_idx]
             )
 
-    scan.tree(
+    scan_sys(
         sys,
         backwards_scan,
         "llll",
@@ -92,7 +92,7 @@ def compute_mass_matrix(sys: base.System) -> jax.Array:
             its[p] += algebra.transform_inertia(l_to_p[i], its[i])
         return its[i]
 
-    batched_its = scan.tree(
+    batched_its = scan_sys(
         sys,
         accumulate_inertias,
         "ll",
@@ -161,7 +161,7 @@ def compute_mass_matrix(sys: base.System) -> jax.Array:
             idxs_j = idx_map["d"](j)
             H = H.at[idxs_i, idxs_j].set(H_ij)
 
-    scan.tree(sys, populate_H, "l", list(range(sys.num_links())), reverse=True)
+    scan_sys(sys, populate_H, "l", list(range(sys.num_links())), reverse=True)
 
     H = H + jnp.tril(H, -1).T
 
@@ -191,7 +191,7 @@ def _spring_force(sys: base.System, q: jax.Array):
             q_spring_force_link = zeropoint - q
         q_spring_force.append(q_spring_force_link)
 
-    scan.tree(
+    scan_sys(
         sys,
         _calc_spring_force_per_link,
         "qql",
@@ -268,7 +268,7 @@ def _semi_implicit_euler_integration(
         q_next.append(q_next_i)
 
     # uses already `qd_next` because semi-implicit
-    scan.tree(sys, q_integrate, "qdl", state.q, qd_next, sys.link_types)
+    scan_sys(sys, q_integrate, "qdl", state.q, qd_next, sys.link_types)
     q_next = jnp.concatenate(q_next)
 
     state = state.replace(q=q_next, qd=qd_next, mass_mat_inv=mass_mat_inv)

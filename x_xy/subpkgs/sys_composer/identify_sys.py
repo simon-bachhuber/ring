@@ -1,10 +1,11 @@
-import warnings
 from typing import NamedTuple
+import warnings
 
 import jax.numpy as jnp
 
-from x_xy import base
 from x_xy.utils import tree_equal
+
+from ... import base
 
 
 def _new_to_old_indices(new_parents: list[int]) -> list[int]:

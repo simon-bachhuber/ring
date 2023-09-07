@@ -87,9 +87,7 @@ def joint_axes_data(sys: x_xy.System, N: int) -> dict[dict[str, jax.Array]]:
             joint_axes = xaxis
         X[name] = {"joint_axes": joint_axes}
 
-    x_xy.scan_tree(
-        sys, f, "lll", sys.link_names, sys.link_types, sys.links.joint_params
-    )
+    x_xy.scan_sys(sys, f, "lll", sys.link_names, sys.link_types, sys.links.joint_params)
     X = jax.tree_map(lambda arr: jnp.repeat(arr[None], N, axis=0), X)
     return X
 

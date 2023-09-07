@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
 
-from x_xy import base
 from x_xy import maths
 
+from .. import base
 from ..io import load_sys_from_str
 from .jcalc import _draw_rxyz
 from .jcalc import _joint_types

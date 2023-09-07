@@ -1,12 +1,15 @@
 from xml.dom.minidom import parseString
-from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.etree.ElementTree import Element
+from xml.etree.ElementTree import SubElement
+from xml.etree.ElementTree import tostring
 
-from x_xy import base
 from x_xy.io.xml import abstract
 from x_xy.io.xml.abstract import _to_str
 
+from ... import base
 
-def save_sys_to_xml_str(sys: base.System) -> str:
+
+def save_sys_to_str(sys: base.System) -> str:
     global_index_map = {qd: sys.idx_map(qd) for qd in ["q", "d"]}
 
     # Create root element
@@ -67,6 +70,6 @@ def save_sys_to_xml_str(sys: base.System) -> str:
 
 
 def save_sys_to_xml(sys: base.System, xml_path: str) -> None:
-    xml_str = save_sys_to_xml_str(sys)
+    xml_str = save_sys_to_str(sys)
     with open(xml_path, "w") as f:
         f.write(xml_str)

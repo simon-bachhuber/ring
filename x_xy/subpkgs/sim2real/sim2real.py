@@ -11,7 +11,7 @@ from x_xy import build_generator
 from x_xy import load_sys_from_str
 from x_xy import maths
 from x_xy import RCMG_Config
-from x_xy import scan
+from x_xy import scan_sys
 from x_xy import System
 from x_xy import Transform
 from x_xy.algorithms.augmentations import _wrapper_sys_xml
@@ -93,7 +93,7 @@ def xs_from_raw(
         t = x_xy.algebra.transform_mul(t, x_xy.algebra.transform_inv(t_eps))
         xs.append(t)
 
-    x_xy.scan.tree(sys, f, "l", sys.link_names)
+    scan_sys(sys, f, "l", sys.link_names)
 
     # stack and permute such that time-axis is 0-th axis
     xs = xs[0].batch(*xs[1:])
@@ -160,7 +160,7 @@ def unzip_xs(sys: System, xs: Transform) -> Tuple[Transform, Transform]:
             transform2_rot = Transform.create(rot=x_parent_to_link.rot)
             return (transform1_pos, transform2_rot)
 
-        return scan.tree(sys, f, "ll", list(range(sys.num_links())), sys.link_parents)
+        return scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_parents)
 
     return _unzip_xs(xs)
 
@@ -173,7 +173,7 @@ def zip_xs(
     """Performs forward kinematics using `transform1` and `transform2`.
 
     Args:
-        sys (x_xy.base.System): Defines scan.tree
+        sys (x_xy.base.System): Defines scan_sys
         xs_transform1 (x_xy.base.Transform): Applied before `transform1`
         xs_transform2 (x_xy.base.Transform): Applied after `transform2`
 
@@ -192,9 +192,7 @@ def zip_xs(
             eps_to_l[i] = algebra.transform_mul(transform, eps_to_l[p])
             return eps_to_l[i]
 
-        return x_xy.scan.tree(
-            sys, f, "ll", list(range(sys.num_links())), sys.link_parents
-        )
+        return scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_parents)
 
     return _zip_xs(xs_transform1, xs_transform2)
 
@@ -210,7 +208,7 @@ def delete_to_world_pos_rot(sys: System, xs: Transform) -> Transform:
     by unity transforms.
 
     Args:
-        sys (System): System only used for structure (in scan.tree).
+        sys (System): System only used for structure (in scan_sys).
         xs (Transform): Time-series of transforms to be modified.
 
     Returns:
@@ -233,7 +231,7 @@ def randomize_to_world_pos_rot(
 
     Args:
         key (jax.Array): PRNG Key.
-        sys (System): System only used for structure (in scan.tree).
+        sys (System): System only used for structure (in scan_sys).
         xs (Transform): Time-series of transforms to be modified.
         config (RCMG_Config): Defines the randomization.
         cor (bool): Whether or not to randomize the center of rotation.
@@ -284,7 +282,7 @@ def scale_xs(
     be `transform2` objects.
 
     Args:
-        sys (System): System defining structure (for scan.tree)
+        sys (System): System defining structure (for scan_sys)
         xs (Transform): Time-series of transforms to be modified.
         factor (float): Multiplicative factor.
         exclude (list[str], optional): Skip scaling of transforms if their link_type
@@ -303,7 +301,7 @@ def scale_xs(
                 x_link = _scale_transform_based_on_type(x_link, type, factor)
             return x_link
 
-        return scan.tree(sys, f, "ll", list(range(sys.num_links())), sys.link_types)
+        return scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_types)
 
     return _scale_xs(xs)
 
@@ -343,7 +341,7 @@ def project_xs(sys: System, transform2: Transform) -> Transform:
                 raise NotImplementedError
             return Transform(pos=pos, rot=rot)
 
-        return scan.tree(sys, f, "ll", list(range(sys.num_links())), sys.link_types)
+        return scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_types)
 
     return _project_xs(transform2)
 

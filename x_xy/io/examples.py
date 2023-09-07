@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import Iterator
 
-from x_xy import base
 from x_xy.utils import parse_path
 
+from .. import base
 from .xml import load_sys_from_xml
 
 EXAMPLES_DIR = Path(__file__).parent.joinpath("examples")

@@ -6,7 +6,6 @@ import numpy as np
 from PyQt6 import QtWidgets
 from vispy.app import use_app
 
-from x_xy import base
 from x_xy import forward_kinematics
 from x_xy import list_examples
 from x_xy import load_example
@@ -17,6 +16,8 @@ from x_xy import setup_fn_randomize_positions
 from x_xy.render import VispyScene
 from x_xy.subpkgs import exp_data
 from x_xy.subpkgs import sys_composer
+
+from ... import base
 
 forward_kinematics = jax.jit(forward_kinematics)
 register_rr_joint()

@@ -7,9 +7,9 @@ import jax
 import jax.numpy as jnp
 
 from x_xy import algebra
-from x_xy import base
 from x_xy import maths
 
+from .. import base
 from ._random import random_angle_over_time
 from ._random import random_position_over_time
 from ._random import TimeDependentFloat

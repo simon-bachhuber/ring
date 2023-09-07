@@ -1,4 +1,5 @@
-from x_xy import base, scan
+from .. import base
+from ..scan import scan_sys
 
 
 def parse_system(sys: base.System) -> base.System:
@@ -41,4 +42,4 @@ def _parse_system_calculate_inertia(sys: base.System):
         it = inertia_from_geometries(geoms_link)
         return it
 
-    return scan.tree(sys, compute_inertia_per_link, "l", list(range(sys.num_links())))
+    return scan_sys(sys, compute_inertia_per_link, "l", list(range(sys.num_links())))

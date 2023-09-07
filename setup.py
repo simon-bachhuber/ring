@@ -60,3 +60,4 @@ setuptools.setup(
 # - mkdocs-material
 # - mkdocstrings
 # - mkdocstrings-python
+# - mknotebooks
