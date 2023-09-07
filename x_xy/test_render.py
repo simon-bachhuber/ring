@@ -69,8 +69,8 @@ def test_shapes():
 
     state = State.create(sys)
 
-    # step_fn = jax.jit(dynamics.step)
     step_fn = dynamics.step
+    step_fn = jax.jit(step_fn)
 
     state = step_fn(sys, state)
 
@@ -78,4 +78,5 @@ def test_shapes():
 
 
 if __name__ == "__main__":
-    test_animate()
+    # test_animate()
+    test_shapes()
