@@ -69,7 +69,8 @@ def test_shapes():
 
     state = State.create(sys)
 
-    step_fn = jax.jit(dynamics.step)
+    # step_fn = jax.jit(dynamics.step)
+    step_fn = dynamics.step
 
     state = step_fn(sys, state)
 
