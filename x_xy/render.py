@@ -386,8 +386,12 @@ def animate(
     show_pbar: bool = True,
     **kwargs,
 ):
-    """Make animation from system and trajectory of maximal coordinates. `x`
-    are stacked in time along 0th-axis.
+    """
+    Make animation from system and trajectory of maximal coordinates. `xs` is either
+    a single base.Transform object for images or a Sequence of base.Transform objects
+    for a video format. The desired output format can be either inferred implicitely
+    from the extension of `path` or set explicitely using the `fmt` parameter. Mismatch
+    between the two is an error.
     """
     path = Path(path)
     file_fmt = _infer_extension_from_path(path)
