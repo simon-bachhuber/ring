@@ -71,9 +71,7 @@ def test_shapes():
 
     step_fn = jax.jit(dynamics.step)
 
-    state = step_fn(sys, state, jnp.zeros_like(state.qd))
-
-    # x = state.x.batch()
+    state = step_fn(sys, state)
 
     render.animate("figures/example.png", sys, state.x, fmt="png")
 
