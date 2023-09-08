@@ -1,11 +1,12 @@
 import numpy as np
 from vispy.geometry.meshdata import MeshData
-from vispy.scene.visuals import Mesh, create_visual_node
+from vispy.scene.visuals import create_visual_node
+from vispy.scene.visuals import Mesh
 from vispy.visuals import CompoundVisual
 from vispy.visuals import SphereVisual as _SphereVisual
 from vispy.visuals import TubeVisual
 
-from x_xy.base import Color
+from ..base import Color
 
 # vertex density per unit length
 _vectices_per_unit_length = 10

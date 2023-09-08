@@ -4,10 +4,6 @@ import jax
 import jax.numpy as jnp
 
 import x_xy
-from x_xy import render
-from x_xy.algorithms import dynamics
-from x_xy.base import State
-from x_xy.io.xml.from_xml import load_sys_from_str
 
 
 def is_pytest():
@@ -31,7 +27,7 @@ def test_animate():
     else:
         T = 10
 
-    step_fn = jax.jit(dynamics.step)
+    step_fn = jax.jit(x_xy.step)
 
     xs = []
     for _ in range(int(T / sys.dt)):
@@ -44,7 +40,7 @@ def test_animate():
         fmts += ["gif"]
 
     for fmt in fmts:
-        render.animate(filename, sys, xs, fmt=fmt)
+        x_xy.animate(filename, sys, xs, fmt=fmt)
 
         if is_pytest():
             os.system(f"rm animation.{fmt}")
@@ -65,16 +61,11 @@ def test_shapes():
 </x_xy>
     """  # noqa: E501
 
-    sys = load_sys_from_str(sys_str)
-
-    state = State.create(sys)
-
-    step_fn = dynamics.step
-    step_fn = jax.jit(step_fn)
-
+    sys = x_xy.load_sys_from_str(sys_str)
+    state = x_xy.State.create(sys)
+    step_fn = jax.jit(x_xy.step)
     state = step_fn(sys, state)
-
-    render.animate("figures/example.png", sys, state.x, fmt="png")
+    x_xy.animate("figures/example.png", sys, state.x, fmt="png")
 
 
 if __name__ == "__main__":

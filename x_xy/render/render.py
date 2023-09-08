@@ -1,7 +1,9 @@
-import time
-from abc import ABC, abstractmethod, abstractstaticmethod
+from abc import ABC
+from abc import abstractmethod
+from abc import abstractstaticmethod
 from functools import partial
 from pathlib import Path
+import time
 from typing import Optional, Sequence, TypeVar, Union
 
 import imageio
@@ -10,13 +12,24 @@ import jax.numpy as jnp
 import numpy as np
 import tqdm
 import tree_utils
-from tree_utils import PyTree, tree_batch
-from vispy import app, scene
+from tree_utils import PyTree
+from tree_utils import tree_batch
+from vispy import app
+from vispy import scene
 from vispy.scene import MatrixTransform
 
 import x_xy
-from x_xy import algebra, base, maths, visuals
-from x_xy.base import XYZ, Box, Capsule, Cylinder, Geometry, Sphere
+from x_xy import algebra
+from x_xy import maths
+
+from . import visuals
+from .. import base
+from ..base import Box
+from ..base import Capsule
+from ..base import Cylinder
+from ..base import Geometry
+from ..base import Sphere
+from ..base import XYZ
 
 Camera = TypeVar("Camera")
 Visual = TypeVar("Visual")
@@ -539,12 +552,13 @@ def gui(
 
     window = Window(sys, x, fps, show_fps, **kwargs)
     window.open()
+    return window._scene.canvas
 
 
 def probe(sys, **kwargs):
     state = base.State.create(sys)
-    _, state = x_xy.algorithms.forward_kinematics(sys, state)
-    gui(sys, state.x, **kwargs)
+    _, state = x_xy.forward_kinematics(sys, state)
+    return gui(sys, state.x, **kwargs)
 
 
 def _parse_timestep(timestep: float, fps: int, N: int):
