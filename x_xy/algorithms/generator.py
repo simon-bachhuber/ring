@@ -28,39 +28,59 @@ def build_generator(
     config: RCMG_Config = RCMG_Config(),
     setup_fn: SETUP_FN = lambda key, sys: sys,
     finalize_fn: FINALIZE_FN = lambda key, q, x, sys: (q, x),
+    randomize_positions: bool = False,
 ) -> Generator:
+    if config.cor:
+        for i, p in enumerate(sys.link_parents):
+            link_type = sys.link_types[i]
+            if p == -1:
+                assert link_type == "free"
+            if link_type == "free":
+                assert p == -1
+        sys = sys.replace(
+            link_types=["cor" if typ == "free" else typ for typ in sys.link_types]
+        )
+
     def generator(key: jax.random.PRNGKey) -> PyTree:
         nonlocal sys
-        # modified system
+
+        # modify system - use `pos_min/max` from xml
+        if randomize_positions:
+            key, consume = jax.random.split(key)
+            sys_mod1 = _setup_fn_randomize_positions(consume, sys)
+        else:
+            sys_mod1 = sys
+
+        # modify system - use custom logic
         key_start, consume = jax.random.split(key)
-        sys_mod = setup_fn(consume, sys)
+        sys_mod2 = setup_fn(consume, sys_mod1)
 
         # build generalized coordintes vector `q`
         q_list = []
 
-        def draw_q(key, __, link_type):
+        def draw_q(key, __, link_type, joint_params):
             if key is None:
                 key = key_start
             key, key_t, key_value = jax.random.split(key, 3)
             draw_fn = _joint_types[link_type].rcmg_draw_fn
             if draw_fn is None:
                 raise Exception(f"The joint type {link_type} has no draw fn specified.")
-            q_link = draw_fn(config, key_t, key_value)
+            q_link = draw_fn(config, key_t, key_value, joint_params)
             # even revolute and prismatic joints must be 2d arrays
             q_link = q_link if q_link.ndim == 2 else q_link[:, None]
             q_list.append(q_link)
             return key
 
-        keys = scan_sys(sys_mod, draw_q, "l", sys.link_types)
+        keys = scan_sys(sys_mod2, draw_q, "ll", sys.link_types, sys.links.joint_params)
         # stack of keys; only the last key is unused
         key = keys[-1]
 
         q = jnp.concatenate(q_list, axis=1)
 
         # do forward kinematics
-        x, _ = jax.vmap(forward_kinematics_transforms, (None, 0))(sys_mod, q)
+        x, _ = jax.vmap(forward_kinematics_transforms, (None, 0))(sys_mod2, q)
 
-        return finalize_fn(key, q, x, sys_mod)
+        return finalize_fn(key, q, x, sys_mod2)
 
     return generator
 
@@ -87,14 +107,14 @@ def batch_generator(
         if tree_utils.tree_ndim(X) > 2:
             return generators
 
-    generators = _to_list(generators)
+    generators = utils.to_list(generators)
 
     if stochastic:
         assert isinstance(batchsizes, int)
         bs_total = batchsizes
         pmap, vmap = utils.distribute_batchsize(bs_total)
     else:
-        batchsizes = _to_list(batchsizes)
+        batchsizes = utils.to_list(batchsizes)
         assert len(generators) == len(batchsizes)
 
         batch_arr_nonstoch = _build_batch_matrix(batchsizes)
@@ -145,7 +165,7 @@ def offline_generator(
     """Eagerly create a large precomputed generator by calling multiple generators
     and stacking their output."""
     assert drop_last, "Not `drop_last` is currently not implemented."
-    generators, sizes = _to_list(generators), _to_list(sizes)
+    generators, sizes = utils.to_list(generators), utils.to_list(sizes)
     assert len(generators) == len(sizes)
 
     key = jax.random.PRNGKey(seed)
@@ -216,7 +236,24 @@ def make_normalizer_from_generator(
     return normalizer
 
 
-def _to_list(obj):
-    if not isinstance(obj, list):
-        return [obj]
-    return obj
+def _setup_fn_randomize_positions(key: jax.Array, sys: base.System) -> base.System:
+    ts = sys.links.transform1
+
+    for i in range(sys.num_links()):
+        link = sys.links[i]
+        key, new_pos = _draw_pos_uniform(key, link.pos_min, link.pos_max)
+        ts = ts.index_set(i, ts[i].replace(pos=new_pos))
+
+    return sys.replace(links=sys.links.replace(transform1=ts))
+
+
+def _draw_pos_uniform(key, pos_min, pos_max):
+    key, c1, c2, c3 = jax.random.split(key, num=4)
+    pos = jnp.array(
+        [
+            jax.random.uniform(c1, minval=pos_min[0], maxval=pos_max[0]),
+            jax.random.uniform(c2, minval=pos_min[1], maxval=pos_max[1]),
+            jax.random.uniform(c3, minval=pos_min[2], maxval=pos_max[2]),
+        ]
+    )
+    return key, pos
