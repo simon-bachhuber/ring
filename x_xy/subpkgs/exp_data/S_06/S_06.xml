@@ -9,22 +9,22 @@
             <body name="imu1" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
                 <geom type="box" mass="0" dim="0.05 0.03 0.02" color="green"/>
             </body>
-            <body name="seg5" joint="spherical" pos="0.2 0 0" pos_min="0.15 -0.02 -0.02" pos_max="0.25 0.02 0.02">
+            <body name="seg5" joint="spherical" pos="0.2 0 0" pos_min="0.15 -0.05 -0.05" pos_max="0.35 0.05 0.05">
                 <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05"/>
                 <body name="imu5" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
                     <geom type="box" mass="0" dim="0.05 0.03 0.02" color="orange"/>
                 </body>
-                <body name="seg2" joint="rx" pos="0.2 0 0" pos_min="0.15 -0.02 -0.02" pos_max="0.25 0.02 0.02">
+                <body name="seg2" joint="rx" pos="0.2 0 0" pos_min="0.15 -0.05 -0.05" pos_max="0.35 0.05 0.05">
                     <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05"/>
                     <body name="imu2" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
                         <geom type="box" mass="0" dim="0.05 0.03 0.02" color="orange"/>
                     </body>
-                    <body name="seg3" joint="ry" pos="0.2 0 0" pos_min="0.15 -0.02 -0.02" pos_max="0.25 0.02 0.02">
+                    <body name="seg3" joint="ry" pos="0.2 0 0" pos_min="0.15 -0.05 -0.05" pos_max="0.35 0.05 0.05">
                         <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05"/>
                         <body name="imu3" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
                             <geom type="box" mass="0" dim="0.05 0.03 0.02" color="orange"/>
                         </body>
-                        <body name="seg4" joint="rz" pos="0.2 0 0" pos_min="0.15 -0.02 -0.02" pos_max="0.25 0.02 0.02">
+                        <body name="seg4" joint="rz" pos="0.2 0 0" pos_min="0.15 -0.05 -0.05" pos_max="0.35 0.05 0.05">
                             <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05"/>
                             <body name="imu4" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
                                 <geom type="box" mass="0" dim="0.05 0.03 0.02" color="blue"/>
