@@ -4,8 +4,8 @@ import jax
 import jax.numpy as jnp
 
 from x_xy import algebra
-from x_xy import parse_system
 from x_xy import scan_sys
+from x_xy.io import parse_system
 
 from ... import base
 from .identify_sys import identify_system

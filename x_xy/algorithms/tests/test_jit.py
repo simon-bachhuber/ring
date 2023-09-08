@@ -6,7 +6,7 @@ import x_xy
 
 def test_jit_forward_kinematics():
     "This tests the lack of a certain bug. Details see function `_from_xml_vispy` below"
-    for sys in x_xy.list_load_examples():
+    for sys in x_xy.io.list_load_examples():
         for _ in range(2):
             jax.jit(x_xy.forward_kinematics)(sys, x_xy.base.State.create(sys))
 

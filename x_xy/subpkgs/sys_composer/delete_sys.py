@@ -1,8 +1,8 @@
 import jax.numpy as jnp
 import tree_utils
 
-from x_xy import parse_system
 from x_xy import scan_sys
+from x_xy.io import parse_system
 
 from ... import base
 

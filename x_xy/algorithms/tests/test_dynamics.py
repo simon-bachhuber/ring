@@ -30,8 +30,8 @@ def test_inverse_dynamics_and_mass_matrix():
     state = x_xy.State.create(sys, q, qd)
     sys, state = x_xy.forward_kinematics(sys, state)
 
-    C = jax.jit(x_xy.inverse_dynamics)(sys, state.qd, qdd)
-    H = jax.jit(x_xy.compute_mass_matrix)(sys)
+    C = jax.jit(x_xy.algorithms.inverse_dynamics)(sys, state.qd, qdd)
+    H = jax.jit(x_xy.algorithms.compute_mass_matrix)(sys)
 
     np.testing.assert_allclose(
         C, np.array([196.20001, -98.100006], dtype=np.float32), atol=1e-4, rtol=1e-6

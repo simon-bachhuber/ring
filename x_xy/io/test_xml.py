@@ -11,7 +11,7 @@ def test_xml_parsing():
         xml_path = Path(__file__).parent.joinpath(f"examples/{example_name}.xml")
         original_sys: x_xy.System = x_xy.io.xml.load_sys_from_xml(xml_path)
 
-        sys_to_xml_str = x_xy.io.xml.save_sys_to_xml_str(original_sys)
+        sys_to_xml_str = x_xy.io.xml.save_sys_to_str(original_sys)
 
         logging.debug(sys_to_xml_str)
 
