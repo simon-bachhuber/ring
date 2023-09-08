@@ -39,6 +39,7 @@ def predict(
     render_prediction: bool = True,
     render_path: str = "animation.mp4",
     verbose: bool = True,
+    gui: bool = False,
     **vispy_kwargs,
 ):
     """
@@ -180,15 +181,18 @@ def predict(
                 assert tree_equal(xs_render, xs_render_simple)
             xs_render = xs_render_simple
 
-        x_xy.animate(
-            render_path,
-            sys_render,
-            xs_render,
-            fps=25,
-            show_pbar=True,
-            verbose=verbose,
-            **vispy_kwargs,
-        )
+        if not gui:
+            x_xy.animate(
+                render_path,
+                sys_render,
+                xs_render,
+                fps=25,
+                show_pbar=True,
+                verbose=verbose,
+                **vispy_kwargs,
+            )
+        else:
+            return x_xy.gui(sys_render, xs_render, fps=25, **vispy_kwargs)
 
     return yhat, metrics
 
