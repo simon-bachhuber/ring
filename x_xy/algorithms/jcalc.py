@@ -60,6 +60,7 @@ class RCMG_Config:
     pos0_max: float = 0.0
 
     # cor (center of rotation) custom fields
+    cor: bool = False
     cor_t_min: float = 0.2
     cor_t_max: float | TimeDependentFloat = 2.0
     cor_dpos_min: float | TimeDependentFloat = 0.00001
@@ -106,15 +107,24 @@ def concat_configs(configs: list[RCMG_Config], boundaries: list[float]) -> RCMG_
         return scalar
 
     hints = get_type_hints(RCMG_Config())
+    attrs = RCMG_Config().__dict__
     is_time_dependent_field = lambda key: hints[key] == (float | TimeDependentFloat)
-    time_dependent_fields = [
-        key for key in RCMG_Config().__dict__ if is_time_dependent_field(key)
-    ]
+    time_dependent_fields = [key for key in attrs if is_time_dependent_field(key)]
+    time_independent_fields = [key for key in attrs if not is_time_dependent_field(key)]
+
+    for time_dep_field in time_independent_fields:
+        field_values = set([getattr(config, time_dep_field) for config in configs])
+        assert (
+            len(field_values) == 1
+        ), f"RCMG_Config.{time_dep_field}={field_values}. Should be one unique value.."
+
     changes = {field: new_value(field) for field in time_dependent_fields}
     return replace(configs[0], **changes)
 
 
-DRAW_FN = Callable[[RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey], jax.Array]
+DRAW_FN = Callable[
+    [RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey, jax.Array], jax.Array
+]
 
 
 @dataclass
@@ -123,6 +133,7 @@ class JointModel:
     transform: Callable[[jax.Array, jax.Array], base.Transform]
     # len(motion) == len(qd)
     motion: list[base.Motion] = field(default_factory=lambda: [])
+    # (config, key_t, key_value, params) -> jax.Array
     rcmg_draw_fn: Optional[DRAW_FN] = None
 
 
@@ -154,6 +165,12 @@ def _p3d_transform(q, _):
     return base.Transform.create(pos=q)
 
 
+def _cor_transform(q, _):
+    free = _free_transform(q[:7], _)
+    p3d = _p3d_transform(q[7:], _)
+    return algebra.transform_mul(p3d, free)
+
+
 mrx = base.Motion.create(ang=jnp.array([1.0, 0, 0]))
 mry = base.Motion.create(ang=jnp.array([0.0, 1, 0]))
 mrz = base.Motion.create(ang=jnp.array([0.0, 0, 1]))
@@ -166,6 +183,7 @@ def _draw_rxyz(
     config: RCMG_Config,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    _: jax.Array,
     enable_range_of_motion: bool = True,
     free_spherical: bool = False,
 ) -> jax.Array:
@@ -202,6 +220,7 @@ def _draw_pxyz(
     config: RCMG_Config,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    __: jax.Array,
     cor: bool = False,
 ) -> jax.Array:
     key_value, consume = jax.random.split(key_value)
@@ -227,14 +246,22 @@ def _draw_pxyz(
 
 
 def _draw_spherical(
-    config: RCMG_Config, key_t: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+    config: RCMG_Config,
+    key_t: jax.random.PRNGKey,
+    key_value: jax.random.PRNGKey,
+    _: jax.Array,
 ) -> jax.Array:
     # NOTE: We draw 3 euler angles and then build a quaternion.
     # Not ideal, but i am unaware of a better way.
     @jax.vmap
     def draw_euler_angles(key_t, key_value):
         return _draw_rxyz(
-            config, key_t, key_value, enable_range_of_motion=False, free_spherical=True
+            config,
+            key_t,
+            key_value,
+            None,
+            enable_range_of_motion=False,
+            free_spherical=True,
         )
 
     triple = lambda key: jax.random.split(key, 3)
@@ -244,36 +271,52 @@ def _draw_spherical(
 
 
 def _draw_p3d_and_cor(
-    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey, cor: bool
+    config: RCMG_Config,
+    _: jax.random.PRNGKey,
+    key_value: jax.random.PRNGKey,
+    __: jax.Array,
+    cor: bool,
 ) -> jax.Array:
-    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key, cor))(
+    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key, None, cor))(
         jax.random.split(key_value, 3)
     )
     return pos.T
 
 
 def _draw_p3d(
-    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+    config: RCMG_Config,
+    _: jax.random.PRNGKey,
+    key_value: jax.random.PRNGKey,
+    __: jax.Array,
 ) -> jax.Array:
-    return _draw_p3d_and_cor(config, _, key_value, cor=False)
+    return _draw_p3d_and_cor(config, _, key_value, None, cor=False)
 
 
 def _draw_cor(
-    config: RCMG_Config, _: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+    config: RCMG_Config,
+    _: jax.random.PRNGKey,
+    key_value: jax.random.PRNGKey,
+    __: jax.Array,
 ) -> jax.Array:
-    return _draw_p3d_and_cor(config, _, key_value, cor=True)
+    key_value1, key_value2 = jax.random.split(key_value)
+    q_free = _draw_free(config, _, key_value1, None)
+    q_p3d = _draw_p3d_and_cor(config, _, key_value2, None, cor=True)
+    return jnp.concatenate((q_free, q_p3d), axis=1)
 
 
 def _draw_free(
-    config: RCMG_Config, key_t: jax.random.PRNGKey, key_value: jax.random.PRNGKey
+    config: RCMG_Config,
+    key_t: jax.random.PRNGKey,
+    key_value: jax.random.PRNGKey,
+    __: jax.Array,
 ) -> jax.Array:
     key_value1, key_value2 = jax.random.split(key_value)
-    q = _draw_spherical(config, key_t, key_value1)
-    pos = _draw_p3d(config, None, key_value2)
+    q = _draw_spherical(config, key_t, key_value1, None)
+    pos = _draw_p3d(config, None, key_value2, None)
     return jnp.concatenate((q, pos), axis=1)
 
 
-def _draw_frozen(config: RCMG_Config, __, ___):
+def _draw_frozen(config: RCMG_Config, _, __, ___):
     N = int(config.T / config.Ts)
     return jnp.zeros((N, 0))
 
@@ -283,7 +326,7 @@ _joint_types = {
     "frozen": JointModel(_frozen_transform, [], _draw_frozen),
     "spherical": JointModel(_spherical_transform, [mrx, mry, mrz], _draw_spherical),
     "p3d": JointModel(_p3d_transform, [mpx, mpy, mpz], _draw_p3d),
-    "cor": JointModel(_p3d_transform, [mpx, mpy, mpz], _draw_cor),
+    "cor": JointModel(_cor_transform, [], _draw_cor),
     "rx": JointModel(
         lambda q, _: _rxyz_transform(q, _, jnp.array([1.0, 0, 0])), [mrx], _draw_rxyz
     ),
