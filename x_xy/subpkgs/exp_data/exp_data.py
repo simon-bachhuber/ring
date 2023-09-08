@@ -6,8 +6,8 @@ import joblib
 import yaml
 
 import x_xy
-from x_xy.subpkgs import sim2real
 from x_xy.subpkgs import sys_composer
+from x_xy.subpkgs.sim2real.sim2real import _crop_sequence
 from x_xy.utils import parse_path
 
 from .omc_to_joblib import exp_dir
@@ -40,8 +40,6 @@ def load_sys(
     morph_yaml_key: Optional[str] = None,
     delete_after_morph: Optional[list[str]] = None,
     replace_rxyz_with_rr: bool = False,
-    cor: bool = False,
-    show_cs_floating_base: bool = True,
 ) -> x_xy.base.System:
     xml_path = _load_file_path(exp_id, "xml")
     sys = x_xy.io.load_sys_from_xml(xml_path)
@@ -50,7 +48,6 @@ def load_sys(
         sys = preprocess_sys(sys)
 
     if replace_rxyz_with_rr:
-        x_xy.algorithms.register_rr_joint()
         sys = _replace_rxyz_with_rr(sys)
 
     if morph_yaml_key is not None:
@@ -59,11 +56,6 @@ def load_sys(
 
     if delete_after_morph is not None:
         sys = sys_composer.delete_subsystem(sys, delete_after_morph)
-
-    if cor:
-        sys = x_xy.replace_free_with_cor(
-            sys, show_cs_floating_base=show_cs_floating_base
-        )
 
     return sys
 
@@ -110,4 +102,4 @@ def load_data(
     t1 = max(t1, 0.0)
     t2 = timings[motion_stop]["stop" if stop_for_stop else "start"] + right_padd
 
-    return sim2real._crop_sequence(trial_data, 1 / HZ, t1=t1, t2=t2)
+    return _crop_sequence(trial_data, 1 / HZ, t1=t1, t2=t2)
