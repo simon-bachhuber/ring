@@ -14,8 +14,6 @@ from x_xy import RCMG_Config
 from x_xy import scan_sys
 from x_xy import System
 from x_xy import Transform
-from x_xy.algorithms.augmentations import _wrapper_sys_xml
-from x_xy.algorithms.augmentations import NEW_WORLD
 
 
 def xs_from_raw(
@@ -224,7 +222,7 @@ def delete_to_world_pos_rot(sys: System, xs: Transform) -> Transform:
 
 
 def randomize_to_world_pos_rot(
-    key: jax.Array, sys: System, xs: Transform, config: RCMG_Config, cor: bool = False
+    key: jax.Array, sys: System, xs: Transform, config: RCMG_Config
 ) -> Transform:
     """Replace the transforms of all links that connect to the worldbody
     by randomize transforms.
@@ -234,7 +232,6 @@ def randomize_to_world_pos_rot(
         sys (System): System only used for structure (in scan_sys).
         xs (Transform): Time-series of transforms to be modified.
         config (RCMG_Config): Defines the randomization.
-        cor (bool): Whether or not to randomize the center of rotation.
 
     Returns:
         Transform: Time-series of modified transforms.
@@ -242,15 +239,18 @@ def randomize_to_world_pos_rot(
     _checks_time_series_of_xs(sys, xs)
     assert sys.link_parents.count(-1) == 1, "Found multiple connections to world"
 
-    from x_xy.subpkgs import sys_composer
+    free_sys_str = """
+<x_xy>
+    <options dt="0.01"/>
+    <worldbody>
+        <body name="free" joint="free"/>
+    </worldbody>
+</x_xy>
+"""
 
-    free_sys = load_sys_from_str(_wrapper_sys_xml(show_cs_floating_base=False))
-    link_name = NEW_WORLD
-    if not cor:
-        free_sys = sys_composer.delete_subsystem(free_sys, NEW_WORLD)
-        link_name = "free"
+    free_sys = load_sys_from_str(free_sys_str)
     _, xs_free = build_generator(free_sys, config)(key)
-    xs_free = xs_free.take(free_sys.name_to_idx(link_name), axis=1)
+    xs_free = xs_free.take(free_sys.name_to_idx("free"), axis=1)
     link_idx_to_world = sys.link_parents.index(-1)
     return _overwrite_transform_of_link_then_update(sys, xs, xs_free, link_idx_to_world)
 
