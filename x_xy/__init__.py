@@ -9,6 +9,7 @@ from .algorithms import concat_configs
 from .algorithms import forward_kinematics
 from .algorithms import imu
 from .algorithms import JointModel
+from .algorithms import make_normalizer_from_generator
 from .algorithms import offline_generator
 from .algorithms import pd_control
 from .algorithms import RCMG_Config
