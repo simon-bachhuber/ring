@@ -1,7 +1,8 @@
 import jax
 import jax.numpy as jnp
 
-from x_xy.base import Geometry, _Base
+from x_xy.base import _Base
+from x_xy.base import Geometry
 
 
 def tree_equal(a, b):
@@ -48,3 +49,10 @@ def sys_compare(sys1, sys2, verbose: bool = True):
     equalB = tree_equal(sys1, sys2)
     assert equalA == equalB
     return equalA
+
+
+def to_list(obj: object) -> list:
+    "obj -> [obj], if it isn't already a list."
+    if not isinstance(obj, list):
+        return [obj]
+    return obj

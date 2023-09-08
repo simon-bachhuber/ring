@@ -4,4 +4,5 @@ from .batchsize import expand_batchsize
 from .batchsize import merge_batchsize
 from .path import parse_path
 from .utils import sys_compare
+from .utils import to_list
 from .utils import tree_equal
