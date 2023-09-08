@@ -64,8 +64,12 @@ def test_virtual_input_joint_axes():
     # builds a `setup_fn` that randomizes the `sys.links.joint_params` field
     X, _ = _tree_squeeze(
         pipeline.make_generator(
-            RCMG_Config(T=10.0), 1, sys, virtual_input_joint_axes=True
-        )[0](jax.random.PRNGKey(1))
+            RCMG_Config(T=10.0),
+            1,
+            sys,
+            virtual_input_joint_axes=True,
+            virtual_input_joint_axes_noisy=False,
+        )(jax.random.PRNGKey(1))
     )
 
     np.testing.assert_allclose(

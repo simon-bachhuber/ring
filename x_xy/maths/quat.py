@@ -129,11 +129,13 @@ def quat_random(
     """Provides a random *unit* quaternion, sampled uniformly"""
     shape = batch_shape + (4,)
     qs = safe_normalize(jrand.normal(key, shape))
-    if maxval == jnp.pi:
-        return qs
-    axis, angle = quat_to_rot_axis(qs)
-    angle_scaled = angle * maxval / jnp.pi
-    return quat_rot_axis(axis, angle_scaled)
+
+    def _scale_angle():
+        axis, angle = quat_to_rot_axis(qs)
+        angle_scaled = angle * maxval / jnp.pi
+        return quat_rot_axis(axis, angle_scaled)
+
+    return jax.lax.cond(maxval == jnp.pi, lambda: qs, _scale_angle)
 
 
 def quat_euler(angles, intrinsic=True, convention="zyx"):

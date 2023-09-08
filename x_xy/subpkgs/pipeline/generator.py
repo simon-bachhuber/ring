@@ -21,6 +21,7 @@ def make_generator(
     randomize_positions: bool = True,
     random_s2s_ori: Optional[float] = None,
     virtual_input_joint_axes: bool = False,
+    virtual_input_joint_axes_noisy: bool = True,
     offline_size: Optional[int] = None,
 ) -> x_xy.algorithms.Generator:
     configs, sys_data = to_list(configs), to_list(sys_data)
@@ -37,7 +38,9 @@ def make_generator(
                 # so have to use the inner `sys` object
                 sys_noimu_joint_axes, _ = make_sys_noimu(sys)
                 N = tree_utils.tree_shape(X)
-                X_joint_axes = joint_axes_data(sys_noimu_joint_axes, N, key, noisy=True)
+                X_joint_axes = joint_axes_data(
+                    sys_noimu_joint_axes, N, key, noisy=virtual_input_joint_axes_noisy
+                )
                 for segment in X:
                     X[segment].update(X_joint_axes[segment])
 
