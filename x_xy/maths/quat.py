@@ -5,7 +5,9 @@ import jax.numpy as jnp
 import jax.random as jrand
 
 from .basic import wrap_to_pi
-from .safe import safe_arcsin, safe_norm, safe_normalize
+from .safe import safe_arcsin
+from .safe import safe_norm
+from .safe import safe_normalize
 
 
 @partial(jnp.vectorize, signature="(4)->(4)")
@@ -121,10 +123,17 @@ def quat_to_3x3(q: jnp.ndarray) -> jnp.ndarray:
     )
 
 
-def quat_random(key: jrand.PRNGKey, batch_shape: tuple = ()) -> jax.Array:
+def quat_random(
+    key: jrand.PRNGKey, batch_shape: tuple = (), maxval: float = jnp.pi
+) -> jax.Array:
     """Provides a random *unit* quaternion, sampled uniformly"""
     shape = batch_shape + (4,)
-    return safe_normalize(jrand.normal(key, shape))
+    qs = safe_normalize(jrand.normal(key, shape))
+    if maxval == jnp.pi:
+        return qs
+    axis, angle = quat_to_rot_axis(qs)
+    angle_scaled = angle * maxval / jnp.pi
+    return quat_rot_axis(axis, angle_scaled)
 
 
 def quat_euler(angles, intrinsic=True, convention="zyx"):

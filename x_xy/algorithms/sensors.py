@@ -89,7 +89,7 @@ def imu(
     noisy: bool = False,
     smoothen_degree: Optional[int] = None,
     delay: Optional[int] = None,
-    random_s2s_ori: bool = False,
+    random_s2s_ori: Optional[float] = None,
     quasi_physical: bool = False,
 ) -> dict:
     """Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu.
@@ -99,12 +99,14 @@ def imu(
     """
     assert xs.ndim() == 2
 
-    if random_s2s_ori:
+    if random_s2s_ori is not None:
         assert key is not None, "`random_s2s_ori` requires a random seed via `key`"
         # `xs` are now from eps-to-segment, so add another final rotation from
         # segment-to-sensor where this transform is only rotational
         key, consume = jax.random.split(key)
-        xs_s2s = base.Transform.create(rot=maths.quat_random(consume))
+        xs_s2s = base.Transform.create(
+            rot=maths.quat_random(consume, maxval=random_s2s_ori)
+        )
         xs = jax.vmap(algebra.transform_mul, in_axes=(None, 0))(xs_s2s, xs)
 
     if quasi_physical:
