@@ -25,3 +25,10 @@ def test_sys_idx_map():
 
     assert idx_map_q["imu2"] == slice(9, 9)
     assert idx_map_d["imu2"] == slice(8, 8)
+
+
+def test_n_joint_params():
+    x_xy.base.update_n_joint_params(5)
+    sys = x_xy.load_example("test_free")
+    assert sys.links.joint_params.shape == (sys.num_links(), 5)
+    x_xy.base.update_n_joint_params(3)

@@ -322,7 +322,12 @@ class Capsule(Geometry):
         return jnp.diag(jnp.array([I_b, I_a, I_a]))
 
 
-N_JOINT_PARAMS: int = 3
+_N_JOINT_PARAMS: int = 3
+
+
+def update_n_joint_params(n_joint_params: int) -> None:
+    global _N_JOINT_PARAMS
+    _N_JOINT_PARAMS = n_joint_params
 
 
 @struct.dataclass
@@ -337,7 +342,7 @@ class Link(_Base):
     # they are directly feed into the `jcalc` routine
     # this array *must* be of shape (N_JOINT_PARAMS,)
     joint_params: jax.Array = struct.field(
-        default_factory=lambda: jnp.zeros((N_JOINT_PARAMS,))
+        default_factory=lambda: jnp.zeros((_N_JOINT_PARAMS,))
     )
 
     # internal useage
@@ -351,8 +356,9 @@ Q_WIDTHS = {
     "frozen": 0,
     "spherical": 4,
     "p3d": 3,
-    # center of rotation, a `p3d` joint with custom parameter fields in `RMCG_Config`
-    "cor": 3,
+    # center of rotation, a `free` joint and then a `p3d` joint with custom
+    # parameter fields in `RMCG_Config`
+    "cor": 10,
     "px": 1,
     "py": 1,
     "pz": 1,
@@ -365,7 +371,8 @@ QD_WIDTHS = {
     "frozen": 0,
     "spherical": 3,
     "p3d": 3,
-    "cor": 3,
+    # `cor` is a purely kinematic joint, does not support dynamical simulation
+    "cor": 0,
     "px": 1,
     "py": 1,
     "pz": 1,
