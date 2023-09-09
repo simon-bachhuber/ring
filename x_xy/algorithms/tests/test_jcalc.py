@@ -50,6 +50,12 @@ def test_concat_configs(T, seed):
         T_i -= 10
         array_eq(T_i, T_f)
 
+    # test that two configs that disagree with values that are not
+    # time-dependent can not be concatenated
+    motion_config_disagree = x_xy.RCMG_Config(t_min=0.04)
+    with pytest.raises(AssertionError):
+        x_xy.concat_configs([motion_config, motion_config_disagree], [T])
+
 
 def test_find_interval():
     assert _find_interval(1.5, jnp.array([0.0, 1.0, 2.0])) == 2

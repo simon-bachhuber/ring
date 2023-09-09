@@ -69,6 +69,7 @@ def test_virtual_input_joint_axes():
             sys,
             virtual_input_joint_axes=True,
             virtual_input_joint_axes_noisy=False,
+            random_transform1_rot=jnp.deg2rad(5.0),
         )(jax.random.PRNGKey(1))
     )
 
