@@ -426,7 +426,10 @@ def animate(
     n_links = sys.num_links()
 
     def data_check(x):
-        assert x.pos.ndim == x.rot.ndim == 2, "Expected shape = (n_links, 3/4)"
+        assert (
+            x.pos.ndim == x.rot.ndim == 2
+        ), f"Expected shape = (n_links, 3/4). Got pos.shape{x.pos.shape}, "
+        "rot.shape={x.rot.shape}"
         assert (
             x.pos.shape[0] == x.rot.shape[0] == n_links
         ), "Number of links does not match"
