@@ -18,6 +18,7 @@ from .jcalc import RCMG_Config
 from .kinematics import forward_kinematics_transforms
 
 Generator = Callable[[jax.random.PRNGKey], PyTree]
+OfflineGenerator = Callable[[jax.random.PRNGKey], PyTree]
 SETUP_FN = Callable[[jax.random.PRNGKey, base.System], base.System]
 FINALIZE_FN = Callable[[jax.Array, jax.Array, base.Transform, base.System], PyTree]
 Normalizer = Callable[[PyTree], PyTree]
@@ -161,7 +162,7 @@ def offline_generator(
     drop_last: bool = True,
     seed: int = 1,
     store_on_cpu: bool = True,
-) -> Generator:
+) -> OfflineGenerator:
     """Eagerly create a large precomputed generator by calling multiple generators
     and stacking their output."""
     assert drop_last, "Not `drop_last` is currently not implemented."
