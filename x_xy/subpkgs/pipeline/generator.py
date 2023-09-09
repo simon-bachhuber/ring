@@ -20,6 +20,8 @@ def make_generator(
     return_xs: bool = False,
     randomize_positions: bool = True,
     random_s2s_ori: Optional[float] = None,
+    # this also leads to a random s2s ori
+    random_transform1_rot: Optional[float] = None,
     virtual_input_joint_axes: bool = False,
     virtual_input_joint_axes_noisy: bool = True,
     offline_size: Optional[int] = None,
@@ -30,6 +32,15 @@ def make_generator(
         sys_noimu, _ = make_sys_noimu(sys_data[0])
 
     def _make_generator(sys, config):
+        def setup_fn(key, sys):
+            key, consume = jax.random.split(key)
+            sys = setup_fn_randomize_joint_axes(consume, sys)
+            if random_transform1_rot is not None:
+                sys = _setup_fn_randomize_transform1_rot(
+                    key, sys, random_transform1_rot
+                )
+            return sys
+
         def finalize_fn(key, q, x, sys):
             key, consume = jax.random.split(key)
             X = imu_data(consume, x, sys, random_s2s_ori=random_s2s_ori)
@@ -72,3 +83,10 @@ def make_generator(
     else:
         sizes = len(gens) * [offline_size // len(gens)]
         return x_xy.offline_generator(gens, sizes, bs)
+
+
+def _setup_fn_randomize_transform1_rot(key, sys, maxval) -> x_xy.System:
+    new_transform1 = sys.links.transform1.replace(
+        rot=x_xy.maths.quat_random(key, (sys.num_links(),), maxval=maxval)
+    )
+    return sys.replace(links=sys.links.replace(transform1=new_transform1))
