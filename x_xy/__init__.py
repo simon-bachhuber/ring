@@ -1,6 +1,3 @@
-from . import algebra
-from . import maths
-from . import utils
 from .algebra import transform_inv
 from .algebra import transform_mul
 from .algorithms import batch_generator

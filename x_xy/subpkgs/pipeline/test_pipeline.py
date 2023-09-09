@@ -13,7 +13,10 @@ def test_virtual_input_joint_axes():
     sys = setup_fn_randomize_joint_axes(jax.random.PRNGKey(1), sys)
     joint_axes = sys.links.joint_params
     sys_rr = sys.replace(
-        link_types=["rr" if l in ["ry", "rz"] else l for l in sys.link_types]
+        link_types=[
+            "rr" if link_type in ["ry", "rz"] else link_type
+            for link_type in sys.link_types
+        ]
     )
 
     # test `load_data`
