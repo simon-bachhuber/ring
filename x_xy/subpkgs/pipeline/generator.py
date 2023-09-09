@@ -65,7 +65,7 @@ def make_generator(
         return x_xy.build_generator(
             sys,
             config,
-            setup_fn_randomize_joint_axes,
+            setup_fn,
             finalize_fn,
             randomize_positions=randomize_positions,
         )
