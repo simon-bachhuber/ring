@@ -9,6 +9,7 @@ nav:
     - 'notebooks/batched_simulation.ipynb'
     - 'notebooks/control.ipynb'
     - 'notebooks/custom_joint_type.ipynb'
+    - 'notebooks/morph_system.ipynb'
   - API: 
     - System: api/system.md
     - State: api/state.md
