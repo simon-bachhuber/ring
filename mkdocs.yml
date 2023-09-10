@@ -4,6 +4,7 @@ site_description: The documentation for the x_xy software library.
 
 nav:
   - 'index.md'
+  - 'notebooks/getting_started.ipynb'
   - Basic API: 
     - System: api/system.md
     - State: api/state.md
@@ -62,6 +63,7 @@ extra_javascript:
 plugins:
     - search  # default search plugin; needs manually re-enabling when using any other plugins
     - autorefs  # Cross-links to headings
+    - mknotebooks
     - mkdocstrings:
         default_handler: python
         handlers:

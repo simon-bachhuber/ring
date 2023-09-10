@@ -6,7 +6,8 @@ __pycache__
 .pytype*
 .pytest*
 *.pkl
-*.ipynb
 .DS_Store
 build/
 site/
+.ipynb_checkpoints/*
+testing.ipynb
