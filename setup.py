@@ -30,7 +30,7 @@ def find_data_files(package_dir, patterns, excludes=()):
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.7.0",
+    version="0.7.1",
     package_data={
         "x_xy": find_data_files(
             "x_xy", patterns=["*.xml", "*.yaml", "*.joblib", "*.json"]
@@ -50,7 +50,8 @@ setuptools.setup(
         "pyyaml",
         "mediapy",
     ],
-    entry_points={"console_scripts": ["xxy-render = x_xy.cli.render:main"]},
+    # leave this comment in incase we need to knwo the syntax again in the future
+    # entry_points={"console_scripts": ["xxy-render = x_xy.cli.render:main"]},
 )
 
 
