@@ -389,6 +389,48 @@ def _animate_video(
     imageio.mimsave(path, frames, format=fmt, fps=fps)
 
 
+def render_frames(
+    sys: base.System,
+    xs: base.Transform | list[base.Transform],
+    show_pbar: bool = True,
+    **kwargs,
+) -> list[np.ndarray]:
+    """Render frames from system and trajectory of maximal coordinates `xs`.
+
+    Args:
+        sys (base.System): System to render.
+        xs (base.Transform | list[base.Transform]): Single or time-series
+        of maximal coordinates `xs`.
+        show_pbar (bool, optional): Whether or not to show a progress bar.
+        Defaults to True.
+
+    Returns:
+        list[np.ndarray]: Stacked rendered frames. Length == len(xs).
+    """
+    xs = x_xy.utils.to_list(xs)
+
+    n_links = sys.num_links()
+
+    def data_check(x):
+        assert (
+            x.pos.ndim == x.rot.ndim == 2
+        ), f"Expected shape = (n_links, 3/4). Got pos.shape{x.pos.shape}, "
+        "rot.shape={x.rot.shape}"
+        assert (
+            x.pos.shape[0] == x.rot.shape[0] == n_links
+        ), "Number of links does not match"
+
+    for x in xs:
+        data_check(x)
+
+    scene = _init_vispy_scene(sys, **kwargs)
+    frames = []
+    for x in tqdm.tqdm(xs, "Rendering frames..", disable=not show_pbar):
+        scene.update(x)
+        frames.append(scene.render())
+    return frames
+
+
 def animate(
     path: Union[str, Path],
     sys: base.System,
