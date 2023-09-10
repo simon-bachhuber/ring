@@ -16,7 +16,7 @@
         <link rel="prev" href="../state/">
       
       
-        <link rel="next" href="../generator/">
+        <link rel="next" href="../dyn_sim/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -87,7 +87,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#the-transform-object" class="md-skip">
+        <a href="#x_xy.base.Transform" class="md-skip">
           Skip to content
         </a>
       
@@ -244,7 +244,7 @@
         
   
   <span class="md-ellipsis">
-    Home
+    x_xy - Documentation Home
   </span>
   
 
@@ -275,7 +275,7 @@
             
   
   <span class="md-ellipsis">
-    Examples
+    Examples / Notebooks
   </span>
   
 
@@ -285,7 +285,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Examples
+            Examples / Notebooks
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -466,8 +466,6 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
-      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -496,8 +494,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -506,8 +502,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-work-with-transforms" class="md-nav__link">
-    How to work with transforms
+  <a href="#x_xy.base.Transform" class="md-nav__link">
+    Transform
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algebra.transform.transform_mul" class="md-nav__link">
+    transform_mul()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algebra.transform.transform_inv" class="md-nav__link">
+    transform_inv()
   </a>
   
 </li>
@@ -527,11 +537,51 @@
   
   
     <li class="md-nav__item">
-      <a href="../generator/" class="md-nav__link">
+      <a href="../dyn_sim/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Generator
+    Dynamic Simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kin_sim/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kinematic Simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sensors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sensors
   </span>
   
 
@@ -552,6 +602,46 @@
   
   <span class="md-ellipsis">
     Rendering
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../register/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Register New Joint Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../maths/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    x_xy.maths
   </span>
   
 
@@ -590,7 +680,7 @@
             
   
   <span class="md-ellipsis">
-    Advanced API
+    API (subpkgs)
   </span>
   
 
@@ -600,7 +690,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            Advanced API
+            API (subpkgs)
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -610,31 +700,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../register_joint_types/" class="md-nav__link">
+      <a href="../sys_composer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Register New Joint Types
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../exp_data/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    subpkgs.exp_data
+    sys_composer
   </span>
   
 
@@ -654,7 +724,7 @@
         
   
   <span class="md-ellipsis">
-    subpkgs.sim2real
+    sim2real
   </span>
   
 
@@ -670,94 +740,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../sys_composer/" class="md-nav__link">
+      <a href="../exp_data/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    subpkgs.sys_composer
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-    
-    
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  <span class="md-ellipsis">
-    API (everything else)
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            API (everything else)
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../algebra.md" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    None
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../base.md" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    None
+    exp_data
   </span>
   
 
@@ -789,8 +776,241 @@
                   
 
 
-<h1 id="the-transform-object">The <code>transform</code> object<a class="headerlink" href="#the-transform-object" title="Permanent link">¤</a></h1>
-<h2 id="how-to-work-with-transforms">How to work with transforms<a class="headerlink" href="#how-to-work-with-transforms" title="Permanent link">¤</a></h2>
+  <h1>Transform</h1>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h4 id="x_xy.base.Transform" class="doc doc-heading">
+          <code>Transform</code>
+
+
+<a href="#x_xy.base.Transform" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+  
+      <p>Represents the Transformation from Plücker A to Plücker B,
+where B is located relative to A at <code>pos</code> in frame A and <code>rot</code> is the
+relative quaternion from A to B.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>x_xy/base.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@struct</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="nc">Transform</span><span class="p">(</span><span class="n">_Base</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents the Transformation from Plücker A to Plücker B,</span>
+<span class="sd">    where B is located relative to A at `pos` in frame A and `rot` is the</span>
+<span class="sd">    relative quaternion from A to B.&quot;&quot;&quot;</span>
+
+    <span class="n">pos</span><span class="p">:</span> <span class="n">Vector</span>
+    <span class="n">rot</span><span class="p">:</span> <span class="n">Quaternion</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">pos</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">rot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;One must be given.&quot;</span>
+        <span class="n">shape_rot</span> <span class="o">=</span> <span class="n">rot</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">rot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">()</span>
+        <span class="n">shape_pos</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape_rot</span> <span class="o">+</span> <span class="p">(</span><span class="mi">3</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="n">rot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rot</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">rot</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span> <span class="n">shape_pos</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+
+        <span class="k">assert</span> <span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">rot</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">Transform</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">rot</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">zero</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="s2">&quot;Transform&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a zero transform with a batch shape.&quot;&quot;&quot;</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">3</span><span class="p">,))</span>
+        <span class="n">rot</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span> <span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="n">Transform</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">rot</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">as_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">:</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">maths</span><span class="o">.</span><span class="n">quat_to_3x3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">maths</span><span class="o">.</span><span class="n">spatial</span><span class="o">.</span><span class="n">quadrants</span><span class="p">(</span><span class="n">aa</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">bb</span><span class="o">=</span><span class="n">E</span><span class="p">)</span> <span class="o">@</span> <span class="n">maths</span><span class="o">.</span><span class="n">spatial</span><span class="o">.</span><span class="n">xlt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h5 id="x_xy.base.Transform.zero" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">zero</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">())</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#x_xy.base.Transform.zero" class="headerlink" title="Permanent link">¤</a></h5>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Returns a zero transform with a batch shape.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/base.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">zero</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="s2">&quot;Transform&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a zero transform with a batch shape.&quot;&quot;&quot;</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">3</span><span class="p">,))</span>
+    <span class="n">rot</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span> <span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+    <span class="k">return</span> <span class="n">Transform</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">rot</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div><hr />
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.algebra.transform.transform_mul" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">transform_mul</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span> <span class="n">t1</span><span class="p">)</span></code>
+
+<a href="#x_xy.algebra.transform.transform_mul" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Chains two transformations <code>t1</code> and <code>t2</code>.
+t1: Plücker A -&gt; Plücker B,
+t2: Plücker B -&gt; Plücker C
+=&gt;
+Returns: Plücker A -&gt; Plücker C</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/algebra/transform.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">transform_mul</span><span class="p">(</span><span class="n">t2</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">,</span> <span class="n">t1</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Chains two transformations `t1` and `t2`.</span>
+<span class="sd">    t1: Plücker A -&gt; Plücker B,</span>
+<span class="sd">    t2: Plücker B -&gt; Plücker C</span>
+<span class="sd">    =&gt;</span>
+<span class="sd">    Returns: Plücker A -&gt; Plücker C</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">t1</span><span class="o">.</span><span class="n">pos</span> <span class="o">+</span> <span class="n">maths</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">t2</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">maths</span><span class="o">.</span><span class="n">quat_inv</span><span class="p">(</span><span class="n">t1</span><span class="o">.</span><span class="n">rot</span><span class="p">))</span>
+    <span class="n">rot</span> <span class="o">=</span> <span class="n">maths</span><span class="o">.</span><span class="n">quat_mul</span><span class="p">(</span><span class="n">t2</span><span class="o">.</span><span class="n">rot</span><span class="p">,</span> <span class="n">t1</span><span class="o">.</span><span class="n">rot</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">rot</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div><hr />
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.algebra.transform.transform_inv" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">transform_inv</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></code>
+
+<a href="#x_xy.algebra.transform.transform_inv" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Inverts the transform. A -&gt; B becomes B -&gt; A</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/algebra/transform.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">transform_inv</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">:</span>
+    <span class="s2">&quot;Inverts the transform. A -&gt; B becomes B -&gt; A&quot;</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">maths</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">rot</span><span class="p">)</span>
+    <span class="n">rot</span> <span class="o">=</span> <span class="n">maths</span><span class="o">.</span><span class="n">quat_inv</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">rot</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">rot</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
 
 
 

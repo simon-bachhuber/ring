@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://x_xy.com/api/generator/">
+        <link rel="canonical" href="https://x_xy.com/api/register/">
       
       
-        <link rel="prev" href="../transform/">
+        <link rel="prev" href="../rendering/">
       
       
-        <link rel="next" href="../rendering/">
+        <link rel="next" href="../maths/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Generator - x_xy</title>
+        <title>Register New Joint Types - x_xy</title>
       
     
     
@@ -86,6 +86,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#x_xy.algorithms.jcalc.register_new_joint_type" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -118,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Generator
+              Register New Joint Types
             
           </span>
         </div>
@@ -239,7 +244,7 @@
         
   
   <span class="md-ellipsis">
-    Home
+    x_xy - Documentation Home
   </span>
   
 
@@ -270,7 +275,7 @@
             
   
   <span class="md-ellipsis">
-    Examples
+    Examples / Notebooks
   </span>
   
 
@@ -280,7 +285,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Examples
+            Examples / Notebooks
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -473,25 +478,57 @@
                 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../dyn_sim/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Generator
+    Dynamic Simulation
   </span>
   
 
       </a>
-      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kin_sim/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kinematic Simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sensors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sensors
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -508,6 +545,103 @@
   
   <span class="md-ellipsis">
     Rendering
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Register New Joint Types
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Register New Joint Types
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algorithms.jcalc.register_new_joint_type" class="md-nav__link">
+    register_new_joint_type()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algorithms.jcalc.JointModel" class="md-nav__link">
+    JointModel
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.base.update_n_joint_params" class="md-nav__link">
+    update_n_joint_params()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../maths/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    x_xy.maths
   </span>
   
 
@@ -546,7 +680,7 @@
             
   
   <span class="md-ellipsis">
-    Advanced API
+    API (subpkgs)
   </span>
   
 
@@ -556,7 +690,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            Advanced API
+            API (subpkgs)
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -566,31 +700,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../register_joint_types/" class="md-nav__link">
+      <a href="../sys_composer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Register New Joint Types
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../exp_data/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    subpkgs.exp_data
+    sys_composer
   </span>
   
 
@@ -610,7 +724,7 @@
         
   
   <span class="md-ellipsis">
-    subpkgs.sim2real
+    sim2real
   </span>
   
 
@@ -626,94 +740,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../sys_composer/" class="md-nav__link">
+      <a href="../exp_data/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    subpkgs.sys_composer
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-    
-    
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  <span class="md-ellipsis">
-    API (everything else)
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            API (everything else)
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../algebra.md" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    None
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../base.md" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    None
+    exp_data
   </span>
   
 
@@ -745,9 +776,141 @@
                   
 
 
-  <h1>Generator</h1>
+  <h1>Register New Joint Types</h1>
+
+<div class="doc doc-object doc-function">
 
 
+
+
+<h4 id="x_xy.algorithms.jcalc.register_new_joint_type" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">register_new_joint_type</span><span class="p">(</span><span class="n">joint_type</span><span class="p">,</span> <span class="n">joint_model</span><span class="p">,</span> <span class="n">q_width</span><span class="p">,</span> <span class="n">qd_width</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#x_xy.algorithms.jcalc.register_new_joint_type" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/algorithms/jcalc.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">register_new_joint_type</span><span class="p">(</span>
+    <span class="n">joint_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">joint_model</span><span class="p">:</span> <span class="n">JointModel</span><span class="p">,</span>
+    <span class="n">q_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">qd_width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="k">if</span> <span class="n">qd_width</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">qd_width</span> <span class="o">=</span> <span class="n">q_width</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">joint_model</span><span class="o">.</span><span class="n">motion</span><span class="p">)</span> <span class="o">==</span> <span class="n">qd_width</span>
+    <span class="k">assert</span> <span class="n">joint_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_joint_types</span><span class="p">,</span> <span class="s2">&quot;already exists&quot;</span>
+    <span class="n">_joint_types</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">joint_type</span><span class="p">:</span> <span class="n">joint_model</span><span class="p">})</span>
+    <span class="n">base</span><span class="o">.</span><span class="n">Q_WIDTHS</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">joint_type</span><span class="p">:</span> <span class="n">q_width</span><span class="p">})</span>
+    <span class="n">base</span><span class="o">.</span><span class="n">QD_WIDTHS</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">joint_type</span><span class="p">:</span> <span class="n">qd_width</span><span class="p">})</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h4 id="x_xy.algorithms.jcalc.JointModel" class="doc doc-heading">
+          <code>JointModel</code>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#x_xy.algorithms.jcalc.JointModel" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+
+            <details class="quote">
+              <summary>Source code in <code>x_xy/algorithms/jcalc.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">JointModel</span><span class="p">:</span>
+    <span class="c1"># (q, params) -&gt; Transform</span>
+    <span class="n">transform</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">],</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">]</span>
+    <span class="c1"># len(motion) == len(qd)</span>
+    <span class="n">motion</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">base</span><span class="o">.</span><span class="n">Motion</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[])</span>
+    <span class="c1"># (config, key_t, key_value, params) -&gt; jax.Array</span>
+    <span class="n">rcmg_draw_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DRAW_FN</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.base.update_n_joint_params" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">update_n_joint_params</span><span class="p">(</span><span class="n">n_joint_params</span><span class="p">)</span></code>
+
+<a href="#x_xy.base.update_n_joint_params" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/base.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">update_n_joint_params</span><span class="p">(</span><span class="n">n_joint_params</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">global</span> <span class="n">_N_JOINT_PARAMS</span>
+    <span class="n">_N_JOINT_PARAMS</span> <span class="o">=</span> <span class="n">n_joint_params</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
 
 
 

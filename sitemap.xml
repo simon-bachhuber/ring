@@ -6,22 +6,37 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://x_xy.com/api/dyn_sim/</loc>
+         <lastmod>2023-09-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://x_xy.com/api/exp_data/</loc>
          <lastmod>2023-09-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/api/generator/</loc>
+         <loc>https://x_xy.com/api/kin_sim/</loc>
          <lastmod>2023-09-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/api/register_joint_types/</loc>
+         <loc>https://x_xy.com/api/maths/</loc>
+         <lastmod>2023-09-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://x_xy.com/api/register/</loc>
          <lastmod>2023-09-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://x_xy.com/api/rendering/</loc>
+         <lastmod>2023-09-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://x_xy.com/api/sensors/</loc>
          <lastmod>2023-09-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
