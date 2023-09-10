@@ -12,6 +12,7 @@ from ..base import Color
 _vectices_per_unit_length = 10
 
 _default_color = (1, 0.8, 0.7, 1)
+_default_edge_color = "black"
 
 
 class DoubleMeshVisual(CompoundVisual):
@@ -135,6 +136,12 @@ class BoxVisual(DoubleMeshVisual):
         color: Color = None,
         edge_color: Color = None
     ):
+        if color is None:
+            color = _default_color
+
+        if edge_color is None:
+            edge_color = _default_edge_color
+
         dim_x = float(dim_x)
         dim_y = float(dim_y)
         dim_z = float(dim_z)
