@@ -65,7 +65,7 @@ def test_shapes():
     state = x_xy.State.create(sys)
     step_fn = jax.jit(x_xy.step)
     state = step_fn(sys, state)
-    x_xy.animate("figures/example.png", sys, state.x, fmt="png")
+    x_xy.animate("docs/img/example.png", sys, state.x, fmt="png")
 
 
 if __name__ == "__main__":
