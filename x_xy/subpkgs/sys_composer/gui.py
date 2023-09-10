@@ -6,21 +6,18 @@ import numpy as np
 from PyQt6 import QtWidgets
 from vispy.app import use_app
 
+from x_xy import base
 from x_xy import forward_kinematics
-from x_xy import list_examples
 from x_xy import load_example
 from x_xy import load_sys_from_xml
-from x_xy import register_rr_joint
-from x_xy import setup_fn_randomize_joint_axes
-from x_xy import setup_fn_randomize_positions
-from x_xy.render import VispyScene
+from x_xy.algorithms.generator import _setup_fn_randomize_positions
+from x_xy.io import list_examples
+from x_xy.render.render import VispyScene
 from x_xy.subpkgs import exp_data
+from x_xy.subpkgs import pipeline
 from x_xy.subpkgs import sys_composer
 
-from ... import base
-
 forward_kinematics = jax.jit(forward_kinematics)
-register_rr_joint()
 
 EXAMPLE_CHOICES = list_examples()
 EXPERIMENT_CHOICES = exp_data.list_experiments()
@@ -76,9 +73,10 @@ class MyMainWindow(QtWidgets.QMainWindow):
         if dialog_seed != "":
             seed = int(dialog_seed)
             key = random.PRNGKey(seed)
-            c1, c2 = random.split(key)
-            sys = setup_fn_randomize_joint_axes(c1, sys)
-            sys = setup_fn_randomize_positions(c2, sys)
+            c1, c2, c3 = random.split(key, 3)
+            sys = pipeline.rr_joint.setup_fn_randomize_joint_axes(c1, sys)
+            sys = _setup_fn_randomize_positions(c2, sys)
+            sys = pipeline.generator._setup_fn_randomize_transform1_rot(c3, sys, 0.2)
 
         self._controls.joint_control.clear()
         self._controls.joint_control.addItems(sys.link_names)
