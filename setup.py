@@ -48,6 +48,7 @@ setuptools.setup(
         "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
         "joblib",
         "pyyaml",
+        "mediapy",
     ],
     entry_points={"console_scripts": ["xxy-render = x_xy.cli.render:main"]},
 )
