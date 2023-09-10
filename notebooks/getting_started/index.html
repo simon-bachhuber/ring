@@ -16,7 +16,7 @@
         <link rel="prev" href="../..">
       
       
-        <link rel="next" href="../../api/system/">
+        <link rel="next" href="../batched_simulation/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -260,6 +260,44 @@
     
   
   
+    
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
@@ -328,6 +366,74 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../batched_simulation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Batched simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../control/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Control
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_joint_type/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom joint type
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
@@ -351,7 +457,7 @@
             
   
   <span class="md-ellipsis">
-    Basic API
+    API
   </span>
   
 
@@ -361,7 +467,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            Basic API
+            API
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -729,25 +835,8 @@
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>This example is available as a jupyter notebook in colab <a href="https://colab.research.google.com/github/SimiPixel/x_xy_v2/blob/main/docs/notebooks/getting_started.ipynb">here</a>.</p>
+<p>This example is available as a jupyter notebook <a href="https://github.com/SimiPixel/x_xy_v2/blob/main/docs/notebooks/getting_started.ipynb">here</a>.</p>
 </div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="highlight"><pre><span></span><code><span class="c1"># install dependencies in colab</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">google.colab</span>
-    <span class="n">IN_COLAB</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="k">except</span><span class="p">:</span>
-    <span class="n">IN_COLAB</span> <span class="o">=</span> <span class="kc">False</span>
-
-<span class="k">if</span> <span class="n">IN_COLAB</span><span class="p">:</span>
-    <span class="o">%</span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">SimiPixel</span><span class="o">/</span><span class="n">x_xy_v2</span><span class="o">.</span><span class="n">git</span>
-    <span class="o">%</span><span class="n">pip</span> <span class="n">install</span> <span class="n">pyqt6</span>
-</code></pre></div>
-
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
@@ -762,6 +851,8 @@
 
 <span class="kn">import</span> <span class="nn">mediapy</span> <span class="k">as</span> <span class="nn">media</span>
 <span class="kn">import</span> <span class="nn">vispy</span>
+
+<span class="c1"># other backends are fine too, just not `jupyter_rfb`. You can install `pyqt6` using `pip install pyqt6`</span>
 <span class="n">vispy</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;pyqt6&quot;</span><span class="p">)</span>
 </code></pre></div>
 

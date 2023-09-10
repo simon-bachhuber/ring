@@ -51,6 +51,21 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://x_xy.com/notebooks/batched_simulation/</loc>
+         <lastmod>2023-09-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://x_xy.com/notebooks/control/</loc>
+         <lastmod>2023-09-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://x_xy.com/notebooks/custom_joint_type/</loc>
+         <lastmod>2023-09-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://x_xy.com/notebooks/getting_started/</loc>
          <lastmod>2023-09-10</lastmod>
          <changefreq>daily</changefreq>

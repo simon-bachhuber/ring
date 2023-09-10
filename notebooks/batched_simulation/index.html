@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://x_xy.com/api/transform/">
+        <link rel="canonical" href="https://x_xy.com/notebooks/batched_simulation/">
       
       
-        <link rel="prev" href="../state/">
+        <link rel="prev" href="../getting_started/">
       
       
-        <link rel="next" href="../generator/">
+        <link rel="next" href="../control/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Transform - x_xy</title>
+        <title>Batched simulation - x_xy</title>
       
     
     
@@ -87,7 +87,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#the-transform-object" class="md-skip">
+        <a href="#batched-dynamical-simulation" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Transform
+              Batched simulation
             
           </span>
         </div>
@@ -257,19 +257,21 @@
       
   
   
+    
+  
   
     
     
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
             
@@ -282,7 +284,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Examples
@@ -295,7 +297,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../notebooks/getting_started/" class="md-nav__link">
+      <a href="../getting_started/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -313,9 +315,27 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../notebooks/batched_simulation/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Batched simulation
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -324,6 +344,58 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#batched-dynamical-simulation" class="md-nav__link">
+    Batched Dynamical Simulation
+  </a>
+  
+    <nav class="md-nav" aria-label="Batched Dynamical Simulation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#batched-system" class="md-nav__link">
+    Batched System
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batched-state" class="md-nav__link">
+    Batched State
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batched-kinematic-simulation" class="md-nav__link">
+    Batched Kinematic Simulation
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -335,7 +407,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../notebooks/control/" class="md-nav__link">
+      <a href="../control/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -355,7 +427,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../notebooks/custom_joint_type/" class="md-nav__link">
+      <a href="../custom_joint_type/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -380,21 +452,19 @@
       
   
   
-    
-  
   
     
     
     
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
@@ -407,7 +477,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             API
@@ -420,7 +490,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../system/" class="md-nav__link">
+      <a href="../../api/system/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -440,7 +510,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../state/" class="md-nav__link">
+      <a href="../../api/state/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -458,29 +528,9 @@
                 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Transform
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../api/transform/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -489,33 +539,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-work-with-transforms" class="md-nav__link">
-    How to work with transforms
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -527,7 +550,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../generator/" class="md-nav__link">
+      <a href="../../api/generator/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -547,7 +570,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rendering/" class="md-nav__link">
+      <a href="../../api/rendering/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -610,7 +633,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../register_joint_types/" class="md-nav__link">
+      <a href="../../api/register_joint_types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -630,7 +653,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../exp_data/" class="md-nav__link">
+      <a href="../../api/exp_data/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -650,7 +673,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sim2real/" class="md-nav__link">
+      <a href="../../api/sim2real/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -670,7 +693,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sys_composer/" class="md-nav__link">
+      <a href="../../api/sys_composer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -789,8 +812,221 @@
                   
 
 
-<h1 id="the-transform-object">The <code>transform</code> object<a class="headerlink" href="#the-transform-object" title="Permanent link">¤</a></h1>
-<h2 id="how-to-work-with-transforms">How to work with transforms<a class="headerlink" href="#how-to-work-with-transforms" title="Permanent link">¤</a></h2>
+  <h1>Batched simulation</h1>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script>
+(function() {
+  function addWidgetsRenderer() {
+    var requireJsScript = document.createElement('script');
+    requireJsScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js';
+
+    var mimeElement = document.querySelector('script[type="application/vnd.jupyter.widget-view+json"]');
+    var jupyterWidgetsScript = document.createElement('script');
+    var widgetRendererSrc = 'https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js';
+    var widgetState;
+
+    // Fallback for older version:
+    try {
+      widgetState = mimeElement && JSON.parse(mimeElement.innerHTML);
+
+      if (widgetState && (widgetState.version_major < 2 || !widgetState.version_major)) {
+        widgetRendererSrc = 'jupyter-js-widgets@*/dist/embed.js';
+      }
+    } catch(e) {}
+
+    jupyterWidgetsScript.src = widgetRendererSrc;
+
+    document.body.appendChild(requireJsScript);
+    document.body.appendChild(jupyterWidgetsScript);
+  }
+
+  document.addEventListener('DOMContentLoaded', addWidgetsRenderer);
+}());
+</script>
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="batched-dynamical-simulation">Batched Dynamical Simulation<a class="headerlink" href="#batched-dynamical-simulation" title="Permanent link">¤</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><code>System</code> object is a registered Jax-PyTree. This means it's a nested array.</p>
+<p>This enables us to stack multiple systems (or states) to enable vectorized operations.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="batched-system">Batched System<a class="headerlink" href="#batched-system" title="Permanent link">¤</a></h3>
+<p>I.e. simulating two different system with the same initial state.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">x_xy</span>
+
+<span class="kn">import</span> <span class="nn">jax</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">import</span> <span class="nn">mediapy</span> <span class="k">as</span> <span class="nn">media</span>
+<span class="kn">import</span> <span class="nn">vispy</span>
+
+<span class="c1"># other backends are fine too, just not `jupyter_rfb`. You can install `pyqt6` using `pip install pyqt6`</span>
+<span class="n">vispy</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;pyqt6&quot;</span><span class="p">)</span>
+
+<span class="n">xml_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">&lt;x_xy model=&quot;double_pendulum&quot;&gt;</span>
+<span class="s2">    &lt;options gravity=&quot;0 0 9.81&quot; dt=&quot;0.01&quot;/&gt;</span>
+<span class="s2">    &lt;worldbody&gt;</span>
+<span class="s2">        &lt;body name=&quot;upper&quot; euler=&quot;0 90 0&quot; joint=&quot;ry&quot; damping=&quot;2&quot;&gt;</span>
+<span class="s2">            &lt;geom type=&quot;box&quot; mass=&quot;10&quot; pos=&quot;0.5 0 0&quot; dim=&quot;1 0.25 0.2&quot;/&gt;</span>
+<span class="s2">            &lt;body name=&quot;lower&quot; pos=&quot;1 0 0&quot; joint=&quot;ry&quot; damping=&quot;2&quot;&gt;</span>
+<span class="s2">                &lt;geom type=&quot;box&quot; mass=&quot;10&quot; pos=&quot;0.5 0 0&quot; dim=&quot;1 0.25 0.2&quot;/&gt;</span>
+<span class="s2">            &lt;/body&gt;</span>
+<span class="s2">        &lt;/body&gt;</span>
+<span class="s2">    &lt;/worldbody&gt;</span>
+<span class="s2">&lt;/x_xy&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">sys</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">load_sys_from_str</span><span class="p">(</span><span class="n">xml_str</span><span class="p">)</span>
+<span class="n">state</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">State</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">sys</span><span class="p">)</span>
+</code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="highlight"><pre><span></span><code><span class="c1"># second system with gravity disabled</span>
+<span class="n">sys_nograv</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">gravity</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">gravity</span> <span class="o">*</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="n">sys_batched</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">sys_nograv</span><span class="p">)</span>
+
+<span class="n">next_state_batched</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">x_xy</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="n">in_axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">))(</span><span class="n">sys_batched</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+</code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="highlight"><pre><span></span><code><span class="c1"># note how the state of the system without gravity has not changed at all</span>
+<span class="n">next_state_batched</span><span class="o">.</span><span class="n">q</span>
+</code></pre></div>
+
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_text output_subarea output_execute_result">
+<pre>
+<code>Array([[-1.7982468e-10,  2.3305433e-10],
+       [ 0.0000000e+00,  0.0000000e+00]], dtype=float32)</code>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="batched-state">Batched State<a class="headerlink" href="#batched-state" title="Permanent link">¤</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="highlight"><pre><span></span><code><span class="n">second_state</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">State</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">qd</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">2</span><span class="p">,)))</span>
+<span class="n">state_batched</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">second_state</span><span class="p">)</span>
+<span class="n">next_state_batched</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">x_xy</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="n">in_axes</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">))(</span><span class="n">sys</span><span class="p">,</span> <span class="n">state_batched</span><span class="p">)</span>
+</code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="highlight"><pre><span></span><code><span class="n">next_state_batched</span><span class="o">.</span><span class="n">q</span>
+</code></pre></div>
+
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_text output_subarea output_execute_result">
+<pre>
+<code>Array([[-1.7982468e-10,  2.3305433e-10],
+       [ 1.0048340e-02,  9.8215193e-03]], dtype=float32)</code>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="batched-kinematic-simulation">Batched Kinematic Simulation<a class="headerlink" href="#batched-kinematic-simulation" title="Permanent link">¤</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Batched kinematic simulation is done using either <code>x_xy.batch_generator</code> or <code>x_xy.offline_generator</code>.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="highlight"><pre><span></span><code><span class="n">gen</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">build_generator</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">RCMG_Config</span><span class="p">(</span><span class="n">T</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">t_max</span><span class="o">=</span><span class="mf">1.5</span><span class="p">))</span>
+<span class="n">batchsize</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">gen_batched</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">batch_generator</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="n">batchsizes</span><span class="o">=</span><span class="n">batchsize</span><span class="p">)</span>
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">qs</span><span class="p">,</span> <span class="n">xs</span> <span class="o">=</span> <span class="n">gen_batched</span><span class="p">(</span><span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="n">seed</span><span class="p">))</span>
+</code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="highlight"><pre><span></span><code><span class="n">qs</span><span class="o">.</span><span class="n">shape</span>
+</code></pre></div>
+
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="output_text output_subarea output_execute_result">
+<pre>
+<code>(8, 1000, 2)</code>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
 
 
 
