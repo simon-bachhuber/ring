@@ -4,21 +4,25 @@ site_description: The documentation for the x_xy software library.
 
 nav:
   - 'index.md'
-  - 'notebooks/getting_started.ipynb'
-  - Basic API: 
+  - Examples / Notebooks:
+    - 'notebooks/getting_started.ipynb'
+    - 'notebooks/batched_simulation.ipynb'
+    - 'notebooks/control.ipynb'
+    - 'notebooks/custom_joint_type.ipynb'
+  - API: 
     - System: api/system.md
     - State: api/state.md
     - Transform: api/transform.md
-    - Generator: api/generator.md
+    - Dynamic Simulation: api/dyn_sim.md
+    - Kinematic Simulation: api/kin_sim.md
+    - Sensors: api/sensors.md
     - Rendering: api/rendering.md
-  - Advanced API: 
-    - Register New Joint Types: api/register_joint_types.md
-    - subpkgs.exp_data: api/exp_data.md
-    - subpkgs.sim2real: api/sim2real.md
-    - subpkgs.sys_composer: api/sys_composer.md
-  - API (everything else):
-    - algebra.md
-    - base.md
+    - Register New Joint Types: api/register.md
+    - x_xy.maths: api/maths.md
+  - API (subpkgs):
+    - sys_composer: api/sys_composer.md
+    - sim2real: api/sim2real.md
+    - exp_data: api/exp_data.md
 
 theme:
     name: material

@@ -1,16 +1,9 @@
 <p align="center">
-<img src="figures/icon.svg" height="200" />
+<img src="docs/img/icon.svg" height="200" />
 </p>
 
 # `x_xy_v2` -- A *tiny* Kinematic Tree Simulator
-<img src="figures/coverage_badge.svg" height="20" />
-
-`x_xy` is a small package for performing
-- forward dynamics
-- inverse dynamics
-- forward kinematics
-
-on a general Kinematic Tree structure. 
+<img src="docs/img/coverage_badge.svg" height="20" />
 
 ## Installation
 
@@ -27,13 +20,10 @@ Additionally,
 
     Note 2: More info: https://vispy.org/installation.html
 
-- `subpkgs/omc` requires `pandas`.
-- `subpkgs/pipeline` requires `matplotlib`.
+```bash
+pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+```
 
-Typically, this will install `jax` as cpu-only version. CUDA version can be installed with
-> pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+## Documentation
 
-## Examples
-Example systems can be found under `x_xy/io/examples`. 
-
-Additionally, there are some simple example scripts available on the [wiki](https://github.com/SimiPixel/x_xy_v2/wiki). 
+Available [here](https://simipixel.github.io/x_xy_v2/).
