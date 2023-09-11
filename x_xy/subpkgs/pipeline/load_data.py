@@ -136,6 +136,7 @@ def load_data(
     t1: float = 0,
     t2: float | None = None,
     virtual_input_joint_axes: bool = False,
+    quasi_physical: bool = False,
 ):
     sys_noimu, imu_attachment = make_sys_noimu(sys, imu_link_names)
 
@@ -201,11 +202,7 @@ def load_data(
     N = xs.shape()
     if artificial_imus:
         key, consume = jax.random.split(key)
-        X = imu_data(
-            consume,
-            xs,
-            sys,
-        )
+        X = imu_data(consume, xs, sys, quasi_physical=quasi_physical)
     else:
         rigid_flex = "imu_rigid" if rigid_imus else "imu_flex"
         X = {}

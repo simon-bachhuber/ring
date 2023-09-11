@@ -1,6 +1,7 @@
 from typing import Optional
 
 import jax
+import jax.numpy as jnp
 import tree_utils
 
 import x_xy
@@ -20,10 +21,10 @@ def make_generator(
     return_xs: bool = False,
     randomize_positions: bool = True,
     random_s2s_ori: Optional[float] = None,
-    # this also leads to a random s2s ori
-    random_transform1_rot: Optional[float] = None,
+    random_transform1_rot_segments: Optional[float] = None,
     virtual_input_joint_axes: bool = False,
     virtual_input_joint_axes_noisy: bool = True,
+    quasi_physical: bool = False,
     offline_size: Optional[int] = None,
 ) -> x_xy.algorithms.Generator:
     configs, sys_data = to_list(configs), to_list(sys_data)
@@ -35,15 +36,21 @@ def make_generator(
         def setup_fn(key, sys):
             key, consume = jax.random.split(key)
             sys = setup_fn_randomize_joint_axes(consume, sys)
-            if random_transform1_rot is not None:
+            if random_transform1_rot_segments is not None:
                 sys = _setup_fn_randomize_transform1_rot(
-                    key, sys, random_transform1_rot
+                    key, sys, random_transform1_rot_segments
                 )
             return sys
 
         def finalize_fn(key, q, x, sys):
             key, consume = jax.random.split(key)
-            X = imu_data(consume, x, sys, random_s2s_ori=random_s2s_ori)
+            X = imu_data(
+                consume,
+                x,
+                sys,
+                random_s2s_ori=random_s2s_ori,
+                quasi_physical=quasi_physical,
+            )
             if virtual_input_joint_axes:
                 # the outer `sys_noimu` does not get the updated joint-axes
                 # so have to use the inner `sys` object
@@ -85,8 +92,16 @@ def make_generator(
         return x_xy.offline_generator(gens, sizes, bs)
 
 
-def _setup_fn_randomize_transform1_rot(key, sys, maxval) -> x_xy.System:
+def _setup_fn_randomize_transform1_rot(
+    key, sys, maxval, not_imus: bool = True
+) -> x_xy.System:
     new_transform1 = sys.links.transform1.replace(
         rot=x_xy.maths.quat_random(key, (sys.num_links(),), maxval=maxval)
     )
+    if not_imus:
+        imus = [name for name in sys.link_names if name[:3] == "imu"]
+        new_rot = new_transform1.rot
+        for imu in imus:
+            new_rot = new_rot.at[sys.name_to_idx(imu)].set(jnp.array([1.0, 0, 0, 0]))
+        new_transform1 = new_transform1.replace(rot=new_rot)
     return sys.replace(links=sys.links.replace(transform1=new_transform1))
