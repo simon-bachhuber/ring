@@ -185,7 +185,7 @@ def predict(
             x_xy.animate(
                 render_path,
                 sys_render,
-                xs_render,
+                [xs_render[i] for i in range(xs_render.shape())],
                 fps=25,
                 show_pbar=True,
                 verbose=verbose,
