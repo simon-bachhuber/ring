@@ -407,6 +407,26 @@
 
               
             
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/error_quaternion/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Error quaternion
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1449,14 +1469,14 @@ vectors stay the same. We only transform them to a common frames.</p>
 
   <div class="doc doc-contents first">
   
-      <p>Angle in radians between <code>q</code> and <code>qhat</code>.</p>
+      <p>Absolute angle in radians between <code>q</code> and <code>qhat</code>.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
             <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">18</span>
 <span class="normal">19</span>
 <span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">angle_error</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">qhat</span><span class="p">):</span>
-    <span class="s2">&quot;Angle in radians between `q` and `qhat`.&quot;</span>
+    <span class="s2">&quot;Absolute angle in radians between `q` and `qhat`.&quot;</span>
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">quat_angle</span><span class="p">(</span><span class="n">quat_mul</span><span class="p">(</span><span class="n">quat_inv</span><span class="p">(</span><span class="n">q</span><span class="p">),</span> <span class="n">qhat</span><span class="p">)))</span>
 </code></pre></div></td></tr></table></div>
           </details>

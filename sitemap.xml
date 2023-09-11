@@ -81,6 +81,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://x_xy.com/notebooks/error_quaternion/</loc>
+         <lastmod>2023-09-11</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://x_xy.com/notebooks/experimental_data/</loc>
          <lastmod>2023-09-11</lastmod>
          <changefreq>daily</changefreq>
