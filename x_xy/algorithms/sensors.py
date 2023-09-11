@@ -234,8 +234,8 @@ def _quasi_physical_simulation_beautiful(
 
 
 _constants = {
-    "qp_damp": 7.0,
-    "qp_stif": 125.0,
+    "qp_damp": 35.0,
+    "qp_stif": 625.0,
 }
 
 
