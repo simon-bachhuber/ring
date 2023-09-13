@@ -5,5 +5,5 @@ from .load_data import joint_axes_data
 from .load_data import load_data
 from .load_data import make_sys_noimu
 from .predict import predict
+from .rr_imp_joint import register_rr_imp_joint
 from .rr_joint import register_rr_joint
-from .rr_joint import setup_fn_randomize_joint_axes

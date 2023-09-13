@@ -26,10 +26,11 @@ def _read_yaml(exp_id):
     return yaml_str
 
 
-def _replace_rxyz_with_rr(sys: x_xy.base.System):
+def _replace_rxyz_with(sys: x_xy.base.System, replace_with: str):
     return sys.replace(
         link_types=[
-            "rr" if (typ in ["rx", "ry", "rz"]) else typ for typ in sys.link_types
+            replace_with if (typ in ["rx", "ry", "rz"]) else typ
+            for typ in sys.link_types
         ]
     )
 
@@ -39,7 +40,7 @@ def load_sys(
     preprocess_sys: Optional[Callable] = None,
     morph_yaml_key: Optional[str] = None,
     delete_after_morph: Optional[list[str]] = None,
-    replace_rxyz_with_rr: bool = False,
+    replace_rxyz: Optional[str] = None,
 ) -> x_xy.base.System:
     xml_path = _load_file_path(exp_id, "xml")
     sys = x_xy.io.load_sys_from_xml(xml_path)
@@ -47,8 +48,8 @@ def load_sys(
     if preprocess_sys is not None:
         sys = preprocess_sys(sys)
 
-    if replace_rxyz_with_rr:
-        sys = _replace_rxyz_with_rr(sys)
+    if replace_rxyz is not None:
+        sys = _replace_rxyz_with(sys, replace_rxyz)
 
     if morph_yaml_key is not None:
         new_parents = _read_yaml(exp_id)["morph"][morph_yaml_key]
