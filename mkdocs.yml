@@ -10,6 +10,8 @@ nav:
     - 'notebooks/control.ipynb'
     - 'notebooks/custom_joint_type.ipynb'
     - 'notebooks/morph_system.ipynb'
+    - 'notebooks/experimental_data.ipynb'
+    - 'notebooks/error_quaternion.ipynb'
   - API: 
     - System: api/system.md
     - State: api/state.md
