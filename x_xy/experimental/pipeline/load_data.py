@@ -86,6 +86,8 @@ def joint_axes_data(
             joint_axes = id_to_axis[link_type[1]]
         elif link_type == "rr":
             joint_axes = joint_params
+        elif link_type == "rr_imp":
+            joint_axes = joint_params[:3]
         else:
             joint_axes = xaxis
         X[name] = {"joint_axes": joint_axes}

@@ -4,13 +4,14 @@ import numpy as np
 
 from x_xy import load_example
 from x_xy import RCMG_Config
-from x_xy.subpkgs import pipeline
-from x_xy.subpkgs.pipeline.rr_joint import setup_fn_randomize_joint_axes
+from x_xy.experimental import pipeline
 
 
 def test_virtual_input_joint_axes():
+    pipeline.register_rr_joint()
+
     sys = load_example("test_three_seg_seg2")
-    sys = setup_fn_randomize_joint_axes(jax.random.PRNGKey(1), sys)
+    sys = pipeline.setup_fn_randomize_joint_axes(jax.random.PRNGKey(1), sys)
     joint_axes = sys.links.joint_params
     sys_rr = sys.replace(
         link_types=[

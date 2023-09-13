@@ -7,6 +7,8 @@ from x_xy.algorithms.jcalc import _draw_rxyz
 
 
 def register_rr_joint():
+    x_xy.update_n_joint_params(3)
+
     def _rr_transform(q, params):
         def _rxyz_transform(q, _, axis):
             q = jnp.squeeze(q)
