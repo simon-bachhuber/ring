@@ -59,6 +59,8 @@ def random_angle_over_time(
         )
         t += dt
 
+        # TODO do we really need the `jnp.floor(t / Ts) * Ts` since we resample later
+        # anyways
         ANG_i = jnp.array([[jnp.floor(t / Ts) * Ts, phi]])
         ANG = jax.lax.dynamic_update_slice_in_dim(ANG, ANG_i, start_index=i, axis=0)
 
