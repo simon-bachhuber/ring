@@ -8,6 +8,7 @@ from .quat import quat_euler
 from .quat import quat_from_3x3
 from .quat import quat_inv
 from .quat import quat_mul
+from .quat import quat_project
 from .quat import quat_random
 from .quat import quat_rot_axis
 from .quat import quat_to_3x3

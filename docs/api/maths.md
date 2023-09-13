@@ -16,6 +16,8 @@
 
 ::: x_xy.maths.quat.quat_to_3x3
 
+::: x_xy.maths.quat.quat_project
+
 ::: x_xy.maths.quat.rotate
 
 ::: x_xy.maths.quat.rotate_quat

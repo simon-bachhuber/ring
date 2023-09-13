@@ -16,7 +16,7 @@ def ensure_positive_w(q):
 
 
 def angle_error(q, qhat):
-    "Angle in radians between `q` and `qhat`."
+    "Absolute angle in radians between `q` and `qhat`."
     return jnp.abs(quat_angle(quat_mul(quat_inv(q), qhat)))
 
 
@@ -216,3 +216,22 @@ def quat_to_euler(q: jnp.ndarray) -> jnp.ndarray:
     )
 
     return jnp.array([x, y, z])
+
+
+@partial(jnp.vectorize, signature="(4),(3)->(4),(4)")
+def quat_project(q: jax.Array, k: jax.Array) -> tuple[jax.Array, jax.Array]:
+    """Decompose quaternion into a primary rotation around axis `k` such that
+    the residual rotation's angle is minimized.
+
+    Args:
+        q (jax.Array): Quaternion to decompose.
+        k (jax.Array): Primary axis direction.
+
+    Returns:
+        tuple[jax.Array, jax.Array]: Primary quaternion, residual quaternion
+    """
+    phi_pri = 2 * jnp.arctan2(q[1:] @ k, q[0])
+    # NOTE: CONVENTION
+    q_pri = quat_rot_axis(k, -phi_pri)
+    q_res = quat_mul(q, quat_inv(q_pri))
+    return q_pri, q_res

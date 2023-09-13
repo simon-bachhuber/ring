@@ -66,3 +66,21 @@ def test_euler_angles():
     np.testing.assert_allclose(
         angles, maths.quat_to_euler(maths.euler_to_quat(angles)), atol=1e-7, rtol=1e-6
     )
+
+
+def test_quat_project():
+    q = maths.quat_random(
+        jax.random.PRNGKey(
+            1,
+        )
+    )
+
+    q_pri, q_res = maths.quat_project(q, jnp.array([1.0, 0, 0]))
+    np.testing.assert_allclose(q, maths.quat_mul(q_res, q_pri), 1e-6, 1e-7)
+
+    axis, angle = maths.quat_to_rot_axis(q)
+    # NOTE: CONVENTION
+    angle *= -1
+    q_pri, q_res = maths.quat_project(q, axis)
+    np.testing.assert_allclose(angle, maths.quat_angle(q_pri))
+    np.testing.assert_allclose(jnp.array(0.0), maths.quat_angle(q_res))
