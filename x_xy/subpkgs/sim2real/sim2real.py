@@ -315,7 +315,7 @@ def project_xs(sys: System, transform2: Transform) -> Transform:
 
     @jax.vmap
     def _project_xs(transform2):
-        def f(_, __, i: int, link_type: str):
+        def f(_, __, i: int, link_type: str, joint_params: jax.Array):
             t = transform2[i]
             rot, pos = jnp.array([1.0, 0, 0, 0]), jnp.zeros((3,))
 
@@ -333,15 +333,29 @@ def project_xs(sys: System, transform2: Transform) -> Transform:
                 pos = t.pos
             elif link_type == "free":
                 pos, rot = t.pos, t.rot
-            elif link_type in ["rr", "frozen"]:
-                warnings.warn(
-                    f"`{link_type}`-joint-types can currently not be projected."
-                )
+            # TODO; Consider removing the case of `rr` and `rr_imp`
+            # after all these joints are not part of the standard library
+            elif link_type == "rr":
+                assert joint_params.shape == (3,)
+                rot = maths.quat_project(t.rot, joint_params)
+            elif link_type == "rr_imp":
+                assert joint_params.shape == (6,)
+                warnings.warn("`rr_imp` cannot be projected.")
+                rot = t.rot
+            elif link_type == "frozen":
+                pass
             else:
                 raise NotImplementedError
             return Transform(pos=pos, rot=rot)
 
-        return scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_types)
+        return scan_sys(
+            sys,
+            f,
+            "lll",
+            list(range(sys.num_links())),
+            sys.link_types,
+            sys.links.joint_params,
+        )
 
     return _project_xs(transform2)
 
