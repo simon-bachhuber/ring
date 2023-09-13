@@ -322,12 +322,18 @@ class Capsule(Geometry):
         return jnp.diag(jnp.array([I_b, I_a, I_a]))
 
 
-_N_JOINT_PARAMS: int = 3
+_DEFAULT_N_JOINT_PARAMS: int = 3
+_N_JOINT_PARAMS: int = _DEFAULT_N_JOINT_PARAMS
 
 
-def update_n_joint_params(n_joint_params: int) -> None:
+def update_n_joint_params(n_joint_params: Optional[int] = None) -> None:
+    "If None then reset to default value."
     global _N_JOINT_PARAMS
-    _N_JOINT_PARAMS = n_joint_params
+    global _DEFAULT_N_JOINT_PARAMS
+    if n_joint_params is None:
+        _N_JOINT_PARAMS = _DEFAULT_N_JOINT_PARAMS
+    else:
+        _N_JOINT_PARAMS = n_joint_params
 
 
 @struct.dataclass

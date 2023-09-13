@@ -28,7 +28,7 @@ def test_sys_idx_map():
 
 
 def test_n_joint_params():
-    x_xy.base.update_n_joint_params(5)
+    x_xy.update_n_joint_params(5)
     sys = x_xy.load_example("test_free")
     assert sys.links.joint_params.shape == (sys.num_links(), 5)
-    x_xy.base.update_n_joint_params(3)
+    x_xy.update_n_joint_params()
