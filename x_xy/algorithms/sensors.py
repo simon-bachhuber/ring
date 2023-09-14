@@ -52,7 +52,7 @@ def gyroscope(rot: jax.Array, dt: float) -> jax.Array:
     return jnp.where(jnp.abs(angle) > 1e-10, gyr, jnp.zeros(3))
 
 
-NOISE_LEVELS = {"acc": 0.5, "gyr": jnp.deg2rad(1.0)}
+NOISE_LEVELS = {"acc": 0.1, "gyr": jnp.deg2rad(1.0)}
 BIAS_LEVELS = {"acc": 0.5, "gyr": jnp.deg2rad(1.0)}
 
 
@@ -75,7 +75,7 @@ def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
             * NOISE_LEVELS[sensor]
         )
         bias = jax.random.uniform(
-            c2, minval=-BIAS_LEVELS[sensor], maxval=BIAS_LEVELS[sensor]
+            c2, minval=-BIAS_LEVELS[sensor], maxval=BIAS_LEVELS[sensor], shape=(3,)
         )
         noisy_imu_measurements[sensor] = imu_measurements[sensor] + noise + bias
     return noisy_imu_measurements
