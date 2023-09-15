@@ -22,7 +22,7 @@ def xs_from_raw(
     t1: float = 0.0,
     t2: Optional[float] = None,
     eps_frame: Optional[str] = None,
-    qinv: bool = True,
+    qinv: bool = False,
 ) -> x_xy.base.Transform:
     """Build time-series of maximal coordinates `xs` from raw position and
     quaternion trajectory data. This function scans through each link (as
@@ -41,34 +41,15 @@ def xs_from_raw(
         t2 (Optional[float], optional): Crop time right. Defaults to None.
         eps_frame (str, optional): Move into this segment's frame at time zero as
             eps frame. Defaults to `None`.
-            If `None`: Use root-frame as eps-frame.
-            If 'none': Don't move into a specific eps-frame.
+            If `None`: Don't move into a specific eps-frame.
 
     Returns:
         x_xy.base.Transform: Time-series of eps-to-link transformations
     """
-
-    if eps_frame == "none":
-        warnings.warn(
-            "`eps_frame` set to `none` might lead to problems with artificial IMUs,"
-            " since the gravity vector is assumed to be in positive z-axis in eps-frame"
-        )
-
     link_name_pos_rot = _crop_sequence(link_name_pos_rot, sys.dt, t1, t2)
 
     # determine `eps_frame` transform
-    if eps_frame != "none":
-        if eps_frame is None:
-            connect_to_base = []
-            # find link and link name that connects to world
-            for link_name, link_parent in zip(sys.link_names, sys.link_parents):
-                if link_parent == -1:
-                    connect_to_base.append(link_name)
-            assert len(connect_to_base) == 1, (
-                f"Ambiguous `eps-frame` since multiple links ({connect_to_base})"
-                " connect to base."
-            )
-            eps_frame = connect_to_base[0]
+    if eps_frame is not None:
         eps = link_name_pos_rot[eps_frame]
         q_eps = eps["quat"][0]
         if qinv:
@@ -112,22 +93,18 @@ def match_xs(sys: System, xs: Transform, sys_xs: System) -> Transform:
     """
     _checks_time_series_of_xs(sys_xs, xs)
 
-    # disable warnings temporarily because otherwise it will warn because of the usage
-    # of `eps_frame` = 'none'
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        xs_small = xs_from_raw(
-            sys,
-            {
-                name: {
-                    "pos": xs.pos[:, sys_xs.name_to_idx(name)],
-                    "quat": xs.rot[:, sys_xs.name_to_idx(name)],
-                }
-                for name in sys_xs.link_names
-            },
-            eps_frame="none",
-            qinv=False,
-        )
+    xs_small = xs_from_raw(
+        sys,
+        {
+            name: {
+                "pos": xs.pos[:, sys_xs.name_to_idx(name)],
+                "quat": xs.rot[:, sys_xs.name_to_idx(name)],
+            }
+            for name in sys_xs.link_names
+        },
+        eps_frame=None,
+        qinv=False,
+    )
     return xs_small
 
 

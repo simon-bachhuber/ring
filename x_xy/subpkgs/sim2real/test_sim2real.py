@@ -1,5 +1,3 @@
-import warnings
-
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -23,7 +21,7 @@ def test_forward_kinematics_omc():
 
     for qinv in [False, True]:
         print(f"QInv: {qinv}")
-        for eps_frame in ["none", None, "inner"]:
+        for eps_frame in [None, "inner"]:
             print(f"Epsilon Frame: {eps_frame}")
 
             qrand = maths.quat_random(jax.random.PRNGKey(1), (2, 2))
@@ -44,11 +42,7 @@ def test_forward_kinematics_omc():
                 qrand, qrand_inv = qrand_inv, qrand
 
             sys = x_xy.io.load_sys_from_str(sys_str)
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                xs_omc = sim2real.xs_from_raw(
-                    sys, omc_data, qinv=qinv, eps_frame=eps_frame
-                )
+            xs_omc = sim2real.xs_from_raw(sys, omc_data, qinv=qinv, eps_frame=eps_frame)
             t1_omc, t2_omc = sim2real.unzip_xs(sys, xs_omc)
             t1_sys = sys.links.transform1
 
@@ -79,7 +73,7 @@ def test_forward_kinematics_omc():
             outer_rot = []
 
             for t in range(2):
-                if eps_frame != "none":
+                if eps_frame is not None:
                     q_in_eps = qrand[t, 0]
                     q_in0_eps = qrand[0, 0]
                     q_in_in0 = maths.quat_mul(q_in_eps, maths.quat_inv(q_in0_eps))
