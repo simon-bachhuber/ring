@@ -5,11 +5,11 @@ import jax.numpy as jnp
 import tree_utils
 
 import x_xy
+from x_xy.subpkgs import sys_composer
 from x_xy.utils import to_list
 
 from .load_data import imu_data
 from .load_data import joint_axes_data
-from .load_data import make_sys_noimu
 from .rr_imp_joint import setup_fn_randomize_joint_axes_primary_residual
 from .rr_joint import setup_fn_randomize_joint_axes
 
@@ -31,7 +31,7 @@ def make_generator(
     configs, sys_data = to_list(configs), to_list(sys_data)
 
     if sys_noimu is None:
-        sys_noimu, _ = make_sys_noimu(sys_data[0])
+        sys_noimu, _ = sys_composer.make_sys_noimu(sys_data[0])
 
     def _make_generator(sys, config):
         def setup_fn(key, sys):
@@ -62,7 +62,7 @@ def make_generator(
             if virtual_input_joint_axes:
                 # the outer `sys_noimu` does not get the updated joint-axes
                 # so have to use the inner `sys` object
-                sys_noimu_joint_axes, _ = make_sys_noimu(sys)
+                sys_noimu_joint_axes, _ = sys_composer.make_sys_noimu(sys)
                 N = tree_utils.tree_shape(X)
                 X_joint_axes = joint_axes_data(
                     sys_noimu_joint_axes, N, key, noisy=virtual_input_joint_axes_noisy

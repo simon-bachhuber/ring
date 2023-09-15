@@ -1,10 +1,26 @@
+from typing import Optional
+
 import jax.numpy as jnp
 import tree_utils
 
+import x_xy
 from x_xy import scan_sys
 from x_xy.io import parse_system
 
 from ... import base
+
+
+def _autodetermine_imu_names(sys) -> list[str]:
+    return [name for name in sys.link_names if name[:3] == "imu"]
+
+
+def make_sys_noimu(sys: x_xy.System, imu_link_names: Optional[list[str]] = None):
+    "Returns, e.g., imu_attachment = {'imu1': 'seg1', 'imu2': 'seg3'}"
+    if imu_link_names is None:
+        imu_link_names = _autodetermine_imu_names(sys)
+    imu_attachment = {name: sys.parent_name(name) for name in imu_link_names}
+    sys_noimu = delete_subsystem(sys, imu_link_names)
+    return sys_noimu, imu_attachment
 
 
 def delete_subsystem(sys: base.System, link_name: str | list[str]) -> base.System:

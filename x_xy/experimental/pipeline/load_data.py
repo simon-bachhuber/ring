@@ -33,7 +33,7 @@ def imu_data(
     smoothen_degree=None,
     quasi_physical: bool = False,
 ) -> dict:
-    sys_noimu, imu_attachment = make_sys_noimu(sys_xs)
+    sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys_xs)
     inv_imu_attachment = {val: key for key, val in imu_attachment.items()}
     X = {}
     N = xs.shape()
@@ -106,19 +106,6 @@ def joint_axes_data(
     return X
 
 
-def autodetermine_imu_names(sys) -> list[str]:
-    return [name for name in sys.link_names if name[:3] == "imu"]
-
-
-def make_sys_noimu(sys: x_xy.System, imu_link_names: Optional[list[str]] = None):
-    "Returns, e.g., imu_attachment = {'imu1': 'seg1', 'imu2': 'seg3'}"
-    if imu_link_names is None:
-        imu_link_names = autodetermine_imu_names(sys)
-    imu_attachment = {name: sys.parent_name(name) for name in imu_link_names}
-    sys_noimu = sys_composer.delete_subsystem(sys, imu_link_names)
-    return sys_noimu, imu_attachment
-
-
 def load_data(
     sys: x_xy.System,
     config: Optional[x_xy.RCMG_Config] = None,
@@ -140,7 +127,7 @@ def load_data(
     virtual_input_joint_axes: bool = False,
     quasi_physical: bool = False,
 ):
-    sys_noimu, imu_attachment = make_sys_noimu(sys, imu_link_names)
+    sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys, imu_link_names)
 
     if (
         artificial_transform1
