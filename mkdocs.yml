@@ -12,6 +12,7 @@ nav:
     - 'notebooks/morph_system.ipynb'
     - 'notebooks/experimental_data.ipynb'
     - 'notebooks/error_quaternion.ipynb'
+    - 'notebooks/imu_modeling.ipynb'
   - API: 
     - System: api/system.md
     - State: api/state.md
