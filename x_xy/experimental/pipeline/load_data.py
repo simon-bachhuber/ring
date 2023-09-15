@@ -32,6 +32,7 @@ def imu_data(
     delay=None,
     smoothen_degree=None,
     quasi_physical: bool = False,
+    low_pass_filter_acc: bool = False,
 ) -> dict:
     sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys_xs)
     inv_imu_attachment = {val: key for key, val in imu_attachment.items()}
@@ -51,6 +52,7 @@ def imu_data(
                 delay=delay,
                 smoothen_degree=smoothen_degree,
                 quasi_physical=quasi_physical,
+                low_pass_filter_acc=low_pass_filter_acc,
             )
         else:
             imu_measurements = {
@@ -126,6 +128,7 @@ def load_data(
     t2: float | None = None,
     virtual_input_joint_axes: bool = False,
     quasi_physical: bool = False,
+    low_pass_filter_acc: bool = False,
 ):
     sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys, imu_link_names)
 
@@ -191,7 +194,13 @@ def load_data(
     N = xs.shape()
     if artificial_imus:
         key, consume = jax.random.split(key)
-        X = imu_data(consume, xs, sys, quasi_physical=quasi_physical)
+        X = imu_data(
+            consume,
+            xs,
+            sys,
+            quasi_physical=quasi_physical,
+            low_pass_filter_acc=low_pass_filter_acc,
+        )
     else:
         rigid_flex = "imu_rigid" if rigid_imus else "imu_flex"
         X = {}

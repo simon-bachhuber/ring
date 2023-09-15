@@ -11,3 +11,5 @@ build/
 site/
 .ipynb_checkpoints/*
 testing.ipynb
+wandb
+.neptune
