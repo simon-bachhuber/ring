@@ -66,6 +66,7 @@ def _dang_max(t: jax.Array) -> jax.Array:
     return jnp.where(t < 0.5, 1.0, 2.0)
 
 
+@pytest.mark.long
 def test_rcmg():
     for example in x_xy.io.list_examples():
         sys = x_xy.load_example(example)

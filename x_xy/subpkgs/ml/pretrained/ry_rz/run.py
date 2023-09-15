@@ -1,18 +1,12 @@
 import jax.numpy as jnp
-from neural_networks.logging import WandbLogger
-from neural_networks.rnno import DustinExperiment
-from neural_networks.rnno import rnno_v2_flags
-from neural_networks.rnno import train
-from neural_networks.rnno.training_loop_callbacks import EvalXy2TrainingLoopCallback
-from neural_networks.rnno.training_loop_callbacks import LogEpisodeTrainingLoopCallback
-from neural_networks.rnno.training_loop_callbacks import SaveParamsTrainingLoopCallback
 import tree_utils
-import wandb
 
+import wandb
 import x_xy
 from x_xy import maths
 from x_xy.experimental import pipeline
 from x_xy.subpkgs import exp_data
+from x_xy.subpkgs import ml
 from x_xy.subpkgs import sys_composer
 
 three_seg_seg2 = r"""
@@ -42,7 +36,7 @@ def _make_3Seg_callbacks(rnno_fn):
     _mae_metrices = {
         "mae_deg": (
             lambda q, qhat: maths.angle_error(q, qhat),
-            lambda arr: jnp.rad2deg(jnp.mean(arr[:, 2500:], axis=1)),
+            lambda arr: jnp.rad2deg(jnp.mean(arr[:, 2000:], axis=1)),
             jnp.mean,
         )
     }
@@ -56,7 +50,7 @@ def _make_3Seg_callbacks(rnno_fn):
             )
         )
         callbacks.append(
-            EvalXy2TrainingLoopCallback(
+            ml.EvalXy2TrainingLoopCallback(
                 "repro_n50",
                 rnno_fn,
                 sys_composer.make_sys_noimu(sys_3Seg)[0],
@@ -77,8 +71,16 @@ def _make_3Seg_callbacks(rnno_fn):
 
 
 def main():
-    wandb.init(project="GKT", name="reproduce Neptune #50 - save params")
-    logger = WandbLogger()
+    if ml.on_cluster():
+        wandb.init(project="GKT", name="reproduce Neptune #50 - save params")
+        bs = 512
+        n_episodes = 1500
+        rnno_fn = lambda sys: ml.make_rnno(sys)
+    else:
+        bs = 4
+        n_episodes = 5
+        rnno_fn = lambda sys: ml.make_rnno(sys, 20, 10)
+
     config = x_xy.algorithms.RCMG_Config(
         t_min=0.05,
         t_max=0.3,
@@ -90,20 +92,14 @@ def main():
         ang0_min=0.0,
         ang0_max=0.0,
     )
-    gen, _ = pipeline.make_generator(config, 512, sys, sys_noimu)
-    rnno_fn = lambda sys: rnno_v2_flags(sys)
-    rnno = rnno_fn(sys_noimu)
-    train(
+    gen = pipeline.make_generator(config, bs, sys, sys_noimu)
+    ml.train(
         gen,
-        1500,
-        rnno,
-        loggers=[logger],
-        callbacks=[
-            DustinExperiment(rnno_fn, 5, with_seg2=True),
-            LogEpisodeTrainingLoopCallback(),
-            SaveParamsTrainingLoopCallback("~/params/params_ry_rz.pickle"),
-        ]
-        + _make_3Seg_callbacks(rnno_fn),
+        n_episodes,
+        rnno_fn(sys_noimu),
+        loggers=[ml.WandbLogger() if ml.on_cluster() else ml.MockMultimediaLogger()],
+        callbacks=_make_3Seg_callbacks(rnno_fn),
+        callback_save_params="~/params/params_ry_rz.pickle",
     )
 
 
