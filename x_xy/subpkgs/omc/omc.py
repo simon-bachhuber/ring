@@ -13,16 +13,15 @@ from typing import Optional
 
 import jax
 import joblib
-import tree_utils
+import numpy as np
 from scipy.io import savemat
+import tree_utils
 
 from x_xy.utils import parse_path
 
 from .imus import _imu_measurements_from_txt
-from .markers import (
-    _construct_pos_from_single_marker,
-    _construct_quat_from_four_markers,
-)
+from .markers import _construct_pos_from_single_marker
+from .markers import _construct_quat_from_four_markers
 
 
 def dump_omc(
@@ -41,8 +40,6 @@ def dump_omc(
 ):
     try:
         import qmt
-
-        del qmt
     except ImportError:
         print(
             "This module requires the `qmt` library to be installed, "
@@ -61,6 +58,10 @@ def dump_omc(
 
     imu_offset_time = None
     for seg in marker_imu_setup:
+        # special case; This json field just stores that one quaternion
+        if seg == "earth_omc_to_earth_inertial":
+            continue
+
         opt_imu_seg_data, imu_offset_time = _synced_opti_imu_data(
             path_optitrack,
             path_imu,
@@ -78,10 +79,36 @@ def dump_omc(
             assume_imus_are_in_sync=assume_imus_are_in_sync,
         )
 
-        if opt_imu_seg_data is not None:
-            data[seg] = opt_imu_seg_data
-        else:
+        if opt_imu_seg_data is None:
             print(f"Segment_{seg[-1]} was not found in OMC data.")
+            continue
+
+        opt_imu_seg_data_aligned = dict()
+        opt_imu_seg_data_aligned["imu_rigid"] = dict()
+
+        pos_EOpt, quat_markers2EOpt = opt_imu_seg_data["pos"], opt_imu_seg_data["quat"]
+
+        # alignment: earth_omc to earth_inertial
+        q_EOpt2EInert = _str_to_numpy_array(
+            marker_imu_setup["earth_omc_to_earth_inertial"]
+        )
+        opt_imu_seg_data_aligned["quat"] = qmt.qinv(
+            qmt.qmult(q_EOpt2EInert, quat_markers2EOpt)
+        )
+        opt_imu_seg_data_aligned["pos"] = qmt.rotate(q_EOpt2EInert, pos_EOpt)
+
+        # alignment: rigid-imu to markers
+        q_imu2markers = _str_to_numpy_array(
+            marker_imu_setup[seg]["imu_rigid_imu_to_markers"]
+        )
+        for signal in ["acc", "mag", "gyr"]:
+            opt_imu_seg_data_aligned["imu_rigid"][signal] = qmt.rotate(
+                q_imu2markers, opt_imu_seg_data["imu_rigid"][signal]
+            )
+
+        opt_imu_seg_data_aligned["imu_flex"] = opt_imu_seg_data["imu_flex"]
+
+        data[seg] = opt_imu_seg_data_aligned
 
     joblib.dump(data, p_output)
     if save_as_matlab:
@@ -123,7 +150,7 @@ def autodetermine_optitrack_freq(path_optitrack):
 
 
 def _find_imu_keys(seg_number, marker_imu_setup) -> list[str]:
-    cond = lambda key: key[:3] == "imu"
+    cond = lambda key: (key[:3] == "imu" and key != "imu_rigid_imu_to_markers")
     return [key for key in marker_imu_setup[f"seg{seg_number}"] if cond(key)]
 
 
@@ -235,3 +262,7 @@ def _synced_opti_imu_data(
         print(f"Crop sequence at the end to reach a common length of {N} values")
 
     return {"quat": q, "pos": pos, **imus}, imu_offset_time
+
+
+def _str_to_numpy_array(expr: str) -> np.ndarray:
+    return np.array([float(num) for num in expr.split(" ")], dtype=float)
