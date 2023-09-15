@@ -52,8 +52,8 @@ def gyroscope(rot: jax.Array, dt: float) -> jax.Array:
     return jnp.where(jnp.abs(angle) > 1e-10, gyr, jnp.zeros(3))
 
 
-NOISE_LEVELS = {"acc": 0.1, "gyr": jnp.deg2rad(1.0)}
-BIAS_LEVELS = {"acc": 0.5, "gyr": jnp.deg2rad(1.0)}
+NOISE_LEVELS = {"acc": 0.05, "gyr": jnp.deg2rad(0.5)}
+BIAS_LEVELS = {"acc": 0.1, "gyr": jnp.deg2rad(1.0)}
 
 
 def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
@@ -91,6 +91,7 @@ def imu(
     delay: Optional[int] = None,
     random_s2s_ori: Optional[float] = None,
     quasi_physical: bool = False,
+    low_pass_filter_acc: bool = False,
 ) -> dict:
     """Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu.
     NOTE: `smoothen_degree` is used as window size for moving average.
@@ -111,6 +112,9 @@ def imu(
 
     if quasi_physical:
         xs = _quasi_physical_simulation(xs, dt)
+
+    if low_pass_filter_acc:
+        xs = xs.replace(pos=_butterworth(xs.pos, 1 / dt))
 
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
 
@@ -259,3 +263,46 @@ def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
     zeropoint = (xs.pos, zeropoint_vel)
     _, pos = jax.lax.scan(step_dynamics, state, zeropoint)
     return xs.replace(pos=pos)
+
+
+def _butterworth(
+    signal: jax.Array,
+    f_sampling: float,
+    f_cutoff: int = 15,
+    method: str = "forward_backward",
+) -> jax.Array:
+    """https://stackoverflow.com/questions/20924868/calculate-coefficients-of-2nd-order
+    -butterworth-low-pass-filter"""
+
+    if method == "forward_backward":
+        signal = _butterworth(signal, f_sampling, f_cutoff, "forward")
+        return _butterworth(signal, f_sampling, f_cutoff, "backward")
+    elif method == "forward":
+        pass
+    elif method == "backward":
+        signal = jnp.flip(signal, axis=0)
+    else:
+        raise NotImplementedError
+
+    ff = f_cutoff / f_sampling
+    ita = 1.0 / jnp.tan(jnp.pi * ff)
+    q = jnp.sqrt(2.0)
+    b0 = 1.0 / (1.0 + q * ita + ita**2)
+    b1 = 2 * b0
+    b2 = b0
+    a1 = 2.0 * (ita**2 - 1.0) * b0
+    a2 = -(1.0 - q * ita + ita**2) * b0
+
+    def f(carry, x_i):
+        x_im1, x_im2, y_im1, y_im2 = carry
+        y_i = b0 * x_i + b1 * x_im1 + b2 * x_im2 + a1 * y_im1 + a2 * y_im2
+        return (x_i, x_im1, y_i, y_im1), y_i
+
+    init = (signal[1], signal[0]) * 2
+    signal = jax.lax.scan(f, init, signal[2:])[1]
+    signal = jnp.concatenate((signal[0:1],) * 2 + (signal,))
+
+    if method == "backward":
+        signal = jnp.flip(signal, axis=0)
+
+    return signal
