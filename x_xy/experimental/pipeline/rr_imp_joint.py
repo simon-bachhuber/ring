@@ -7,7 +7,7 @@ from x_xy.algorithms.jcalc import _draw_rxyz
 
 
 def register_rr_imp_joint(
-    config_res=x_xy.RCMG_Config(t_max=0.75), ang_max_deg: float = 5.0
+    config_res=x_xy.RCMG_Config(dang_max=5.0, t_max=0.4), ang_max_deg: float = 7.5
 ):
     x_xy.update_n_joint_params(6)
 
