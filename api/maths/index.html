@@ -427,6 +427,26 @@
 
               
             
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/imu_modeling/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Imu modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -738,6 +758,13 @@
         <li class="md-nav__item">
   <a href="#x_xy.maths.quat.quat_to_3x3" class="md-nav__link">
     quat_to_3x3()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.quat.quat_project" class="md-nav__link">
+    quat_project()
   </a>
   
 </li>
@@ -1387,6 +1414,132 @@ vectors stay the same. We only transform them to a common frames.</p>
             <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xz</span> <span class="o">-</span> <span class="n">wy</span><span class="p">,</span> <span class="n">yz</span> <span class="o">+</span> <span class="n">wx</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">xx</span> <span class="o">+</span> <span class="n">yy</span><span class="p">)]),</span>
         <span class="p">]</span>
     <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.quat.quat_project" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">quat_project</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.quat.quat_project" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Decompose quaternion into a primary rotation around axis <code>k</code> such that
+the residual rotation's angle is minimized.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>q</code></td>
+          <td>
+                <code><span title="jax.Array">Array</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Quaternion to decompose.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>k</code></td>
+          <td>
+                <code><span title="jax.Array">Array</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Primary axis direction.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>tuple[<span title="jax.Array">Array</span>, <span title="jax.Array">Array</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>tuple[jax.Array, jax.Array]: Primary quaternion, residual quaternion</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@partial</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">vectorize</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="s2">&quot;(4),(3)-&gt;(4),(4)&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">quat_project</span><span class="p">(</span><span class="n">q</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decompose quaternion into a primary rotation around axis `k` such that</span>
+<span class="sd">    the residual rotation&#39;s angle is minimized.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        q (jax.Array): Quaternion to decompose.</span>
+<span class="sd">        k (jax.Array): Primary axis direction.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[jax.Array, jax.Array]: Primary quaternion, residual quaternion</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phi_pri</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">@</span> <span class="n">k</span><span class="p">,</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="c1"># NOTE: CONVENTION</span>
+    <span class="n">q_pri</span> <span class="o">=</span> <span class="n">quat_rot_axis</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">-</span><span class="n">phi_pri</span><span class="p">)</span>
+    <span class="n">q_res</span> <span class="o">=</span> <span class="n">quat_mul</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">quat_inv</span><span class="p">(</span><span class="n">q_pri</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">q_pri</span><span class="p">,</span> <span class="n">q_res</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>

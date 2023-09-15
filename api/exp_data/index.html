@@ -425,6 +425,26 @@
 
               
             
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/imu_modeling/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Imu modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -842,8 +862,7 @@
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/exp_data/exp_data.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 75</span>
-<span class="normal"> 76</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 76</span>
 <span class="normal"> 77</span>
 <span class="normal"> 78</span>
 <span class="normal"> 79</span>
@@ -872,7 +891,8 @@
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
-<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span>
+<span class="normal">105</span>
+<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span>
     <span class="n">exp_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">motion_start</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">motion_stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -916,7 +936,7 @@
 
 
 <h4 id="x_xy.subpkgs.exp_data.exp_data.load_sys" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">load_sys</span><span class="p">(</span><span class="n">exp_id</span><span class="p">,</span> <span class="n">preprocess_sys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">morph_yaml_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delete_after_morph</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">replace_rxyz_with_rr</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">load_sys</span><span class="p">(</span><span class="n">exp_id</span><span class="p">,</span> <span class="n">preprocess_sys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">morph_yaml_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delete_after_morph</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">replace_rxyz</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#x_xy.subpkgs.exp_data.exp_data.load_sys" class="headerlink" title="Permanent link">¤</a></h4>
 
@@ -925,8 +945,7 @@
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/exp_data/exp_data.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">37</span>
-<span class="normal">38</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
 <span class="normal">41</span>
@@ -948,12 +967,13 @@
 <span class="normal">57</span>
 <span class="normal">58</span>
 <span class="normal">59</span>
-<span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_sys</span><span class="p">(</span>
+<span class="normal">60</span>
+<span class="normal">61</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_sys</span><span class="p">(</span>
     <span class="n">exp_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">preprocess_sys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">morph_yaml_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">delete_after_morph</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">replace_rxyz_with_rr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">replace_rxyz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">:</span>
     <span class="n">xml_path</span> <span class="o">=</span> <span class="n">_load_file_path</span><span class="p">(</span><span class="n">exp_id</span><span class="p">,</span> <span class="s2">&quot;xml&quot;</span><span class="p">)</span>
     <span class="n">sys</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_sys_from_xml</span><span class="p">(</span><span class="n">xml_path</span><span class="p">)</span>
@@ -961,8 +981,8 @@
     <span class="k">if</span> <span class="n">preprocess_sys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">sys</span> <span class="o">=</span> <span class="n">preprocess_sys</span><span class="p">(</span><span class="n">sys</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">replace_rxyz_with_rr</span><span class="p">:</span>
-        <span class="n">sys</span> <span class="o">=</span> <span class="n">_replace_rxyz_with_rr</span><span class="p">(</span><span class="n">sys</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">replace_rxyz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sys</span> <span class="o">=</span> <span class="n">_replace_rxyz_with</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">replace_rxyz</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">morph_yaml_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">new_parents</span> <span class="o">=</span> <span class="n">_read_yaml</span><span class="p">(</span><span class="n">exp_id</span><span class="p">)[</span><span class="s2">&quot;morph&quot;</span><span class="p">][</span><span class="n">morph_yaml_key</span><span class="p">]</span>

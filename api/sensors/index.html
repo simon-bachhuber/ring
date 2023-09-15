@@ -427,6 +427,26 @@
 
               
             
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/imu_modeling/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Imu modeling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -835,7 +855,7 @@
 
 
 <h4 id="x_xy.algorithms.sensors.imu" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">imu</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">gravity</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">noisy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smoothen_degree</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">random_s2s_ori</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quasi_physical</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">imu</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">gravity</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">noisy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smoothen_degree</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">random_s2s_ori</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quasi_physical</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">low_pass_filter_acc</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 <a href="#x_xy.algorithms.sensors.imu" class="headerlink" title="Permanent link">¤</a></h4>
 
@@ -904,7 +924,11 @@ such moving average window is delayed to just be causal.</p>
 <span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
-<span class="normal">139</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">imu</span><span class="p">(</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">imu</span><span class="p">(</span>
     <span class="n">xs</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">,</span>
     <span class="n">gravity</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span>
     <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -914,6 +938,7 @@ such moving average window is delayed to just be causal.</p>
     <span class="n">delay</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">random_s2s_ori</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">quasi_physical</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">low_pass_filter_acc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu.</span>
 <span class="sd">    NOTE: `smoothen_degree` is used as window size for moving average.</span>
@@ -934,6 +959,9 @@ such moving average window is delayed to just be causal.</p>
 
     <span class="k">if</span> <span class="n">quasi_physical</span><span class="p">:</span>
         <span class="n">xs</span> <span class="o">=</span> <span class="n">_quasi_physical_simulation</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">low_pass_filter_acc</span><span class="p">:</span>
+        <span class="n">xs</span> <span class="o">=</span> <span class="n">xs</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="n">_butterworth</span><span class="p">(</span><span class="n">xs</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">dt</span><span class="p">))</span>
 
     <span class="n">measurements</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;acc&quot;</span><span class="p">:</span> <span class="n">accelerometer</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">gravity</span><span class="p">,</span> <span class="n">dt</span><span class="p">),</span> <span class="s2">&quot;gyr&quot;</span><span class="p">:</span> <span class="n">gyroscope</span><span class="p">(</span><span class="n">xs</span><span class="o">.</span><span class="n">rot</span><span class="p">,</span> <span class="n">dt</span><span class="p">)}</span>
 
@@ -1068,11 +1096,7 @@ to the base are skipped (that would be absolute pose).</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/algorithms/sensors.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">146</span>
 <span class="normal">147</span>
 <span class="normal">148</span>
 <span class="normal">149</span>
@@ -1116,7 +1140,11 @@ to the base are skipped (that would be absolute pose).</p>
 <span class="normal">187</span>
 <span class="normal">188</span>
 <span class="normal">189</span>
-<span class="normal">190</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rel_pose</span><span class="p">(</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rel_pose</span><span class="p">(</span>
     <span class="n">sys_scan</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span> <span class="n">xs</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">,</span> <span class="n">sys_xs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Relative pose of the entire system. `sys_scan` defines the parent-child ordering,</span>
