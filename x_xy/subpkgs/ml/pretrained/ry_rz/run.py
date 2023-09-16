@@ -74,7 +74,7 @@ def main():
     if ml.on_cluster():
         wandb.init(project="GKT", name="reproduce Neptune #50 - save params")
         bs = 512
-        n_episodes = 1500
+        n_episodes = 1000
         rnno_fn = lambda sys: ml.make_rnno(sys)
     else:
         bs = 4
