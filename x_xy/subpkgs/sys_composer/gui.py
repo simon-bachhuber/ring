@@ -11,10 +11,10 @@ from x_xy import forward_kinematics
 from x_xy import load_example
 from x_xy import load_sys_from_xml
 from x_xy.algorithms.generator import _setup_fn_randomize_positions
+from x_xy.experimental import pipeline
 from x_xy.io import list_examples
 from x_xy.render.render import VispyScene
 from x_xy.subpkgs import exp_data
-from x_xy.subpkgs import pipeline
 from x_xy.subpkgs import sys_composer
 
 forward_kinematics = jax.jit(forward_kinematics)
