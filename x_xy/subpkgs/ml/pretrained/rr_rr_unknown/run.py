@@ -83,7 +83,7 @@ def main():
         n_episodes = 5
         rnno_fn = lambda sys: ml.make_rnno(sys, 20, 10)
 
-    config = x_xy.algorithms.RCMG_Config(
+    config1 = x_xy.RCMG_Config(
         t_min=0.05,
         t_max=0.3,
         dang_min=0.1,
@@ -94,7 +94,26 @@ def main():
         ang0_min=0.0,
         ang0_max=0.0,
     )
-    gen = pipeline.make_generator(config, bs, sys, sys_noimu)
+    config2 = x_xy.RCMG_Config(
+        t_min=0.75,
+        t_max=3.0,
+        dang_min=0.1,
+        dang_max=1.0,
+        dang_min_free_spherical=0.1,
+        delta_ang_min=0.4,
+        dang_max_free_spherical=1.0,
+        delta_ang_max_free_spherical=1.0,
+        dpos_max=0.3,
+        cor_dpos_max=0.3,
+        range_of_motion_hinge_method="sigmoid",
+        randomized_interpolation_angle=True,
+        cdf_bins_min=1,
+        cdf_bins_max=5,
+        cor=True,
+    )
+
+    gen = pipeline.make_generator([config1, config2], bs, sys, sys_noimu)
+
     ml.train(
         gen,
         n_episodes,
