@@ -11,12 +11,14 @@ from optax._src.transform import add_noise
 from optax._src.transform import AddNoiseState
 
 
-def lamb_optimizer(lr: float, n_episodes: int, n_steps_per_episode: int):
+def make_optimizer(
+    lr: float, n_episodes: int, n_steps_per_episode: int, inner_opt=optax.lamb
+):
     steps = n_steps_per_episode * n_episodes
     schedule = optax.cosine_decay_schedule(lr, steps, 1e-7)
     optimizer = optax.chain(
         optax.adaptive_grad_clip(0.1),
-        optax.lamb(schedule),
+        inner_opt(schedule),
     )
     optimizer = skip_large_update(optimizer, 5.0, 6 * 25, warmup=300)
     return optimizer

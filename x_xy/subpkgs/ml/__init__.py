@@ -7,6 +7,6 @@ from .ml_utils import NeptuneLogger
 from .ml_utils import on_cluster
 from .ml_utils import save
 from .ml_utils import WandbLogger
-from .optimizer import lamb_optimizer
+from .optimizer import make_optimizer
 from .rnno import make_rnno
 from .train import train

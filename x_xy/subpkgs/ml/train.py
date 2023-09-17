@@ -19,7 +19,7 @@ from .callbacks import NanKillRunCallback
 from .callbacks import SaveParamsTrainingLoopCallback
 from .callbacks import TimingKillRunCallback
 from .ml_utils import Logger
-from .optimizer import lamb_optimizer
+from .optimizer import make_optimizer
 from .training_loop import TrainingLoop
 from .training_loop import TrainingLoopCallback
 
@@ -164,7 +164,7 @@ def train(
 
     if optimizer is None:
         # TODO; hardcoded `n_steps_per_episode`
-        optimizer = lamb_optimizer(3e-3, n_episodes, n_steps_per_episode=6)
+        optimizer = make_optimizer(3e-3, n_episodes, n_steps_per_episode=6)
 
     opt_state = optimizer.init(params)
 
