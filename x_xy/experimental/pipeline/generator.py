@@ -21,13 +21,10 @@ def make_generator(
     sys_noimu: Optional[x_xy.System] = None,
     return_xs: bool = False,
     randomize_positions: bool = True,
-    random_s2s_ori: Optional[float] = None,
     random_transform1_rot_segments: Optional[float] = None,
     virtual_input_joint_axes: bool = False,
     virtual_input_joint_axes_noisy: bool = True,
-    quasi_physical: bool = False,
     offline_size: Optional[int] = None,
-    low_pass_filter_acc: bool = False,
 ) -> x_xy.algorithms.Generator:
     configs, sys_data = to_list(configs), to_list(sys_data)
 
@@ -57,9 +54,6 @@ def make_generator(
                 consume,
                 x,
                 sys,
-                random_s2s_ori=random_s2s_ori,
-                quasi_physical=quasi_physical,
-                low_pass_filter_acc=low_pass_filter_acc,
             )
             if virtual_input_joint_axes:
                 # the outer `sys_noimu` does not get the updated joint-axes

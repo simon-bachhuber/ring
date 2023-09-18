@@ -91,7 +91,8 @@ def imu(
     delay: Optional[int] = None,
     random_s2s_ori: Optional[float] = None,
     quasi_physical: bool = False,
-    low_pass_filter_acc: bool = False,
+    low_pass_filter_pos_f_cutoff: Optional[float] = None,
+    low_pass_filter_rot_alpha: Optional[bool] = None,
 ) -> dict:
     """Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu.
     NOTE: `smoothen_degree` is used as window size for moving average.
@@ -113,8 +114,11 @@ def imu(
     if quasi_physical:
         xs = _quasi_physical_simulation(xs, dt)
 
-    if low_pass_filter_acc:
-        xs = xs.replace(pos=_butterworth(xs.pos, 1 / dt))
+    if low_pass_filter_pos_f_cutoff is not None:
+        xs = xs.replace(pos=_butterworth(xs.pos, 1 / dt, low_pass_filter_pos_f_cutoff))
+
+    if low_pass_filter_rot_alpha is not None:
+        xs = xs.replace(rot=maths.quat_lowpassfilter(xs.rot, low_pass_filter_rot_alpha))
 
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
 
@@ -268,7 +272,7 @@ def _quasi_physical_simulation(xs: base.Transform, dt: float) -> base.Transform:
 def _butterworth(
     signal: jax.Array,
     f_sampling: float,
-    f_cutoff: int = 15,
+    f_cutoff: int,
     method: str = "forward_backward",
 ) -> jax.Array:
     """https://stackoverflow.com/questions/20924868/calculate-coefficients-of-2nd-order
