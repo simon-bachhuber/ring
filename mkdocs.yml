@@ -27,6 +27,7 @@ nav:
     - sys_composer: api/sys_composer.md
     - sim2real: api/sim2real.md
     - exp_data: api/exp_data.md
+    - omc: api/omc.md
 
 theme:
     name: material

@@ -1,29 +1,66 @@
+from functools import cache
+
 import numpy as np
 
-from .nan import _interp_nan_values, _nan_check, _slerp_nan_values
-
-_df_optitrack = None
-_path_optitrack = None
+from .utils import resample
 
 
+def _sync_imu_offset_with_optical(
+    imu: dict, q_opt: np.ndarray, hz_imu: float, hz_opt: float
+) -> int:
+    from qmt import syncOptImu
+
+    sync_info = syncOptImu(
+        opt_quat=q_opt,
+        opt_rate=hz_opt,
+        imu_gyr=imu["gyr"],
+        imu_rate=hz_imu,
+        params=dict(syncRate=1000.0, cut=0.15, fc=10.0, correlate="rmse", fast=True),
+    )
+    imu_offset_time = sync_info["sync"][0][-1]
+    return int(imu_offset_time * hz_imu)
+
+
+def _imu_measurements_from_txt(
+    path_imu,
+    imu_file_prefix,
+    imu_number: str,
+    txt_file_delimiter: str = "\t",
+    txt_file_skiprows: int = 4,
+):
+    from pathlib import Path
+
+    import pandas as pd
+
+    try:
+        df = pd.read_csv(
+            Path(path_imu).joinpath(
+                Path(imu_file_prefix + imu_number).with_suffix(".txt")
+            ),
+            delimiter=txt_file_delimiter,
+            skiprows=txt_file_skiprows,
+        )
+    except FileNotFoundError:
+        return
+
+    acc = df[["Acc_X", "Acc_Y", "Acc_Z"]].to_numpy()
+    gyr = df[["Gyr_X", "Gyr_Y", "Gyr_Z"]].to_numpy()
+    mag = df[["Mag_X", "Mag_Y", "Mag_Z"]].to_numpy()
+
+    assert np.all(~np.isnan(acc))
+    assert np.all(~np.isnan(gyr))
+    assert np.all(~np.isnan(mag))
+
+    return {"acc": acc, "gyr": gyr, "mag": mag}
+
+
+@cache
 def _load_df(path_optitrack: str):
     import pandas as pd
 
-    global _df_optitrack, _path_optitrack
-    if _path_optitrack is not None:
-        if path_optitrack != _path_optitrack:
-            _path_optitrack = path_optitrack
-            _df_optitrack = None
-
-    if _df_optitrack is None:
-        _df_optitrack = pd.read_csv(path_optitrack, low_memory=False, skiprows=3)
-
+    print(f"Loading OMC data from file {path_optitrack}")
+    _df_optitrack = pd.read_csv(path_optitrack, low_memory=False, skiprows=3)
     return _df_optitrack
-
-
-def _list_segments_in_omc_data(path_optitrack: str) -> set[int]:
-    df = _load_df(path_optitrack)
-    return set([int(col[8]) for col in df.columns if "Marker" in col])
 
 
 def _get_marker_xyz(path_optitrack: str, seg_number: int, marker_number: int):
@@ -95,9 +132,9 @@ def _construct_quat_from_three_markers(
     zaxis = np.cross(axis_with_x_comp, axis_with_y_comp)
 
     if delta_y_xaxis == 0:
-        return quatFrom2Axes(x=axis_with_x_comp, z=zaxis)
+        quats = quatFrom2Axes(x=axis_with_x_comp, z=zaxis)
     elif delta_x_yaxis == 0:
-        return quatFrom2Axes(y=axis_with_y_comp, z=zaxis)
+        quats = quatFrom2Axes(y=axis_with_y_comp, z=zaxis)
     else:
         raise Exception(
             f"For Segment {seg_number} you have chosen a marker combination which has "
@@ -105,68 +142,14 @@ def _construct_quat_from_three_markers(
             " unit vectors then."
         )
 
-
-def _construct_quat_from_four_markers(
-    path_optitrack,
-    seg_number: int,
-    marker_imu_setup: dict,
-    hz1,
-    hz2,
-    verbose: bool = True,
-    resample: bool = True,
-):
-    from qmt import quatInterp
-
-    if seg_number not in _list_segments_in_omc_data(path_optitrack):
-        return
-
-    setup = marker_imu_setup[f"seg{seg_number}"]
-    q_estimate = []
-    for xaxis_marker_nrs, yaxis_marker_nrs in zip(
-        setup["xaxis_markers"], setup["yaxis_markers"]
-    ):
-        q_estimate.append(
-            _construct_quat_from_three_markers(
-                path_optitrack,
-                seg_number,
-                xaxis_marker_nrs,
-                yaxis_marker_nrs,
-                marker_imu_setup,
-            )
-        )
-
-    q = q_estimate[0]
-    for i, q_alt in enumerate(q_estimate[1:]):
-        mask = np.isnan(q) * ~np.isnan(q_alt)
-        assert _all_equal_in_last_axis(np.isnan(q))
-        if verbose:
-            print(
-                f"For seg{seg_number} marker alternative {i+1} has provided"
-                f" {np.sum(mask)} non-NaN values"
-            )
-        q[mask] = q_alt[mask]
-
-    if verbose:
-        _nan_check(q, seg_number, hz1)
-
-    if resample:
-        ind = np.arange(q.shape[0], step=hz1 / hz2)
-        q = quatInterp(q, ind)
-        q = _slerp_nan_values(q)
-        if verbose:
-            print("--- AFTER RESAMPLE ---")
-            _nan_check(q, seg_number, hz2)
-
-    return q
+    # get ride of nan values
+    return resample(quats, 1.0, 1.0)
 
 
 def _construct_pos_from_single_marker(
     path_optitrack,
     seg_number: int,
     marker_imu_setup: dict,
-    hz1,
-    hz2,
-    resample: bool = True,
 ):
     xyz = _get_marker_xyz(
         path_optitrack,
@@ -174,18 +157,8 @@ def _construct_pos_from_single_marker(
         marker_imu_setup[f"seg{seg_number}"]["pos_single_marker"],
     )
 
-    if resample:
-        N = xyz.shape[0]
-        xs = np.arange(N, step=hz1 / hz2)
-        xp = np.arange(N)
+    # get ride of nan values
+    xyz = resample(xyz, 1.0, 1.0)
 
-        xyz = np.hstack([np.interp(xs, xp, xyz[:, i])[:, None] for i in range(3)])
-        xyz = _interp_nan_values(
-            xyz, lambda arr, alpha: arr[0] * (1 - alpha) + arr[1] * alpha
-        )
     # milimeters -> meters
     return xyz / 1000
-
-
-def _all_equal_in_last_axis(arr):
-    return np.all(np.repeat(arr[..., 0:1], arr.shape[-1], axis=-1) == arr)

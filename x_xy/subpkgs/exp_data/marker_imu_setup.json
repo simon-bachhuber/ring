@@ -44,5 +44,7 @@
         "imu_flex": "85",
         "pos_single_marker": 2
     },
-    "earth_omc_to_earth_inertial": "0.36619034 0.36498888 -0.60637826 -0.60414664"
+    "earth_omc_to_earth_inertial": "0.36619034 0.36498888 -0.60637826 -0.60414664",
+    "segments": ["seg1", "seg2", "seg3", "seg4", "seg5"],
+    "imus": ["imu_rigid", "imu_flex"]
 }
