@@ -4,9 +4,11 @@ from .quat import angle_error
 from .quat import ensure_positive_w
 from .quat import euler_to_quat
 from .quat import quat_angle
+from .quat import quat_avg
 from .quat import quat_euler
 from .quat import quat_from_3x3
 from .quat import quat_inv
+from .quat import quat_lowpassfilter
 from .quat import quat_mul
 from .quat import quat_project
 from .quat import quat_random

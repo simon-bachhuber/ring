@@ -18,6 +18,10 @@
 
 ::: x_xy.maths.quat.quat_project
 
+::: x_xy.maths.quat.quat_avg
+
+::: x_xy.maths.quat.quat_lowpassfilter
+
 ::: x_xy.maths.quat.rotate
 
 ::: x_xy.maths.quat.rotate_quat

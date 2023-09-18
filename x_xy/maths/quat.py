@@ -3,6 +3,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import jax.random as jrand
+import numpy as np
 
 from .basic import wrap_to_pi
 from .safe import safe_arcsin
@@ -235,3 +236,37 @@ def quat_project(q: jax.Array, k: jax.Array) -> tuple[jax.Array, jax.Array]:
     q_pri = quat_rot_axis(k, -phi_pri)
     q_res = quat_mul(q, quat_inv(q_pri))
     return q_pri, q_res
+
+
+def quat_avg(qs: np.ndarray):
+    "Tolga Birdal's algorithm. Numpy implementation, not jax."
+    if qs.ndim == 1:
+        qs = qs[None, :]
+    assert qs.ndim == 2
+    return np.linalg.eigh(np.einsum("ij,ik,i->...jk", qs, qs, np.ones((qs.shape[0],))))[
+        1
+    ][:, -1]
+
+
+def quat_lowpassfilter(qs: jax.Array, alpha: float = 0.55) -> jax.Array:
+    def f(y, x):
+        # error quaternion; current state -> target
+        q_err = quat_mul(x, quat_inv(y))
+        # scale down error quaternion
+        axis, angle = quat_to_rot_axis(q_err)
+        # ensure angle >= 0
+        axis, angle = jax.lax.cond(
+            angle < 0,
+            lambda axis, angle: (-axis, -angle),
+            lambda axis, angle: (axis, angle),
+            axis,
+            angle,
+        )
+        angle_scaled = angle * alpha
+        q_err_scaled = quat_rot_axis(axis, angle_scaled)
+        # move small step toward error quaternion
+        y = quat_mul(q_err_scaled, y)
+        return y, y
+
+    qs_filtered = jax.lax.scan(f, qs[0], qs[1:])[1]
+    return jnp.vstack((qs[0:1], qs_filtered))
