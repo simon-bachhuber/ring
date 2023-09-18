@@ -770,6 +770,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#x_xy.subpkgs.sys_composer.delete_sys.make_sys_noimu" class="md-nav__link">
+    make_sys_noimu()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#x_xy.subpkgs.sys_composer.inject_sys.inject_system" class="md-nav__link">
     inject_system()
   </a>
@@ -823,6 +830,26 @@
   
   <span class="md-ellipsis">
     exp_data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../omc/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    omc
   </span>
   
 
@@ -996,6 +1023,43 @@
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">parse_system</span><span class="p">(</span><span class="n">new_sys</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.subpkgs.sys_composer.delete_sys.make_sys_noimu" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">make_sys_noimu</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">imu_link_names</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#x_xy.subpkgs.sys_composer.delete_sys.make_sys_noimu" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Returns, e.g., imu_attachment = {'imu1': 'seg1', 'imu2': 'seg3'}</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/subpkgs/sys_composer/delete_sys.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">make_sys_noimu</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">System</span><span class="p">,</span> <span class="n">imu_link_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="s2">&quot;Returns, e.g., imu_attachment = {&#39;imu1&#39;: &#39;seg1&#39;, &#39;imu2&#39;: &#39;seg3&#39;}&quot;</span>
+    <span class="k">if</span> <span class="n">imu_link_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">imu_link_names</span> <span class="o">=</span> <span class="n">_autodetermine_imu_names</span><span class="p">(</span><span class="n">sys</span><span class="p">)</span>
+    <span class="n">imu_attachment</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">parent_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">imu_link_names</span><span class="p">}</span>
+    <span class="n">sys_noimu</span> <span class="o">=</span> <span class="n">delete_subsystem</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">imu_link_names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sys_noimu</span><span class="p">,</span> <span class="n">imu_attachment</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
