@@ -455,6 +455,12 @@ class System(_Base):
     def change_model_name(self, name: str) -> "System":
         return self.replace(model_name=name)
 
+    def rename_link(self, old_name: str, new_name) -> "System":
+        old_idx = self.name_to_idx(old_name)
+        new_link_names = self.link_names.copy()
+        new_link_names[old_idx] = new_name
+        return self.replace(link_names=new_link_names)
+
     @staticmethod
     def deep_equal(a, b):
         if type(a) is not type(b):
