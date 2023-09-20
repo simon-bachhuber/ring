@@ -2,7 +2,6 @@ import random
 from typing import Optional
 
 import jax
-from optax import LookaheadParams
 import tqdm
 import tree_utils
 
@@ -24,7 +23,7 @@ class TrainingLoopCallback:
         self,
         i_episode: int,
         metrices: dict,
-        params: LookaheadParams,
+        params: dict,
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
@@ -64,11 +63,7 @@ class TrainingLoop:
         T = tree_utils.tree_shape(self._sample_eval, 1)
 
         for logger in loggers:
-            if isinstance(params, LookaheadParams):
-                fast_params = params.fast
-            else:
-                fast_params = params
-            logger.log(dict(n_params=n_params(fast_params), batchsize=batchsize, T=T))
+            logger.log(dict(n_params=n_params(params), batchsize=batchsize, T=T))
 
     @property
     def key(self):
