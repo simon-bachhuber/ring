@@ -18,6 +18,7 @@ from .callbacks import LogGradsTrainingLoopCallBack
 from .callbacks import NanKillRunCallback
 from .callbacks import SaveParamsTrainingLoopCallback
 from .callbacks import TimingKillRunCallback
+from .callbacks import WandbKillRun
 from .ml_utils import Logger
 from .optimizer import make_optimizer
 from .training_loop import TrainingLoop
@@ -184,7 +185,7 @@ def train(
         default_metrices, network.apply, initial_state, pmap_size, vmap_size
     )
 
-    default_callbacks = [_DefaultEvalFnCallback(eval_fn)]
+    default_callbacks = [_DefaultEvalFnCallback(eval_fn), WandbKillRun()]
 
     if callback_save_params is not None:
         default_callbacks.append(SaveParamsTrainingLoopCallback(callback_save_params))

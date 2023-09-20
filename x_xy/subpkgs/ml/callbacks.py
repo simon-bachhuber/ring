@@ -9,6 +9,7 @@ import jax
 import jax.numpy as jnp
 import tree_utils
 
+import wandb
 from x_xy import base
 from x_xy.experimental import pipeline
 from x_xy.utils import distribute_batchsize
@@ -360,6 +361,29 @@ class TimingKillRunCallback(TrainingLoopCallback):
             runtime_h = runtime / 3600
             print(f"Run is killed due to timing. Current runtime is {runtime_h}h.")
             send_kill_run_signal()
+
+
+class WandbKillRun(TrainingLoopCallback):
+    def __init__(self, stop_tag: str = "stop"):
+        self.stop_tag = stop_tag
+
+    def after_training_step(
+        self,
+        i_episode: int,
+        metrices: dict,
+        params: dict,
+        grads: list[dict],
+        sample_eval: dict,
+        loggers: list[Logger],
+    ) -> None:
+        if wandb.run is not None:
+            tags = (
+                wandb.Api()
+                .run(path=f"{wandb.run.entity}/{wandb.run.project}/{wandb.run.id}")
+                .tags
+            )
+            if self.stop_tag in tags:
+                send_kill_run_signal()
 
 
 def _repeat_state(state, repeats: int):
