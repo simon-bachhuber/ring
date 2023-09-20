@@ -18,6 +18,7 @@ def make_optimizer(
     schedule = optax.cosine_decay_schedule(lr, steps, 1e-7)
     optimizer = optax.chain(
         optax.adaptive_grad_clip(0.1),
+        optax.clip_by_global_norm(0.2),
         inner_opt(schedule),
     )
     optimizer = skip_large_update(optimizer, 5.0, 6 * 25, warmup=300)
