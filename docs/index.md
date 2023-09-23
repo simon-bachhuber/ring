@@ -37,6 +37,11 @@ The following publications utilize this software library, and refer to it as the
 - [*Plug-and-Play Sparse Inertial Motion Tracking With Sim-to-Real Transfer*](https://ieeexplore.ieee.org/document/10225275)
 - [*RNN-based State and Parameter Estimation for Sparse Magnetometer-free Inertial Motion Tracking*](https://www.journals.infinite-science.de/index.php/automed/article/view/745)
 
+### Other useful ressources
+
+Particularly useful is the following publication from *Roy Featherstone*
+- [*A Beginner’s Guide to 6-D Vectors (Part 2)*](https://ieeexplore.ieee.org/document/5663690)
+
 ## Contact
 
 Simon Bachhuber (simon.bachhuber@fau.de)
