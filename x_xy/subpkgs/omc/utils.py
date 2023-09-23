@@ -30,6 +30,26 @@ def crop_tail(signal: PyTree, hz: Optional[PyTree] = None):
     return tree.map_structure(crop, signal, hz)
 
 
+def hz_helper(
+    segments: list[str],
+    imus: list[str] = ["imu_rigid, imu_flex"],
+    markers: list[int] = [1, 2, 3, 4],
+    hz_imu: float = 40.0,
+    hz_omc: float = 120.0,
+):
+    hz_in = {}
+    imu_dict = dict(acc=hz_imu, mag=hz_imu, gyr=hz_imu)
+    for seg in segments:
+        hz_in[seg] = {}
+        for imu in imus:
+            hz_in[seg][imu] = imu_dict
+        for marker in markers:
+            hz_in[f"marker{marker}"] = hz_omc
+        hz_in["quat"] = hz_omc
+
+    return hz_in
+
+
 def resample(
     signal: PyTree,
     hz_in: float | PyTree,
@@ -68,11 +88,10 @@ def resample(
     return tree.map_structure(resample_array, signal, hz_in, hz_out)
 
 
-def autodetermine_imu_freq(path_imu: str) -> int:
-    path_imu = Path(path_imu).expanduser()
+def autodetermine_imu_freq(path_imu_folder: str) -> int:
     hz = []
-    for file in os.listdir(path_imu):
-        file = Path(path_imu).joinpath(file)
+    for file in os.listdir(path_imu_folder):
+        file = Path(path_imu_folder).joinpath(file)
         if file.suffix != ".txt":
             continue
 
@@ -88,8 +107,6 @@ def autodetermine_imu_freq(path_imu: str) -> int:
 
 
 def autodetermine_optitrack_freq(path_optitrack: str):
-    path_optitrack = Path(path_optitrack).expanduser()
-
     def find_framerate_in_line(line: str, key: str):
         before = line.find(key) + len(key) + 1
         return int(float(line[before:].split(",")[0]))
@@ -103,6 +120,48 @@ def autodetermine_optitrack_freq(path_optitrack: str):
         assert hz_cap == hz_exp, "Capture and exported frame rate are not equal"
 
     return hz_exp
+
+
+def autodetermine_imu_file_prefix(path_imu_folder: str) -> str:
+    prefixes = []
+    for file in os.listdir(path_imu_folder):
+        if file[-4:] != ".txt":
+            continue
+        prefixes.append(file[:-6])
+
+    assert len(set(prefixes)) == 1, f"IMUs have multiple different prefixes {prefixes}"
+    return prefixes[0]
+
+
+_POSSIBLE_DELIMITERS = [";", "\t"]
+
+
+def autodetermine_imu_file_delimiter(path_imu_folder: str) -> str:
+    delimiters = []
+    for file in os.listdir(path_imu_folder):
+        file = Path(path_imu_folder).joinpath(file)
+        if file.suffix != ".txt":
+            continue
+
+        with open(file) as f:
+            # throw away header
+            for _ in range(10):
+                f.readline()
+            # read in some data row
+            data_row = f.readline()
+            for delim in _POSSIBLE_DELIMITERS:
+                # 9D IMU + packet count = 10, or
+                # 9D IMU + packet count + finite time + quat estimate = 15
+                if len(data_row.split(delim)) in [10, 15]:
+                    delimiters.append(delim)
+                    break
+            else:
+                raise Exception(f"No possible delimiter found for row={data_row}")
+
+    assert (
+        len(set(delimiters)) == 1
+    ), f"IMUs have multiple different delimiters {delimiters}"
+    return delimiters[0]
 
 
 # could use instead of `qmt.nanInterp`

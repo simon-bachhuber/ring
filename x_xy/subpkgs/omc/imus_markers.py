@@ -149,12 +149,12 @@ def _construct_quat_from_three_markers(
 def _construct_pos_from_single_marker(
     path_optitrack,
     seg_number: int,
-    marker_imu_setup: dict,
+    marker_number: int,
 ):
     xyz = _get_marker_xyz(
         path_optitrack,
         seg_number,
-        marker_imu_setup[f"seg{seg_number}"]["pos_single_marker"],
+        marker_number,
     )
 
     # get ride of nan values
