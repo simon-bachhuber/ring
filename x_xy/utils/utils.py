@@ -20,7 +20,7 @@ def tree_equal(a, b):
             return False
         return all(tree_equal(a[i], b[i]) for i in range(len(a)))
     if isinstance(a, jax.Array):
-        return jnp.array_equal(a, b)
+        return jnp.allclose(a, b)
     return a == b
 
 
