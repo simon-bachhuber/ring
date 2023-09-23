@@ -113,12 +113,11 @@ DEFAULT_GRAVITY = jnp.array([0, 0, 9.81])
 DEFAULT_DT = jnp.array(0.01)
 
 
-def load_sys_from_str(xml_str: str, prefix: str = "") -> base.System:
+def load_sys_from_str(xml_str: str) -> base.System:
     """Load system from string input.
 
     Args:
         xml_str (str): XML Presentation of the system.
-        prefix (str, optional): Prefix to add to all link names. Defaults to "".
 
     Returns:
         base.System: Loaded system.
@@ -161,7 +160,7 @@ def load_sys_from_str(xml_str: str, prefix: str = "") -> base.System:
 
         link_parents[current_link_idx] = parent
         link_types[current_link_idx] = current_link_typ
-        link_names[current_link_idx] = prefix + body.attrib["name"]
+        link_names[current_link_idx] = body.attrib["name"]
 
         transform = abstract.AbsTrans.from_xml(body.attrib)
         pos_min, pos_max = abstract.AbsPosMinMax.from_xml(body.attrib, transform.pos)
@@ -228,8 +227,8 @@ def load_sys_from_str(xml_str: str, prefix: str = "") -> base.System:
     return parse_system(sys)
 
 
-def load_sys_from_xml(xml_path: str, prefix: str = ""):
-    return load_sys_from_str(_load_xml(xml_path), prefix=prefix)
+def load_sys_from_xml(xml_path: str):
+    return load_sys_from_str(_load_xml(xml_path))
 
 
 def _load_xml(xml_path: str) -> str:
@@ -237,3 +236,13 @@ def _load_xml(xml_path: str) -> str:
     with open(xml_path, "r") as f:
         xml_str = f.read()
     return xml_str
+
+
+def load_comments_from_xml(file_path: str) -> list[str]:
+    parser = ElementTree.XMLParser(target=ElementTree.TreeBuilder(insert_comments=True))
+    tree = ElementTree.parse(file_path, parser)
+    comments = []
+    for node in tree.iter():
+        if "function Comment" in str(node.tag):
+            comments.append(node.text)
+    return comments

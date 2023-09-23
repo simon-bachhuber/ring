@@ -18,7 +18,6 @@ def inject_system(
     sys: base.System,
     sub_sys: base.System,
     at_body: Optional[str] = None,
-    prefix: str = "",
 ) -> base.System:
     """Combine two systems into one.
 
@@ -28,15 +27,10 @@ def inject_system(
             large system `sys`.
         at_body (Optional[str], optional): Into which body of the large system
             small system will be included. Defaults to `worldbody`.
-        prefix (Optional[str], optional): Prefix that is added to body identifiers
-            of small system. Defaults to ''.
 
     Returns:
         base.System: _description_
     """
-
-    # give bodies new names if required
-    sub_sys = sub_sys.replace(link_names=[prefix + name for name in sub_sys.link_names])
 
     # replace parent array
     if at_body is None:

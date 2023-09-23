@@ -116,7 +116,9 @@ def predict(
             # replace render color of geoms for render of predicted motion
             prediction_color = jnp.array([78.0, 163, 243, 255]) / 255
             sys_newcolor = _geoms_replace_color(sys, prediction_color)
-            sys_render = sys_composer.inject_system(sys_xs, sys_newcolor, prefix="hat_")
+            sys_render = sys_composer.inject_system(
+                sys_xs, sys_newcolor.add_prefix_suffix("hat_")
+            )
 
             # `yhat` are child-to-parent transforms, but we need parent-to-child
             # this dictonary has now all links that don't connect to worldbody

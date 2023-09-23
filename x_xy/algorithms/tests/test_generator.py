@@ -87,5 +87,5 @@ def test_randomize_positions():
 
 def test_cor():
     sys = x_xy.load_example("test_three_seg_seg2")
-    sys = sys_composer.inject_system(sys, sys, prefix="second_")
+    sys = sys_composer.inject_system(sys, sys.add_prefix_suffix("second_"))
     x_xy.build_generator(sys, x_xy.RCMG_Config(cor=True))(jax.random.PRNGKey(1))

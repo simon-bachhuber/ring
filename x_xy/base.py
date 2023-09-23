@@ -352,7 +352,9 @@ class Link(_Base):
     )
 
     # internal useage
+    # gets populated by `parse_system`
     inertia: Inertia = Inertia.zero()
+    # gets populated by `forward_kinematics`
     transform2: Transform = Transform.zero()
     transform: Transform = Transform.zero()
 
@@ -371,6 +373,7 @@ Q_WIDTHS = {
     "rx": 1,
     "ry": 1,
     "rz": 1,
+    "saddle": 2,
 }
 QD_WIDTHS = {
     "free": 6,
@@ -385,6 +388,7 @@ QD_WIDTHS = {
     "rx": 1,
     "ry": 1,
     "rz": 1,
+    "saddle": 2,
 }
 
 
@@ -459,6 +463,16 @@ class System(_Base):
         old_idx = self.name_to_idx(old_name)
         new_link_names = self.link_names.copy()
         new_link_names[old_idx] = new_name
+        return self.replace(link_names=new_link_names)
+
+    def add_prefix_suffix(
+        self, prefix: Optional[str] = None, suffix: Optional[str] = None
+    ) -> "System":
+        if prefix is None:
+            prefix = ""
+        if suffix is None:
+            suffix = ""
+        new_link_names = [prefix + name + suffix for name in self.link_names]
         return self.replace(link_names=new_link_names)
 
     @staticmethod
