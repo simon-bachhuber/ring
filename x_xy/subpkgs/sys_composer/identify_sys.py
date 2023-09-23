@@ -1,9 +1,4 @@
 from typing import NamedTuple
-import warnings
-
-import jax.numpy as jnp
-
-from x_xy.utils import tree_equal
 
 from ... import base
 
@@ -32,7 +27,7 @@ def _old_to_new_indices(new_parents: list[int]) -> list[int]:
     return old_to_new_indices + [-1]
 
 
-class Neighbourhood(NamedTuple):
+class Node(NamedTuple):
     link_idx_old_indices: int
     link_idx_new_indices: int
     old_parent_old_indices: int
@@ -44,10 +39,7 @@ class Neighbourhood(NamedTuple):
 
 def identify_system(
     sys: base.System, new_parents: list[int | str], checks: bool = True
-) -> list[Neighbourhood]:
-    if checks:
-        _identify_sys_checks(sys)
-
+) -> tuple[list[Node], list[int], list[int]]:
     new_parents_old_indices = [
         sys.name_to_idx(ele) if isinstance(ele, str) else ele for ele in new_parents
     ]
@@ -60,7 +52,7 @@ def identify_system(
         new_parent_old_indices = new_parents_old_indices[link_idx_old_indices]
         parent_changed = new_parent_old_indices != old_parent_old_indices
         structure.append(
-            Neighbourhood(
+            Node(
                 link_idx_old_indices,
                 old_to_new[link_idx_old_indices],
                 old_parent_old_indices,
@@ -90,27 +82,3 @@ def identify_system(
         permutation,
         [old_to_new[p] for p in new_parents_array_old_indices],
     )
-
-
-def _identify_sys_checks(sys: base.System) -> None:
-    # check that all `transform1` and `pos_min_max` of links that connect to -1
-    # are set to zero / unity
-    for i in range(sys.num_links()):
-        if sys.link_parents[i] == -1:
-            link = sys.links[i]
-            assertion_print = f"""Currently morphing systems with non-unity worldbody
-            to link static transformations (e.g. through specifing `pos`, `euler`,
-            `quat` in xml attributes of a body that directly connects to the
-            worldbody) is not supported. The system `{sys.model_name}` and body
-            `{sys.idx_to_name(i)}` violate this."""
-            assert tree_equal(link.transform1, base.Transform.zero()), assertion_print
-            assert tree_equal(link.pos_min, jnp.zeros((3,))), assertion_print
-            assert tree_equal(link.pos_max, jnp.zeros((3,))), assertion_print
-
-    # warn if there are joints to worldbody that are not of type `free`
-    # those will not be preserved
-    if sys.link_parents.count(-1) > 1:
-        warnings.warn(
-            "Multiple bodies connect to worldbody. "
-            "This ambiguity might not be preserved during morphing."
-        )

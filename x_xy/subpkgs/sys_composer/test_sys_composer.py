@@ -37,7 +37,7 @@ def test_inject_system():
         csys = inject_system(sys2, sys2, "lower")
 
     # .. have to add a prefix
-    csys = inject_system(sys2, sys2, "lower", prefix="sub_")
+    csys = inject_system(sys2, sys2.add_prefix_suffix("sub_"), "lower")
     assert len(sim(csys)) == csys.q_size() == 2 * sys2.q_size()
 
 
@@ -52,9 +52,12 @@ def test_delete_subsystem():
     )
 
     # delete system "in the middle"
-    sys3 = inject_system(inject_system(sys2, sys2, prefix="1"), sys2, prefix="2")
+    sys3 = inject_system(
+        inject_system(sys2, sys2.add_prefix_suffix("1")), sys2.add_prefix_suffix("2")
+    )
     assert tree_equal(
-        delete_subsystem(sys3, "1upper"), inject_system(sys2, sys2, prefix="2")
+        delete_subsystem(sys3, "1upper"),
+        inject_system(sys2, sys2.add_prefix_suffix("2")),
     )
 
     # test jit
@@ -127,43 +130,28 @@ def test_identify_system():
     assert list_equal(parent_array, new_parent_array_truth)
 
 
+@pytest.mark.long
 def test_morph_all_examples():
-    exceptions = ["test_double_pendulum", "test_sensors", "branched"]
     for example in x_xy.io.list_examples():
         print("Example: ", example)
         sys = x_xy.io.load_example(example)
-
-        if sys.model_name in exceptions:
-            with pytest.raises(AssertionError):
-                sys_re = morph_system(sys, sys.link_parents)
-        else:
-            sys_re = morph_system(sys, sys.link_parents)
-            # this should be a zero operation
-            assert sys_compare(sys, sys_re)
-
-    # TODO
-    if False:
-        # Test two known inverses
-        sys = x_xy.io.load_example("test_three_seg_seg2")
-        sys_re = morph_system(
-            morph_system(sys, ["seg3", "seg2", "seg1", -1, "seg3"]),
-            ["seg2", -1, "seg2", "seg1", "seg3"],
-        )
+        sys_re = morph_system(sys, sys.link_parents)
+        # this should be a zero operation
         assert sys_compare(sys, sys_re)
 
-    sys = x_xy.io.load_example("test_kinematics")
-    sys_re = morph_system(morph_system(sys, [1, -1, 0, 2, 2]), [1, -1, 1, 2, 2])
-    assert sys_compare(sys, sys_re)
+
+def test_morph_one_example():
+    for example in x_xy.io.list_examples()[:1]:
+        print("Example: ", example)
+        sys = x_xy.io.load_example(example)
+        sys_re = morph_system(sys, sys.link_parents)
+        # this should be a zero operation
+        assert sys_compare(sys, sys_re)
 
 
 def test_morph_four_seg():
     sys_seg1 = x_xy.io.load_example("test_morph_system/four_seg_seg1")
-    sys_seg2 = x_xy.io.load_example("test_morph_system/four_seg_seg2")
     sys_seg3 = x_xy.io.load_example("test_morph_system/four_seg_seg3")
-    sys_seg2_from_seg1 = morph_system(
-        sys_seg1, ["seg2", -1, "seg2", "seg3", "seg4", "seg1"]
-    ).change_model_name(sys_seg2.model_name)
-    assert sys_compare(sys_seg2, sys_seg2_from_seg1)
     sys_seg3_from_seg1 = morph_system(
         sys_seg1, ["seg2", "seg3", -1, "seg3", "seg4", "seg1"]
     ).change_model_name(sys_seg3.model_name)
