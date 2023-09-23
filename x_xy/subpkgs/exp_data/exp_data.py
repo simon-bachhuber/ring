@@ -6,6 +6,7 @@ import joblib
 import yaml
 
 import x_xy
+from x_xy.io import load_comments_from_xml
 from x_xy.subpkgs import sys_composer
 from x_xy.subpkgs.sim2real.sim2real import _crop_sequence
 from x_xy.utils import parse_path
@@ -35,6 +36,28 @@ def _replace_rxyz_with(sys: x_xy.base.System, replace_with: str):
     )
 
 
+def _morph_new_parents_from_xml_file(file_path: str) -> dict[str, list]:
+    comments = load_comments_from_xml(file_path)
+    assert len(comments) == 9
+    seg_new_parents_map = {}
+    for comment in comments[5:]:
+        segi, new_parents = comment.split(":")
+        seg_new_parents_map[segi] = eval(new_parents)
+    return seg_new_parents_map
+
+
+def _marker_numbers_from_xml_file(file_path: str) -> dict[str, int]:
+    comments = load_comments_from_xml(file_path)
+    assert len(comments) == 9
+    seg_marker_map = {}
+    for comment in comments[:5]:
+        segi, marker_eq_number = comment.split(",")
+        seg_marker_map[segi] = int(marker_eq_number[-1])
+        # marker numbers are 1,2,3, or 4
+        assert 1 <= seg_marker_map[segi] <= 4
+    return seg_marker_map
+
+
 def load_sys(
     exp_id: str,
     preprocess_sys: Optional[Callable] = None,
@@ -52,7 +75,7 @@ def load_sys(
         sys = _replace_rxyz_with(sys, replace_rxyz)
 
     if morph_yaml_key is not None:
-        new_parents = _read_yaml(exp_id)["morph"][morph_yaml_key]
+        new_parents = _morph_new_parents_from_xml_file(xml_path)[morph_yaml_key]
         sys = sys_composer.morph_system(sys, new_parents)
 
     if delete_after_morph is not None:
@@ -103,4 +126,12 @@ def load_data(
     t1 = max(t1, 0.0)
     t2 = timings[motion_stop]["stop" if stop_for_stop else "start"] + right_padd
 
-    return _crop_sequence(trial_data, 1 / HZ, t1=t1, t2=t2)
+    trial_data = _crop_sequence(trial_data, 1 / HZ, t1=t1, t2=t2)
+
+    xml_path = _load_file_path(exp_id, "xml")
+    seg_to_marker_number = _marker_numbers_from_xml_file(xml_path)
+
+    for seg in trial_data:
+        trial_data[seg]["pos"] = trial_data[seg][f"marker{seg_to_marker_number[seg]}"]
+
+    return trial_data
