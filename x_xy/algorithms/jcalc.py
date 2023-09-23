@@ -161,6 +161,11 @@ def _spherical_transform(q, _):
     return base.Transform.create(rot=q)
 
 
+def _saddle_transform(q, _):
+    rot = maths.euler_to_quat(jnp.array([0.0, q[0], q[1]]))
+    return base.Transform.create(rot=rot)
+
+
 def _p3d_transform(q, _):
     return base.Transform.create(pos=q)
 
@@ -270,6 +275,28 @@ def _draw_spherical(
     return q
 
 
+def _draw_saddle(
+    config: RCMG_Config,
+    key_t: jax.random.PRNGKey,
+    key_value: jax.random.PRNGKey,
+    _: jax.Array,
+) -> jax.Array:
+    @jax.vmap
+    def draw_euler_angles(key_t, key_value):
+        return _draw_rxyz(
+            config,
+            key_t,
+            key_value,
+            None,
+            enable_range_of_motion=False,
+            free_spherical=False,
+        )
+
+    double = lambda key: jax.random.split(key)
+    yz_euler_angles = draw_euler_angles(double(key_t), double(key_value)).T
+    return yz_euler_angles
+
+
 def _draw_p3d_and_cor(
     config: RCMG_Config,
     _: jax.random.PRNGKey,
@@ -345,6 +372,7 @@ _joint_types = {
     "pz": JointModel(
         lambda q, _: _pxyz_transform(q, _, jnp.array([0.0, 0, 1])), [mpz], _draw_pxyz
     ),
+    "saddle": JointModel(_saddle_transform, [mry, mrz], _draw_saddle),
 }
 
 
