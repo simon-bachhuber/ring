@@ -40,6 +40,7 @@ VisualPosOri2 = PyTree
 class Scene(ABC):
     _xyz: bool = True
     _xyz_root: bool = True
+    _xyz_transform1: bool = True
     visuals: list[Visual] = []
 
     """
@@ -72,6 +73,12 @@ class Scene(ABC):
         self._xyz = False
         if disable_root:
             self._xyz_root = False
+
+    def enable_xyz_transform1(self):
+        self._xyz_transform1 = True
+
+    def disable_xyz_tranform1(self):
+        self._xyz_transform1 = False
 
     def render(
         self, camera: Optional[Camera | list[Camera]] = None
@@ -135,6 +142,9 @@ class Scene(ABC):
                 visual = self._add_capsule(geom)
             elif isinstance(geom, XYZ):
                 visual = self._add_xyz()
+                if not self._xyz_transform1:
+                    geom_transform.pop()
+                    geom_transform.append(base.Transform.zero())
             else:
                 raise Exception(f"Unknown geom type: {type(geom)}")
             self.visuals.append(visual)
