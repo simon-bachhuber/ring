@@ -43,7 +43,8 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         self._controls = Controls()
         main_layout.addWidget(self._controls)
-        self._canvas_wrapper = VispyScene(size=CANVAS_SIZE, bgcolor="w")
+        self._canvas_wrapper = VispyScene(size=CANVAS_SIZE, bgcolor="black")
+        self._canvas_wrapper.disable_xyz_tranform1()
         main_layout.addWidget(self._canvas_wrapper.canvas.native)
 
         central_widget.setLayout(main_layout)
@@ -76,7 +77,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
             c1, c2, c3 = random.split(key, 3)
             sys = pipeline.rr_joint.setup_fn_randomize_joint_axes(c1, sys)
             sys = _setup_fn_randomize_positions(c2, sys)
-            sys = pipeline.generator._setup_fn_randomize_transform1_rot(c3, sys, 0.2)
+            # sys = pipeline.generator._setup_fn_randomize_transform1_rot(c3, sys, 0.2)
 
         self._controls.joint_control.clear()
         self._controls.joint_control.addItems(sys.link_names)
