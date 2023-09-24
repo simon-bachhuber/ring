@@ -10,6 +10,7 @@ import warnings
 
 import jax
 import numpy as np
+import qmt
 
 from x_xy.utils import parse_path
 
@@ -40,23 +41,6 @@ def read_omc(
     verbose: bool = True,
     assume_imus_synced: bool = False,
 ) -> dict:
-    try:
-        import qmt
-    except ImportError:
-        print(
-            "This module requires the `qmt` library to be installed, "
-            "use `pip install qmt`"
-        )
-    try:
-        import pandas
-
-        del pandas
-    except ImportError:
-        print(
-            "This module requires the `pandas` library to be installed, "
-            "use `pip install pandas`"
-        )
-
     p_setup_file = parse_path(path_marker_imu_setup_file, extension="json")
     path_optitrack = parse_path(path_optitrack_file, extension="csv")
     path_imu = parse_path(path_imu_folder)
@@ -150,6 +134,4 @@ def read_omc(
 
 
 def _from_euler(angles_deg: np.ndarray):
-    import qmt
-
     return qmt.quatFromEulerAngles(np.deg2rad(angles_deg))

@@ -2,27 +2,20 @@ from abc import ABC
 from abc import abstractmethod
 from abc import abstractstaticmethod
 from functools import partial
-from pathlib import Path
-import time
-from typing import Optional, Sequence, TypeVar, Union
+from typing import Optional, TypeVar
 
-import imageio
 import jax
 import jax.numpy as jnp
 import numpy as np
-import tqdm
-import tree_utils
 from tree_utils import PyTree
 from tree_utils import tree_batch
-from vispy import app
 from vispy import scene
 from vispy.scene import MatrixTransform
 
-import x_xy
 from x_xy import algebra
 from x_xy import maths
 
-from . import visuals
+from . import vispy_visuals
 from .. import base
 from ..base import Box
 from ..base import Capsule
@@ -274,7 +267,7 @@ class VispyScene(Scene):
         return self.canvas.render(alpha=True)
 
     def _add_box(self, box: Box) -> Visual:
-        return visuals.Box(
+        return vispy_visuals.Box(
             box.dim_x,
             box.dim_z,
             box.dim_y,
@@ -284,7 +277,7 @@ class VispyScene(Scene):
         )
 
     def _add_sphere(self, sphere: Sphere) -> Visual:
-        return visuals.Sphere(
+        return vispy_visuals.Sphere(
             sphere.radius,
             color=sphere.color,
             edge_color=sphere.edge_color,
@@ -292,7 +285,7 @@ class VispyScene(Scene):
         )
 
     def _add_cylinder(self, cyl: Cylinder) -> Visual:
-        return visuals.Cylinder(
+        return vispy_visuals.Cylinder(
             cyl.radius,
             cyl.length,
             color=cyl.color,
@@ -301,7 +294,7 @@ class VispyScene(Scene):
         )
 
     def _add_capsule(self, cap: Capsule) -> Visual:
-        return visuals.Capsule(
+        return vispy_visuals.Capsule(
             cap.radius,
             cap.length,
             color=cap.color,
@@ -347,318 +340,3 @@ class VispyScene(Scene):
         self, visual: scene.visuals.VisualNode, transform: np.ndarray, geom: Geometry
     ):
         visual.transform.matrix = transform
-
-
-def _animate_image(
-    path: Union[str, Path],
-    x: base.Transform,
-    scene: Scene,
-    *,
-    fmt: Optional[str] = None,
-    verbose: bool = True,
-):
-    scene.update(x)
-    frame = scene.render()
-
-    # remove alpha channel
-    if fmt == "jpg" and frame.shape[-1] == 4:
-        alpha = frame[..., 3]
-
-        # assumes frame is u8
-        if np.any(alpha != 255):
-            raise Exception("jpg does not support alpha")
-
-        frame = frame[..., :3]
-
-    if verbose:
-        print(f"Converting frames to {path} (this might take a while..)")
-
-    imageio.imsave(path, frame, format=fmt)
-
-
-def _animate_video(
-    path: Union[str, Path],
-    xs: list[base.Transform],
-    scene: Scene,
-    fps: int,
-    N: int,
-    step: int,
-    *,
-    show_pbar=True,
-    fmt: Optional[str] = None,
-    verbose: bool = True,
-):
-    frames = []
-    for t in tqdm.tqdm(range(0, N, step), "Rendering frames..", disable=not show_pbar):
-        scene.update(xs[t])
-        frames.append(scene.render())
-
-    if verbose:
-        print(f"DONE. Converting frames to {path} (this might take a while..)")
-
-    imageio.mimsave(path, frames, format=fmt, fps=fps)
-
-
-def render_frames(
-    sys: base.System,
-    xs: base.Transform | list[base.Transform],
-    show_pbar: bool = True,
-    **kwargs,
-) -> list[np.ndarray]:
-    """Render frames from system and trajectory of maximal coordinates `xs`.
-
-    Args:
-        sys (base.System): System to render.
-        xs (base.Transform | list[base.Transform]): Single or time-series
-        of maximal coordinates `xs`.
-        show_pbar (bool, optional): Whether or not to show a progress bar.
-        Defaults to True.
-
-    Returns:
-        list[np.ndarray]: Stacked rendered frames. Length == len(xs).
-    """
-    xs = x_xy.utils.to_list(xs)
-
-    n_links = sys.num_links()
-
-    def data_check(x):
-        assert (
-            x.pos.ndim == x.rot.ndim == 2
-        ), f"Expected shape = (n_links, 3/4). Got pos.shape{x.pos.shape}, "
-        "rot.shape={x.rot.shape}"
-        assert (
-            x.pos.shape[0] == x.rot.shape[0] == n_links
-        ), "Number of links does not match"
-
-    for x in xs:
-        data_check(x)
-
-    scene = _init_vispy_scene(sys, **kwargs)
-    frames = []
-    for x in tqdm.tqdm(xs, "Rendering frames..", disable=not show_pbar):
-        scene.update(x)
-        frames.append(scene.render())
-    return frames
-
-
-def animate(
-    path: Union[str, Path],
-    sys: base.System,
-    xs: base.Transform | Sequence[base.Transform],
-    fps: int = 50,
-    fmt: Optional[str] = None,
-    verbose: bool = True,
-    show_pbar: bool = True,
-    **kwargs,
-):
-    """
-    Make animation from system and trajectory of maximal coordinates. `xs` is either
-    a single base.Transform object for images or a Sequence of base.Transform objects
-    for a video format. The desired output format can be either inferred implicitely
-    from the extension of `path` or set explicitely using the `fmt` parameter. Mismatch
-    between the two is an error.
-    """
-    path = Path(path)
-    file_fmt = _infer_extension_from_path(path)
-
-    if file_fmt is not None and fmt is not None:
-        assert (
-            file_fmt == fmt.lower()
-        ), f"""The chosen filename `{path.name}` and required fmt `{fmt}`
-        are inconsistent."""
-    elif file_fmt is None and fmt is not None:
-        path = path.with_suffix("." + fmt)
-    elif fmt is None and file_fmt is not None:
-        fmt = file_fmt
-    else:
-        raise ValueError("neither fmt nor path extension given, can't infer format")
-
-    scene = _init_vispy_scene(sys, **kwargs)
-
-    n_links = sys.num_links()
-
-    def data_check(x):
-        assert (
-            x.pos.ndim == x.rot.ndim == 2
-        ), f"Expected shape = (n_links, 3/4). Got pos.shape{x.pos.shape}, "
-        "rot.shape={x.rot.shape}"
-        assert (
-            x.pos.shape[0] == x.rot.shape[0] == n_links
-        ), "Number of links does not match"
-
-    if fmt in ["jpg", "png"]:
-        # image fmts
-
-        if isinstance(xs, base.Transform):
-            x = xs
-        else:
-            x = xs[0]
-
-        data_check(x)
-
-        _animate_image(path, x, scene, fmt=fmt, verbose=verbose)
-
-    elif fmt in ["mp4", "gif"]:
-        # video fmts
-
-        if isinstance(xs, base.Transform):
-            xs = [xs]
-        else:
-            xs = list(xs)
-
-        for x in xs:
-            data_check(x)
-
-        N = len(xs)
-        _, step = _parse_timestep(sys.dt, fps, N)
-
-        _animate_video(
-            path, xs, scene, fps, N, step, show_pbar=show_pbar, fmt=fmt, verbose=verbose
-        )
-    else:
-        raise ValueError(f"fmt {fmt} is not implement")
-
-
-class Window:
-    def __init__(
-        self,
-        sys: base.System,
-        x: base.Transform,
-        fps: int = 50,
-        show_fps: bool = False,
-        **kwargs,
-    ):
-        """Open an interactive Window that plays back the pre-computed trajectory.
-
-        Args:
-            scene (VispyScene): Scene used for rendering.
-            x (base.Transform): Pre-computed trajectory.
-            timestep (float): Timedelta between Transforms.
-            fps (int, optional): Frame-rate. Defaults to 50.
-        """
-        self._x = x
-        self._scene = _init_vispy_scene(sys, **kwargs)
-        _data_checks(sys.num_links(), x.pos, x.rot)
-
-        self.N = x.pos.shape[0]
-        self.T, self.step = _parse_timestep(sys.dt, fps, self.N)
-        self.timestep = sys.dt
-        self.fps = fps
-        self.show_fps = show_fps
-
-    def reset(self):
-        "Reset trajectory to beginning."
-        self.reached_end = False
-        self.time = 0
-        self.t = 0
-        self.starttime = time.time()
-        self._update_scene()
-
-    def _update_scene(self):
-        self._scene.update(self._x[self.t])
-
-    def _on_timer(self, event):
-        if self.time > self.T:
-            self.reached_end = True
-
-        if self.reached_end:
-            return
-
-        self._update_scene()
-
-        self.t += self.step
-        self.time += self.step * self.timestep
-        self.realtime = time.time()
-        self.current_fps = (self.time / (self.realtime - self.starttime)) * self.fps
-
-        if self.show_fps:
-            print("FPS: ", int(self.current_fps), f"Target FPS: {self.fps}")
-
-    def open(self):
-        "Open interactive GUI window."
-        self.reset()
-
-        self._timer = app.Timer(
-            1 / self.fps,
-            connect=self._on_timer,
-            start=True,
-        )
-
-        app.run()
-
-
-def gui(
-    sys: base.System,
-    x: base.Transform,
-    fps: int = 50,
-    show_fps: bool = False,
-    **kwargs,
-):
-    """Open an interactive Window that plays back the pre-computed trajectory.
-
-    Args:
-        scene (VispyScene): Scene used for rendering.
-        x (base.Transform): Pre-computed trajectory.
-        timestep (float): Timedelta between Transforms.
-        fps (int, optional): Frame-rate. Defaults to 50.
-    """
-    if tree_utils.tree_ndim(x) == 2:
-        x = x.batch()
-
-    window = Window(sys, x, fps, show_fps, **kwargs)
-    window.open()
-    return window._scene.canvas
-
-
-def probe(sys, **kwargs):
-    state = base.State.create(sys)
-    _, state = x_xy.forward_kinematics(sys, state)
-    return gui(sys, state.x, **kwargs)
-
-
-def _parse_timestep(timestep: float, fps: int, N: int):
-    assert 1 / timestep > fps, "The `fps` is too high for the simulated timestep"
-    fps_simu = int(1 / timestep)
-    assert (fps_simu % fps) == 0, "The `fps` does not align with the timestep"
-    T = N * timestep
-    step = int(fps_simu / fps)
-    return T, step
-
-
-def _data_checks(n_links, data_pos, data_rot):
-    assert (
-        data_pos.ndim == data_rot.ndim == 3
-    ), "Expected shape = (n_timesteps, n_links, 3/4)"
-    assert (
-        data_pos.shape[1] == data_rot.shape[1] == n_links
-    ), "Number of links does not match"
-
-
-def _infer_extension_from_path(path: Path) -> Optional[str]:
-    ext = path.suffix
-    # fmt starts after the . e.g. .mp4
-    return ext[1:] if len(ext) > 0 else None
-
-
-def _init_vispy_scene(sys: base.System, **kwargs) -> Scene:
-    scene = VispyScene(**kwargs)
-    scene.init(sys.geoms)
-    return scene
-
-
-def _enable_headless_backend():
-    import vispy
-
-    try:
-        vispy.use("egl")
-        return True
-    except RuntimeError:
-        try:
-            vispy.use("osmesa")
-            return True
-        except RuntimeError:
-            print(
-                "Headless mode requires either `egl` or `osmesa` as backends for vispy",
-                "Couldn't find neither. Falling back to interactive mode.",
-            )
-            return False

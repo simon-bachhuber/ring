@@ -3,7 +3,7 @@ from . import algorithms
 from . import base
 from . import io
 from . import maths
-from . import render
+from . import rendering
 from . import utils
 from .algebra import transform_inv
 from .algebra import transform_mul
@@ -29,8 +29,5 @@ from .io import load_sys_from_str
 from .io import load_sys_from_xml
 from .io import save_sys_to_str
 from .io import save_sys_to_xml
-from .render import animate
-from .render import gui
-from .render import probe
-from .render import render_frames
+from .rendering import render
 from .scan import scan_sys

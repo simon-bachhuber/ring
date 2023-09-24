@@ -3,6 +3,9 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+from qmt import nanInterp
+from qmt import quatInterp
+from qmt import vecInterp
 import tree
 from tree_utils import PyTree
 
@@ -56,10 +59,6 @@ def resample(
     hz_out: float | PyTree,
     quatdetect: bool = True,
 ) -> PyTree:
-    from qmt import nanInterp
-    from qmt import quatInterp
-    from qmt import vecInterp
-
     hz_in, hz_out = tree.map_structure(float, (hz_in, hz_out))
 
     if isinstance(hz_in, float):

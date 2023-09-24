@@ -1,6 +1,10 @@
 from functools import cache
+from pathlib import Path
 
 import numpy as np
+import pandas as pd
+from qmt import quatFrom2Axes
+from qmt import syncOptImu
 
 from .utils import resample
 
@@ -8,8 +12,6 @@ from .utils import resample
 def _sync_imu_offset_with_optical(
     imu: dict, q_opt: np.ndarray, hz_imu: float, hz_opt: float
 ) -> int:
-    from qmt import syncOptImu
-
     sync_info = syncOptImu(
         opt_quat=q_opt,
         opt_rate=hz_opt,
@@ -28,10 +30,6 @@ def _imu_measurements_from_txt(
     txt_file_delimiter: str = "\t",
     txt_file_skiprows: int = 4,
 ):
-    from pathlib import Path
-
-    import pandas as pd
-
     try:
         df = pd.read_csv(
             Path(path_imu).joinpath(
@@ -56,8 +54,6 @@ def _imu_measurements_from_txt(
 
 @cache
 def _load_df(path_optitrack: str):
-    import pandas as pd
-
     print(f"Loading OMC data from file {path_optitrack}")
     _df_optitrack = pd.read_csv(path_optitrack, low_memory=False, skiprows=3)
     return _df_optitrack
@@ -81,8 +77,6 @@ def _construct_quat_from_three_markers(
     yaxis_marker_numbers: tuple[int],
     marker_imu_setup: dict,
 ):
-    from qmt import quatFrom2Axes
-
     # >> Begin checks
     xaxis_marker_numbers, yaxis_marker_numbers = map(
         set, (xaxis_marker_numbers, yaxis_marker_numbers)
