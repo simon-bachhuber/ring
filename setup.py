@@ -27,6 +27,21 @@ def find_data_files(package_dir, patterns, excludes=()):
     return list(paths)
 
 
+subpkg_ml_requires = ["wandb", "neptune", "optax", "dm-haiku", "joblib"]
+subpkg_omc_requires = ["qmt", "pandas"]
+subpkg_datasets_requires = ["pyyaml", "joblib"]
+render_mujoco_requires = ["mujoco"]
+render_vispy_requires = ["vispy", "pyqt6"]
+dev_requires = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "mknotebooks",
+    "pytest",
+]
+
+
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
@@ -42,30 +57,21 @@ setuptools.setup(
         "jax",
         "flax",
         "tqdm",
-        "vispy",
-        "imageio[ffmpeg]==2.27",
-        "pytest",
         "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
-        "joblib",
-        "pyyaml",
-        "mediapy",
     ],
+    extras_require={
+        "ml": subpkg_ml_requires,
+        "omc": subpkg_omc_requires,
+        "datasets": subpkg_datasets_requires,
+        "render_mujoco": render_mujoco_requires,
+        "render_vispy": render_vispy_requires,
+        "dev": dev_requires,
+        "all": subpkg_ml_requires
+        + subpkg_omc_requires
+        + subpkg_datasets_requires
+        + render_mujoco_requires
+        + render_vispy_requires,
+    }
     # leave this comment in incase we need to knwo the syntax again in the future
     # entry_points={"console_scripts": ["xxy-render = x_xy.cli.render:main"]},
 )
-
-
-# TODO
-# create a separate `dev` package that additionally requires the following
-# dependencies; install via pip
-# - mkdocs
-# - mkdocs-material
-# - mkdocstrings
-# - mkdocstrings-python
-# - mknotebooks
-
-# subpackage `ml` requires:
-# - wandb
-# - neptune
-# - optax
-# - dm-haiku

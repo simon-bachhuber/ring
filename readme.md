@@ -7,18 +7,11 @@
 
 ## Installation
 
-Supports `Python=3.10` and `Python=3.11`.
+Supports `Python=3.10/3.11` (tested).
 
 Install with `pip` using
 
-`pip install git+https://github.com/SimiPixel/x_xy_v2.git`
-
-Additionally,
-- `render.py` requires a vispy backend (e.g. `pip install pyqt6`).
-
-    Note 1: On a headless node with a Nvidia GPU it works without any backend.
-
-    Note 2: More info: https://vispy.org/installation.html
+`pip install 'x_xy[all] @ git+https://github.com/SimiPixel/x_xy_v2'`
 
 Typically, this will install `jax` as cpu-only version. CUDA version can be installed with
 ```bash
