@@ -30,8 +30,8 @@ def find_data_files(package_dir, patterns, excludes=()):
 subpkg_ml_requires = ["wandb", "neptune", "optax", "dm-haiku", "joblib"]
 subpkg_omc_requires = ["qmt", "pandas"]
 subpkg_datasets_requires = ["pyyaml", "joblib"]
-render_mujoco_requires = ["mujoco"]
-render_vispy_requires = ["vispy", "pyqt6"]
+mujoco_render_requires = ["mujoco"]
+vispy_render_requires = ["vispy", "pyqt6"]
 dev_requires = [
     "mkdocs",
     "mkdocs-material",
@@ -63,14 +63,14 @@ setuptools.setup(
         "ml": subpkg_ml_requires,
         "omc": subpkg_omc_requires,
         "datasets": subpkg_datasets_requires,
-        "render_mujoco": render_mujoco_requires,
-        "render_vispy": render_vispy_requires,
+        "mujoco_render": mujoco_render_requires,
+        "vispy_render": vispy_render_requires,
         "dev": dev_requires,
         "all": subpkg_ml_requires
         + subpkg_omc_requires
         + subpkg_datasets_requires
-        + render_mujoco_requires
-        + render_vispy_requires,
+        + mujoco_render_requires
+        + vispy_render_requires,
     }
     # leave this comment in incase we need to knwo the syntax again in the future
     # entry_points={"console_scripts": ["xxy-render = x_xy.cli.render:main"]},
