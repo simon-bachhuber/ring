@@ -14,13 +14,13 @@ from x_xy.algorithms.generator import _setup_fn_randomize_positions
 from x_xy.experimental import pipeline
 from x_xy.io import list_examples
 from x_xy.rendering.vispy_render import VispyScene
-from x_xy.subpkgs import exp_data
+from x_xy.subpkgs import exp
 from x_xy.subpkgs import sys_composer
 
 forward_kinematics = jax.jit(forward_kinematics)
 
 EXAMPLE_CHOICES = list_examples()
-EXPERIMENT_CHOICES = exp_data.list_experiments()
+EXPERIMENT_CHOICES = exp.list_experiments()
 
 CANVAS_SIZE = (800, 720)  # (width, height)
 
@@ -61,7 +61,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
         if sys_id in EXAMPLE_CHOICES:
             sys = load_example(sys_id)
         elif sys_id in EXPERIMENT_CHOICES:
-            sys = exp_data.load_sys(sys_id)
+            sys = exp.load_sys(sys_id)
         else:
             sys = load_sys_from_xml(sys_id)
 

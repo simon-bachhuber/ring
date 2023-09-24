@@ -29,7 +29,7 @@ def find_data_files(package_dir, patterns, excludes=()):
 
 subpkg_ml_requires = ["wandb", "neptune", "optax", "dm-haiku", "joblib"]
 subpkg_omc_requires = ["qmt", "pandas"]
-subpkg_datasets_requires = ["pyyaml", "joblib"]
+subpkg_exp_requires = ["pyyaml", "joblib"]
 mujoco_render_requires = ["mujoco"]
 vispy_render_requires = ["vispy", "pyqt6"]
 dev_requires = [
@@ -62,13 +62,17 @@ setuptools.setup(
     extras_require={
         "ml": subpkg_ml_requires,
         "omc": subpkg_omc_requires,
-        "datasets": subpkg_datasets_requires,
-        "mujoco_render": mujoco_render_requires,
-        "vispy_render": vispy_render_requires,
+        "exp": subpkg_exp_requires,
+        "muj": mujoco_render_requires,
+        "vis": vispy_render_requires,
         "dev": dev_requires,
+        "all_muj": subpkg_ml_requires
+        + subpkg_omc_requires
+        + subpkg_exp_requires
+        + mujoco_render_requires,
         "all": subpkg_ml_requires
         + subpkg_omc_requires
-        + subpkg_datasets_requires
+        + subpkg_exp_requires
         + mujoco_render_requires
         + vispy_render_requires,
     }

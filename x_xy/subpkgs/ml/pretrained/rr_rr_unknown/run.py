@@ -5,7 +5,7 @@ import wandb
 import x_xy
 from x_xy import maths
 from x_xy.experimental import pipeline
-from x_xy.subpkgs import exp_data
+from x_xy.subpkgs import exp
 from x_xy.subpkgs import ml
 from x_xy.subpkgs import sys_composer
 
@@ -31,7 +31,7 @@ sys_noimu = sys_composer.delete_subsystem(
     sys_composer.morph_system(sys, ["seg1", -1, "seg1", "seg2", "seg3"]),
     ["imu1", "imu2"],
 )
-sys_3Seg = exp_data.load_sys("S_06", None, "seg2", ["seg5", "imu3"])
+sys_3Seg = exp.load_sys("S_06", None, "seg2", ["seg5", "imu3"])
 
 
 def _make_3Seg_callbacks(rnno_fn):
@@ -44,7 +44,7 @@ def _make_3Seg_callbacks(rnno_fn):
     }
     callbacks = []
     for motion_phase in ["fast", "slow"]:
-        exp_data_dict = exp_data.load_data("S_06", motion_phase, motion_phase)
+        exp_data_dict = exp.load_data("S_06", motion_phase, motion_phase)
         X, y, xs = tree_utils.add_batch_dim(
             pipeline.load_data(
                 sys_3Seg,
