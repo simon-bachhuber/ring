@@ -134,6 +134,9 @@ def _xml_str_one_geom(geom: Geometry) -> str:
 
 
 def _array_to_str(arr: Sequence[float]) -> str:
+    # TODO
+    # this float truncation is only here for debugging and can't stay
+    # it even truncates quaternions like this..
     return "".join(["{:.2f} ".format(value) for value in arr])[:-1]
 
 
