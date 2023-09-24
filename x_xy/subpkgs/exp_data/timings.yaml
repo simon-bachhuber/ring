@@ -1,0 +1,34 @@
+S_06:
+  timings:
+    canonical:
+      start: 33.0
+      stop: 172.0
+    slow:
+      start: 183.0
+      stop: 224.0
+    # initial pose
+    fast: 
+      start: 230.0
+      stop: 273.0
+    # initial pose
+    fast_slow_fast:
+      start: 280.0
+      stop: 315.0
+    pause1:
+      start: 315.0
+      stop: 317.0
+    fast_slow:
+      start: 317.0
+      stop: 339.0
+    pause2:
+      start: 339.0
+      stop: 342.0
+    slow_end:
+      start: 342.0
+      stop: 358.0
+    # Thomas bonus
+    shaking:
+      start: 358.0
+      stop: 376.0
+    # end of trial
+  earth_omc_to_earth_inertial_quaternion: "0.36619034 0.36498888 -0.60637826 -0.60414664"
