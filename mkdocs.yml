@@ -26,8 +26,9 @@ nav:
   - API (subpkgs):
     - sys_composer: api/sys_composer.md
     - sim2real: api/sim2real.md
-    - exp_data: api/exp_data.md
+    - exp: api/exp.md
     - omc: api/omc.md
+    - ml: api/ml.md
 
 theme:
     name: material
