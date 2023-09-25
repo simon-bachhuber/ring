@@ -29,7 +29,9 @@ def parse_system(sys: base.System) -> base.System:
                 f"pos_min={pos_min}, pos_max={pos_max}"
             )
 
-        jax.lax.cond(~jnp.all(pos_min <= pos_max), print_warning, lambda: None)
+        # jax.lax.cond(~jnp.all(pos_min <= pos_max), print_warning, lambda: None)
+        # with jax.disable_jit():
+        #    assert all(pos_max >= pos_min), f"min={pos_min}, max={pos_max}"
 
     for geom in sys.geoms:
         assert geom.link_idx in list(range(sys.num_links())) + [-1]
