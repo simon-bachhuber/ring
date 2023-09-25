@@ -40,12 +40,20 @@ def morph_system(sys: base.System, new_parents: list[int | str]) -> base.System:
                 ].new_parent_old_indices
                 if grandparent != -1:
                     use = grandparent
+                else:
+                    # in this case we will always move the cs into the cs that connects
+                    # to -1; thus the `pos_mod` will always be zeros no matter what we
+                    # `use`
+                    use = None
             else:
                 use = link_idx_old_indices
 
-            pos_min_max_using_one = sys.links.transform1.pos.at[use].set(
-                old_pos_min_max[use]
-            )
+            if use is not None:
+                pos_min_max_using_one = sys.links.transform1.pos.at[use].set(
+                    old_pos_min_max[use]
+                )
+            else:
+                pos_min_max_using_one = sys.links.transform1.pos
 
             sys_mod = sys.replace(
                 links=sys.links.replace(
