@@ -1,7 +1,8 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 import mujoco
 
+from .. import maths
 from ..base import Box
 from ..base import Capsule
 from ..base import Cylinder
@@ -10,7 +11,12 @@ from ..base import Sphere
 from ..base import Transform
 
 
-def _build_model_of_geoms(geoms: list[Geometry]) -> mujoco.MjModel:
+def _build_model_of_geoms(
+    geoms: list[Geometry],
+    cameras: dict[int, Sequence[str]],
+    lights: dict[int, Sequence[str]],
+    debug: bool,
+) -> mujoco.MjModel:
     # sort in ascending order, this shouldn't be required as it is already done by
     # parse_system; do it for good measure anyways
     geoms = geoms.copy()
@@ -18,6 +24,31 @@ def _build_model_of_geoms(geoms: list[Geometry]) -> mujoco.MjModel:
 
     # range of required link_indices to which geoms attach
     unique_parents = set([geom.link_idx for geom in geoms])
+
+    # throw error if you attached a camera or light to a body that has no geoms
+    inside_worldbody_cameras = ""
+    for camera_parent in cameras:
+        if -1 not in unique_parents:
+            if camera_parent == -1:
+                for camera_str in cameras[camera_parent]:
+                    inside_worldbody_cameras += camera_str
+                continue
+
+        assert (
+            camera_parent in unique_parents
+        ), f"Camera parent {camera_parent} not in {unique_parents}"
+
+    inside_worldbody_lights = ""
+    for light_parent in lights:
+        if -1 not in unique_parents:
+            if light_parent == -1:
+                for light_str in lights[light_parent]:
+                    inside_worldbody_lights += light_str
+                continue
+
+        assert (
+            light_parent in unique_parents
+        ), f"Light parent {light_parent} not in {unique_parents}"
 
     # group together all geoms in each link
     grouped_geoms = dict(
@@ -31,8 +62,13 @@ def _build_model_of_geoms(geoms: list[Geometry]) -> mujoco.MjModel:
 
     inside_worldbody = ""
     for parent, geoms in grouped_geoms.items():
-        inside_worldbody += _xml_str_one_body(parent, geoms)
+        find = lambda dic: dic[parent] if parent in dic else []
+        inside_worldbody += _xml_str_one_body(
+            parent, geoms, find(cameras), find(lights)
+        )
 
+    parents_noworld = unique_parents - set([-1])
+    targetbody = min(parents_noworld) if len(parents_noworld) > 0 else -1
     xml_str = f""" # noqa: E501
 <mujoco>
   <asset>
@@ -41,37 +77,6 @@ def _build_model_of_geoms(geoms: list[Geometry]) -> mujoco.MjModel:
     <texture name="skybox" type="skybox" builtin="gradient" rgb1=".4 .6 .8" rgb2="0 0 0" width="800" height="800" mark="random" markrgb="1 1 1"/>
     <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="300" height="300" mark="edge" markrgb=".2 .3 .4"/>
     <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2"/>
-    <material name="self" rgba=".7 .5 .3 1"/>
-    <material name="self_default" rgba=".7 .5 .3 1"/>
-    <material name="self_highlight" rgba="0 .5 .3 1"/>
-    <material name="effector" rgba=".7 .4 .2 1"/>
-    <material name="effector_default" rgba=".7 .4 .2 1"/>
-    <material name="effector_highlight" rgba="0 .5 .3 1"/>
-    <material name="decoration" rgba=".3 .5 .7 1"/>
-    <material name="eye" rgba="0 .2 1 1"/>
-    <material name="target" rgba=".6 .3 .3 1"/>
-    <material name="target_default" rgba=".6 .3 .3 1"/>
-    <material name="target_highlight" rgba=".6 .3 .3 .4"/>
-    <material name="site" rgba=".5 .5 .5 .3"/>
-    <material name="red" rgba="0.8 0.2 0.2 1"/>
-    <material name="green" rgba="0.2 0.8 0.2 1"/>
-    <material name="blue" rgba="0.2 0.2 0.8 1"/>
-    <material name="yellow" rgba="0.8 0.8 0.2 1"/>
-    <material name="cyan" rgba="0.2 0.8 0.8 1"/>
-    <material name="magenta" rgba="0.8 0.2 0.8 1"/>
-    <material name="white" rgba="0.8 0.8 0.8 1"/>
-    <material name="gray" rgba="0.5 0.5 0.5 1"/>
-    <material name="brown" rgba="0.6 0.3 0.1 1"/>
-    <material name="orange" rgba="0.8 0.5 0.2 1"/>
-    <material name="pink" rgba="0.8 0.75 0.8 1"/>
-    <material name="purple" rgba="0.5 0.2 0.5 1"/>
-    <material name="lime" rgba="0.5 0.8 0.2 1"/>
-    <material name="turquoise" rgba="0.25 0.88 0.82 1"/>
-    <material name="gold" rgba="0.8 0.84 0.2 1"/>
-    <material name="matplotlib_green" rgba="0.0 0.502 0.0 1"/>
-    <material name="matplotlib_blue" rgba="0.012 0.263 0.8745 1"/>
-    <material name="matplotlib_lightblue" rgba="0.482 0.784 0.9647 1"/>
-    <material name="matplotlib_salmon" rgba="0.98 0.502 0.447 1"/>
   </asset>
 
   <visual>
@@ -82,36 +87,48 @@ def _build_model_of_geoms(geoms: list[Geometry]) -> mujoco.MjModel:
   </visual>
 
 <worldbody>
-<light pos="0 0 5" dir="0 0 -1"/>
-<camera pos="3 0 1.5" mode="trackcom"/>
-<geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane"/>
+<camera pos="0 -1 1" name="trackcom" mode="trackcom"/>
+<camera pos="0 -1 1" name="target" mode="targetbodycom" target="{targetbody}"/>
+<light pos="0 0 10" dir="0 0 -1"/>
+<geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>
+{inside_worldbody_cameras}
+{inside_worldbody_lights}
 {inside_worldbody}
 </worldbody>
 </mujoco>
 """
+    if debug:
+        print("Mujoco xml string: ", xml_str)
+
     return mujoco.MjModel.from_xml_string(xml_str)
 
 
-def _xml_str_one_body(body_number: int, geoms: list[Geometry]) -> str:
-    inside_body = ""
+def _xml_str_one_body(
+    body_number: int, geoms: list[Geometry], cameras: list[str], lights: list[str]
+) -> str:
+    inside_body_geoms = ""
     for geom in geoms:
-        inside_body += _xml_str_one_geom(geom)
+        inside_body_geoms += _xml_str_one_geom(geom)
+
+    inside_body_cameras = ""
+    for camera in cameras:
+        inside_body_cameras += camera  # + "\n"
+
+    inside_body_lights = ""
+    for light in lights:
+        inside_body_lights += light  # + "\n"
+
     return f"""
 <body name="{body_number}" mocap="true">
-{inside_body}
+{inside_body_cameras}
+{inside_body_lights}
+{inside_body_geoms}
 </body>
 """
 
 
 def _xml_str_one_geom(geom: Geometry) -> str:
-    if isinstance(geom.color, tuple):
-        if len(geom.color) == 3:
-            color = geom.color + (1.0,)
-        else:
-            color = geom.color
-        rgba_material = f'rgba="{_array_to_str(color)}"'
-    else:
-        rgba_material = f'material="{geom.color}"'
+    rgba = f'rgba="{_array_to_str(geom.color)}"'
 
     if isinstance(geom, Box):
         type_size = f'type="box" size="{_array_to_str([geom.dim_x / 2, geom.dim_y / 2, geom.dim_z / 2])}"'  # noqa: E501
@@ -128,36 +145,67 @@ def _xml_str_one_geom(geom: Geometry) -> str:
     else:
         raise NotImplementedError
 
-    return f"""
-<geom {type_size} {rgba_material} pos="{_array_to_str(geom.transform.pos)}" quat="{_array_to_str(geom.transform.rot)}"/>
-"""  # noqa: E501
+    rot, pos = maths.quat_inv(geom.transform.rot), geom.transform.pos
+    rot, pos = f'pos="{_array_to_str(pos)}"', f'quat="{_array_to_str(rot)}"'
+    return f"<geom {type_size} {rgba} {rot} {pos}/>"
 
 
 def _array_to_str(arr: Sequence[float]) -> str:
-    # TODO
-    # this float truncation is only here for debugging and can't stay
-    # it even truncates quaternions like this..
-    return "".join(["{:.2f} ".format(value) for value in arr])[:-1]
+    # TODO; remove round & truncation
+    return "".join(["{:.4f} ".format(round(value, 4)) for value in arr])[:-1]
 
 
 class MujocoScene:
+    def __init__(
+        self,
+        height: int = 240,
+        width: int = 320,
+        add_cameras: dict[int, str | Sequence[str]] = {},
+        add_lights: dict[int, str | Sequence[str]] = {},
+        debug: bool = False,
+    ) -> None:
+        self.debug = debug
+        self.height, self.width = height, width
+
+        def to_list(dic: dict):
+            for k, v in dic.items():
+                if isinstance(v, str):
+                    dic[k] = [v]
+            return dic
+
+        self.add_cameras, self.add_lights = to_list(add_cameras), to_list(add_lights)
+
     def init(self, geoms: list[Geometry]):
-        self._body_names = list(set([geom.link_idx for geom in geoms]))
-        self._model = _build_model_of_geoms(geoms)
+        self._parent_ids = list(set([geom.link_idx for geom in geoms]))
+        self._model = _build_model_of_geoms(
+            geoms, self.add_cameras, self.add_lights, debug=self.debug
+        )
         self._data = mujoco.MjData(self._model)
-        self._renderer = mujoco.Renderer(self._model, 480, 640)
+        self._renderer = mujoco.Renderer(self._model, self.height, self.width)
 
     def update(self, x: Transform):
-        for body_name in self._body_names:
+        rot, pos = maths.quat_inv(x.rot), x.pos
+        for parent_id in self._parent_ids:
+            if parent_id == -1:
+                continue
+
             # body name is just the str(parent_id)
-            parent_id = int(body_name)
-            mocap_id = int(self._model.body(body_name).mocapid)
-            mocap_pos = x.pos[parent_id]
-            mocap_quat = x.rot[parent_id]
+            mocap_id = int(self._model.body(str(parent_id)).mocapid)
+
+            if self.debug:
+                print(f"link_idx: {parent_id}, mocap_id: {mocap_id}")
+
+            mocap_pos = pos[parent_id]
+            mocap_quat = rot[parent_id]
             self._data.mocap_pos[mocap_id] = mocap_pos
             self._data.mocap_quat[mocap_id] = mocap_quat
 
-    def render(self):
+        if self.debug:
+            print("mocap_pos: ", self._data.mocap_pos)
+            print("mocap_quat: ", self._data.mocap_quat)
+
         mujoco.mj_forward(self._model, self._data)
-        self._renderer.update_scene(self._data)
+
+    def render(self, camera: Optional[str] = None):
+        self._renderer.update_scene(self._data, camera=-1 if camera is None else camera)
         return self._renderer.render()
