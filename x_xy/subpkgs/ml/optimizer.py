@@ -1,4 +1,4 @@
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Optional
 
 import jax
 from jax import lax
@@ -12,14 +12,22 @@ from optax._src.transform import AddNoiseState
 
 
 def make_optimizer(
-    lr: float, n_episodes: int, n_steps_per_episode: int, inner_opt=optax.lamb
+    lr: float,
+    n_episodes: int,
+    n_steps_per_episode: int,
+    adap_clip: Optional[float] = 0.1,
+    glob_clip: Optional[float] = 0.2,
+    inner_opt=optax.lamb,
+    **inner_opt_kwargs
 ):
     steps = n_steps_per_episode * n_episodes
     schedule = optax.cosine_decay_schedule(lr, steps, 1e-7)
     optimizer = optax.chain(
-        optax.adaptive_grad_clip(0.1),
-        optax.clip_by_global_norm(0.2),
-        inner_opt(schedule),
+        optax.adaptive_grad_clip(adap_clip)
+        if adap_clip is not None
+        else optax.identity(),
+        optax.clip_by_global_norm(0.2) if glob_clip is not None else optax.identity(),
+        inner_opt(schedule, **inner_opt_kwargs),
     )
     optimizer = skip_large_update(optimizer, 5.0, 6 * 25, warmup=300)
     return optimizer
