@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -9,20 +8,16 @@ import x_xy
 from x_xy.io import load_comments_from_xml
 from x_xy.subpkgs import sys_composer
 from x_xy.subpkgs.sim2real.sim2real import _crop_sequence
-from x_xy.utils import parse_path
 
-from .omc_to_joblib import exp_dir
-from .omc_to_joblib import HZ
+_id2xml = {"S_06": "setups/arm.xml"}
 
 
-def _load_file_path(exp_id: str, extension: str):
-    return exp_dir(parse_path(exp_id, extension="", mkdir=False)).joinpath(
-        parse_path(exp_id, mkdir=False, extension=extension)
-    )
+def _relative_to_this_file(path: str) -> Path:
+    return Path(__file__).parent.joinpath(path)
 
 
-def _read_yaml(exp_id):
-    with open(_load_file_path(exp_id, "yaml")) as file:
+def _read_yaml(path: str):
+    with open(_relative_to_this_file(path)) as file:
         yaml_str = yaml.safe_load(file)
     return yaml_str
 
@@ -65,7 +60,7 @@ def load_sys(
     delete_after_morph: Optional[list[str]] = None,
     replace_rxyz: Optional[str] = None,
 ) -> x_xy.base.System:
-    xml_path = _load_file_path(exp_id, "xml")
+    xml_path = _relative_to_this_file(_id2xml[exp_id])
     sys = x_xy.io.load_sys_from_xml(xml_path)
 
     if preprocess_sys is not None:
@@ -84,18 +79,6 @@ def load_sys(
     return sys
 
 
-def list_experiments() -> list[str]:
-    exps = []
-    parent = Path(__file__).parent
-    for child in os.listdir(parent):
-        file = parent.joinpath(child)
-        if file.is_dir():
-            if child[:2] != "__":
-                exps.append(child)
-    exps.sort()
-    return exps
-
-
 def load_data(
     exp_id: str,
     motion_start: str,
@@ -105,9 +88,9 @@ def load_data(
     start_for_start: bool = True,
     stop_for_stop: bool = True,
 ) -> dict:
-    trial_data = joblib.load(_load_file_path(exp_id, "joblib"))
+    trial_data = joblib.load(_relative_to_this_file(f"joblib/{exp_id}.joblib"))
 
-    timings = _read_yaml(exp_id)["timings"]
+    timings = _read_yaml("timings.yaml")[exp_id]["timings"]
 
     if motion_stop is None:
         motion_stop = motion_start
@@ -126,12 +109,15 @@ def load_data(
     t1 = max(t1, 0.0)
     t2 = timings[motion_stop]["stop" if stop_for_stop else "start"] + right_padd
 
+    # TODO
+    HZ = 100.0
     trial_data = _crop_sequence(trial_data, 1 / HZ, t1=t1, t2=t2)
 
-    xml_path = _load_file_path(exp_id, "xml")
-    seg_to_marker_number = _marker_numbers_from_xml_file(xml_path)
+    # xml_path = _relative_to_this_file(_id2xml[exp_id])
+    # seg_to_marker_number = _marker_numbers_from_xml_file(xml_path)
 
-    for seg in trial_data:
-        trial_data[seg]["pos"] = trial_data[seg][f"marker{seg_to_marker_number[seg]}"]
+    # TODO
+    # for seg in trial_data:
+    #    trial_data[seg]["pos"] = trial_data[seg][f"marker{seg_to_marker_number[seg]}"]
 
     return trial_data
