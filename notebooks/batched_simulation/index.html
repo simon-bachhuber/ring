@@ -831,11 +831,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api/exp_data/" class="md-nav__link">
+      <a href="../../api/exp/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    exp_data
+    exp
   </span>
   
 
@@ -856,6 +856,26 @@
   
   <span class="md-ellipsis">
     omc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/ml/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ml
   </span>
   
 
@@ -957,14 +977,7 @@
 
 <span class="kn">import</span> <span class="nn">jax</span>
 <span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-<span class="kn">import</span> <span class="nn">mediapy</span> <span class="k">as</span> <span class="nn">media</span>
-<span class="kn">import</span> <span class="nn">vispy</span>
-
-<span class="c1"># other backends are fine too, just not `jupyter_rfb`. You can install `pyqt6` using `pip install pyqt6`</span>
-<span class="n">vispy</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;pyqt6&quot;</span><span class="p">)</span>
 
 <span class="n">xml_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">&lt;x_xy model=&quot;double_pendulum&quot;&gt;</span>

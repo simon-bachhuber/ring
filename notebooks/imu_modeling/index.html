@@ -845,11 +845,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api/exp_data/" class="md-nav__link">
+      <a href="../../api/exp/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    exp_data
+    exp
   </span>
   
 
@@ -870,6 +870,26 @@
   
   <span class="md-ellipsis">
     omc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/ml/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ml
   </span>
   
 
@@ -944,7 +964,7 @@
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">x_xy.subpkgs</span> <span class="kn">import</span> <span class="n">exp_data</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">x_xy.subpkgs</span> <span class="kn">import</span> <span class="n">exp</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">jax</span>
 <span class="kn">import</span> <span class="nn">x_xy</span>
@@ -954,7 +974,7 @@
 
 <span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="n">seg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">t1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">t2</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">motion</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;fast&quot;</span><span class="p">):</span>
 
-    <span class="n">data</span> <span class="o">=</span> <span class="n">exp_data</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><span class="s2">&quot;S_06&quot;</span><span class="p">,</span> <span class="n">motion</span><span class="p">)[</span><span class="n">seg</span><span class="p">]</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><span class="s2">&quot;S_06&quot;</span><span class="p">,</span> <span class="n">motion</span><span class="p">)[</span><span class="n">seg</span><span class="p">]</span>
 
     <span class="c1"># extract a small window from long time series for plotting</span>
     <span class="n">pos</span><span class="p">,</span> <span class="n">rot</span><span class="p">,</span> <span class="n">imu_data</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">arr</span><span class="p">:</span> <span class="n">arr</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">t1</span> <span class="o">*</span> <span class="n">hz</span><span class="p">):</span> <span class="nb">int</span><span class="p">(</span><span class="n">t2</span> <span class="o">*</span> <span class="n">hz</span><span class="p">)],</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;quat&quot;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;imu_rigid&quot;</span><span class="p">]))</span>

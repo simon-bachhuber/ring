@@ -846,11 +846,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../exp_data/" class="md-nav__link">
+      <a href="../exp/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    exp_data
+    exp
   </span>
   
 
@@ -871,6 +871,26 @@
   
   <span class="md-ellipsis">
     omc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ml
   </span>
   
 
@@ -921,11 +941,7 @@
 
             <details class="quote">
               <summary>Source code in <code>x_xy/base.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">391</span>
-<span class="normal">392</span>
-<span class="normal">393</span>
-<span class="normal">394</span>
-<span class="normal">395</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">395</span>
 <span class="normal">396</span>
 <span class="normal">397</span>
 <span class="normal">398</span>
@@ -1004,7 +1020,27 @@
 <span class="normal">471</span>
 <span class="normal">472</span>
 <span class="normal">473</span>
-<span class="normal">474</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@struct</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@struct</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span> <span class="nc">System</span><span class="p">(</span><span class="n">_Base</span><span class="p">):</span>
     <span class="n">link_parents</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">links</span><span class="p">:</span> <span class="n">Link</span>
@@ -1071,6 +1107,22 @@
     <span class="k">def</span> <span class="nf">change_model_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;System&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">rename_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;System&quot;</span><span class="p">:</span>
+        <span class="n">old_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_to_idx</span><span class="p">(</span><span class="n">old_name</span><span class="p">)</span>
+        <span class="n">new_link_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">link_names</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">new_link_names</span><span class="p">[</span><span class="n">old_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_name</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">link_names</span><span class="o">=</span><span class="n">new_link_names</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_prefix_suffix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">suffix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;System&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">prefix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">suffix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">suffix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">new_link_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">prefix</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="n">suffix</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">link_names</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">link_names</span><span class="o">=</span><span class="n">new_link_names</span><span class="p">)</span>
+
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">deep_equal</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
@@ -1121,18 +1173,18 @@
 
           <details class="quote">
             <summary>Source code in <code>x_xy/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">436</span>
-<span class="normal">437</span>
-<span class="normal">438</span>
-<span class="normal">439</span>
-<span class="normal">440</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">440</span>
 <span class="normal">441</span>
 <span class="normal">442</span>
 <span class="normal">443</span>
 <span class="normal">444</span>
 <span class="normal">445</span>
 <span class="normal">446</span>
-<span class="normal">447</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">idx_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">idx_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
     <span class="s2">&quot;type: is either `l` or `q` or `d`&quot;</span>
     <span class="kn">from</span> <span class="nn">x_xy</span> <span class="kn">import</span> <span class="n">scan_sys</span>
 
@@ -1166,7 +1218,7 @@
 
 
 <h4 id="x_xy.io.xml.from_xml.load_sys_from_str" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">load_sys_from_str</span><span class="p">(</span><span class="n">xml_str</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">load_sys_from_str</span><span class="p">(</span><span class="n">xml_str</span><span class="p">)</span></code>
 
 <a href="#x_xy.io.xml.from_xml.load_sys_from_str" class="headerlink" title="Permanent link">¤</a></h4>
 
@@ -1200,20 +1252,6 @@
           </td>
           <td>
               <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>prefix</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Prefix to add to all link names. Defaults to "".</p>
-            </div>
-          </td>
-          <td>
-                <code>&#39;&#39;</code>
           </td>
         </tr>
     </tbody>
@@ -1356,13 +1394,11 @@
 <span class="normal">224</span>
 <span class="normal">225</span>
 <span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_sys_from_str</span><span class="p">(</span><span class="n">xml_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">:</span>
+<span class="normal">227</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_sys_from_str</span><span class="p">(</span><span class="n">xml_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load system from string input.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        xml_str (str): XML Presentation of the system.</span>
-<span class="sd">        prefix (str, optional): Prefix to add to all link names. Defaults to &quot;&quot;.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        base.System: Loaded system.</span>
@@ -1405,7 +1441,7 @@
 
         <span class="n">link_parents</span><span class="p">[</span><span class="n">current_link_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span>
         <span class="n">link_types</span><span class="p">[</span><span class="n">current_link_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_link_typ</span>
-        <span class="n">link_names</span><span class="p">[</span><span class="n">current_link_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">body</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="n">link_names</span><span class="p">[</span><span class="n">current_link_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">body</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
 
         <span class="n">transform</span> <span class="o">=</span> <span class="n">abstract</span><span class="o">.</span><span class="n">AbsTrans</span><span class="o">.</span><span class="n">from_xml</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">attrib</span><span class="p">)</span>
         <span class="n">pos_min</span><span class="p">,</span> <span class="n">pos_max</span> <span class="o">=</span> <span class="n">abstract</span><span class="o">.</span><span class="n">AbsPosMinMax</span><span class="o">.</span><span class="n">from_xml</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">attrib</span><span class="p">,</span> <span class="n">transform</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
@@ -1484,7 +1520,7 @@
 
 
 <h4 id="x_xy.io.xml.from_xml.load_sys_from_xml" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">load_sys_from_xml</span><span class="p">(</span><span class="n">xml_path</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">load_sys_from_xml</span><span class="p">(</span><span class="n">xml_path</span><span class="p">)</span></code>
 
 <a href="#x_xy.io.xml.from_xml.load_sys_from_xml" class="headerlink" title="Permanent link">¤</a></h4>
 
@@ -1493,9 +1529,9 @@
 
           <details class="quote">
             <summary>Source code in <code>x_xy/io/xml/from_xml.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">231</span>
-<span class="normal">232</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_sys_from_xml</span><span class="p">(</span><span class="n">xml_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">load_sys_from_str</span><span class="p">(</span><span class="n">_load_xml</span><span class="p">(</span><span class="n">xml_path</span><span class="p">),</span> <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">230</span>
+<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_sys_from_xml</span><span class="p">(</span><span class="n">xml_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">load_sys_from_str</span><span class="p">(</span><span class="n">_load_xml</span><span class="p">(</span><span class="n">xml_path</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
