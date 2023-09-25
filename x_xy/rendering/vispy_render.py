@@ -221,7 +221,8 @@ class VispyScene(Scene):
         self,
         show_cs=False,
         show_cs_root=True,
-        size=(1280, 720),
+        width: int = 320,
+        height: int = 240,
         camera: scene.cameras.BaseCamera = scene.TurntableCamera(
             elevation=25, distance=4.0, azimuth=25
         ),
@@ -236,8 +237,6 @@ class VispyScene(Scene):
                 Defaults to True.
             show_cs_root (bool, optional): Show coordinate system of earth frame.
                 Defaults to True.
-            size (tuple, optional): Width and height of rendered image.
-                Defaults to (1280, 720).
             camera (scene.cameras.BaseCamera, optional): The camera angle.
                 Defaults to scene.TurntableCamera( elevation=30, distance=6 ).
 
@@ -248,7 +247,7 @@ class VispyScene(Scene):
             >> image = scene.render()
         """
         self.canvas = scene.SceneCanvas(
-            keys="interactive", size=size, show=True, **kwargs
+            keys="interactive", size=(width, height), show=True, **kwargs
         )
         self.view = self.canvas.central_widget.add_view()
         self._set_camera(camera)
