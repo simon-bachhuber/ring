@@ -9,7 +9,7 @@ def setup_colab_env():
     except ImportError:
         return
 
-    if subprocess.run("nvidia-smi").returncode:
+    if subprocess.run("nvidia-smi", shell=True).returncode:
         raise RuntimeError(
             "Cannot communicate with GPU. "
             "Make sure you are using a GPU Colab runtime. "
