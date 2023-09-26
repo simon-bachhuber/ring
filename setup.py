@@ -45,10 +45,10 @@ dev_requires = [
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.9.2",
+    version="0.9.3",
     package_data={
         "x_xy": find_data_files(
-            "x_xy", patterns=["*.xml", "*.yaml", "*.joblib", "*.json"]
+            "x_xy", patterns=["*.xml", "*.yaml", "*.joblib", "*.json", "*.pickle"]
         ),
     },
     include_package_data=True,

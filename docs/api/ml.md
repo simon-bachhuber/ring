@@ -10,4 +10,8 @@
 
 ::: x_xy.subpkgs.ml.ml_utils.save
 
+::: x_xy.subpkgs.ml.ml_utils.list_pretrained
+
+::: x_xy.subpkgs.ml.ml_utils.n_params
+
 ::: x_xy.subpkgs.ml.ml_utils.WandbLogger

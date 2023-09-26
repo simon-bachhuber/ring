@@ -1,5 +1,6 @@
 from functools import partial
 from typing import Callable, Optional, Tuple
+import warnings
 
 import haiku as hk
 import jax
@@ -87,11 +88,16 @@ def _build_step_fn(
             debug_grads.append(grads)
 
             if tbp_skip > i:
+                warnings.warn(f"Skipping the {i}th-tbp gradient step.")
                 if not tbp_skip_keep_grads:
+                    warnings.warn(
+                        f"Stopping the gradients of the {i}th-tbp gradient step."
+                    )
                     state = jax.lax.stop_gradient(state)
                 continue
             else:
                 state = jax.lax.stop_gradient(state)
+            warnings.warn(f"Appyling the gradients of the {i}-th-tbp gradient step.")
             params, opt_state = apply_grads(grads, params, opt_state)
 
         return params, opt_state, {"loss": loss}, debug_grads

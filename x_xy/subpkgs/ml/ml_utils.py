@@ -14,6 +14,7 @@ import neptune
 import numpy as np
 from tree_utils import PyTree
 from tree_utils import tree_batch
+
 import wandb
 
 suffix = ".pickle"
@@ -33,15 +34,35 @@ def save(data: PyTree, path: Union[str, Path], overwrite: bool = False):
         pickle.dump(data, file)
 
 
-def load(path: Union[str, Path]) -> PyTree:
-    path = Path(path).expanduser()
-    if not path.is_file():
-        raise ValueError(f"Not a file: {path}")
-    if path.suffix != suffix:
-        raise ValueError(f"Not a {suffix} file: {path}")
-    with open(path, "rb") as file:
-        data = pickle.load(file)
-    return data
+def load(
+    path: Optional[Union[str, Path]] = None, pretrained: Optional[str] = None
+) -> PyTree:
+    assert not (
+        path is None and pretrained is None
+    ), "Either `path` or `pretrained` must be given."
+    assert not (
+        path is not None and pretrained is not None
+    ), "Both `path` and `pretrained` cannot both be given."
+
+    if path is not None:
+        path = Path(path).expanduser()
+        if not path.is_file():
+            raise ValueError(f"Not a file: {path}")
+        if path.suffix != suffix:
+            raise ValueError(f"Not a {suffix} file: {path}")
+        with open(path, "rb") as file:
+            data = pickle.load(file)
+        return data
+    else:
+        pretrained_folder = f"pretrained/{pretrained}/params_{pretrained}{suffix}"
+        return load(Path(__file__).parent.joinpath(pretrained_folder))
+
+
+def list_pretrained() -> list[str]:
+    return list(
+        set(os.listdir(Path(__file__).parent.joinpath("pretrained")))
+        - set((".DS_Store", "__init__.py"))
+    )
 
 
 # An arbitrarily nested dictionary with jax.Array leaves; Or strings
@@ -58,7 +79,8 @@ class Logger(ABC):
         pass
 
 
-def n_params(params):
+def n_params(params) -> int:
+    "Number of parameters in Pytree `params`."
     return sum([arr.flatten().size for arr in jax.tree_util.tree_leaves(params)])
 
 
