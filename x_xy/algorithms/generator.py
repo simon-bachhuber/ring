@@ -17,10 +17,19 @@ from .jcalc import _joint_types
 from .jcalc import RCMG_Config
 from .kinematics import forward_kinematics_transforms
 
-Generator = Callable[[jax.random.PRNGKey], PyTree]
-OfflineGenerator = Callable[[jax.random.PRNGKey], PyTree]
-SETUP_FN = Callable[[jax.random.PRNGKey, base.System], base.System]
-FINALIZE_FN = Callable[[jax.Array, jax.Array, base.Transform, base.System], PyTree]
+PRNGKey = jax.Array
+InputExtras = base.System
+OutputExtras = tuple[PRNGKey, jax.Array, jax.Array, base.System]
+Xy = PyTree
+GeneratorWithInputExtras = Callable[[PRNGKey, InputExtras], Xy]
+GeneratorWithOutputExtras = Callable[[PRNGKey], tuple[Xy, OutputExtras]]
+GeneratorWithInputOutputExtras = Callable[
+    [PRNGKey, InputExtras], tuple[Xy, OutputExtras]
+]
+Generator = Callable[[PRNGKey], Xy]
+OfflineGenerator = Generator
+SETUP_FN = Callable[[PRNGKey, base.System], base.System]
+FINALIZE_FN = Callable[[PRNGKey, jax.Array, base.Transform, base.System], Xy]
 Normalizer = Callable[[PyTree], PyTree]
 
 
