@@ -939,6 +939,8 @@
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Setup the environment if this is executed on Google Colab.</p>
+<p><em>Make sure to change the runtime type to <code>GPU</code>. To do this go to <code>Runtime</code> -&gt; <code>Change runtime type</code> -&gt; <code>GPU</code></em></p>
+<p>Otherwise, rendering won't work in Google Colab.</p>
 </div>
 </div>
 </div>
@@ -1159,7 +1161,7 @@
 <div class="output_area">
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>
-<code>329 ms ± 5.58 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+<code>329 ms ± 8.2 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 </code>
 </pre>
 </div>
@@ -1179,7 +1181,7 @@
 <div class="output_area">
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>
-<code>74.6 µs ± 1.03 µs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+<code>89.9 µs ± 47.6 µs per loop (mean ± std. dev. of 7 runs, 1 loop each)
 </code>
 </pre>
 </div>
@@ -1216,7 +1218,7 @@
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="highlight"><pre><span></span><code><span class="n">frames</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">frames</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">&quot;targetfar&quot;</span><span class="p">)</span>
 </code></pre></div>
 
 </div>
@@ -1225,7 +1227,7 @@
 <div class="output_area">
 <div class="output_subarea output_stream output_stderr output_text">
 <pre>
-<code>Rendering frames..: 100%|██████████| 1000/1000 [00:03&lt;00:00, 254.24it/s]
+<code>Rendering frames..: 100%|██████████| 1000/1000 [00:04&lt;00:00, 243.56it/s]
 </code>
 </pre>
 </div>
@@ -1283,7 +1285,7 @@
     <span class="n">state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">x_xy</span><span class="o">.</span><span class="n">step</span><span class="p">)(</span><span class="n">sys</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
     <span class="n">xs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
 
-<span class="n">frames</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+<span class="n">frames</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">&quot;targetfar&quot;</span><span class="p">)</span>
 <span class="n">show_video</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
 </code></pre></div>
 
@@ -1293,7 +1295,7 @@
 <div class="output_area">
 <div class="output_subarea output_stream output_stderr output_text">
 <pre>
-<code>Rendering frames..: 100%|██████████| 1000/1000 [00:03&lt;00:00, 251.97it/s]
+<code>Rendering frames..: 100%|██████████| 1000/1000 [00:04&lt;00:00, 243.13it/s]
 </code>
 </pre>
 </div>
@@ -1365,7 +1367,7 @@
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
-<div class="highlight"><pre><span></span><code><span class="n">frames</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">xs_list</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">frames</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">xs_list</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">&quot;targetfar&quot;</span><span class="p">)</span>
 </code></pre></div>
 
 </div>
@@ -1374,7 +1376,7 @@
 <div class="output_area">
 <div class="output_subarea output_stream output_stderr output_text">
 <pre>
-<code>Rendering frames..: 100%|██████████| 1000/1000 [00:04&lt;00:00, 240.20it/s]
+<code>Rendering frames..: 100%|██████████| 1000/1000 [00:04&lt;00:00, 248.56it/s]
 </code>
 </pre>
 </div>
@@ -1616,7 +1618,7 @@
 <span class="n">seed</span> <span class="o">=</span> <span class="mi">1</span>
 <span class="n">_</span><span class="p">,</span> <span class="n">xs</span> <span class="o">=</span> <span class="n">gen</span><span class="p">(</span><span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="n">seed</span><span class="p">))</span>
 <span class="n">xs_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">xs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">xs</span><span class="o">.</span><span class="n">shape</span><span class="p">())]</span>
-<span class="n">frames</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">xs_list</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+<span class="n">frames</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">xs_list</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">&quot;targetfar&quot;</span><span class="p">)</span>
 <span class="n">show_video</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
 </code></pre></div>
 
@@ -1626,7 +1628,7 @@
 <div class="output_area">
 <div class="output_subarea output_stream output_stderr output_text">
 <pre>
-<code>Rendering frames..: 100%|██████████| 1000/1000 [00:04&lt;00:00, 205.78it/s]
+<code>Rendering frames..: 100%|██████████| 1000/1000 [00:05&lt;00:00, 194.38it/s]
 </code>
 </pre>
 </div>
