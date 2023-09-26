@@ -25,10 +25,11 @@ def _make_rnno_cell_apply_fn(
     sys,
     inner_cell,
     send_msg,
-    send_quat,
+    send_output,
     hidden_state_dim,
     message_dim,
     send_message_stop_grads,
+    output_normalize: bool,
 ):
     parent_array = jnp.array(sys.link_parents, dtype=jnp.int32)
 
@@ -66,8 +67,11 @@ def _make_rnno_cell_apply_fn(
         stacked_cell_input = _tree(sys, cell_input)
 
         def update_state(cell_input, state):
-            output, state = inner_cell(cell_input, state)
-            return safe_normalize(send_quat(output)), state
+            cell_output, state = inner_cell(cell_input, state)
+            output = send_output(cell_output)
+            if output_normalize:
+                output = safe_normalize(output)
+            return output, state
 
         y, state = jax.vmap(update_state)(stacked_cell_input, prev_state)
 
@@ -91,6 +95,8 @@ def make_rnno(
     send_message_method: str = "mlp",
     send_message_init: hk.initializers.Initializer = hk.initializers.Orthogonal(),
     send_message_stop_grads: bool = False,
+    link_output_dim: int = 4,
+    link_output_normalize: bool = True,
 ) -> SimpleNamespace:
     "Expects unbatched inputs. Batching via `vmap`"
 
@@ -119,7 +125,7 @@ def make_rnno(
             raise NotImplementedError
 
         inner_cell = StackedRNNCell(cell, hidden_state_dim, stack_rnn_cells)
-        send_quat = hk.nets.MLP([hidden_state_dim, 4])
+        send_output = hk.nets.MLP([hidden_state_dim, link_output_dim])
         state = hk.get_state(
             "inner_cell_state",
             [sys.num_links(), stack_rnn_cells, hidden_state_init],
@@ -131,10 +137,11 @@ def make_rnno(
                 sys,
                 inner_cell,
                 send_msg,
-                send_quat,
+                send_output,
                 hidden_state_dim,
                 message_dim,
                 send_message_stop_grads,
+                output_normalize=link_output_normalize,
             ),
             X,
             state,

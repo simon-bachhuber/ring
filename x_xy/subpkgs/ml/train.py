@@ -25,15 +25,18 @@ from .optimizer import make_optimizer
 from .training_loop import TrainingLoop
 from .training_loop import TrainingLoopCallback
 
-default_metrices = {
+LOSS_FN = Callable[[jax.Array, jax.Array], float]
+_default_loss_fn = lambda q, qhat: maths.angle_error(q, qhat) ** 2
+
+# reduces (batch_axis, time_axis) -> Scalar
+ACCUMULATOR_FN = Callable[[jax.Array], float]
+METRICES = dict[str, Tuple[LOSS_FN, ACCUMULATOR_FN]]
+_default_metrices = {
     "mae_deg": (
         lambda q, qhat: maths.angle_error(q, qhat),
         lambda arr: jnp.rad2deg(jnp.mean(arr, axis=(0, 1))),
     ),
 }
-
-
-default_loss_fn = lambda q, qhat: maths.angle_error(q, qhat) ** 2
 
 
 def _build_step_fn(
@@ -97,7 +100,6 @@ def _build_step_fn(
                 continue
             else:
                 state = jax.lax.stop_gradient(state)
-            warnings.warn(f"Appyling the gradients of the {i}-th-tbp gradient step.")
             params, opt_state = apply_grads(grads, params, opt_state)
 
         return params, opt_state, {"loss": loss}, debug_grads
@@ -126,6 +128,8 @@ def train(
     callback_kill_if_nan: bool = False,
     callback_kill_after_episode: Optional[int] = None,
     callback_kill_after_seconds: Optional[float] = None,
+    loss_fn: LOSS_FN = _default_loss_fn,
+    metrices: METRICES = _default_metrices,
 ):
     """Trains RNNO
 
@@ -176,7 +180,7 @@ def train(
     opt_state = optimizer.init(params)
 
     step_fn = _build_step_fn(
-        default_loss_fn,
+        loss_fn,
         network.apply,
         initial_state,
         pmap_size,
@@ -188,7 +192,7 @@ def train(
     )
 
     eval_fn = _build_eval_fn(
-        default_metrices, network.apply, initial_state, pmap_size, vmap_size
+        metrices, network.apply, initial_state, pmap_size, vmap_size
     )
 
     default_callbacks = [_DefaultEvalFnCallback(eval_fn), WandbKillRun()]
