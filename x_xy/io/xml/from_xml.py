@@ -209,17 +209,16 @@ def load_sys_from_str(xml_str: str) -> base.System:
     flat_geoms += _extract_geoms_from_body_xml(worldbody, -1)
 
     sys = base.System(
-        assert_order_then_to_list(link_parents),
-        links,
-        assert_order_then_to_list(link_types),
-        dampings,
-        armatures,
-        spring_stiffnesses,
-        spring_zeropoints,
-        options["dt"],
-        False,
-        flat_geoms,
-        options["gravity"],
+        link_parents=assert_order_then_to_list(link_parents),
+        links=links,
+        link_types=assert_order_then_to_list(link_types),
+        link_damping=dampings,
+        link_armature=armatures,
+        link_spring_stiffness=spring_stiffnesses,
+        link_spring_zeropoint=spring_zeropoints,
+        dt=options["dt"],
+        geoms=flat_geoms,
+        gravity=options["gravity"],
         link_names=assert_order_then_to_list(link_names),
         model_name=model_name,
     )
