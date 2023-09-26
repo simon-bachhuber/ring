@@ -1,3 +1,5 @@
+from typing import Optional
+
 import jax
 import jax.numpy as jnp
 
@@ -60,9 +62,11 @@ def morph_system(sys: base.System, new_parents: list[int | str]) -> base.System:
                     transform1=sys.links.transform1.replace(pos=pos_min_max_using_one)
                 )
             )
-            pos_mod = _new_transform1(sys_mod, permutation, structure)[1][
-                link_idx_old_indices
-            ].pos
+
+            # break early because we only use the value of `link_idx_old_indices` anways
+            pos_mod = _new_transform1(
+                sys_mod, permutation, structure, breakearly=link_idx_old_indices
+            )[1][link_idx_old_indices].pos
 
             new_pos_min_max.append(pos_mod)
         return jnp.vstack(new_pos_min_max)
@@ -124,6 +128,7 @@ def _new_transform1(
     structure: list[Node],
     mod_geoms: bool = False,
     move_cs_one_up: bool = True,
+    breakearly: Optional[int] = None,
 ):
     x = jax.jit(x_xy.forward_kinematics)(sys, x_xy.State.create(sys))[1].x
 
@@ -170,6 +175,10 @@ def _new_transform1(
         new_transform1s = new_transform1s.index_set(
             link_idx_old_indices, new_transform1
         )
+
+        if breakearly == link_idx_old_indices:
+            break
+
     return sys, new_transform1s
 
 
