@@ -89,6 +89,8 @@ def _build_model_of_geoms(
 <worldbody>
 <camera pos="0 -1 1" name="trackcom" mode="trackcom"/>
 <camera pos="0 -1 1" name="target" mode="targetbodycom" target="{targetbody}"/>
+<camera pos="0 -3 3" name="targetfar" mode="targetbodycom" target="{targetbody}"/>
+<camera pos="0 -5 5" name="targetFar" mode="targetbodycom" target="{targetbody}"/>
 <light pos="0 0 10" dir="0 0 -1"/>
 <geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>
 {inside_worldbody_cameras}

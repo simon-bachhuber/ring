@@ -33,10 +33,9 @@ def setup_colab_env():
         """
             )
 
+    # Configure MuJoCo to use the EGL rendering backend (requires GPU)
+    os.environ["MUJOCO_GL"] = "egl"
 
-# Configure MuJoCo to use the EGL rendering backend (requires GPU)
-os.environ["MUJOCO_GL"] = "egl"
-
-# install mediapy
-os.system("command -v ffmpeg >/dev/null || (apt update && apt install -y ffmpeg)")
-os.system("pip install -q mediapy")
+    # install mediapy
+    os.system("command -v ffmpeg >/dev/null || (apt update && apt install -y ffmpeg)")
+    os.system("pip install -q mediapy")
