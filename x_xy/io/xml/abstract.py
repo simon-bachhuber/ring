@@ -155,6 +155,7 @@ class AbsGeomBox:
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Box:
         mass, trafo, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         dims = [geom_attr["dim"][i] for i in range(3)]
+        assert all([dim > 0.0 for dim in dims]), "Negative box dimensions"
         return base.Box(mass, trafo, link_idx, color, edge_color, *dims)
 
     @staticmethod
@@ -172,6 +173,7 @@ class AbsGeomSphere:
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Sphere:
         mass, trafo, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         radius = geom_attr["dim"].item()
+        assert radius > 0.0, "Negative sphere radius"
         return base.Sphere(mass, trafo, link_idx, color, edge_color, radius)
 
     @staticmethod
@@ -189,6 +191,7 @@ class AbsGeomCylinder:
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Cylinder:
         mass, trafo, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         dims = [geom_attr["dim"][i] for i in range(2)]
+        assert all([dim > 0.0 for dim in dims]), "Negative cylinder dimensions"
         return base.Cylinder(mass, trafo, link_idx, color, edge_color, *dims)
 
     @staticmethod
@@ -206,6 +209,7 @@ class AbsGeomCapsule:
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.Capsule:
         mass, trafo, color, edge_color = _from_xml_geom_attr_processing(geom_attr)
         dims = [geom_attr["dim"][i] for i in range(2)]
+        assert all([dim > 0.0 for dim in dims]), "Negative capsule dimensions"
         return base.Capsule(mass, trafo, link_idx, color, edge_color, *dims)
 
     @staticmethod
