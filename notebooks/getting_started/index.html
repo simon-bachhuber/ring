@@ -931,13 +931,42 @@
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>This example is available as a jupyter notebook <a href="https://github.com/SimiPixel/x_xy_v2/blob/main/docs/notebooks/getting_started.ipynb">here</a>.</p>
+<p>And on Google Colab <a href="https://colab.research.google.com/github/SimiPixel/x_xy_v2/blob/main/docs/notebooks/getting_started.ipynb">here</a></p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Setup the environment if this is executed on Google Colab.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">google.colab</span>
+    <span class="n">IN_COLAB</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">IN_COLAB</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="k">if</span> <span class="n">IN_COLAB</span><span class="p">:</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s2">&quot;pip install --quiet &#39;x_xy[muj] @ git+https://github.com/SimiPixel/x_xy_v2&#39;&quot;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s2">&quot;pip install --quiet mediapy&quot;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s2">&quot;pip install --quiet matplotlib&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">x_xy</span>
+<span class="c1"># automatically detects colab or not</span>
+<span class="n">x_xy</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">setup_colab_env</span><span class="p">()</span>
 
 <span class="kn">import</span> <span class="nn">jax</span>
 <span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
