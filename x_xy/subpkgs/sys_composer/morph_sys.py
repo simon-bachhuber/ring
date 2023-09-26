@@ -100,23 +100,22 @@ def morph_system(sys: base.System, new_parents: list[int | str]) -> base.System:
     )
 
     morphed_system = base.System(
-        new_parent_array,
-        _permute(links).replace(
+        link_parents=new_parent_array,
+        links=_permute(links).replace(
             joint_params=jnp.vstack([link[5] for link in _joint_properties])
         ),
-        [link[4] for link in _joint_properties],
-        stack_joint_properties(0),
-        stack_joint_properties(1),
-        stack_joint_properties(2),
-        stack_joint_properties(3),
-        sys.dt,
-        sys.dynamic_geometries,
-        _permute_modify_geoms(sys.geoms, structure),
-        sys.gravity,
-        sys.integration_method,
-        sys.mass_mat_iters,
-        _permute(sys.link_names),
-        sys.model_name,
+        link_types=[link[4] for link in _joint_properties],
+        link_damping=stack_joint_properties(0),
+        link_armature=stack_joint_properties(1),
+        link_spring_stiffness=stack_joint_properties(2),
+        link_spring_zeropoint=stack_joint_properties(3),
+        dt=sys.dt,
+        geoms=_permute_modify_geoms(sys.geoms, structure),
+        gravity=sys.gravity,
+        integration_method=sys.integration_method,
+        mass_mat_iters=sys.mass_mat_iters,
+        link_names=_permute(sys.link_names),
+        model_name=sys.model_name,
     )
 
     return parse_system(morphed_system)

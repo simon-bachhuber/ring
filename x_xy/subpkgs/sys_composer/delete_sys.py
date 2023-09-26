@@ -63,25 +63,24 @@ def delete_subsystem(sys: base.System, link_name: str | list[str]) -> base.Syste
     d, a, ss, sz = map(jnp.concatenate, (d, a, ss, sz))
 
     new_sys = base.System(
-        _reindex_parent_array(sys.link_parents, subsys),
-        tree_utils.tree_indices(sys.links, jnp.array(keep, dtype=int)),
-        take(sys.link_types),
-        d,
-        a,
-        ss,
-        sz,
-        sys.dt,
-        sys.dynamic_geometries,
-        [
+        link_parents=_reindex_parent_array(sys.link_parents, subsys),
+        links=tree_utils.tree_indices(sys.links, jnp.array(keep, dtype=int)),
+        link_types=take(sys.link_types),
+        link_damping=d,
+        link_armature=a,
+        link_spring_stiffness=ss,
+        link_spring_zeropoint=sz,
+        dt=sys.dt,
+        geoms=[
             geom.replace(link_idx=idx_map[geom.link_idx])
             for geom in sys.geoms
             if geom.link_idx in keep
         ],
-        sys.gravity,
-        sys.integration_method,
-        sys.mass_mat_iters,
-        take(sys.link_names),
-        sys.model_name,
+        gravity=sys.gravity,
+        integration_method=sys.integration_method,
+        mass_mat_iters=sys.mass_mat_iters,
+        link_names=take(sys.link_names),
+        model_name=sys.model_name,
     )
 
     return parse_system(new_sys)

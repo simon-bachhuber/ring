@@ -403,10 +403,6 @@ class System(_Base):
     link_spring_zeropoint: jax.Array
     # simulation timestep size
     dt: float = struct.field(False)
-    # whether or not to re-calculate the inertia
-    # matrix at every simulation timestep because
-    # the geometries may have changed
-    dynamic_geometries: bool = struct.field(False)
     # geometries in the system
     geoms: list[Geometry]
     # root / base acceleration offset

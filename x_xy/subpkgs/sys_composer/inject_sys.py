@@ -73,7 +73,6 @@ def inject_system(
             sys.link_spring_zeropoint, sub_sys.link_spring_zeropoint
         ),
         dt=sys.dt,
-        dynamic_geometries=sys.dynamic_geometries,
         geoms=sys.geoms + sub_sys.geoms,
         gravity=sys.gravity,
         integration_method=sys.integration_method,
