@@ -1,4 +1,4 @@
-import jax
+from jax.core import Tracer
 import jax.numpy as jnp
 
 from .. import base
@@ -12,7 +12,7 @@ def parse_system(sys: base.System) -> base.System:
     - populate the spatial inertia tensors
     - check that all names are unique
     - check that names are strings
-    - check that all pos_min <= pos_max
+    - check that all pos_min <= pos_max (unless traced)
     - order geoms in ascending order based on their parent link idx
     """
     assert len(sys.link_parents) == len(sys.link_types) == sys.links.batch_dim()
@@ -21,17 +21,9 @@ def parse_system(sys: base.System) -> base.System:
         assert sys.link_names.count(name) == 1, f"Duplicated name=`{name}` in system"
         assert isinstance(name, str)
 
-        pos_min, pos_max = sys.links.pos_min[i], sys.links.pos_max[i]
-
-        def print_warning():
-            jax.debug.print(
-                f"Warning from `parse_system`: name={name}, "
-                f"pos_min={pos_min}, pos_max={pos_max}"
-            )
-
-        # jax.lax.cond(~jnp.all(pos_min <= pos_max), print_warning, lambda: None)
-        # with jax.disable_jit():
-        #    assert all(pos_max >= pos_min), f"min={pos_min}, max={pos_max}"
+    pos_min, pos_max = sys.links.pos_min, sys.links.pos_max
+    if not isinstance(pos_min, Tracer):
+        assert jnp.all(pos_max >= pos_min), f"min={pos_min}, max={pos_max}"
 
     for geom in sys.geoms:
         assert geom.link_idx in list(range(sys.num_links())) + [-1]
