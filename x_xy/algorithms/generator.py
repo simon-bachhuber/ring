@@ -72,7 +72,9 @@ def build_generator(
             q_list.append(q_link)
             return key
 
-        keys = scan_sys(sys_mod2, draw_q, "ll", sys.link_types, sys.links.joint_params)
+        keys = scan_sys(
+            sys_mod2, draw_q, "ll", sys_mod2.link_types, sys_mod2.links.joint_params
+        )
         # stack of keys; only the last key is unused
         key = keys[-1]
 
