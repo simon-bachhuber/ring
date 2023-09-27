@@ -19,8 +19,6 @@ from x_xy import Transform
 def xs_from_raw(
     sys: x_xy.base.System,
     link_name_pos_rot: dict,
-    t1: float = 0.0,
-    t2: Optional[float] = None,
     eps_frame: Optional[str] = None,
     qinv: bool = False,
 ) -> x_xy.base.Transform:
@@ -37,8 +35,6 @@ def xs_from_raw(
         sys (x_xy.base.System): System which defines ordering of returned `xs`
         link_name_pos_rot (dict): Dictonary of `link_name` ->
             {'pos': ..., 'quat': ...}. Obtained, e.g., using `process_omc`.
-        t1 (float, optional): Crop time left. Defaults to 0.0.
-        t2 (Optional[float], optional): Crop time right. Defaults to None.
         eps_frame (str, optional): Move into this segment's frame at time zero as
             eps frame. Defaults to `None`.
             If `None`: Don't move into a specific eps-frame.
@@ -46,8 +42,6 @@ def xs_from_raw(
     Returns:
         x_xy.base.Transform: Time-series of eps-to-link transformations
     """
-    link_name_pos_rot = _crop_sequence(link_name_pos_rot, sys.dt, t1, t2)
-
     # determine `eps_frame` transform
     if eps_frame is not None:
         eps = link_name_pos_rot[eps_frame]
@@ -345,13 +339,3 @@ def _scale_transform_based_on_type(x: Transform, link_type: str, factor: float):
         axis, angle = maths.quat_to_rot_axis(rot)
         rot = maths.quat_rot_axis(axis, angle * factor)
     return Transform(pos, rot)
-
-
-def _crop_sequence(data: dict, dt: float, t1: float = 0.0, t2: Optional[float] = None):
-    # crop time left and right
-    if t2 is None:
-        t2i = tree_utils.tree_shape(data)
-    else:
-        t2i = int(t2 / dt)
-    t1i = int(t1 / dt)
-    return jax.tree_map(lambda arr: jnp.array(arr)[t1i:t2i], data)

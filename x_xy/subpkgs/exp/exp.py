@@ -1,13 +1,15 @@
 from pathlib import Path
 from typing import Callable, Optional
 
+import jax
+import jax.numpy as jnp
 import joblib
+import tree_utils
 import yaml
 
 import x_xy
 from x_xy.io import load_comments_from_xml
 from x_xy.subpkgs import sys_composer
-from x_xy.subpkgs.sim2real.sim2real import _crop_sequence
 
 _id2xml = {"S_06": "setups/arm.xml"}
 
@@ -121,3 +123,13 @@ def load_data(
     #    trial_data[seg]["pos"] = trial_data[seg][f"marker{seg_to_marker_number[seg]}"]
 
     return trial_data
+
+
+def _crop_sequence(data: dict, dt: float, t1: float = 0.0, t2: Optional[float] = None):
+    # crop time left and right
+    if t2 is None:
+        t2i = tree_utils.tree_shape(data)
+    else:
+        t2i = int(t2 / dt)
+    t1i = int(t1 / dt)
+    return jax.tree_map(lambda arr: jnp.array(arr)[t1i:t2i], data)
