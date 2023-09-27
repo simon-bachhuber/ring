@@ -12,7 +12,6 @@ import tree_utils
 
 import wandb
 from x_xy import base
-from x_xy.experimental import pipeline
 from x_xy.utils import distribute_batchsize
 from x_xy.utils import expand_batchsize
 from x_xy.utils import merge_batchsize
@@ -145,6 +144,7 @@ class EvalXy2TrainingLoopCallback(TrainingLoopCallback):
         self._render_plot()
 
     def _render_plot(self):
+        return
         if not self.plot and not self.render:
             return
 

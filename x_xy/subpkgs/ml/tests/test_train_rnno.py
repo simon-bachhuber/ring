@@ -2,16 +2,33 @@ import jax
 import tree_utils
 
 import x_xy
-from x_xy.experimental import pipeline
+from x_xy.algorithms.generator import transforms
 from x_xy.subpkgs import ml
 from x_xy.subpkgs import sys_composer
+
+
+def pipeline_make_generator(
+    config: x_xy.RCMG_Config,
+    bs: int,
+    sys: x_xy.System,
+):
+    sys_noimu, _ = sys_composer.make_sys_noimu(sys)
+
+    gen = x_xy.GeneratorPipe(
+        transforms.GeneratorTrafoIMU(),
+        transforms.GeneratorTrafoRelPose(sys_noimu),
+        x_xy.GeneratorTrafoRemoveOutputExtras(),
+        x_xy.GeneratorTrafoRemoveInputExtras(sys),
+    )(config)
+
+    return x_xy.batch_generator(gen, bs)
 
 
 def test_rnno():
     example = "test_three_seg_seg2"
     sys = x_xy.io.load_example(example)
     seed = jax.random.PRNGKey(1)
-    gen = pipeline.make_generator(x_xy.RCMG_Config(T=10.0), 1, sys)
+    gen = pipeline_make_generator(x_xy.RCMG_Config(T=10.0), 1, sys)
 
     X, y = gen(seed)
     sys_noimu, _ = sys_composer.make_sys_noimu(sys)
