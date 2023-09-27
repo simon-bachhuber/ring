@@ -20,6 +20,7 @@ from .types import GeneratorWithOutputExtras
 from .types import OutputExtras
 from .types import PRNGKey
 from .types import SETUP_FN
+from .types import Xy
 
 
 def build_generator(
@@ -43,7 +44,7 @@ def build_generator(
 def _generator_with_extras(
     config: RCMG_Config,
 ) -> GeneratorWithInputOutputExtras:
-    def generator(key: PRNGKey, sys: base.System) -> OutputExtras:
+    def generator(key: PRNGKey, sys: base.System) -> tuple[Xy, OutputExtras]:
         if config.cor:
             sys = _replace_free_with_cor(sys)
 

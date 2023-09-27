@@ -8,8 +8,8 @@ from ... import base
 PRNGKey = jax.Array
 InputExtras = base.System
 OutputExtras = tuple[PRNGKey, jax.Array, jax.Array, base.System]
-Xy = PyTree
-BatchedXy = PyTree
+Xy = tuple[PyTree, PyTree]
+BatchedXy = tuple[PyTree, PyTree]
 GeneratorWithInputExtras = Callable[[PRNGKey, InputExtras], Xy]
 GeneratorWithOutputExtras = Callable[[PRNGKey], tuple[Xy, OutputExtras]]
 GeneratorWithInputOutputExtras = Callable[
