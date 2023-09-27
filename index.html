@@ -923,15 +923,9 @@
 <h2 id="x_xy_v2-a-tiny-kinematic-tree-simulator"><code>x_xy_v2</code> -- A <em>tiny</em> Kinematic Tree Simulator<a class="headerlink" href="#x_xy_v2-a-tiny-kinematic-tree-simulator" title="Permanent link">¤</a></h2>
 <p><img src="img/coverage_badge.svg" height="20" /></p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">¤</a></h2>
-<p>Supports <code>Python=3.10</code> and <code>Python=3.11</code>.</p>
+<p>Supports <code>Python=3.10/3.11</code> (tested).</p>
 <p>Install with <code>pip</code> using</p>
-<p><code>pip install git+https://github.com/SimiPixel/x_xy_v2.git</code></p>
-<p>Additionally,
-- <code>render.py</code> requires a vispy backend (e.g. <code>pip install pyqt6</code>).</p>
-<pre><code>Note 1: On a headless node with a Nvidia GPU it works without any backend.
-
-Note 2: More info: https://vispy.org/installation.html
-</code></pre>
+<p><code>pip install 'x_xy[all] @ git+https://github.com/SimiPixel/x_xy_v2'</code></p>
 <p>Typically, this will install <code>jax</code> as cpu-only version. CUDA version can be installed with
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span><span class="s2">&quot;jax[cuda12_pip]&quot;</span><span class="w"> </span>-f<span class="w"> </span>https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 </code></pre></div></p>

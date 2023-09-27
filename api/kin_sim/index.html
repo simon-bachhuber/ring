@@ -87,7 +87,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#x_xy.algorithms.generator.build_generator" class="md-skip">
+        <a href="#x_xy.algorithms.generator.base.build_generator" class="md-skip">
           Skip to content
         </a>
       
@@ -620,7 +620,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#x_xy.algorithms.generator.build_generator" class="md-nav__link">
+  <a href="#x_xy.algorithms.generator.base.build_generator" class="md-nav__link">
     build_generator()
   </a>
   
@@ -634,6 +634,41 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#x_xy.algorithms.generator.base.GeneratorPipe" class="md-nav__link">
+    GeneratorPipe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algorithms.generator.types.GeneratorTrafo" class="md-nav__link">
+    GeneratorTrafo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algorithms.generator.base.GeneratorTrafoRemoveInputExtras" class="md-nav__link">
+    GeneratorTrafoRemoveInputExtras
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algorithms.generator.base.GeneratorTrafoRemoveOutputExtras" class="md-nav__link">
+    GeneratorTrafoRemoveOutputExtras
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algorithms.generator.base.GeneratorTrafoRandomizePositions" class="md-nav__link">
+    GeneratorTrafoRandomizePositions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#x_xy.algorithms.jcalc.concat_configs" class="md-nav__link">
     concat_configs()
   </a>
@@ -641,14 +676,14 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#x_xy.algorithms.generator.batch_generator" class="md-nav__link">
+  <a href="#x_xy.algorithms.generator.batch.batch_generator" class="md-nav__link">
     batch_generator()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#x_xy.algorithms.generator.offline_generator" class="md-nav__link">
+  <a href="#x_xy.algorithms.generator.batch.offline_generator" class="md-nav__link">
     offline_generator()
   </a>
   
@@ -662,7 +697,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#x_xy.algorithms.generator.make_normalizer_from_generator" class="md-nav__link">
+  <a href="#x_xy.algorithms.generator.utils.make_normalizer_from_generator" class="md-nav__link">
     make_normalizer_from_generator()
   </a>
   
@@ -929,17 +964,19 @@
 
 
 
-<h4 id="x_xy.algorithms.generator.build_generator" class="doc doc-heading">
+<h4 id="x_xy.algorithms.generator.base.build_generator" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">build_generator</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">RCMG_Config</span><span class="p">(),</span> <span class="n">setup_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="p">,</span> <span class="p">:</span> <span class="n">sys</span><span class="p">,</span> <span class="n">finalize_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="p">,</span> <span class="p">,</span> <span class="p">,</span> <span class="p">:</span> <span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">randomize_positions</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
-<a href="#x_xy.algorithms.generator.build_generator" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#x_xy.algorithms.generator.base.build_generator" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
 
           <details class="quote">
-            <summary>Source code in <code>x_xy/algorithms/generator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
+            <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
 <span class="normal">28</span>
 <span class="normal">29</span>
 <span class="normal">30</span>
@@ -952,112 +989,22 @@
 <span class="normal">37</span>
 <span class="normal">38</span>
 <span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">build_generator</span><span class="p">(</span>
+<span class="normal">40</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">build_generator</span><span class="p">(</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n">RCMG_Config</span> <span class="o">=</span> <span class="n">RCMG_Config</span><span class="p">(),</span>
     <span class="n">setup_fn</span><span class="p">:</span> <span class="n">SETUP_FN</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">,</span> <span class="n">sys</span><span class="p">:</span> <span class="n">sys</span><span class="p">,</span>
     <span class="n">finalize_fn</span><span class="p">:</span> <span class="n">FINALIZE_FN</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">sys</span><span class="p">:</span> <span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span>
     <span class="n">randomize_positions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">cor</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">link_parents</span><span class="p">):</span>
-            <span class="n">link_type</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">link_types</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                <span class="k">assert</span> <span class="n">link_type</span> <span class="o">==</span> <span class="s2">&quot;free&quot;</span>
-            <span class="k">if</span> <span class="n">link_type</span> <span class="o">==</span> <span class="s2">&quot;free&quot;</span><span class="p">:</span>
-                <span class="k">assert</span> <span class="n">p</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="n">sys</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-            <span class="n">link_types</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cor&quot;</span> <span class="k">if</span> <span class="n">typ</span> <span class="o">==</span> <span class="s2">&quot;free&quot;</span> <span class="k">else</span> <span class="n">typ</span> <span class="k">for</span> <span class="n">typ</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">link_types</span><span class="p">]</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">generator</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PyTree</span><span class="p">:</span>
-        <span class="k">nonlocal</span> <span class="n">sys</span>
-
-        <span class="c1"># modify system - use `pos_min/max` from xml</span>
-        <span class="k">if</span> <span class="n">randomize_positions</span><span class="p">:</span>
-            <span class="n">key</span><span class="p">,</span> <span class="n">consume</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-            <span class="n">sys_mod1</span> <span class="o">=</span> <span class="n">_setup_fn_randomize_positions</span><span class="p">(</span><span class="n">consume</span><span class="p">,</span> <span class="n">sys</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">sys_mod1</span> <span class="o">=</span> <span class="n">sys</span>
-
-        <span class="c1"># modify system - use custom logic</span>
-        <span class="n">key_start</span><span class="p">,</span> <span class="n">consume</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="n">sys_mod2</span> <span class="o">=</span> <span class="n">setup_fn</span><span class="p">(</span><span class="n">consume</span><span class="p">,</span> <span class="n">sys_mod1</span><span class="p">)</span>
-
-        <span class="c1"># build generalized coordintes vector `q`</span>
-        <span class="n">q_list</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="k">def</span> <span class="nf">draw_q</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">__</span><span class="p">,</span> <span class="n">link_type</span><span class="p">,</span> <span class="n">joint_params</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">key</span> <span class="o">=</span> <span class="n">key_start</span>
-            <span class="n">key</span><span class="p">,</span> <span class="n">key_t</span><span class="p">,</span> <span class="n">key_value</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-            <span class="n">draw_fn</span> <span class="o">=</span> <span class="n">_joint_types</span><span class="p">[</span><span class="n">link_type</span><span class="p">]</span><span class="o">.</span><span class="n">rcmg_draw_fn</span>
-            <span class="k">if</span> <span class="n">draw_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The joint type </span><span class="si">{</span><span class="n">link_type</span><span class="si">}</span><span class="s2"> has no draw fn specified.&quot;</span><span class="p">)</span>
-            <span class="n">q_link</span> <span class="o">=</span> <span class="n">draw_fn</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">key_t</span><span class="p">,</span> <span class="n">key_value</span><span class="p">,</span> <span class="n">joint_params</span><span class="p">)</span>
-            <span class="c1"># even revolute and prismatic joints must be 2d arrays</span>
-            <span class="n">q_link</span> <span class="o">=</span> <span class="n">q_link</span> <span class="k">if</span> <span class="n">q_link</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">q_link</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
-            <span class="n">q_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_link</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">key</span>
-
-        <span class="n">keys</span> <span class="o">=</span> <span class="n">scan_sys</span><span class="p">(</span><span class="n">sys_mod2</span><span class="p">,</span> <span class="n">draw_q</span><span class="p">,</span> <span class="s2">&quot;ll&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">link_types</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">joint_params</span><span class="p">)</span>
-        <span class="c1"># stack of keys; only the last key is unused</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="n">keys</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
-        <span class="n">q</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">q_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="c1"># do forward kinematics</span>
-        <span class="n">x</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">forward_kinematics_transforms</span><span class="p">,</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">))(</span><span class="n">sys_mod2</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">finalize_fn</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">sys_mod2</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">generator</span>
+    <span class="k">return</span> <span class="n">GeneratorPipe</span><span class="p">(</span>
+        <span class="n">GeneratorTrafoSetupFn</span><span class="p">(</span><span class="n">setup_fn</span><span class="p">),</span>
+        <span class="n">GeneratorTrafoRandomizePositions</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">randomize_positions</span>
+        <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">gen</span><span class="p">:</span> <span class="n">gen</span><span class="p">),</span>
+        <span class="n">GeneratorTrafoFinalizeFn</span><span class="p">(</span><span class="n">finalize_fn</span><span class="p">),</span>
+        <span class="n">GeneratorTrafoRemoveInputExtras</span><span class="p">(</span><span class="n">sys</span><span class="p">),</span>
+        <span class="n">GeneratorTrafoRemoveOutputExtras</span><span class="p">(),</span>
+    <span class="p">)(</span><span class="n">config</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -1211,6 +1158,313 @@
 
 </div>
 
+<div class="doc doc-object doc-class">
+
+
+
+
+<h4 id="x_xy.algorithms.generator.base.GeneratorPipe" class="doc doc-heading">
+          <code>GeneratorPipe</code>
+
+
+<a href="#x_xy.algorithms.generator.base.GeneratorPipe" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+
+            <details class="quote">
+              <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span>
+<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorPipe</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">gen_trafos</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">GeneratorTrafo</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gen_trafos</span> <span class="o">=</span> <span class="n">gen_trafos</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">RCMG_Config</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
+        <span class="n">GeneratorWithInputOutputExtras</span>
+        <span class="o">|</span> <span class="n">GeneratorWithOutputExtras</span>
+        <span class="o">|</span> <span class="n">GeneratorWithInputExtras</span>
+        <span class="o">|</span> <span class="n">Generator</span>
+    <span class="p">):</span>
+        <span class="n">gen</span> <span class="o">=</span> <span class="n">_generator_with_extras</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">trafo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_trafos</span><span class="p">:</span>
+            <span class="n">gen</span> <span class="o">=</span> <span class="n">trafo</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gen</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h4 id="x_xy.algorithms.generator.types.GeneratorTrafo" class="doc doc-heading">
+          <code>GeneratorTrafo</code>
+
+
+<a href="#x_xy.algorithms.generator.types.GeneratorTrafo" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+
+            <details class="quote">
+              <summary>Source code in <code>x_xy/algorithms/generator/types.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafo</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">gen</span><span class="p">:</span> <span class="n">GeneratorWithInputOutputExtras</span>
+        <span class="o">|</span> <span class="n">GeneratorWithOutputExtras</span>
+        <span class="o">|</span> <span class="n">GeneratorWithInputExtras</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
+        <span class="n">GeneratorWithInputOutputExtras</span>
+        <span class="o">|</span> <span class="n">GeneratorWithOutputExtras</span>
+        <span class="o">|</span> <span class="n">GeneratorWithInputExtras</span>
+        <span class="o">|</span> <span class="n">Generator</span>
+    <span class="p">):</span>
+        <span class="o">...</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h4 id="x_xy.algorithms.generator.base.GeneratorTrafoRemoveInputExtras" class="doc doc-heading">
+          <code>GeneratorTrafoRemoveInputExtras</code>
+
+
+<a href="#x_xy.algorithms.generator.base.GeneratorTrafoRemoveInputExtras" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+
+            <details class="quote">
+              <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveInputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sys</span> <span class="o">=</span> <span class="n">sys</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">gen</span><span class="p">:</span> <span class="n">GeneratorWithInputExtras</span> <span class="o">|</span> <span class="n">GeneratorWithInputOutputExtras</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span> <span class="o">|</span> <span class="n">GeneratorWithOutputExtras</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">_gen</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">gen</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_gen</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h4 id="x_xy.algorithms.generator.base.GeneratorTrafoRemoveOutputExtras" class="doc doc-heading">
+          <code>GeneratorTrafoRemoveOutputExtras</code>
+
+
+<a href="#x_xy.algorithms.generator.base.GeneratorTrafoRemoveOutputExtras" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+
+            <details class="quote">
+              <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveOutputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">gen</span><span class="p">:</span> <span class="n">GeneratorWithOutputExtras</span> <span class="o">|</span> <span class="n">GeneratorWithInputOutputExtras</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span> <span class="o">|</span> <span class="n">GeneratorWithInputExtras</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">_gen</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">gen</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">_gen</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h4 id="x_xy.algorithms.generator.base.GeneratorTrafoRandomizePositions" class="doc doc-heading">
+          <code>GeneratorTrafoRandomizePositions</code>
+
+
+<a href="#x_xy.algorithms.generator.base.GeneratorTrafoRandomizePositions" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+
+            <details class="quote">
+              <summary>Source code in <code>x_xy/algorithms/generator/transforms.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRandomizePositions</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">gen</span><span class="p">:</span> <span class="n">GeneratorWithInputExtras</span> <span class="o">|</span> <span class="n">GeneratorWithInputOutputExtras</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GeneratorWithInputExtras</span> <span class="o">|</span> <span class="n">GeneratorWithInputOutputExtras</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">GeneratorTrafoSetupFn</span><span class="p">(</span><span class="n">_setup_fn_randomize_positions</span><span class="p">)(</span><span class="n">gen</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
 
 <div class="doc doc-object doc-function">
 
@@ -1298,10 +1552,10 @@
 
 
 
-<h4 id="x_xy.algorithms.generator.batch_generator" class="doc doc-heading">
+<h4 id="x_xy.algorithms.generator.batch.batch_generator" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">batch_generator</span><span class="p">(</span><span class="n">generators</span><span class="p">,</span> <span class="n">batchsizes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stochastic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
-<a href="#x_xy.algorithms.generator.batch_generator" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#x_xy.algorithms.generator.batch.batch_generator" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -1310,70 +1564,70 @@
 NOTE: If <code>stochastic</code> then <code>batchsizes</code> must be a single integer.</p>
 
           <details class="quote">
-            <summary>Source code in <code>x_xy/algorithms/generator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">batch_generator</span><span class="p">(</span>
+            <summary>Source code in <code>x_xy/algorithms/generator/batch.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">batch_generator</span><span class="p">(</span>
     <span class="n">generators</span><span class="p">:</span> <span class="n">Generator</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Generator</span><span class="p">],</span>
     <span class="n">batchsizes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">stochastic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchedGenerator</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a large generator by stacking multiple generators lazily.</span>
 <span class="sd">    NOTE: If `stochastic` then `batchsizes` must be a single integer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1440,10 +1694,10 @@ NOTE: If <code>stochastic</code> then <code>batchsizes</code> must be a single i
 
 
 
-<h4 id="x_xy.algorithms.generator.offline_generator" class="doc doc-heading">
+<h4 id="x_xy.algorithms.generator.batch.offline_generator" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">offline_generator</span><span class="p">(</span><span class="n">generators</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">batchsize</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">store_on_cpu</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
-<a href="#x_xy.algorithms.generator.offline_generator" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#x_xy.algorithms.generator.batch.offline_generator" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -1452,46 +1706,46 @@ NOTE: If <code>stochastic</code> then <code>batchsizes</code> must be a single i
 and stacking their output.</p>
 
           <details class="quote">
-            <summary>Source code in <code>x_xy/algorithms/generator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">offline_generator</span><span class="p">(</span>
+            <summary>Source code in <code>x_xy/algorithms/generator/batch.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">offline_generator</span><span class="p">(</span>
     <span class="n">generators</span><span class="p">:</span> <span class="n">Generator</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Generator</span><span class="p">],</span>
     <span class="n">sizes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">batchsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1499,7 +1753,7 @@ and stacking their output.</p>
     <span class="n">drop_last</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">store_on_cpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OfflineGenerator</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchedGenerator</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Eagerly create a large precomputed generator by calling multiple generators</span>
 <span class="sd">    and stacking their output.&quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">drop_last</span><span class="p">,</span> <span class="s2">&quot;Not `drop_last` is currently not implemented.&quot;</span>
@@ -1587,65 +1841,60 @@ and stacking their output.</p>
 
 
 
-<h4 id="x_xy.algorithms.generator.make_normalizer_from_generator" class="doc doc-heading">
+<h4 id="x_xy.algorithms.generator.utils.make_normalizer_from_generator" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">make_normalizer_from_generator</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">approx_with_large_batchsize</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span></code>
 
-<a href="#x_xy.algorithms.generator.make_normalizer_from_generator" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#x_xy.algorithms.generator.utils.make_normalizer_from_generator" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
   
-      <p><code>generator</code> is expected to return <code>X, y</code>. Then, this function returns a pure
-function that normalizes <code>X</code>.</p>
+      <p>Returns a pure function that normalizes <code>X</code>.</p>
 
           <details class="quote">
-            <summary>Source code in <code>x_xy/algorithms/generator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">make_normalizer_from_generator</span><span class="p">(</span>
-    <span class="n">generator</span><span class="p">:</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">approx_with_large_batchsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span>
+            <summary>Source code in <code>x_xy/algorithms/generator/utils.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">make_normalizer_from_generator</span><span class="p">(</span>
+    <span class="n">generator</span><span class="p">:</span> <span class="n">BatchedGenerator</span><span class="p">,</span> <span class="n">approx_with_large_batchsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Normalizer</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`generator` is expected to return `X, y`. Then, this function returns a pure</span>
-<span class="sd">    function that normalizes `X`.&quot;&quot;&quot;</span>
-    <span class="c1"># batch it if it isn&#39;t already</span>
-    <span class="n">generator</span> <span class="o">=</span> <span class="n">batch_generator</span><span class="p">(</span><span class="n">generator</span><span class="p">)</span>
+    <span class="s2">&quot;Returns a pure function that normalizes `X`.&quot;</span>
 
     <span class="c1"># probe generator for its batchsize</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">generator</span><span class="p">(</span><span class="n">KEY</span><span class="p">)</span>
     <span class="n">bs</span> <span class="o">=</span> <span class="n">tree_utils</span><span class="o">.</span><span class="n">tree_shape</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">tree_utils</span><span class="o">.</span><span class="n">tree_ndim</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;`generator` must be batched.&quot;</span>
 
     <span class="c1"># how often do we have to query the generator</span>
     <span class="n">number_of_gen_calls</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">approx_with_large_batchsize</span> <span class="o">/</span> <span class="n">bs</span><span class="p">)</span>

@@ -980,8 +980,7 @@
 <span class="normal">83</span>
 <span class="normal">84</span>
 <span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">delete_subsystem</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span> <span class="n">link_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">:</span>
+<span class="normal">86</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">delete_subsystem</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span> <span class="n">link_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">:</span>
     <span class="s2">&quot;Cut subsystem starting at `link_name` (inclusive) from tree.&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">link_name</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">link_name</span><span class="p">:</span>
@@ -1021,25 +1020,24 @@
     <span class="n">d</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">ss</span><span class="p">,</span> <span class="n">sz</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">,</span> <span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">ss</span><span class="p">,</span> <span class="n">sz</span><span class="p">))</span>
 
     <span class="n">new_sys</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">(</span>
-        <span class="n">_reindex_parent_array</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">link_parents</span><span class="p">,</span> <span class="n">subsys</span><span class="p">),</span>
-        <span class="n">tree_utils</span><span class="o">.</span><span class="n">tree_indices</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">links</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">keep</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)),</span>
-        <span class="n">take</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">link_types</span><span class="p">),</span>
-        <span class="n">d</span><span class="p">,</span>
-        <span class="n">a</span><span class="p">,</span>
-        <span class="n">ss</span><span class="p">,</span>
-        <span class="n">sz</span><span class="p">,</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">dynamic_geometries</span><span class="p">,</span>
-        <span class="p">[</span>
+        <span class="n">link_parents</span><span class="o">=</span><span class="n">_reindex_parent_array</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">link_parents</span><span class="p">,</span> <span class="n">subsys</span><span class="p">),</span>
+        <span class="n">links</span><span class="o">=</span><span class="n">tree_utils</span><span class="o">.</span><span class="n">tree_indices</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">links</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">keep</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)),</span>
+        <span class="n">link_types</span><span class="o">=</span><span class="n">take</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">link_types</span><span class="p">),</span>
+        <span class="n">link_damping</span><span class="o">=</span><span class="n">d</span><span class="p">,</span>
+        <span class="n">link_armature</span><span class="o">=</span><span class="n">a</span><span class="p">,</span>
+        <span class="n">link_spring_stiffness</span><span class="o">=</span><span class="n">ss</span><span class="p">,</span>
+        <span class="n">link_spring_zeropoint</span><span class="o">=</span><span class="n">sz</span><span class="p">,</span>
+        <span class="n">dt</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+        <span class="n">geoms</span><span class="o">=</span><span class="p">[</span>
             <span class="n">geom</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">link_idx</span><span class="o">=</span><span class="n">idx_map</span><span class="p">[</span><span class="n">geom</span><span class="o">.</span><span class="n">link_idx</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">geom</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">geoms</span>
             <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">link_idx</span> <span class="ow">in</span> <span class="n">keep</span>
         <span class="p">],</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">gravity</span><span class="p">,</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">integration_method</span><span class="p">,</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">mass_mat_iters</span><span class="p">,</span>
-        <span class="n">take</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">link_names</span><span class="p">),</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">model_name</span><span class="p">,</span>
+        <span class="n">gravity</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">gravity</span><span class="p">,</span>
+        <span class="n">integration_method</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">integration_method</span><span class="p">,</span>
+        <span class="n">mass_mat_iters</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">mass_mat_iters</span><span class="p">,</span>
+        <span class="n">link_names</span><span class="o">=</span><span class="n">take</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">link_names</span><span class="p">),</span>
+        <span class="n">model_name</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">model_name</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">parse_system</span><span class="p">(</span><span class="n">new_sys</span><span class="p">)</span>
@@ -1255,8 +1253,7 @@ small system will be included. Defaults to <code>worldbody</code>.</p>
 <span class="normal">81</span>
 <span class="normal">82</span>
 <span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">inject_system</span><span class="p">(</span>
+<span class="normal">84</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">inject_system</span><span class="p">(</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span>
     <span class="n">sub_sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span>
     <span class="n">at_body</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1315,7 +1312,6 @@ small system will be included. Defaults to <code>worldbody</code>.</p>
             <span class="n">sys</span><span class="o">.</span><span class="n">link_spring_zeropoint</span><span class="p">,</span> <span class="n">sub_sys</span><span class="o">.</span><span class="n">link_spring_zeropoint</span>
         <span class="p">),</span>
         <span class="n">dt</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-        <span class="n">dynamic_geometries</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">dynamic_geometries</span><span class="p">,</span>
         <span class="n">geoms</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">geoms</span> <span class="o">+</span> <span class="n">sub_sys</span><span class="o">.</span><span class="n">geoms</span><span class="p">,</span>
         <span class="n">gravity</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">gravity</span><span class="p">,</span>
         <span class="n">integration_method</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">integration_method</span><span class="p">,</span>
@@ -1525,8 +1521,7 @@ j-th link in the old system.</p>
 <span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">morph_system</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span> <span class="n">new_parents</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">:</span>
+<span class="normal">121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">morph_system</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span> <span class="n">new_parents</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Re-orders the graph underlying the system. Returns a new system.</span>
 
 <span class="sd">    Args:</span>
@@ -1613,23 +1608,22 @@ j-th link in the old system.</p>
     <span class="p">)</span>
 
     <span class="n">morphed_system</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">(</span>
-        <span class="n">new_parent_array</span><span class="p">,</span>
-        <span class="n">_permute</span><span class="p">(</span><span class="n">links</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">link_parents</span><span class="o">=</span><span class="n">new_parent_array</span><span class="p">,</span>
+        <span class="n">links</span><span class="o">=</span><span class="n">_permute</span><span class="p">(</span><span class="n">links</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
             <span class="n">joint_params</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">link</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">_joint_properties</span><span class="p">])</span>
         <span class="p">),</span>
-        <span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">_joint_properties</span><span class="p">],</span>
-        <span class="n">stack_joint_properties</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
-        <span class="n">stack_joint_properties</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
-        <span class="n">stack_joint_properties</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
-        <span class="n">stack_joint_properties</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">dynamic_geometries</span><span class="p">,</span>
-        <span class="n">_permute_modify_geoms</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">geoms</span><span class="p">,</span> <span class="n">structure</span><span class="p">),</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">gravity</span><span class="p">,</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">integration_method</span><span class="p">,</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">mass_mat_iters</span><span class="p">,</span>
-        <span class="n">_permute</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">link_names</span><span class="p">),</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">model_name</span><span class="p">,</span>
+        <span class="n">link_types</span><span class="o">=</span><span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">_joint_properties</span><span class="p">],</span>
+        <span class="n">link_damping</span><span class="o">=</span><span class="n">stack_joint_properties</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">link_armature</span><span class="o">=</span><span class="n">stack_joint_properties</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">link_spring_stiffness</span><span class="o">=</span><span class="n">stack_joint_properties</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+        <span class="n">link_spring_zeropoint</span><span class="o">=</span><span class="n">stack_joint_properties</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+        <span class="n">dt</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+        <span class="n">geoms</span><span class="o">=</span><span class="n">_permute_modify_geoms</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">geoms</span><span class="p">,</span> <span class="n">structure</span><span class="p">),</span>
+        <span class="n">gravity</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">gravity</span><span class="p">,</span>
+        <span class="n">integration_method</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">integration_method</span><span class="p">,</span>
+        <span class="n">mass_mat_iters</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">mass_mat_iters</span><span class="p">,</span>
+        <span class="n">link_names</span><span class="o">=</span><span class="n">_permute</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">link_names</span><span class="p">),</span>
+        <span class="n">model_name</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">model_name</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">parse_system</span><span class="p">(</span><span class="n">morphed_system</span><span class="p">)</span>
