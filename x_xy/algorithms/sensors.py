@@ -124,7 +124,7 @@ def imu(
 
     if smoothen_degree is not None:
         measurements = jax.tree_map(
-            lambda arr: moving_average(arr, smoothen_degree),
+            lambda arr: _moving_average(arr, smoothen_degree),
             measurements,
         )
 
@@ -198,7 +198,57 @@ def rel_pose(
     return y
 
 
-def moving_average(arr: jax.Array, window: int) -> jax.Array:
+def joint_axes(
+    sys: base.System,
+    xs: base.Transform,
+    sys_xs: base.System,
+    key: Optional[jax.Array] = None,
+    noisy: bool = False,
+):
+    # TODO
+    from x_xy.subpkgs.sim2real import match_xs
+    from x_xy.subpkgs.sim2real import unzip_xs
+
+    xs = match_xs(sys, xs, sys_xs)
+
+    _, transform2_rot = unzip_xs(sys, xs)
+    qs = transform2_rot.rot.transpose((1, 0, 2))
+
+    l2norm = lambda x: jnp.sqrt(jnp.sum(x**2, axis=-1))
+
+    @jax.vmap
+    def ensure_axis_convention(qs):
+        axis = qs[..., 1:] / (
+            jnp.linalg.norm(qs[..., 1:], axis=-1, keepdims=True) + 1e-6
+        )
+        convention = axis[0]
+        cond = (l2norm(convention - axis) > l2norm(convention + axis))[..., None]
+        return jnp.where(cond, -axis, axis)
+
+    axes = ensure_axis_convention(qs)
+
+    # TODO
+    # not ideal to average vectors that live on a sphere
+    N = axes.shape[1]
+    axes_average = jnp.mean(axes, axis=1)
+    axes_average /= jnp.linalg.norm(axes_average, axis=-1, keepdims=True)
+    axes = jnp.repeat(axes_average[:, None], N, axis=1)
+
+    X = {name: {"joint_axes": axes[sys.name_to_idx(name)]} for name in sys.link_names}
+
+    if noisy:
+        assert key is not None
+        for name in X:
+            key, c1, c2 = jax.random.split(key, 3)
+            bias = maths.quat_random(c1, maxval=jnp.deg2rad(5.0))
+            noise = maths.quat_random(c2, (N,), maxval=jnp.deg2rad(2.0))
+            dist = maths.quat_mul(noise, bias)
+            X[name]["joint_axes"] = maths.rotate(X[name]["joint_axes"], dist)
+
+    return X
+
+
+def _moving_average(arr: jax.Array, window: int) -> jax.Array:
     "Padds with left and right values of array."
     assert window % 2 == 1
     assert window > 1, "Window size of 1 would be a no-op"

@@ -32,4 +32,5 @@ from .sensors import accelerometer
 from .sensors import add_noise_bias
 from .sensors import gyroscope
 from .sensors import imu
+from .sensors import joint_axes
 from .sensors import rel_pose

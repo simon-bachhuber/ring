@@ -17,6 +17,7 @@ from .algorithms import GeneratorTrafoRandomizePositions
 from .algorithms import GeneratorTrafoRemoveInputExtras
 from .algorithms import GeneratorTrafoRemoveOutputExtras
 from .algorithms import imu
+from .algorithms import joint_axes
 from .algorithms import JointModel
 from .algorithms import make_normalizer_from_generator
 from .algorithms import offline_generator
