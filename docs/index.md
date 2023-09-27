@@ -22,6 +22,35 @@ Typically, this will install `jax` as cpu-only version. CUDA version can be inst
 pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
 
+### Installation of Extras
+
+Seperates dependencies neatly per subpackage. E.g. the dependencies for subpkg `omc` can be installed via
+
+`pip install 'x_xy[omc] @ git+https://github.com/SimiPixel/x_xy_v2'`
+
+Also available installs are
+
+`pip install 'x_xy @ git+https://github.com/SimiPixel/x_xy_v2'` (base; only subpackages `sys_composer` and `sim2real` work, no rendering)
+
+`pip install 'x_xy[omc] @ git+https://github.com/SimiPixel/x_xy_v2'` (base+omc)
+
+`pip install 'x_xy[ml] @ git+https://github.com/SimiPixel/x_xy_v2'` (base+ml)
+
+`pip install 'x_xy[exp] @ git+https://github.com/SimiPixel/x_xy_v2'` (base+exp)
+
+`pip install 'x_xy[muj] @ git+https://github.com/SimiPixel/x_xy_v2'` (base+ mujoco rendering backend)
+
+`pip install 'x_xy[vis] @ git+https://github.com/SimiPixel/x_xy_v2'` (base+ vispy rendering backend)
+
+`pip install 'x_xy[all] @ git+https://github.com/SimiPixel/x_xy_v2'` (everything works)
+
+`pip install 'x_xy[all_muj] @ git+https://github.com/SimiPixel/x_xy_v2'` (everything works but not vispy rendering only mujoco rendering)
+
+`pip install 'x_xy[dev] @ git+https://github.com/SimiPixel/x_xy_v2'` (base+ development dependencies)
+
+Can also be combined, e.g.
+`pip install 'x_xy[ml,omc] @ git+https://github.com/SimiPixel/x_xy_v2'` (base+ml+omc)
+
 ## Publications
 
 The following publications utilize this software library, and refer to it as the *Random Chain Motion Generator (RCMG)* (more specifically the function `x_xy.build_generator`):

@@ -12,6 +12,7 @@ import x_xy
 from x_xy import maths
 from x_xy.utils import distribute_batchsize
 from x_xy.utils import expand_batchsize
+from x_xy.utils import parse_path
 
 from .callbacks import _repeat_state
 from .callbacks import LogEpisodeTrainingLoopCallback
@@ -124,6 +125,7 @@ def train(
     key_network: jax.random.PRNGKey = key_network,
     key_generator: jax.random.PRNGKey = key_generator,
     callback_save_params: Optional[str] = None,
+    callback_save_params_track_metrices: Optional[list[list[str]]] = None,
     callback_kill_if_grads_larger: Optional[float] = None,
     callback_kill_if_nan: bool = False,
     callback_kill_after_episode: Optional[int] = None,
@@ -219,6 +221,22 @@ def train(
         default_callbacks.append(TimingKillRunCallback(callback_kill_after_seconds))
 
     callbacks_all = default_callbacks + callbacks
+
+    # we add this callback afterwards because it might require the metrices calculated
+    # from one of the user-provided callbacks
+    if callback_save_params_track_metrices is not None:
+        assert (
+            callback_save_params is not None
+        ), "Required field if `callback_save_params_track_metrices` is set."
+
+        callbacks_all.append(
+            SaveParamsTrainingLoopCallback(
+                path_to_file=parse_path(callback_save_params, extension=""),
+                last_n_params=3,
+                track_metrices=callback_save_params_track_metrices,
+                cleanup=True,
+            )
+        )
 
     loop = TrainingLoop(
         key_generator,

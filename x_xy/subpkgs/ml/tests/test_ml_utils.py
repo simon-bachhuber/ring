@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 from pathlib import Path
+import time
 
 import jax
 import jax.numpy as jnp
@@ -10,7 +11,9 @@ import pytest
 import wandb
 from x_xy.subpkgs import ml
 from x_xy.subpkgs.ml.callbacks import SaveParamsTrainingLoopCallback
+from x_xy.subpkgs.ml.ml_utils import Logger
 from x_xy.subpkgs.ml.training_loop import TrainingLoop
+from x_xy.subpkgs.ml.training_loop import TrainingLoopCallback
 
 
 def test_pretrained():
@@ -48,9 +51,7 @@ def generator(key):
 
 
 def step_fn(params, opt_state, X, y):
-    import time
-
-    time.sleep(0.02)
+    time.sleep(0.1)
     debug_grads = [params, params]
     return params, opt_state, {"loss": jnp.array(0.0)}, debug_grads
 
@@ -59,8 +60,8 @@ def test_save_params_loop_callback():
     params = {"matrix": jnp.zeros((100, 100))}
     test_file = "~/params2/params.pickle"
     logger = ml.NeptuneLogger("iss/test", name=str(datetime.now()))
-    n_episodes = 100
-    callback = SaveParamsTrainingLoopCallback(test_file)
+    n_episodes = 10
+    callback = SaveParamsTrainingLoopCallback(test_file, cleanup=True)
 
     opt_state = None
     loop = TrainingLoop(
@@ -74,13 +75,55 @@ def test_save_params_loop_callback():
     )
     loop.run(n_episodes)
 
-    import time
 
-    # await upload
-    time.sleep(3)
-    # clean up
-    os.system("rm ~/params2/params.pickle")
-    os.system("rmdir ~/params2")
+class LogMetrices(TrainingLoopCallback):
+    def __init__(self) -> None:
+        self.t0 = time.time()
+
+    def after_training_step(
+        self,
+        i_episode: int,
+        metrices: dict,
+        params: dict,
+        grads: list[dict],
+        sample_eval: dict,
+        loggers: list[Logger],
+    ) -> None:
+        metrices.update(
+            {
+                "mae": {
+                    "seg1": jnp.array((time.time() - self.t0) * 10),
+                    "seg2": jnp.array(1.0),
+                }
+            }
+        )
+
+
+def test_save_params_metric_tracking():
+    params = {"matrix": jnp.zeros((100, 100))}
+    test_path = "~/params3/expID"
+
+    wandb.init(project="TEST")
+    logger = ml.WandbLogger()
+    n_episodes = 10
+    callback = SaveParamsTrainingLoopCallback(
+        test_path,
+        last_n_params=2,
+        track_metrices=[["mae"], ["seg1", "seg2"]],
+        cleanup=True,
+    )
+
+    opt_state = None
+    loop = TrainingLoop(
+        jax.random.PRNGKey(1),
+        generator,
+        params,
+        opt_state,
+        step_fn,
+        [logger],
+        [LogMetrices(), callback],
+    )
+    loop.run(n_episodes)
 
 
 def test_neptune_logger():

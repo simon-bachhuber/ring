@@ -1,9 +1,10 @@
 from collections import deque
 from functools import partial
+import itertools
 import os
 from pathlib import Path
 import time
-from typing import Callable, Optional, Tuple
+from typing import Callable, NamedTuple, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -214,17 +215,52 @@ class EvalXy2TrainingLoopCallback(TrainingLoopCallback):
                         os.system(f"rm {path}")
 
 
+class QueueElement(NamedTuple):
+    value: float
+    params: dict
+    episode: int
+
+
+class Queue:
+    def __init__(self, maxlen: int = 1):
+        self._storage: list[QueueElement] = []
+        self.maxlen = maxlen
+
+    def __len__(self) -> int:
+        return len(self._storage)
+
+    def insert(self, ele: QueueElement) -> None:
+        sort = True
+        if len(self) < self.maxlen:
+            self._storage.append(ele)
+        elif ele.value < self._storage[-1].value:
+            self._storage[-1] = ele
+        else:
+            sort = False
+
+        if sort:
+            self._storage.sort(key=lambda ele: ele.value)
+
+    def __iter__(self):
+        return iter(self._storage)
+
+
 class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
     def __init__(
         self,
         path_to_file: str,
         upload: bool = True,
         last_n_params: int = 1,
+        track_metrices: Optional[list[list[str]]] = None,
+        cleanup: bool = False,
     ):
-        self.path_to_file = parse_path(path_to_file, extension="pickle")
+        self.path_to_file = parse_path(path_to_file)
         self.upload = upload
-        self._params = deque(maxlen=last_n_params)
+        self._queue = Queue(maxlen=last_n_params)
         self._loggers = []
+        self._track_metrices = track_metrices
+        self._value = 0.0
+        self._cleanup = cleanup
 
     def after_training_step(
         self,
@@ -235,19 +271,52 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
         sample_eval: dict,
         loggers: list[Logger],
     ) -> None:
-        self._params.append(params)
+        if self._track_metrices is None:
+            self._value -= 1.0
+            value = self._value
+        else:
+            value = 0.0
+            N = 0
+            for combination in itertools.product(*self._track_metrices):
+                metrices_zoomedout = metrices
+                for key in combination:
+                    metrices_zoomedout = metrices_zoomedout[key]
+                value += float(metrices_zoomedout)
+                N += 1
+            value /= N
+
+        ele = QueueElement(value, params, i_episode)
+        self._queue.insert(ele)
+
         self._loggers = loggers
 
     def close(self):
-        params = list(self._params)
-        if len(params) == 1:
-            params = params[0]
+        filenames = []
+        for ele in self._queue:
+            if len(self._queue) == 1:
+                filename = parse_path(self.path_to_file, extension="pickle")
+            else:
+                filename = parse_path(
+                    self.path_to_file
+                    + "_episode={}_value={:.4f}".format(ele.episode, ele.value),
+                    extension="pickle",
+                )
 
-        save(params, self.path_to_file, overwrite=True)
+            save(ele.params, filename, overwrite=True)
+            if self.upload:
+                _find_multimedia_logger(self._loggers).log_params(filename)
 
-        if self.upload:
-            logger = _find_multimedia_logger(self._loggers)
-            logger.log_params(self.path_to_file)
+            filenames.append(filename)
+
+        if self._cleanup:
+            # wait for upload
+            time.sleep(3)
+
+            for filename in filenames:
+                os.system(f"rm {filename}")
+
+            # delete folder
+            os.system(f"rmdir {str(Path(filename).parent)}")
 
 
 def _find_multimedia_logger(loggers):
