@@ -10,6 +10,11 @@ from .generator import batch_generator
 from .generator import build_generator
 from .generator import FINALIZE_FN
 from .generator import Generator
+from .generator import GeneratorPipe
+from .generator import GeneratorTrafo
+from .generator import GeneratorTrafoRandomizePositions
+from .generator import GeneratorTrafoRemoveInputExtras
+from .generator import GeneratorTrafoRemoveOutputExtras
 from .generator import make_normalizer_from_generator
 from .generator import Normalizer
 from .generator import offline_generator

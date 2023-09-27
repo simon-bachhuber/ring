@@ -11,6 +11,11 @@ from .algorithms import batch_generator
 from .algorithms import build_generator
 from .algorithms import concat_configs
 from .algorithms import forward_kinematics
+from .algorithms import GeneratorPipe
+from .algorithms import GeneratorTrafo
+from .algorithms import GeneratorTrafoRandomizePositions
+from .algorithms import GeneratorTrafoRemoveInputExtras
+from .algorithms import GeneratorTrafoRemoveOutputExtras
 from .algorithms import imu
 from .algorithms import JointModel
 from .algorithms import make_normalizer_from_generator
