@@ -4,7 +4,8 @@ import numpy as np
 import tree_utils
 
 import x_xy
-from x_xy.algorithms.generator import _draw_pos_uniform
+from x_xy.algorithms.generator.transforms import _draw_pos_uniform
+from x_xy.algorithms.generator.transforms import _setup_fn_randomize_positions
 from x_xy.subpkgs import sys_composer
 
 
@@ -78,9 +79,7 @@ def test_randomize_positions():
     # then comes `seg1` relative to `seg2`
     pos_old = setup_fn_old(internal_key, sys).links.transform1.pos
 
-    pos_new = x_xy.algorithms.generator._setup_fn_randomize_positions(
-        key, sys
-    ).links.transform1.pos
+    pos_new = _setup_fn_randomize_positions(key, sys).links.transform1.pos
 
     np.testing.assert_array_equal(pos_old, pos_new)
 

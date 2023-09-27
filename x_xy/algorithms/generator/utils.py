@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 import tree_utils
 
-from .base import BatchedGenerator
+from .types import BatchedGenerator
 
 KEY = jax.random.PRNGKey(777)
 KEY_PERMUTATION = jax.random.PRNGKey(888)

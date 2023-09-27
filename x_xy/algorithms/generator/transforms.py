@@ -2,19 +2,53 @@ import jax
 import jax.numpy as jnp
 
 from ... import base
-from .base import GeneratorWithInputExtras
-from .base import GeneratorWithInputOutputExtras
+from .types import FINALIZE_FN
+from .types import GeneratorTrafo
+from .types import GeneratorWithInputExtras
+from .types import GeneratorWithInputOutputExtras
+from .types import GeneratorWithOutputExtras
+from .types import SETUP_FN
 
 
-def generator_trafo_randomize_positions(
-    gen: GeneratorWithInputExtras | GeneratorWithInputOutputExtras,
-) -> GeneratorWithInputExtras | GeneratorWithInputOutputExtras:
-    def _gen(key, sys):
-        key, consume = jax.random.split(key)
-        sys = _setup_fn_randomize_positions(consume, sys)
-        return gen(key, sys)
+class GeneratorTrafoSetupFn(GeneratorTrafo):
+    def __init__(self, setup_fn: SETUP_FN):
+        self.setup_fn = setup_fn
 
-    return _gen
+    def __call__(
+        self,
+        gen: GeneratorWithInputExtras | GeneratorWithInputOutputExtras,
+    ) -> GeneratorWithInputExtras | GeneratorWithInputOutputExtras:
+        def _gen(key, sys):
+            key, consume = jax.random.split(key)
+            sys = self.setup_fn(consume, sys)
+            return gen(key, sys)
+
+        return _gen
+
+
+class GeneratorTrafoFinalizeFn(GeneratorTrafo):
+    def __init__(self, finalize_fn: FINALIZE_FN):
+        self.finalize_fn = finalize_fn
+
+    def __call__(
+        self,
+        gen: GeneratorWithOutputExtras | GeneratorWithInputOutputExtras,
+    ) -> GeneratorWithOutputExtras | GeneratorWithInputOutputExtras:
+        def _gen(*args):
+            _, (key, *extras) = gen(*args)
+            key, consume = jax.random.split(key)
+            Xy = self.finalize_fn(consume, *extras)
+            return Xy, tuple(list(key) + extras)
+
+        return _gen
+
+
+class GeneratorTrafoRandomizePositions(GeneratorTrafo):
+    def __call__(
+        self,
+        gen: GeneratorWithInputExtras | GeneratorWithInputOutputExtras,
+    ) -> GeneratorWithInputExtras | GeneratorWithInputOutputExtras:
+        return GeneratorTrafoSetupFn(_setup_fn_randomize_positions)(gen)
 
 
 def _setup_fn_randomize_positions(key: jax.Array, sys: base.System) -> base.System:

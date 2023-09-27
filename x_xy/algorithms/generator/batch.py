@@ -8,8 +8,8 @@ from tree_utils import tree_batch
 
 from x_xy import utils
 
-from .base import BatchedGenerator
-from .base import Generator
+from .types import BatchedGenerator
+from .types import Generator
 
 
 def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:

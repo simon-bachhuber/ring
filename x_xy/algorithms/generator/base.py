@@ -1,31 +1,47 @@
-from typing import Callable
+from typing import Sequence
 
 import jax
 import jax.numpy as jnp
-from tree_utils import PyTree
 
 from ... import base
 from ...scan import scan_sys
 from ..jcalc import _joint_types
 from ..jcalc import RCMG_Config
 from ..kinematics import forward_kinematics_transforms
+from .transforms import GeneratorTrafoFinalizeFn
+from .transforms import GeneratorTrafoRandomizePositions
+from .transforms import GeneratorTrafoSetupFn
+from .types import FINALIZE_FN
+from .types import Generator
+from .types import GeneratorTrafo
+from .types import GeneratorWithInputExtras
+from .types import GeneratorWithInputOutputExtras
+from .types import GeneratorWithOutputExtras
+from .types import OutputExtras
+from .types import PRNGKey
+from .types import SETUP_FN
 
-PRNGKey = jax.Array
-InputExtras = base.System
-OutputExtras = tuple[PRNGKey, jax.Array, jax.Array, base.System]
-Xy = PyTree
-BatchedXy = PyTree
-GeneratorWithInputExtras = Callable[[PRNGKey, InputExtras], Xy]
-GeneratorWithOutputExtras = Callable[[PRNGKey], tuple[Xy, OutputExtras]]
-GeneratorWithInputOutputExtras = Callable[
-    [PRNGKey, InputExtras], tuple[Xy, OutputExtras]
-]
-Generator = Callable[[PRNGKey], Xy]
-BatchedGenerator = Callable[[PRNGKey], BatchedXy]
 
-
-def generator_with_extras(
+def build_generator(
+    sys: base.System,
     config: RCMG_Config = RCMG_Config(),
+    setup_fn: SETUP_FN = lambda key, sys: sys,
+    finalize_fn: FINALIZE_FN = lambda key, q, x, sys: (q, x),
+    randomize_positions: bool = False,
+) -> Generator:
+    return GeneratorPipe(
+        GeneratorTrafoSetupFn(setup_fn),
+        GeneratorTrafoRandomizePositions()
+        if randomize_positions
+        else (lambda gen: gen),
+        GeneratorTrafoFinalizeFn(finalize_fn),
+        GeneratorTrafoRemoveInputExtras(sys),
+        GeneratorTrafoRemoveOutputExtras(),
+    )(config)
+
+
+def _generator_with_extras(
+    config: RCMG_Config,
 ) -> GeneratorWithInputOutputExtras:
     def generator(key: PRNGKey, sys: base.System) -> OutputExtras:
         if config.cor:
@@ -63,22 +79,47 @@ def generator_with_extras(
     return generator
 
 
-def generator_trafo_remove_input_extras(
-    gen: GeneratorWithInputExtras | GeneratorWithInputOutputExtras, sys: base.System
-) -> Generator | GeneratorWithOutputExtras:
-    def _gen(key):
-        return gen(key, sys)
+class GeneratorPipe:
+    def __init__(self, *gen_trafos: Sequence[GeneratorTrafo]):
+        self._gen_trafos = gen_trafos
 
-    return _gen
+    def __call__(
+        self, config: RCMG_Config
+    ) -> (
+        GeneratorWithInputOutputExtras
+        | GeneratorWithOutputExtras
+        | GeneratorWithInputExtras
+        | Generator
+    ):
+        gen = _generator_with_extras(config)
+        for trafo in self._gen_trafos:
+            gen = trafo(gen)
+        return gen
 
 
-def generator_trafo_remove_output_extras(
-    gen: GeneratorWithOutputExtras | GeneratorWithInputOutputExtras,
-) -> Generator | GeneratorWithInputExtras:
-    def _gen(*args):
-        return gen(*args)[0]
+class GeneratorTrafoRemoveInputExtras(GeneratorTrafo):
+    def __init__(self, sys: base.System):
+        self.sys = sys
 
-    return _gen
+    def __call__(
+        self,
+        gen: GeneratorWithInputExtras | GeneratorWithInputOutputExtras,
+    ) -> Generator | GeneratorWithOutputExtras:
+        def _gen(key):
+            return gen(key, self.sys)
+
+        return _gen
+
+
+class GeneratorTrafoRemoveOutputExtras(GeneratorTrafo):
+    def __call__(
+        self,
+        gen: GeneratorWithOutputExtras | GeneratorWithInputOutputExtras,
+    ) -> Generator | GeneratorWithInputExtras:
+        def _gen(*args):
+            return gen(*args)[0]
+
+        return _gen
 
 
 def _replace_free_with_cor(sys: base.System) -> base.System:
