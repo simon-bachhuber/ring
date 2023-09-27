@@ -17,6 +17,8 @@ def make_optimizer(
     n_steps_per_episode: int,
     adap_clip: Optional[float] = 0.1,
     glob_clip: Optional[float] = 0.2,
+    skip_large_update_max_normsq: float = 5.0,
+    skip_large_update_warmup: int = 300,
     inner_opt=optax.lamb,
     **inner_opt_kwargs
 ):
@@ -29,7 +31,12 @@ def make_optimizer(
         optax.clip_by_global_norm(0.2) if glob_clip is not None else optax.identity(),
         inner_opt(schedule, **inner_opt_kwargs),
     )
-    optimizer = skip_large_update(optimizer, 5.0, 6 * 25, warmup=300)
+    optimizer = skip_large_update(
+        optimizer,
+        skip_large_update_max_normsq,
+        max_consecutive_toolarge=6 * 25,
+        warmup=skip_large_update_warmup,
+    )
     return optimizer
 
 
