@@ -174,7 +174,7 @@ class EvalXy2TrainingLoopCallback(TrainingLoopCallback):
             if self.verbose:
                 print(f"--- EvalFnCallback {self.metric_identifier} --- ")
 
-            pipeline.predict(
+            """pipeline.predict(
                 self.sys_noimu,
                 self.rnno_fn,
                 X,
@@ -188,7 +188,7 @@ class EvalXy2TrainingLoopCallback(TrainingLoopCallback):
                 verbose=self.verbose,
                 show_cs=self.show_cs,
                 show_cs_root=self.show_cs_root,
-            )
+            )"""
 
             plot_path = parse_path(
                 self.path,
@@ -447,7 +447,7 @@ class WandbKillRun(TrainingLoopCallback):
     ) -> None:
         if wandb.run is not None:
             tags = (
-                wandb.Api()
+                wandb.Api(timeout=99)
                 .run(path=f"{wandb.run.entity}/{wandb.run.project}/{wandb.run.id}")
                 .tags
             )
