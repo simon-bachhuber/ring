@@ -93,6 +93,9 @@ def _build_model_of_geoms(
 <camera pos="0 -5 5" name="targetFar" mode="targetbodycom" target="{targetbody}"/>
 <light pos="0 0 10" dir="0 0 -1"/>
 <geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>
+<geom name="earthframe_x" pos="0.2 0.05 0.05" size="0.2 0.05 0.05" type="box" rgba=".8 .2 .2 1" mass="0"/>
+<geom name="earthframe_y" pos="0.05 0.2 0.05" size="0.05 0.2 0.05" type="box" rgba=".2 .8 .2 1" mass="0"/>
+<geom name="earthframe_z" pos="0.05 0.05 0.2" size="0.05 0.05 .2" type="box" rgba=".2 .2 .8 1" mass="0"/>
 {inside_worldbody_cameras}
 {inside_worldbody_lights}
 {inside_worldbody}
