@@ -6,7 +6,6 @@ This module allows to read in Optical Motion Capture (OMC) and IMU data by
 
 import json
 from typing import Optional
-import warnings
 
 import jax
 import numpy as np
@@ -28,6 +27,8 @@ def read_omc(
     path_marker_imu_setup_file: str,
     path_optitrack_file: str,
     path_imu_folder: str,
+    segment_names_setup_file: list[str] = ["seg1", "seg2", "seg3", "seg4", "seg5"],
+    imu_names_setup_file: list[str] = ["imu_rigid", "imu_flex"],
     imu_file_prefix: Optional[str] = None,
     imu_file_delimiter: Optional[str] = None,
     # zyx convention
@@ -35,11 +36,10 @@ def read_omc(
     # if imu and seg not in `q_Imu2seg[seg][imu]`, then [0, 0, 0]
     # also zyx convention
     qImu2Seg_euler_deg: dict = {},
-    imu_sync_offset: Optional[int] = None,
+    imu_sync_offset: Optional[dict] = None,
     hz_opt: Optional[int] = None,
     hz_imu: Optional[int] = None,
     verbose: bool = True,
-    assume_imus_synced: bool = False,
 ) -> dict:
     p_setup_file = parse_path(path_marker_imu_setup_file, extension="json")
     path_optitrack = parse_path(path_optitrack_file, extension="csv")
@@ -68,14 +68,15 @@ def read_omc(
         if verbose:
             print(f"IMU File Delimiter: {imu_file_delimiter}")
 
-    if imu_sync_offset is not None:
-        if assume_imus_synced is False:
-            assume_imus_synced = True
-            warnings.warn("`assume_imus_synced` was overwritten to `True`.")
-
     data = {}
-    for seg in marker_imu_setup["segments"]:
+    if imu_sync_offset is None:
+        imu_sync_offset = {}
+
+    for seg in segment_names_setup_file:
         data[seg] = {}
+        if seg not in imu_sync_offset:
+            imu_sync_offset[seg] = {}
+
         seg_number = int(seg[3])
         xaxis_markers = marker_imu_setup[seg]["xaxis_markers"][0]
         yaxis_markers = marker_imu_setup[seg]["yaxis_markers"][0]
@@ -85,23 +86,27 @@ def read_omc(
         )
 
         imus = {}
-        for imu in marker_imu_setup["imus"]:
+        for imu in imu_names_setup_file:
             imu_number = marker_imu_setup[seg][imu]
             imu_unsynced = _imu_measurements_from_txt(
                 path_imu, imu_file_prefix, imu_number, imu_file_delimiter
             )
-            if imu_sync_offset is None:
-                imu_sync_offset = _sync_imu_offset_with_optical(
+            if imu not in imu_sync_offset[seg]:
+                imu_sync_offset[seg][imu] = _sync_imu_offset_with_optical(
                     imu_unsynced, quat_opt_markers2EOpt, hz_imu, hz_opt
                 )
             if verbose:
                 print(
                     f"Segment: {seg_number}, IMU: {imu_number}, Offset: "
-                    f"{imu_sync_offset}"
+                    f"{imu_sync_offset[seg][imu]}"
                 )
 
-            assert imu_sync_offset >= 0, f"IMU sync offset negative, {imu_sync_offset}"
-            imu_synced = jax.tree_map(lambda arr: arr[imu_sync_offset:], imu_unsynced)
+            assert (
+                imu_sync_offset[seg][imu] >= 0
+            ), f"IMU sync offset negative, {imu_sync_offset[seg][imu]}"
+            imu_synced = jax.tree_map(
+                lambda arr: arr[imu_sync_offset[seg][imu] :], imu_unsynced
+            )
             imus[imu] = imu_synced
 
             # alignment: rigid-imu to markers
@@ -112,10 +117,6 @@ def read_omc(
 
             for signal in ["acc", "mag", "gyr"]:
                 imus[imu][signal] = qmt.rotate(q_Imu2Seg_default, imus[imu][signal])
-
-            # reset `imu_sync_offset` is required
-            if not assume_imus_synced:
-                imu_sync_offset = None
 
         data[seg].update(imus)
 
@@ -130,7 +131,7 @@ def read_omc(
                 ),
             )
 
-    return data
+    return data, imu_sync_offset
 
 
 def _from_euler(angles_deg: np.ndarray):
