@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Optional
+import warnings
 
 import numpy as np
 from qmt import nanInterp
@@ -21,6 +22,30 @@ def crop_tail(signal: PyTree, hz: Optional[PyTree] = None):
 
     signal_lengths = tree.map_structure(length_in_seconds, signal, hz)
     shortest_length = min(tree.flatten(signal_lengths))
+    hz_of_shortest_length = tree.flatten(hz)[np.argmin(tree.flatten(signal_lengths))]
+
+    # reduce shortest_length until it becomes a clearn crop for all other frequencies
+    i = -1
+    cleancrop = False
+    while not cleancrop:
+        i += 1
+        shortest_length -= i * (1 / hz_of_shortest_length)
+        cleancrop = True
+
+        for each_hz in tree.flatten(hz):
+            if (shortest_length * each_hz) % 1 != 0.0:
+                cleancrop = False
+                break
+
+        if i > int(hz_of_shortest_length):
+            warnings.warn(
+                f"Must crop more than i={i} and still no clean crop possible."
+            )
+
+        if i > 100:
+            break
+
+    print(f"`crop_tail`: Crop off at t={shortest_length}.")
 
     def crop(arr, hz):
         crop_tail = shortest_length * hz
@@ -35,7 +60,7 @@ def crop_tail(signal: PyTree, hz: Optional[PyTree] = None):
 
 def hz_helper(
     segments: list[str],
-    imus: list[str] = ["imu_rigid, imu_flex"],
+    imus: list[str] = ["imu_rigid", "imu_flex"],
     markers: list[int] = [1, 2, 3, 4],
     hz_imu: float = 40.0,
     hz_omc: float = 120.0,
@@ -47,8 +72,8 @@ def hz_helper(
         for imu in imus:
             hz_in[seg][imu] = imu_dict
         for marker in markers:
-            hz_in[f"marker{marker}"] = hz_omc
-        hz_in["quat"] = hz_omc
+            hz_in[seg][f"marker{marker}"] = hz_omc
+        hz_in[seg]["quat"] = hz_omc
 
     return hz_in
 
@@ -116,7 +141,10 @@ def autodetermine_optitrack_freq(path_optitrack: str):
         line = f.readline()
         hz_cap = find_framerate_in_line(line, "Capture Frame Rate")
         hz_exp = find_framerate_in_line(line, "Export Frame Rate")
-        assert hz_cap == hz_exp, "Capture and exported frame rate are not equal"
+        if hz_cap != hz_exp:
+            warnings.warn(
+                f"Capture ({hz_cap}) and exported ({hz_exp}) frame rate are not equal"
+            )
 
     return hz_exp
 
