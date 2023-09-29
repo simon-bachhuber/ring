@@ -4,6 +4,7 @@ import numpy as np
 import tqdm
 
 from .. import base
+from ..algorithms import forward_kinematics
 from ..utils import to_list
 
 _rgbas = {
@@ -36,7 +37,7 @@ _rgbas = {
 
 def render(
     sys: base.System,
-    xs: base.Transform | list[base.Transform],
+    xs: Optional[base.Transform | list[base.Transform]] = None,
     camera: Optional[str] = None,
     show_pbar: bool = True,
     backend: str = "mujoco",
@@ -67,6 +68,9 @@ def render(
 
     # convert all colors to rgbas
     geoms_rgba = [_color_to_rgba(geom) for geom in sys.geoms]
+
+    if xs is None:
+        xs = forward_kinematics(sys, base.State.create(sys))[1].x
 
     xs = to_list(xs)
 
