@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 import qmt
 
 from x_xy.subpkgs import omc
@@ -83,8 +82,9 @@ def test_crop_tail():
     np.testing.assert_allclose(data_cropped["gyr"], data["gyr"][:40])
     np.testing.assert_allclose(data_cropped["omc"], data["omc"])
 
-    with pytest.raises(AssertionError):
-        data_cropped = omc.crop_tail(data, {"gyr": 40.0, "omc": 120.0})
+    data_cropped = omc.crop_tail(data, {"gyr": 40.0, "omc": 120.0})
+    np.testing.assert_allclose(data_cropped["gyr"], data["gyr"][:30])
+    np.testing.assert_allclose(data_cropped["omc"], data["omc"][:90])
 
 
 def test_resample_and_crop_tail():
