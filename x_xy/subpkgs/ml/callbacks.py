@@ -252,6 +252,7 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
         upload: bool = True,
         last_n_params: int = 1,
         track_metrices: Optional[list[list[str]]] = None,
+        track_metrices_eval_every: int = 5,
         cleanup: bool = False,
     ):
         self.path_to_file = parse_path(path_to_file)
@@ -261,6 +262,7 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
         self._track_metrices = track_metrices
         self._value = 0.0
         self._cleanup = cleanup
+        self._track_metrices_eval_every = track_metrices_eval_every
 
     def after_training_step(
         self,
@@ -275,15 +277,20 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
             self._value -= 1.0
             value = self._value
         else:
-            value = 0.0
-            N = 0
-            for combination in itertools.product(*self._track_metrices):
-                metrices_zoomedout = metrices
-                for key in combination:
-                    metrices_zoomedout = metrices_zoomedout[key]
-                value += float(metrices_zoomedout)
-                N += 1
-            value /= N
+            if (i_episode % self._track_metrices_eval_every) == 0:
+                value = 0.0
+                N = 0
+                for combination in itertools.product(*self._track_metrices):
+                    metrices_zoomedout = metrices
+                    for key in combination:
+                        metrices_zoomedout = metrices_zoomedout[key]
+                    value += float(metrices_zoomedout)
+                    N += 1
+                value /= N
+            else:
+                # some very large loss such that it doesn't get added because
+                # we have already added this parameter set
+                value = 1e16
 
         ele = QueueElement(value, params, i_episode)
         self._queue.insert(ele)
