@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -68,6 +68,7 @@ def inverse_kinematics_endeffector(
     q0: Optional[jax.Array] = None,
     random_q0_starts: Optional[int] = None,
     key: Optional[jax.Array] = None,
+    custom_joints: dict[str, Callable[[jax.Array], jax.Array]] = {},
     jaxopt_solver: Solver = jaxopt.LBFGS,
     **jaxopt_solver_kwargs,
 ) -> tuple[jax.Array, jaxopt.OptStep]:
@@ -121,6 +122,8 @@ def inverse_kinematics_endeffector(
                 new_q = maths.wrap_to_pi(q)
             elif link_type in ["frozen", "p3d", "px", "py", "pz"]:
                 new_q = q
+            elif link_type in custom_joints:
+                new_q = custom_joints[link_type](q)
             else:
                 raise NotImplementedError
             q_preproc.append(new_q)
