@@ -33,7 +33,5 @@
         "position": [[-1, -1], [-1, 0], [1, -2], [1, 0]],
         "imu_rigid": "99",
         "imu_flex": "85"
-    },
-    "segments": ["seg1", "seg2", "seg3", "seg4", "seg5"],
-    "imus": ["imu_rigid", "imu_flex"]
+    }
 }
