@@ -45,7 +45,7 @@ dev_requires = [
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.9.8",
+    version="0.9.9",
     package_data={
         "x_xy": find_data_files(
             "x_xy", patterns=["*.xml", "*.yaml", "*.joblib", "*.json", "*.pickle"]
@@ -55,6 +55,7 @@ setuptools.setup(
     install_requires=[
         "jaxlib",
         "jax",
+        "jaxopt",
         "flax",
         "tqdm",
         "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
