@@ -296,9 +296,9 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
             if len(self._queue) == 1:
                 filename = parse_path(self.path_to_file, extension="pickle")
             else:
+                value = "{:.2f}".format(ele.value).replace(".", ",")
                 filename = parse_path(
-                    self.path_to_file
-                    + "_episode={}_value={:.4f}".format(ele.episode, ele.value),
+                    self.path_to_file + f"_episode={ele.episode}_value={value}",
                     extension="pickle",
                 )
 
