@@ -11,4 +11,5 @@ from .ml_utils import save
 from .ml_utils import WandbLogger
 from .optimizer import make_optimizer
 from .rnno import make_rnno
+from .rnno import RNNOFilter
 from .train import train

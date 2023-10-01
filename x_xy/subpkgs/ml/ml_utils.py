@@ -35,7 +35,9 @@ def save(data: PyTree, path: Union[str, Path], overwrite: bool = False):
 
 
 def load(
-    path: Optional[Union[str, Path]] = None, pretrained: Optional[str] = None
+    path: Optional[Union[str, Path]] = None,
+    pretrained: Optional[str] = None,
+    pretrained_version: Optional[int] = None,
 ) -> PyTree:
     assert not (
         path is None and pretrained is None
@@ -43,6 +45,9 @@ def load(
     assert not (
         path is not None and pretrained is not None
     ), "Both `path` and `pretrained` cannot both be given."
+
+    if pretrained_version is not None:
+        assert pretrained is not None
 
     if path is not None:
         path = Path(path).expanduser()
@@ -54,7 +59,13 @@ def load(
             data = pickle.load(file)
         return data
     else:
-        pretrained_folder = f"pretrained/{pretrained}/params_{pretrained}{suffix}"
+        version = ""
+        if pretrained_version is not None:
+            # v0, v1, v2, ...
+            version = f"_v{int(pretrained_version)}"
+        pretrained_folder = (
+            f"pretrained/{pretrained}/params_{pretrained}{version}{suffix}"
+        )
         return load(Path(__file__).parent.joinpath(pretrained_folder))
 
 

@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Optional
 
 import haiku as hk
 import jax
@@ -8,6 +9,37 @@ import tree_utils
 from x_xy import base
 from x_xy import scan_sys
 from x_xy.maths import safe_normalize
+from x_xy.subpkgs import ml
+
+
+class RNNOFilter:
+    def __init__(
+        self,
+        identifier: str,
+        params: Optional[dict] = None,
+        key: jax.Array = jax.random.PRNGKey(1),
+        **rnno_kwargs,
+    ):
+        self._identifier = identifier
+        self.key = key
+        self.params = params
+        self.rnno_fn = lambda sys: ml.make_rnno(sys, **rnno_kwargs)
+
+    def init(self, sys, X_t0):
+        X_batched = tree_utils.to_3d_if_2d(tree_utils.add_batch_dim(X_t0), strict=True)
+        self.rnno = self.rnno_fn(sys)
+        params, self.state = self.rnno.init(self.key, X_batched)
+        if self.params is None:
+            self.params = params
+
+    def predict(self, X: dict) -> dict:
+        assert tree_utils.tree_ndim(X) == 3
+        bs = tree_utils.tree_shape(X)
+        state = jax.tree_map(lambda arr: jnp.repeat(arr[None], bs, axis=0), self.state)
+        return self.rnno.apply(self.params, state, X)[0]
+
+    def identifier(self) -> str:
+        return self._identifier
 
 
 def _tree(sys, f):
@@ -98,7 +130,7 @@ def make_rnno(
     link_output_dim: int = 4,
     link_output_normalize: bool = True,
 ) -> SimpleNamespace:
-    "Expects unbatched inputs. Batching via `vmap`"
+    "Expects batched inputs."
 
     if use_gru:
         cell = hk.GRU
@@ -150,10 +182,20 @@ def make_rnno(
         return y
 
     def init(key, X):
+        "X.shape (bs, timesteps, features)"
         X = tree_utils.to_2d_if_3d(X, strict=True)
         return forward.init(key, X)
 
     def apply(params, state, X):
+        """
+        params: (features)
+        state.shape (bs, features)
+        X.shape (bs, timesteps, features)
+
+        Returns: (yhat, state)
+        yhat.shape (bs, timesteps, features)
+        state.shape (bs, features)
+        """
         assert tree_utils.tree_ndim(X) == 3
         return jax.vmap(forward.apply, in_axes=(None, 0, 0))(params, state, X)
 
