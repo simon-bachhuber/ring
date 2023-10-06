@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import Optional
+from typing import Callable, Optional
 
 import haiku as hk
 import jax
@@ -61,7 +61,7 @@ def _make_rnno_cell_apply_fn(
     hidden_state_dim,
     message_dim,
     send_message_stop_grads,
-    output_normalize: bool,
+    output_transform: Callable,
 ):
     parent_array = jnp.array(sys.link_parents, dtype=jnp.int32)
 
@@ -100,9 +100,7 @@ def _make_rnno_cell_apply_fn(
 
         def update_state(cell_input, state):
             cell_output, state = inner_cell(cell_input, state)
-            output = send_output(cell_output)
-            if output_normalize:
-                output = safe_normalize(output)
+            output = output_transform(send_output(cell_output))
             return output, state
 
         y, state = jax.vmap(update_state)(stacked_cell_input, prev_state)
@@ -129,6 +127,7 @@ def make_rnno(
     send_message_stop_grads: bool = False,
     link_output_dim: int = 4,
     link_output_normalize: bool = True,
+    link_output_transform: Optional[Callable] = None,
 ) -> SimpleNamespace:
     "Expects batched inputs."
 
@@ -138,6 +137,10 @@ def make_rnno(
     else:
         cell = LSTM
         hidden_state_init = hidden_state_dim * 2
+
+    if link_output_normalize:
+        assert link_output_transform is None
+        link_output_transform = safe_normalize
 
     @hk.without_apply_rng
     @hk.transform_with_state
@@ -173,7 +176,7 @@ def make_rnno(
                 hidden_state_dim,
                 message_dim,
                 send_message_stop_grads,
-                output_normalize=link_output_normalize,
+                output_transform=link_output_transform,
             ),
             X,
             state,
