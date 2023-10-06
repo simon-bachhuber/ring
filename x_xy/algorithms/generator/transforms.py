@@ -78,7 +78,7 @@ def _draw_pos_uniform(key, pos_min, pos_max):
     return key, pos
 
 
-class GeneratorTrafoRandomizeTransform1Rot:
+class GeneratorTrafoRandomizeTransform1Rot(GeneratorTrafo):
     def __init__(self, maxval_deg: float):
         self.maxval = jnp.deg2rad(maxval_deg)
 
