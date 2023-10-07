@@ -15,7 +15,7 @@ from x_xy.subpkgs import ml
 class RNNOFilter:
     def __init__(
         self,
-        identifier: str,
+        identifier: Optional[str] = None,
         params: Optional[dict] = None,
         key: jax.Array = jax.random.PRNGKey(1),
         **rnno_kwargs,
@@ -39,6 +39,8 @@ class RNNOFilter:
         return self.rnno.apply(self.params, state, X)[0]
 
     def identifier(self) -> str:
+        if self._identifier is None:
+            raise RuntimeError("No `identifier` was given.")
         return self._identifier
 
 
