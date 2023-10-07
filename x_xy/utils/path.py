@@ -18,15 +18,15 @@ def parse_path(
 
     if extension is not None:
         if extension != "":
-            extension = "." + extension if extension[0] != "." else extension
+            extension = ("." + extension) if (extension[0] != ".") else extension
 
         # check for paths that contain a dot "." in their filename (through a number)
         # or that already have an extension
         old_suffix = path.suffix
         if old_suffix != "" and old_suffix != extension:
             warnings.warn(
-                f"The path ({path}) already has an extension ({old_suffix}), but "
-                f"it gets replaced by {extension}."
+                f"The path ({path}) already has an extension (`{old_suffix}`), but "
+                f"it gets replaced by the extension=`{extension}`."
             )
 
         path = path.with_suffix(extension)
