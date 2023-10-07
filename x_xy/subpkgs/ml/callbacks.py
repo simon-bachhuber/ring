@@ -255,7 +255,7 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
         track_metrices_eval_every: int = 5,
         cleanup: bool = False,
     ):
-        self.path_to_file = parse_path(path_to_file)
+        self.path_to_file = path_to_file
         self.upload = upload
         self._queue = Queue(maxlen=last_n_params)
         self._loggers = []
