@@ -3,6 +3,7 @@ import jax.numpy as jnp
 
 from ... import base
 from ... import maths
+from ...utils import dict_union
 from ..sensors import imu as imu_fn
 from ..sensors import joint_axes
 from ..sensors import rel_pose
@@ -104,20 +105,6 @@ def _setup_fn_randomize_transform1_rot(
     return sys.replace(links=sys.links.replace(transform1=new_transform1))
 
 
-def _update_X(X: dict[str, dict], X_mixin: dict[str, dict]) -> dict:
-    for segment in X_mixin:
-        if segment not in X:
-            X[segment] = X_mixin[segment]
-        else:
-            assert isinstance(X[segment], dict)
-
-            for key in X_mixin[segment]:
-                assert key not in X[segment]
-
-            X[segment].update(X_mixin[segment])
-    return X
-
-
 class GeneratorTrafoJointAxisSensor(GeneratorTrafo):
     def __init__(self, sys: base.System):
         self.sys = sys
@@ -126,7 +113,7 @@ class GeneratorTrafoJointAxisSensor(GeneratorTrafo):
         def _gen(*args):
             (X, y), (key, q, x, sys_x) = gen(*args)
             X_joint_axes = joint_axes(self.sys, x, sys_x)
-            X = _update_X(X, X_joint_axes)
+            X = dict_union(X, X_joint_axes)
             return (X, y), (key, q, x, sys_x)
 
         return _gen
@@ -140,7 +127,7 @@ class GeneratorTrafoRelPose(GeneratorTrafo):
         def _gen(*args):
             (X, y), (key, q, x, sys_x) = gen(*args)
             y_relpose = rel_pose(self.sys, x, sys_x)
-            y = _update_X(y, y_relpose)
+            y = dict_union(y, y_relpose)
             return (X, y), (key, q, x, sys_x)
 
         return _gen
@@ -152,7 +139,7 @@ class GeneratorTrafoIMU(GeneratorTrafo):
             (X, y), (key, q, x, sys) = gen(*args)
             key, consume = jax.random.split(key)
             X_imu = _imu_data(consume, x, sys)
-            X = _update_X(X, X_imu)
+            X = dict_union(X, X_imu)
             return (X, y), (key, q, x, sys)
 
         return _gen

@@ -56,3 +56,33 @@ def to_list(obj: object) -> list:
     if not isinstance(obj, list):
         return [obj]
     return obj
+
+
+def dict_union(
+    d1: dict[str, dict[str, jax.Array]],
+    d2: dict[str, dict[str, jax.Array]],
+    overwrite: bool = False,
+) -> dict:
+    "Builds the union between two nested dictonaries."
+    # safety copying; otherwise this function would mutate out of scope
+    d1 = {key: d1[key].copy() for key in d1}
+
+    for key2 in d2:
+        if key2 not in d1:
+            d1[key2] = d2[key2].copy()
+        else:
+            for key_nested in d2[key2]:
+                if not overwrite:
+                    assert (
+                        key_nested not in d1[key2]
+                    ), f"d1.keys()={d1[key2].keys()}; d2.keys()={d2[key2].keys()}"
+
+            d1[key2].update(d2[key2].copy())
+    return d1
+
+
+def dict_to_nested(
+    d: dict[str, jax.Array], add_key: str
+) -> dict[str, dict[str, jax.Array]]:
+    "Nests a dictonary by inserting a single key dictonary."
+    return {key: {add_key: d[key]} for key in d.keys()}
