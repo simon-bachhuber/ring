@@ -40,13 +40,17 @@ dev_requires = [
     "mkdocstrings-python",
     "mknotebooks",
     "pytest",
+    # for parallel test execution; $ pytest -n auto
+    "pytest-xdist",
+    # for testing of notebooks; $ pytest --nbmake **/*ipynb
+    "nbmake",
 ]
 
 
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.9.12",
+    version="0.9.13",
     package_data={
         "x_xy": find_data_files(
             "x_xy", patterns=["*.xml", "*.yaml", "*.joblib", "*.json", "*.pickle"]
