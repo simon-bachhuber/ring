@@ -60,6 +60,10 @@ def render(
 
         scene = MujocoScene(**scene_kwargs)
     elif backend == "vispy":
+        import vispy
+
+        vispy.use("pyqt6")
+
         from x_xy.rendering.vispy_render import VispyScene
 
         scene = VispyScene(**scene_kwargs)
