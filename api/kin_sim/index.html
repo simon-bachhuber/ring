@@ -974,8 +974,7 @@
 
           <details class="quote">
             <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">25</span>
-<span class="normal">26</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">26</span>
 <span class="normal">27</span>
 <span class="normal">28</span>
 <span class="normal">29</span>
@@ -989,7 +988,8 @@
 <span class="normal">37</span>
 <span class="normal">38</span>
 <span class="normal">39</span>
-<span class="normal">40</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">build_generator</span><span class="p">(</span>
+<span class="normal">40</span>
+<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">build_generator</span><span class="p">(</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n">RCMG_Config</span> <span class="o">=</span> <span class="n">RCMG_Config</span><span class="p">(),</span>
     <span class="n">setup_fn</span><span class="p">:</span> <span class="n">SETUP_FN</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">,</span> <span class="n">sys</span><span class="p">:</span> <span class="n">sys</span><span class="p">,</span>
@@ -1175,8 +1175,7 @@
 
             <details class="quote">
               <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
-<span class="normal">83</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">83</span>
 <span class="normal">84</span>
 <span class="normal">85</span>
 <span class="normal">86</span>
@@ -1190,7 +1189,8 @@
 <span class="normal">94</span>
 <span class="normal">95</span>
 <span class="normal">96</span>
-<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorPipe</span><span class="p">:</span>
+<span class="normal">97</span>
+<span class="normal">98</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorPipe</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">gen_trafos</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">GeneratorTrafo</span><span class="p">]):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_gen_trafos</span> <span class="o">=</span> <span class="n">gen_trafos</span>
 
@@ -1311,8 +1311,7 @@
 
             <details class="quote">
               <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
-<span class="normal">101</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">101</span>
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
@@ -1322,7 +1321,8 @@
 <span class="normal">108</span>
 <span class="normal">109</span>
 <span class="normal">110</span>
-<span class="normal">111</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveInputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
+<span class="normal">111</span>
+<span class="normal">112</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveInputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sys</span> <span class="o">=</span> <span class="n">sys</span>
 
@@ -1374,15 +1374,15 @@
 
             <details class="quote">
               <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">114</span>
-<span class="normal">115</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">115</span>
 <span class="normal">116</span>
 <span class="normal">117</span>
 <span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
 <span class="normal">121</span>
-<span class="normal">122</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveOutputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
+<span class="normal">122</span>
+<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveOutputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">gen</span><span class="p">:</span> <span class="n">GeneratorWithOutputExtras</span> <span class="o">|</span> <span class="n">GeneratorWithInputOutputExtras</span><span class="p">,</span>
@@ -1431,12 +1431,12 @@
 
             <details class="quote">
               <summary>Source code in <code>x_xy/algorithms/generator/transforms.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRandomizePositions</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRandomizePositions</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">gen</span><span class="p">:</span> <span class="n">GeneratorWithInputExtras</span> <span class="o">|</span> <span class="n">GeneratorWithInputOutputExtras</span><span class="p">,</span>
@@ -1810,16 +1810,16 @@ and stacking their output.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/algorithms/kinematics.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">50</span>
 <span class="normal">51</span>
 <span class="normal">52</span>
 <span class="normal">53</span>
-<span class="normal">54</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">forward_kinematics</span><span class="p">(</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">forward_kinematics</span><span class="p">(</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">State</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="n">State</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform forward kinematics in system.</span>

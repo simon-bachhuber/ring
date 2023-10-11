@@ -942,50 +942,18 @@
 
 
 <h4 id="x_xy.subpkgs.ml.rnno.make_rnno" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">make_rnno</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">hidden_state_dim</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">message_dim</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">use_gru</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stack_rnn_cells</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">send_message_n_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">send_message_method</span><span class="o">=</span><span class="s1">&#39;mlp&#39;</span><span class="p">,</span> <span class="n">send_message_init</span><span class="o">=</span><span class="n">hk</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">Orthogonal</span><span class="p">(),</span> <span class="n">send_message_stop_grads</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">link_output_dim</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">link_output_normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">make_rnno</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">hidden_state_dim</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">message_dim</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">use_gru</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stack_rnn_cells</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">send_message_n_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">send_message_method</span><span class="o">=</span><span class="s1">&#39;mlp&#39;</span><span class="p">,</span> <span class="n">send_message_init</span><span class="o">=</span><span class="n">hk</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">Orthogonal</span><span class="p">(),</span> <span class="n">send_message_stop_grads</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">link_output_dim</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">link_output_normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">link_output_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#x_xy.subpkgs.ml.rnno.make_rnno" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
   
-      <p>Expects unbatched inputs. Batching via <code>vmap</code></p>
+      <p>Expects batched inputs.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/ml/rnno.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
-<span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">120</span>
 <span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
@@ -1025,7 +993,54 @@
 <span class="normal">157</span>
 <span class="normal">158</span>
 <span class="normal">159</span>
-<span class="normal">160</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">make_rnno</span><span class="p">(</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">make_rnno</span><span class="p">(</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span>
     <span class="n">hidden_state_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">400</span><span class="p">,</span>
     <span class="n">message_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
@@ -1037,8 +1052,9 @@
     <span class="n">send_message_stop_grads</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">link_output_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
     <span class="n">link_output_normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">link_output_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
-    <span class="s2">&quot;Expects unbatched inputs. Batching via `vmap`&quot;</span>
+    <span class="s2">&quot;Expects batched inputs.&quot;</span>
 
     <span class="k">if</span> <span class="n">use_gru</span><span class="p">:</span>
         <span class="n">cell</span> <span class="o">=</span> <span class="n">hk</span><span class="o">.</span><span class="n">GRU</span>
@@ -1046,6 +1062,10 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">cell</span> <span class="o">=</span> <span class="n">LSTM</span>
         <span class="n">hidden_state_init</span> <span class="o">=</span> <span class="n">hidden_state_dim</span> <span class="o">*</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">link_output_normalize</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">link_output_transform</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="n">link_output_transform</span> <span class="o">=</span> <span class="n">safe_normalize</span>
 
     <span class="nd">@hk</span><span class="o">.</span><span class="n">without_apply_rng</span>
     <span class="nd">@hk</span><span class="o">.</span><span class="n">transform_with_state</span>
@@ -1081,7 +1101,7 @@
                 <span class="n">hidden_state_dim</span><span class="p">,</span>
                 <span class="n">message_dim</span><span class="p">,</span>
                 <span class="n">send_message_stop_grads</span><span class="p">,</span>
-                <span class="n">output_normalize</span><span class="o">=</span><span class="n">link_output_normalize</span><span class="p">,</span>
+                <span class="n">output_transform</span><span class="o">=</span><span class="n">link_output_transform</span><span class="p">,</span>
             <span class="p">),</span>
             <span class="n">X</span><span class="p">,</span>
             <span class="n">state</span><span class="p">,</span>
@@ -1090,10 +1110,20 @@
         <span class="k">return</span> <span class="n">y</span>
 
     <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="s2">&quot;X.shape (bs, timesteps, features)&quot;</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">tree_utils</span><span class="o">.</span><span class="n">to_2d_if_3d</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">forward</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        params: (features)</span>
+<span class="sd">        state.shape (bs, features)</span>
+<span class="sd">        X.shape (bs, timesteps, features)</span>
+
+<span class="sd">        Returns: (yhat, state)</span>
+<span class="sd">        yhat.shape (bs, timesteps, features)</span>
+<span class="sd">        state.shape (bs, features)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="n">tree_utils</span><span class="o">.</span><span class="n">tree_ndim</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
         <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">apply</span><span class="p">,</span> <span class="n">in_axes</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))(</span><span class="n">params</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
 
@@ -1111,7 +1141,7 @@
 
 
 <h4 id="x_xy.subpkgs.ml.train.train" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">train</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">n_episodes</span><span class="p">,</span> <span class="n">network</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tbp</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tbp_skip</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tbp_skip_keep_grads</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">loggers</span><span class="o">=</span><span class="p">[],</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[],</span> <span class="n">initial_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key_network</span><span class="o">=</span><span class="n">key_network</span><span class="p">,</span> <span class="n">key_generator</span><span class="o">=</span><span class="n">key_generator</span><span class="p">,</span> <span class="n">callback_save_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">callback_kill_if_grads_larger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">callback_kill_if_nan</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">callback_kill_after_episode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">callback_kill_after_seconds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss_fn</span><span class="o">=</span><span class="n">_default_loss_fn</span><span class="p">,</span> <span class="n">metrices</span><span class="o">=</span><span class="n">_default_metrices</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">train</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">n_episodes</span><span class="p">,</span> <span class="n">network</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tbp</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tbp_skip</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tbp_skip_keep_grads</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">loggers</span><span class="o">=</span><span class="p">[],</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[],</span> <span class="n">initial_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key_network</span><span class="o">=</span><span class="n">key_network</span><span class="p">,</span> <span class="n">key_generator</span><span class="o">=</span><span class="n">key_generator</span><span class="p">,</span> <span class="n">callback_save_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">callback_save_params_track_metrices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">callback_kill_if_grads_larger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">callback_kill_if_nan</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">callback_kill_after_episode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">callback_kill_after_seconds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss_fn</span><span class="o">=</span><span class="n">_default_loss_fn</span><span class="p">,</span> <span class="n">metrices</span><span class="o">=</span><span class="n">_default_metrices</span><span class="p">)</span></code>
 
 <a href="#x_xy.subpkgs.ml.train.train" class="headerlink" title="Permanent link">¤</a></h4>
 
@@ -1307,8 +1337,7 @@ steps per epoch.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/ml/train.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">113</span>
-<span class="normal">114</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">114</span>
 <span class="normal">115</span>
 <span class="normal">116</span>
 <span class="normal">117</span>
@@ -1427,7 +1456,25 @@ steps per epoch.</p>
 <span class="normal">230</span>
 <span class="normal">231</span>
 <span class="normal">232</span>
-<span class="normal">233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
     <span class="n">generator</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">n_episodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">network</span><span class="p">:</span> <span class="n">hk</span><span class="o">.</span><span class="n">TransformedWithState</span><span class="p">,</span>
@@ -1441,6 +1488,7 @@ steps per epoch.</p>
     <span class="n">key_network</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span> <span class="o">=</span> <span class="n">key_network</span><span class="p">,</span>
     <span class="n">key_generator</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span> <span class="o">=</span> <span class="n">key_generator</span><span class="p">,</span>
     <span class="n">callback_save_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">callback_save_params_track_metrices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">callback_kill_if_grads_larger</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">callback_kill_if_nan</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">callback_kill_after_episode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1536,6 +1584,22 @@ steps per epoch.</p>
         <span class="n">default_callbacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TimingKillRunCallback</span><span class="p">(</span><span class="n">callback_kill_after_seconds</span><span class="p">))</span>
 
     <span class="n">callbacks_all</span> <span class="o">=</span> <span class="n">default_callbacks</span> <span class="o">+</span> <span class="n">callbacks</span>
+
+    <span class="c1"># we add this callback afterwards because it might require the metrices calculated</span>
+    <span class="c1"># from one of the user-provided callbacks</span>
+    <span class="k">if</span> <span class="n">callback_save_params_track_metrices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">callback_save_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">),</span> <span class="s2">&quot;Required field if `callback_save_params_track_metrices` is set.&quot;</span>
+
+        <span class="n">callbacks_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">SaveParamsTrainingLoopCallback</span><span class="p">(</span>
+                <span class="n">path_to_file</span><span class="o">=</span><span class="n">parse_path</span><span class="p">(</span><span class="n">callback_save_params</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="n">last_n_params</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">track_metrices</span><span class="o">=</span><span class="n">callback_save_params_track_metrices</span><span class="p">,</span>
+                <span class="n">cleanup</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
     <span class="n">loop</span> <span class="o">=</span> <span class="n">TrainingLoop</span><span class="p">(</span>
         <span class="n">key_generator</span><span class="p">,</span>
@@ -1799,7 +1863,8 @@ steps per epoch.</p>
 <span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span>
-<span class="normal">214</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EvalXy2TrainingLoopCallback</span><span class="p">(</span><span class="n">TrainingLoopCallback</span><span class="p">):</span>
+<span class="normal">214</span>
+<span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EvalXy2TrainingLoopCallback</span><span class="p">(</span><span class="n">TrainingLoopCallback</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1885,6 +1950,7 @@ steps per epoch.</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">_render_plot</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_render_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">:</span>
             <span class="k">return</span>
 
@@ -1914,21 +1980,21 @@ steps per epoch.</p>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--- EvalFnCallback </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_identifier</span><span class="si">}</span><span class="s2"> --- &quot;</span><span class="p">)</span>
 
-            <span class="n">pipeline</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sys_noimu</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">rnno_fn</span><span class="p">,</span>
-                <span class="n">X</span><span class="p">,</span>
-                <span class="n">y</span><span class="p">,</span>
-                <span class="n">xs</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sys_xs</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">,</span>
-                <span class="n">plot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="p">,</span>
-                <span class="n">render</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">,</span>
-                <span class="n">render_path</span><span class="o">=</span><span class="n">render_path</span><span class="p">,</span>
-                <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
-                <span class="n">show_cs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">show_cs</span><span class="p">,</span>
-                <span class="n">show_cs_root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">show_cs_root</span><span class="p">,</span>
-            <span class="p">)</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;pipeline.predict(</span>
+<span class="sd">                self.sys_noimu,</span>
+<span class="sd">                self.rnno_fn,</span>
+<span class="sd">                X,</span>
+<span class="sd">                y,</span>
+<span class="sd">                xs,</span>
+<span class="sd">                self.sys_xs,</span>
+<span class="sd">                self._params,</span>
+<span class="sd">                plot=self.plot,</span>
+<span class="sd">                render=self.render,</span>
+<span class="sd">                render_path=render_path,</span>
+<span class="sd">                verbose=self.verbose,</span>
+<span class="sd">                show_cs=self.show_cs,</span>
+<span class="sd">                show_cs_root=self.show_cs_root,</span>
+<span class="sd">            )&quot;&quot;&quot;</span>
 
             <span class="n">plot_path</span> <span class="o">=</span> <span class="n">parse_path</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
@@ -2116,7 +2182,7 @@ steps per epoch.</p>
 
 
 <h4 id="x_xy.subpkgs.ml.ml_utils.load" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pretrained_version</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#x_xy.subpkgs.ml.ml_utils.load" class="headerlink" title="Permanent link">¤</a></h4>
 
@@ -2146,8 +2212,21 @@ steps per epoch.</p>
 <span class="normal">55</span>
 <span class="normal">56</span>
 <span class="normal">57</span>
-<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load</span><span class="p">(</span>
-    <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pretrained</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pretrained_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PyTree</span><span class="p">:</span>
     <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span>
         <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pretrained</span> <span class="ow">is</span> <span class="kc">None</span>
@@ -2155,6 +2234,9 @@ steps per epoch.</p>
     <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span>
         <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pretrained</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="p">),</span> <span class="s2">&quot;Both `path` and `pretrained` cannot both be given.&quot;</span>
+
+    <span class="k">if</span> <span class="n">pretrained_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">pretrained</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
@@ -2166,7 +2248,13 @@ steps per epoch.</p>
             <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">data</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">pretrained_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;pretrained/</span><span class="si">{</span><span class="n">pretrained</span><span class="si">}</span><span class="s2">/params_</span><span class="si">{</span><span class="n">pretrained</span><span class="si">}{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">pretrained_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># v0, v1, v2, ...</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_v</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">pretrained_version</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">pretrained_folder</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;pretrained/</span><span class="si">{</span><span class="n">pretrained</span><span class="si">}</span><span class="s2">/params_</span><span class="si">{</span><span class="n">pretrained</span><span class="si">}{</span><span class="n">version</span><span class="si">}{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">load</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">pretrained_folder</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
           </details>
@@ -2235,11 +2323,11 @@ steps per epoch.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/ml/ml_utils.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">list_pretrained</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">list_pretrained</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
     <span class="k">return</span> <span class="nb">list</span><span class="p">(</span>
         <span class="nb">set</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">)))</span>
         <span class="o">-</span> <span class="nb">set</span><span class="p">((</span><span class="s2">&quot;.DS_Store&quot;</span><span class="p">,</span> <span class="s2">&quot;__init__.py&quot;</span><span class="p">))</span>
@@ -2268,9 +2356,9 @@ steps per epoch.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/ml/ml_utils.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">n_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">n_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
     <span class="s2">&quot;Number of parameters in Pytree `params`.&quot;</span>
     <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">arr</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_leaves</span><span class="p">(</span><span class="n">params</span><span class="p">)])</span>
 </code></pre></div></td></tr></table></div>
@@ -2296,18 +2384,7 @@ steps per epoch.</p>
 
             <details class="quote">
               <summary>Source code in <code>x_xy/subpkgs/ml/ml_utils.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">284</span>
 <span class="normal">285</span>
 <span class="normal">286</span>
 <span class="normal">287</span>
@@ -2342,7 +2419,18 @@ steps per epoch.</p>
 <span class="normal">316</span>
 <span class="normal">317</span>
 <span class="normal">318</span>
-<span class="normal">319</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">WandbLogger</span><span class="p">(</span><span class="n">MultimediaLogger</span><span class="p">):</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">WandbLogger</span><span class="p">(</span><span class="n">MultimediaLogger</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">_log_environment</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">wandb</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="n">define_metric</span><span class="p">(</span><span class="n">STEP_METRIC_NAME</span><span class="p">)</span>

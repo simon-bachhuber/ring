@@ -937,7 +937,7 @@
 
 
 <h4 id="x_xy.subpkgs.sim2real.xs_from_raw" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">xs_from_raw</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">link_name_pos_rot</span><span class="p">,</span> <span class="n">t1</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">t2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eps_frame</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qinv</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">xs_from_raw</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">link_name_pos_rot</span><span class="p">,</span> <span class="n">eps_frame</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qinv</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 <a href="#x_xy.subpkgs.sim2real.xs_from_raw" class="headerlink" title="Permanent link">¤</a></h4>
 
@@ -993,34 +993,6 @@ axis is time axis.</p>
           </td>
           <td>
               <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>t1</code></td>
-          <td>
-                <code>float</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Crop time left. Defaults to 0.0.</p>
-            </div>
-          </td>
-          <td>
-                <code>0.0</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>t2</code></td>
-          <td>
-                <code><span title="typing.Optional">Optional</span>[float]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Crop time right. Defaults to None.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
           </td>
         </tr>
         <tr>
@@ -1123,17 +1095,9 @@ If <code>None</code>: Don't move into a specific eps-frame.</p>
 <span class="normal">71</span>
 <span class="normal">72</span>
 <span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">xs_from_raw</span><span class="p">(</span>
+<span class="normal">74</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">xs_from_raw</span><span class="p">(</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span>
     <span class="n">link_name_pos_rot</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
-    <span class="n">t1</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-    <span class="n">t2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">eps_frame</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">qinv</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">:</span>
@@ -1150,8 +1114,6 @@ If <code>None</code>: Don't move into a specific eps-frame.</p>
 <span class="sd">        sys (x_xy.base.System): System which defines ordering of returned `xs`</span>
 <span class="sd">        link_name_pos_rot (dict): Dictonary of `link_name` -&gt;</span>
 <span class="sd">            {&#39;pos&#39;: ..., &#39;quat&#39;: ...}. Obtained, e.g., using `process_omc`.</span>
-<span class="sd">        t1 (float, optional): Crop time left. Defaults to 0.0.</span>
-<span class="sd">        t2 (Optional[float], optional): Crop time right. Defaults to None.</span>
 <span class="sd">        eps_frame (str, optional): Move into this segment&#39;s frame at time zero as</span>
 <span class="sd">            eps frame. Defaults to `None`.</span>
 <span class="sd">            If `None`: Don&#39;t move into a specific eps-frame.</span>
@@ -1159,8 +1121,6 @@ If <code>None</code>: Don't move into a specific eps-frame.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        x_xy.base.Transform: Time-series of eps-to-link transformations</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">link_name_pos_rot</span> <span class="o">=</span> <span class="n">_crop_sequence</span><span class="p">(</span><span class="n">link_name_pos_rot</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
-
     <span class="c1"># determine `eps_frame` transform</span>
     <span class="k">if</span> <span class="n">eps_frame</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">eps</span> <span class="o">=</span> <span class="n">link_name_pos_rot</span><span class="p">[</span><span class="n">eps_frame</span><span class="p">]</span>
@@ -1297,7 +1257,13 @@ If <code>None</code>: Don't move into a specific eps-frame.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/sim2real/sim2real.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 83</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
 <span class="normal"> 84</span>
 <span class="normal"> 85</span>
 <span class="normal"> 86</span>
@@ -1316,13 +1282,7 @@ If <code>None</code>: Don't move into a specific eps-frame.</p>
 <span class="normal"> 99</span>
 <span class="normal">100</span>
 <span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">match_xs</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span> <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span><span class="p">,</span> <span class="n">sys_xs</span><span class="p">:</span> <span class="n">System</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transform</span><span class="p">:</span>
+<span class="normal">102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">match_xs</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span> <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span><span class="p">,</span> <span class="n">sys_xs</span><span class="p">:</span> <span class="n">System</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transform</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Match tranforms `xs` to subsystem `sys`.</span>
 
 <span class="sd">    Args:</span>
@@ -1441,7 +1401,13 @@ translational <code>transform1</code> and pure rotational <code>transform2</code
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/sim2real/sim2real.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">111</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
@@ -1464,13 +1430,7 @@ translational <code>transform1</code> and pure rotational <code>transform2</code
 <span class="normal">131</span>
 <span class="normal">132</span>
 <span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">unzip_xs</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span> <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Transform</span><span class="p">,</span> <span class="n">Transform</span><span class="p">]:</span>
+<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">unzip_xs</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span> <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Transform</span><span class="p">,</span> <span class="n">Transform</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Split eps-to-link transforms into parent-to-child pure</span>
 <span class="sd">    translational `transform1` and pure rotational `transform2`.</span>
 
@@ -1606,7 +1566,13 @@ translational <code>transform1</code> and pure rotational <code>transform2</code
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/sim2real/sim2real.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">143</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
 <span class="normal">144</span>
 <span class="normal">145</span>
 <span class="normal">146</span>
@@ -1629,13 +1595,7 @@ translational <code>transform1</code> and pure rotational <code>transform2</code
 <span class="normal">163</span>
 <span class="normal">164</span>
 <span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">zip_xs</span><span class="p">(</span>
+<span class="normal">166</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">zip_xs</span><span class="p">(</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span>
     <span class="n">xs_transform1</span><span class="p">:</span> <span class="n">Transform</span><span class="p">,</span>
     <span class="n">xs_transform2</span><span class="p">:</span> <span class="n">Transform</span><span class="p">,</span>
@@ -1758,7 +1718,13 @@ by unity transforms.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/sim2real/sim2real.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">181</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
 <span class="normal">182</span>
 <span class="normal">183</span>
 <span class="normal">184</span>
@@ -1769,13 +1735,7 @@ by unity transforms.</p>
 <span class="normal">189</span>
 <span class="normal">190</span>
 <span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">delete_to_world_pos_rot</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span> <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transform</span><span class="p">:</span>
+<span class="normal">192</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">delete_to_world_pos_rot</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span> <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transform</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace the transforms of all links that connect to the worldbody</span>
 <span class="sd">    by unity transforms.</span>
 
@@ -1914,7 +1874,13 @@ by randomize transforms.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/sim2real/sim2real.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">201</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
 <span class="normal">202</span>
 <span class="normal">203</span>
 <span class="normal">204</span>
@@ -1939,13 +1905,7 @@ by randomize transforms.</p>
 <span class="normal">223</span>
 <span class="normal">224</span>
 <span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">randomize_to_world_pos_rot</span><span class="p">(</span>
+<span class="normal">226</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">randomize_to_world_pos_rot</span><span class="p">(</span>
     <span class="n">key</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span> <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">RCMG_Config</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transform</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace the transforms of all links that connect to the worldbody</span>
@@ -2100,7 +2060,13 @@ is one of those. Defaults to ["px", "py", "pz", "free"].</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/sim2real/sim2real.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">251</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
 <span class="normal">252</span>
 <span class="normal">253</span>
 <span class="normal">254</span>
@@ -2126,13 +2092,7 @@ is one of those. Defaults to ["px", "py", "pz", "free"].</p>
 <span class="normal">274</span>
 <span class="normal">275</span>
 <span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">scale_xs</span><span class="p">(</span>
+<span class="normal">277</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">scale_xs</span><span class="p">(</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span>
     <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span><span class="p">,</span>
     <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -2190,7 +2150,13 @@ joints in the system.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/sim2real/sim2real.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">286</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
 <span class="normal">287</span>
 <span class="normal">288</span>
 <span class="normal">289</span>
@@ -2235,13 +2201,7 @@ joints in the system.</p>
 <span class="normal">328</span>
 <span class="normal">329</span>
 <span class="normal">330</span>
-<span class="normal">331</span>
-<span class="normal">332</span>
-<span class="normal">333</span>
-<span class="normal">334</span>
-<span class="normal">335</span>
-<span class="normal">336</span>
-<span class="normal">337</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">project_xs</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span> <span class="n">transform2</span><span class="p">:</span> <span class="n">Transform</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transform</span><span class="p">:</span>
+<span class="normal">331</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">project_xs</span><span class="p">(</span><span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span> <span class="n">transform2</span><span class="p">:</span> <span class="n">Transform</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transform</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Project transforms into the physically feasible subspace as defined by the</span>
 <span class="sd">    joints in the system.&quot;&quot;&quot;</span>
     <span class="n">_checks_time_series_of_xs</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">transform2</span><span class="p">)</span>

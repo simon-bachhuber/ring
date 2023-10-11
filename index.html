@@ -293,6 +293,19 @@
     Installation
   </a>
   
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installation-of-extras" class="md-nav__link">
+    Installation of Extras
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -929,6 +942,21 @@
 <p>Typically, this will install <code>jax</code> as cpu-only version. CUDA version can be installed with
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span><span class="s2">&quot;jax[cuda12_pip]&quot;</span><span class="w"> </span>-f<span class="w"> </span>https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 </code></pre></div></p>
+<h3 id="installation-of-extras">Installation of Extras<a class="headerlink" href="#installation-of-extras" title="Permanent link">¤</a></h3>
+<p>Seperates dependencies neatly per subpackage. E.g. the dependencies for subpkg <code>omc</code> can be installed via</p>
+<p><code>pip install 'x_xy[omc] @ git+https://github.com/SimiPixel/x_xy_v2'</code></p>
+<p>Also available installs are</p>
+<p><code>pip install 'x_xy @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base; only subpackages <code>sys_composer</code> and <code>sim2real</code> work, no rendering)</p>
+<p><code>pip install 'x_xy[omc] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base+omc)</p>
+<p><code>pip install 'x_xy[ml] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base+ml)</p>
+<p><code>pip install 'x_xy[exp] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base+exp)</p>
+<p><code>pip install 'x_xy[muj] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base+ mujoco rendering backend)</p>
+<p><code>pip install 'x_xy[vis] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base+ vispy rendering backend)</p>
+<p><code>pip install 'x_xy[all] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (everything works)</p>
+<p><code>pip install 'x_xy[all_muj] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (everything works but not vispy rendering only mujoco rendering)</p>
+<p><code>pip install 'x_xy[dev] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base+ development dependencies)</p>
+<p>Can also be combined, e.g.
+<code>pip install 'x_xy[ml,omc] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base+ml+omc)</p>
 <h2 id="publications">Publications<a class="headerlink" href="#publications" title="Permanent link">¤</a></h2>
 <p>The following publications utilize this software library, and refer to it as the <em>Random Chain Motion Generator (RCMG)</em> (more specifically the function <code>x_xy.build_generator</code>):</p>
 <ul>

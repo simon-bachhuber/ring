@@ -1015,7 +1015,7 @@ such moving average window is delayed to just be causal.</p>
 
     <span class="k">if</span> <span class="n">smoothen_degree</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">measurements</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">arr</span><span class="p">:</span> <span class="n">moving_average</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">smoothen_degree</span><span class="p">),</span>
+            <span class="k">lambda</span> <span class="n">arr</span><span class="p">:</span> <span class="n">_moving_average</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">smoothen_degree</span><span class="p">),</span>
             <span class="n">measurements</span><span class="p">,</span>
         <span class="p">)</span>
 
