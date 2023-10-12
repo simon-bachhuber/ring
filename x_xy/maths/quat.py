@@ -3,7 +3,6 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import jax.random as jrand
-import numpy as np
 
 from .basic import wrap_to_pi
 from .safe import safe_arcsin
@@ -238,14 +237,14 @@ def quat_project(q: jax.Array, k: jax.Array) -> tuple[jax.Array, jax.Array]:
     return q_pri, q_res
 
 
-def quat_avg(qs: np.ndarray):
-    "Tolga Birdal's algorithm. Numpy implementation, not jax."
+def quat_avg(qs: jax.Array):
+    "Tolga Birdal's algorithm."
     if qs.ndim == 1:
         qs = qs[None, :]
     assert qs.ndim == 2
-    return np.linalg.eigh(np.einsum("ij,ik,i->...jk", qs, qs, np.ones((qs.shape[0],))))[
-        1
-    ][:, -1]
+    return jnp.linalg.eigh(
+        jnp.einsum("ij,ik,i->...jk", qs, qs, jnp.ones((qs.shape[0],)))
+    )[1][:, -1]
 
 
 def quat_lowpassfilter(qs: jax.Array, alpha: float = 0.55) -> jax.Array:
