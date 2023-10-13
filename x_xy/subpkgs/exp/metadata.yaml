@@ -31,4 +31,6 @@ S_06:
       start: 358.0
       stop: 376.0
     # end of trial
-  earth_omc_to_earth_inertial_quaternion: "0.36619034 0.36498888 -0.60637826 -0.60414664"
+  hz:
+    omc: 30.0
+    imu: 40.0
