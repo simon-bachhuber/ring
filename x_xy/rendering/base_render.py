@@ -62,7 +62,11 @@ def render(
     elif backend == "vispy":
         import vispy
 
-        vispy.use("pyqt6")
+        if "vispy_backend" in scene_kwargs:
+            vispy_backend = scene_kwargs.pop("vispy_backend")
+        else:
+            vispy_backend = "pyqt6"
+        vispy.use(vispy_backend)
 
         from x_xy.rendering.vispy_render import VispyScene
 
