@@ -1,36 +1,144 @@
-S_06:
+S_04:
   timings:
-    canonical:
-      start: 33.0
-      stop: 172.0
-    slow:
-      start: 183.0
-      stop: 224.0
-    # initial pose
-    fast: 
-      start: 230.0
-      stop: 273.0
-    # initial pose
-    fast_slow_fast:
-      start: 280.0
-      stop: 315.0
-    pause1:
-      start: 315.0
-      stop: 317.0
-    fast_slow:
-      start: 317.0
-      stop: 339.0
-    pause2:
-      start: 339.0
-      stop: 342.0
-    slow_end:
-      start: 342.0
-      stop: 358.0
-    # Thomas bonus
-    shaking:
-      start: 358.0
-      stop: 376.0
-    # end of trial
+    slow: 33.8
+    pause1: 93.3
+    fast: 96.5
+    pause2: 159.0
+    slow_fast_veryslow: 161.0
+    pause3: 337.0
+    thomas_slow: 346.0
+    thomas_fast: 475.0
+    thomas_shaking: 521.0
+    pause4: 554.0
+    thomas_quasistatic: 580.0
+    pause5: 628.0
   hz:
     omc: 30.0
+    imu: 100.0
+S_06:
+  timings:
+    canonical: 33.0
+    pause1: 172.0
+    slow1: 183.0
+    pause2: 224.0
+    fast: 230.0
+    pause3: 273.0
+    fast_slow_fast: 280.0
+    freeze1: 315.0
+    fast_slow: 317.0
+    freeze2: 339.0
+    slow2: 342.0
+    shaking: 358.0
+    pause4: 376.0
+  hz:
+    omc: 30.0
+    imu: 40.0
+S_07:
+  timings:
+    canonical:
+    pause1:
+    slow_fast_mix:
+    pause2:
+    canonical:
+    pause3:
+    slow_fast_freeze_mix:
+    pause4:
+  hz:
+    omc: 30.0
+    imu: 40.0
+S_08:
+  timings:
+    slow:
+    dangle1:
+    pause1:
+    dangle2:
+    pause2:
+  hz:
+    omc: 30.0
+    imu: 40.0
+S_09:
+  timings:
+    slow_global:
+    pause1:
+    fast_global:
+    pause2:
+    dangle_global:
+    pause3:
+  hz:
+    omc: 120.0
+    imu: 40.0
+S_10:
+  timings:
+    pickandplace:
+    pause:
+  hz:
+    omc: 120.0
+    imu: 40.0
+S_12:
+  timings:
+    canonical:
+    pause1: 
+    slow1: 
+    pause2: 
+    fast: 
+    pause3: 
+    fast_slow_fast: 
+    freeze1: 
+    fast_slow: 
+    freeze2: 
+    slow2: 
+    shaking: 
+    pause4: 
+  hz:
+    omc: 120.0
+    imu: 40.0
+S_13:
+  timings:
+    canonical:
+    pause1:
+    slow_fast_mix:
+    pause2:
+    canonical:
+    pause3:
+    slow_fast_freeze_mix:
+    pause4:
+  hz:
+    omc: 120.0
+    imu: 40.0
+S_14:
+  timings:
+    slow:
+    dangle1:
+    pause1:
+    dangle2:
+    pause2:
+  hz:
+    omc: 120.0
+    imu: 40.0
+S_15:
+  timings:
+    slow_global:
+    pause1:
+    fast_global:
+    pause2:
+    dangle_global:
+    pause3:
+  hz:
+    omc: 120.0
+    imu: 40.0
+S_16:
+  timings:
+    gait_slow:
+    gait_fast:
+    pause:
+  hz:
+    omc: 120.0
+    imu: 40.0
+D_01:
+  hz:
+    omc: 120.0
+    imu: 40.0
+T_01:
+  hz:
+    omc: 120.0
     imu: 40.0

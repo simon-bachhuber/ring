@@ -50,10 +50,14 @@ dev_requires = [
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.9.14",
+    version="0.9.15",
     package_data={
         "x_xy": find_data_files(
-            "x_xy", patterns=["*.xml", "*.yaml", "*.joblib", "*.json", "*.pickle"]
+            # parameters and datasets are now downloaded on-demand
+            # but could exclude with exludes = ["**/exp/*", "**/pretrained/*"]
+            package_dir="x_xy",
+            patterns=["*.xml", "*.yaml", "*.json"],
+            excludes=[],
         ),
     },
     include_package_data=True,
@@ -63,6 +67,7 @@ setuptools.setup(
         "jaxopt",
         "flax",
         "tqdm",
+        "wget",
         "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
     ],
     extras_require={
