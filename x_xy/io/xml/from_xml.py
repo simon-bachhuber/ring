@@ -237,11 +237,24 @@ def _load_xml(xml_path: str) -> str:
     return xml_str
 
 
-def load_comments_from_xml(file_path: str) -> list[str]:
+def load_comments_from_xml(xml_path: str, key: str) -> list[dict]:
+    return load_comments_from_str(_load_xml(xml_path), key=key)
+
+
+def load_comments_from_str(xml_str: str, key: str) -> list[dict]:
     parser = ElementTree.XMLParser(target=ElementTree.TreeBuilder(insert_comments=True))
-    tree = ElementTree.parse(file_path, parser)
+    tree = ElementTree.fromstring(xml_str, parser)
     comments = []
     for node in tree.iter():
         if "function Comment" in str(node.tag):
             comments.append(node.text)
-    return comments
+
+    filtered = [s.split(" ")[1:] for s in comments if s.split(" ")[0] == key]
+    comments_dict = []
+    for comment in filtered:
+        d = dict()
+        for pair in comment:
+            key, value = pair.split("=")
+            d[key] = value
+        comments_dict.append(d)
+    return comments_dict
