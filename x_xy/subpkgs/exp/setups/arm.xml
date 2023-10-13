@@ -5,29 +5,29 @@
     </defaults>
     <worldbody>
         <body name="seg1" joint="free">
-            <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05"/>
+            <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05" color="blue"/>
             <body name="imu1" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
-                <geom type="box" mass="0" dim="0.05 0.03 0.02" color="green"/>
+                <geom type="box" mass="0" dim="0.05 0.03 0.02" color="orange"/>
             </body>
             <body name="seg5" joint="spherical" pos="0.2 0 0" pos_min="0.15 -0.05 -0.05" pos_max="0.35 0.05 0.05">
-                <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05"/>
+                <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05" color="white"/>
                 <body name="imu5" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
                     <geom type="box" mass="0" dim="0.05 0.03 0.02" color="orange"/>
                 </body>
                 <body name="seg2" joint="rx" pos="0.2 0 0" pos_min="0.15 -0.05 -0.05" pos_max="0.35 0.05 0.05">
-                    <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05"/>
+                    <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05" color="blue"/>
                     <body name="imu2" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
                         <geom type="box" mass="0" dim="0.05 0.03 0.02" color="orange"/>
                     </body>
                     <body name="seg3" joint="ry" pos="0.2 0 0" pos_min="0.15 -0.05 -0.05" pos_max="0.35 0.05 0.05">
-                        <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05"/>
+                        <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05" color="white"/>
                         <body name="imu3" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
                             <geom type="box" mass="0" dim="0.05 0.03 0.02" color="orange"/>
                         </body>
                         <body name="seg4" joint="rz" pos="0.2 0 0" pos_min="0.15 -0.05 -0.05" pos_max="0.35 0.05 0.05">
-                            <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05"/>
+                            <geom type="box" mass="0.1" pos="0.1 0 0" dim="0.2 0.05 0.05" color="white"/>
                             <body name="imu4" joint="frozen" pos="0.1 0.0 0.035" pos_min="0.05 -0.05 -0.05" pos_max="0.15 0.05 0.05">
-                                <geom type="box" mass="0" dim="0.05 0.03 0.02" color="blue"/>
+                                <geom type="box" mass="0" dim="0.05 0.03 0.02" color="orange"/>
                             </body>
                         </body>
                     </body>
@@ -35,13 +35,18 @@
             </body>
         </body>
     </worldbody>
-    <!--seg1, marker=2-->
-    <!--seg5, marker=2-->
-    <!--seg2, marker=1-->
-    <!--seg3, marker=2-->
-    <!--seg4, marker=4-->
-    <!--seg5: ["seg5", "seg1", -1, "seg5", "seg5", "seg2", "seg2", "seg3", "seg3", "seg4"]-->
-    <!--seg2: ["seg5", "seg1", "seg2", "seg5", -1, "seg2", "seg2", "seg3", "seg3", "seg4"]-->
-    <!--seg3: ["seg5", "seg1", "seg2", "seg5", "seg3", "seg2", -1, "seg3", "seg3", "seg4"]-->
-    <!--seg4: ["seg5", "seg1", "seg2", "seg5", "seg3", "seg2", "seg4", "seg3", -1, "seg4"]-->
+    <!--omc bodyname=seg1 omcname=seg1 marker=2-->
+    <!--omc bodyname=seg5 omcname=seg5 marker=2-->
+    <!--omc bodyname=seg2 omcname=seg2 marker=1-->
+    <!--omc bodyname=seg3 omcname=seg3 marker=2-->
+    <!--omc bodyname=seg4 omcname=seg4 marker=4-->
+    <!--omc bodyname=imu1 omcname=seg1 marker=2 pos=.1,.0,.035-->
+    <!--omc bodyname=imu5 omcname=seg5 marker=2 pos=.1,.0,.035-->
+    <!--omc bodyname=imu2 omcname=seg2 marker=1 pos=.1,.0,.035-->
+    <!--omc bodyname=imu3 omcname=seg3 marker=2 pos=.1,.0,.035-->
+    <!--omc bodyname=imu4 omcname=seg4 marker=4 pos=.1,.0,.035-->
+    <!--morph key=seg5 parents=["seg5","seg1",-1,"seg5","seg5","seg2","seg2","seg3","seg3","seg4"]-->
+    <!--morph key=seg2 parents=["seg5","seg1","seg2","seg5",-1,"seg2","seg2","seg3","seg3","seg4"]-->
+    <!--morph key=seg3 parents=["seg5","seg1","seg2","seg5","seg3","seg2",-1,"seg3","seg3","seg4"]-->
+    <!--morph key=seg4 parents=["seg5","seg1","seg2","seg5","seg3","seg2","seg4","seg3",-1,"seg4"]-->
 </x_xy>

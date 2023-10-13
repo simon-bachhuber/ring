@@ -7,9 +7,12 @@ import tree_utils
 
 import x_xy
 from x_xy import maths
+from x_xy.io.xml.from_xml import _load_xml
 from x_xy.subpkgs import exp
 from x_xy.subpkgs import sim2real
 from x_xy.subpkgs import sys_composer
+from x_xy.subpkgs.exp.exp import _id2xml
+from x_xy.subpkgs.exp.exp import _relative_to_this_file
 
 from .base import Filter
 
@@ -85,7 +88,11 @@ def _S06_double_triple_hinge_joint(
     results = dict()
     for sta, sto in zip(motion_start, motion_stop):
         data = exp.load_data("S_06", sta, sto)
-        xs = sim2real.xs_from_raw(sys, data)
+
+        xml_str = _load_xml(_relative_to_this_file(_id2xml["S_06"]))
+        xs = sim2real.xs_from_raw(
+            sys, exp.link_name_pos_rot_data(data, xml_str), qinv=True
+        )
         X = x_xy.joint_axes(sys, xs, sys, from_sys=from_sys)
         if from_sys:
             X_xs = x_xy.joint_axes(sys, xs, sys, from_sys=False)
