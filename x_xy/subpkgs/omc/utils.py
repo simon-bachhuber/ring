@@ -11,10 +11,18 @@ import tree
 from tree_utils import PyTree
 
 
-def crop_tail(signal: PyTree, hz: Optional[PyTree] = None):
+def crop_tail(signal: PyTree, hz: Optional[float | PyTree] = None):
     "Crop all signals to length of shortest signal."
     if hz is None:
-        hz = tree.map_structure(lambda _: 1.0, signal)
+        hz = 1.0
+    if isinstance(hz, int):
+        hz = float(hz)
+
+    if isinstance(hz, float):
+        hz = tree.map_structure(lambda _: hz, signal)
+
+    # just in case an integer is given
+    hz = tree.map_structure(float, hz)
 
     def length_in_seconds(arr, hz):
         assert arr.ndim < 3
@@ -189,6 +197,26 @@ def autodetermine_imu_file_delimiter(path_imu_folder: str) -> str:
         len(set(delimiters)) == 1
     ), f"IMUs have multiple different delimiters {delimiters}"
     return delimiters[0]
+
+
+def autodetermine_space_units(path_optitrack: str) -> float:
+    # Example first row of header
+    # Format Version,1.23,Take Name,S_04,Take Notes,,Capture Frame Rate,30.000000,
+    # Export Frame Rate,120.000000,Capture Start Time,2023-06-02 12.09.45.344 PM,
+    # Capture Start Frame,246045,Total Frames in Take,19421,Total Exported Frames,
+    # 77681,Rotation Type,Quaternion,Length Units,Meters,Coordinate Space,Global
+
+    def find_length_units_in_line(line: str, key: str):
+        before = line.find(key) + len(key) + 1
+        return line[before:].split(",")[0]
+
+    # first line is:
+    # ...,Capture Frame Rate,120.000000,Export Frame Rate,120.000000,...
+    with open(path_optitrack) as f:
+        line = f.readline()
+        units = find_length_units_in_line(line, "Length Units")
+
+    return {"Meters": 1.0, "Millimeters": 1000.0}[units]
 
 
 # could use instead of `qmt.nanInterp`
