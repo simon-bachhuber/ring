@@ -6,6 +6,7 @@ import pandas as pd
 from qmt import quatFrom2Axes
 from qmt import syncOptImu
 
+from .utils import autodetermine_space_units
 from .utils import resample
 
 
@@ -154,5 +155,6 @@ def _construct_pos_from_single_marker(
     # get ride of nan values
     xyz = resample(xyz, 1.0, 1.0)
 
-    # milimeters -> meters
-    return xyz / 1000
+    # if required: milimeters -> meters
+    unit_scale = autodetermine_space_units(path_optitrack)
+    return xyz / unit_scale
