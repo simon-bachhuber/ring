@@ -56,10 +56,9 @@ def crop_tail(signal: PyTree, hz: Optional[float | PyTree] = None):
     print(f"`crop_tail`: Crop off at t={shortest_length}.")
 
     def crop(arr, hz):
-        crop_tail = shortest_length * hz
-        assert (
-            crop_tail % 1
-        ) == 0.0, f"No clean crop possible: shortest_length={shortest_length}; hz={hz}"
+        crop_tail = np.round(shortest_length * hz, decimals=10)
+        err_msg = f"No clean crop possible: shortest_length={shortest_length}; hz={hz}"
+        assert (crop_tail % 1) == 0.0, err_msg
         crop_tail = int(crop_tail)
         return arr[:crop_tail]
 
