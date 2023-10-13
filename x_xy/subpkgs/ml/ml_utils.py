@@ -16,6 +16,7 @@ from tree_utils import PyTree
 from tree_utils import tree_batch
 
 import wandb
+from x_xy.utils import download_from_repo
 
 suffix = ".pickle"
 
@@ -63,10 +64,12 @@ def load(
         if pretrained_version is not None:
             # v0, v1, v2, ...
             version = f"_v{int(pretrained_version)}"
-        pretrained_folder = (
-            f"pretrained/{pretrained}/params_{pretrained}{version}{suffix}"
+        path_in_repo = (
+            f"x_xy/subpkgs/ml/pretrained/{pretrained}/"
+            f"params_{pretrained}{version}{suffix}"
         )
-        return load(Path(__file__).parent.joinpath(pretrained_folder))
+        path_on_disk = download_from_repo(path_in_repo)
+        return load(path_on_disk)
 
 
 def list_pretrained() -> list[str]:

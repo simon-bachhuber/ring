@@ -1,5 +1,8 @@
+from pathlib import Path
+
 import jax
 import jax.numpy as jnp
+import wget
 
 from x_xy.base import _Base
 from x_xy.base import Geometry
@@ -86,3 +89,23 @@ def dict_to_nested(
 ) -> dict[str, dict[str, jax.Array]]:
     "Nests a dictonary by inserting a single key dictonary."
     return {key: {add_key: d[key]} for key in d.keys()}
+
+
+_xxy_cache_foldername = ".xxy_cache"
+
+
+def download_from_repo(path_in_repo: str) -> str:
+    path_on_disk = (
+        Path("~").expanduser().joinpath(_xxy_cache_foldername).joinpath(path_in_repo)
+    )
+    if not path_on_disk.exists():
+        path_on_disk.parent.mkdir(parents=True, exist_ok=True)
+        # the the `raw` in the link, otherwise it would download the website
+        url = f"https://github.com/SimiPixel/x_xy_v2/raw/main/{path_in_repo}"
+        print(f"Downloading file from url {url}.. (this might take a moment)")
+        wget.download(url, out=str(path_on_disk.parent))
+        print(
+            f"Downloading finished. Saved to location {path_on_disk}. "
+            f"Note that it is save to delete the folder `{_xxy_cache_foldername}`."
+        )
+    return str(path_on_disk)
