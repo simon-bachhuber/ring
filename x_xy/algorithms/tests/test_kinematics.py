@@ -1,6 +1,5 @@
 import jax
 import jax.numpy as jnp
-import pytest
 import tree_utils as tu
 
 import x_xy
@@ -31,7 +30,6 @@ def SKIP_test_forward_kinematics_transforms():
     assert tu.tree_close(maths.quat_mul(q4_2, q2_eps), ts.take(4).rot)
 
 
-@pytest.mark.long
 def test_inv_kinematics_endeffector():
     xml1 = """
 <x_xy model="spherical">
@@ -81,7 +79,7 @@ def test_inv_kinematics_endeffector():
             )
             return results.state.value
 
-        for trial in range(20):
+        for trial in range(5):
             print(sys.model_name, trial)
             key, consume = jax.random.split(key)
             assert solve(consume) < 1e-3

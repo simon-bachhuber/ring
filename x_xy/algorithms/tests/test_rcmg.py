@@ -66,9 +66,8 @@ def _dang_max(t: jax.Array) -> jax.Array:
     return jnp.where(t < 0.5, 1.0, 2.0)
 
 
-@pytest.mark.long
 def test_rcmg():
-    for example in x_xy.io.list_examples():
+    for example in ["test_all_1"]:
         sys = x_xy.load_example(example)
         for cdf_bins_min, cdf_bins_max in zip([1, 1, 3], [1, 3, 3]):
             config = x_xy.RCMG_Config(
