@@ -6,7 +6,7 @@ import x_xy
 from x_xy import maths
 
 
-def SKIP_test_forward_kinematics_transforms():
+def test_forward_kinematics_transforms():
     sys = x_xy.load_example("test_kinematics")
     q = [
         jnp.array([1, 0, 0, 0, 1, 1, 1.0]),
@@ -79,7 +79,7 @@ def test_inv_kinematics_endeffector():
             )
             return results.state.value
 
-        for trial in range(5):
+        for trial in range(20):
             print(sys.model_name, trial)
             key, consume = jax.random.split(key)
             assert solve(consume) < 1e-3
