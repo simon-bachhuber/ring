@@ -72,11 +72,26 @@ def load(
         return load(path_on_disk)
 
 
-def list_pretrained() -> list[str]:
-    return list(
-        set(os.listdir(Path(__file__).parent.joinpath("pretrained")))
-        - set((".DS_Store", "__init__.py"))
-    )
+def list_pretrained() -> list[tuple[str, int | None]]:
+    pretrained_folder = Path(__file__).parent.joinpath("pretrained")
+
+    def exclude(folder) -> list[str]:
+        subfolders = list(
+            set(os.listdir(folder)) - set((".DS_Store", "__init__.py", "readme.md"))
+        )
+        return subfolders
+
+    pretrained_version = []
+    for subfolder in exclude(pretrained_folder):
+        for file in exclude(pretrained_folder.joinpath(subfolder)):
+            version = str(Path(file).with_suffix(""))[-2:]
+            if version[0] == "v":
+                version = int(version[1])
+            else:
+                version = None
+            pretrained_version.append((subfolder, version))
+
+    return pretrained_version
 
 
 # An arbitrarily nested dictionary with jax.Array leaves; Or strings
