@@ -32,6 +32,10 @@ _rgbas = {
     "matplotlib_blue": (0.012, 0.263, 0.8745, 1.0),
     "matplotlib_lightblue": (0.482, 0.784, 0.9647, 1.0),
     "matplotlib_salmon": (0.98, 0.502, 0.447, 1.0),
+    "black": (0.1, 0.1, 0.1, 1.0),
+    "dustin_exp_blue": (75 / 255, 93 / 255, 208 / 255, 1.0),
+    "dustin_exp_white": (241 / 255, 239 / 255, 208 / 255, 1.0),
+    "dustin_exp_orange": (227 / 255, 139 / 255, 61 / 255, 1.0),
 }
 
 
