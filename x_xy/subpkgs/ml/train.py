@@ -41,7 +41,7 @@ _default_metrices = {
 
 
 def _build_step_fn(
-    metric_fn,
+    metric_fn: LOSS_FN,
     apply_fn,
     initial_state,
     pmap_size,
@@ -57,7 +57,9 @@ def _build_step_fn(
     @partial(jax.value_and_grad, has_aux=True)
     def loss_fn(params, state, X, y):
         yhat, state = apply_fn(params, state, X)
-        pipe = lambda q, qhat: jnp.mean(jax.vmap(jax.vmap(metric_fn))(q, qhat))
+        # this vmap maps along batch-axis, not time-axis
+        # time-axis is handled by `metric_fn`
+        pipe = lambda q, qhat: jnp.mean(jax.vmap(metric_fn)(q, qhat))
         error_tree = jax.tree_map(pipe, y, yhat)
         return jnp.mean(tree_utils.batch_concat(error_tree, 0)), state
 
