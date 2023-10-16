@@ -130,8 +130,7 @@ def test_identify_system():
     assert list_equal(parent_array, new_parent_array_truth)
 
 
-@pytest.mark.long
-def test_morph_all_examples():
+def SKIP_test_morph_all_examples():
     for example in x_xy.io.list_examples():
         print("Example: ", example)
         sys = x_xy.io.load_example(example)

@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+from typing import Optional
 
 import jax
 import jax.numpy as jnp
@@ -103,7 +104,8 @@ def download_from_repo(path_in_repo: str) -> str:
     if not path_on_disk.exists():
         path_on_disk.parent.mkdir(parents=True, exist_ok=True)
         # the the `raw` in the link, otherwise it would download the website
-        url = f"https://github.com/SimiPixel/x_xy_v2/raw/main/{path_in_repo}"
+        # url = f"https://github.com/SimiPixel/x_xy_v2/raw/main/{path_in_repo}"
+        url = f"https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/{path_in_repo}"
         print(f"Downloading file from url {url}.. (this might take a moment)")
         wget.download(url, out=str(path_on_disk.parent))
         print(
@@ -114,6 +116,11 @@ def download_from_repo(path_in_repo: str) -> str:
     return str(path_on_disk)
 
 
-def delete_download_cache() -> None:
+def delete_download_cache(only: Optional[str] = None) -> None:
     "Delete folder and all content in `~/.xxy_cache`."
-    shutil.rmtree(Path("~").expanduser().joinpath(_xxy_cache_foldername))
+    path_cache_folder = Path("~").expanduser().joinpath(_xxy_cache_foldername)
+    if only is not None:
+        path_cache_folder = path_cache_folder.joinpath(only)
+
+    if Path(path_cache_folder).exists():
+        shutil.rmtree(path_cache_folder)

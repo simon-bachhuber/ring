@@ -18,11 +18,11 @@ from x_xy.subpkgs.ml.training_loop import TrainingLoopCallback
 
 def test_pretrained():
     exceptions = ["rr_rr_rr_known"]
-    for pretrained in ml.list_pretrained():
+    for pretrained, version in ml.list_pretrained():
         if pretrained in exceptions:
             continue
 
-        ml.load(pretrained=pretrained)
+        ml.load(pretrained=pretrained, pretrained_version=version)
 
 
 def test_save_load():
