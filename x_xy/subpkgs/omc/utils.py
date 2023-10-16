@@ -1,3 +1,4 @@
+import math
 import os
 from pathlib import Path
 from typing import Optional
@@ -7,21 +8,25 @@ import numpy as np
 from qmt import nanInterp
 from qmt import quatInterp
 from qmt import vecInterp
+from scipy.interpolate import CubicSpline
 import tree
 from tree_utils import PyTree
 
 
-def crop_tail(signal: PyTree, hz: Optional[float | PyTree] = None):
+def crop_tail(
+    signal: PyTree,
+    hz: Optional[int | float | PyTree] = None,
+    strict: bool = True,
+    verbose: bool = True,
+):
     "Crop all signals to length of shortest signal."
     if hz is None:
         hz = 1.0
-    if isinstance(hz, int):
-        hz = float(hz)
 
-    if isinstance(hz, float):
+    if isinstance(hz, (int, float)):
         hz = tree.map_structure(lambda _: hz, signal)
 
-    # just in case an integer is given
+    # int -> float
     hz = tree.map_structure(float, hz)
 
     def length_in_seconds(arr, hz):
@@ -32,34 +37,42 @@ def crop_tail(signal: PyTree, hz: Optional[float | PyTree] = None):
     shortest_length = min(tree.flatten(signal_lengths))
     hz_of_shortest_length = tree.flatten(hz)[np.argmin(tree.flatten(signal_lengths))]
 
-    # reduce shortest_length until it becomes a clearn crop for all other frequencies
-    i = -1
-    cleancrop = False
-    while not cleancrop:
-        i += 1
-        shortest_length -= i * (1 / hz_of_shortest_length)
-        cleancrop = True
+    if strict:
+        # reduce shortest_length until it becomes a clearn crop for all other
+        # frequencies
+        i = -1
+        cleancrop = False
+        while not cleancrop:
+            i += 1
+            shortest_length -= i * (1 / hz_of_shortest_length)
+            cleancrop = True
 
-        for each_hz in tree.flatten(hz):
-            if (shortest_length * each_hz) % 1 != 0.0:
-                cleancrop = False
+            for each_hz in tree.flatten(hz):
+                if (shortest_length * each_hz) % 1 != 0.0:
+                    cleancrop = False
+                    break
+
+            if i > int(hz_of_shortest_length):
+                warnings.warn(
+                    f"Must crop more than i={i} and still no clean crop possible."
+                )
+
+            if i > 100:
                 break
 
-        if i > int(hz_of_shortest_length):
-            warnings.warn(
-                f"Must crop more than i={i} and still no clean crop possible."
-            )
-
-        if i > 100:
-            break
-
-    print(f"`crop_tail`: Crop off at t={shortest_length}.")
+    if verbose:
+        print(f"`crop_tail`: Crop off at t={shortest_length}.")
 
     def crop(arr, hz):
-        crop_tail = np.round(shortest_length * hz, decimals=10)
-        err_msg = f"No clean crop possible: shortest_length={shortest_length}; hz={hz}"
-        assert (crop_tail % 1) == 0.0, err_msg
-        crop_tail = int(crop_tail)
+        if strict:
+            crop_tail = np.round(shortest_length * hz, decimals=10)
+            err_msg = (
+                f"No clean crop possible: shortest_length={shortest_length}; hz={hz}"
+            )
+            assert (crop_tail % 1) == 0.0, err_msg
+            crop_tail = int(crop_tail)
+        else:
+            crop_tail = math.ceil(shortest_length * hz)
         return arr[:crop_tail]
 
     return tree.map_structure(crop, signal, hz)
@@ -87,10 +100,12 @@ def hz_helper(
 
 def resample(
     signal: PyTree,
-    hz_in: float | PyTree,
-    hz_out: float | PyTree,
+    hz_in: int | float | PyTree,
+    hz_out: int | float | PyTree,
     quatdetect: bool = True,
+    vecinterp_method: str = "linear",
 ) -> PyTree:
+    # int -> float
     hz_in, hz_out = tree.map_structure(float, (hz_in, hz_out))
 
     if isinstance(hz_in, float):
@@ -111,12 +126,25 @@ def resample(
         if quatdetect and signal.shape[1] == 4:
             signal = quatInterp(signal, ts_out)
         else:
-            signal = vecInterp(signal, ts_out)
+            if vecinterp_method == "linear":
+                signal = vecInterp(signal, ts_out)
+            elif vecinterp_method == "cubic":
+                signal = _cubic_interpolation(signal, ts_out)
+            else:
+                raise NotImplementedError(
+                    "`vecinterp_method` must be one of ['linear', 'cubic']"
+                )
         if is1D:
             signal = signal[:, 0]
         return signal
 
     return tree.map_structure(resample_array, signal, hz_in, hz_out)
+
+
+def _cubic_interpolation(signal: np.ndarray, ts_out: np.ndarray):
+    ts_in = np.arange(len(signal))
+    interp_1D = lambda arr: (CubicSpline(ts_in, arr)(ts_out))
+    return np.array([interp_1D(signal[:, i]) for i in range(signal.shape[1])]).T
 
 
 def autodetermine_imu_freq(path_imu_folder: str) -> int:
