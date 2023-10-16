@@ -79,8 +79,8 @@ def _S06_double_triple_hinge_joint(
 
     imu_key = "imu_rigid" if rigid else "imu_flex"
 
-    motion_start = ["slow", "fast", "fast_slow_fast", "fast_slow_fast", "fast_slow"]
-    motion_stop = ["slow", "fast", "fast_slow", "slow_end", "slow_end"]
+    motion_start = ["slow1", "fast", "fast_slow_fast", "fast_slow_fast", "fast_slow"]
+    motion_stop = ["pause2", "pause3", "freeze2", "shaking", "shaking"]
 
     results = dict()
     for sta, sto in zip(motion_start, motion_stop):
