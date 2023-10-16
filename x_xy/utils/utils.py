@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 import jax
 import jax.numpy as jnp
@@ -95,6 +96,7 @@ _xxy_cache_foldername = ".xxy_cache"
 
 
 def download_from_repo(path_in_repo: str) -> str:
+    "Download file from `x_xy_v2` Github repo. Returns path on disk."
     path_on_disk = (
         Path("~").expanduser().joinpath(_xxy_cache_foldername).joinpath(path_in_repo)
     )
@@ -106,6 +108,12 @@ def download_from_repo(path_in_repo: str) -> str:
         wget.download(url, out=str(path_on_disk.parent))
         print(
             f"Downloading finished. Saved to location {path_on_disk}. "
-            f"Note that it is save to delete the folder `{_xxy_cache_foldername}`."
+            "All downloaded files can be deleted with "
+            "`x_xy.utils.delete_download_cache`."
         )
     return str(path_on_disk)
+
+
+def delete_download_cache() -> None:
+    "Delete folder and all content in `~/.xxy_cache`."
+    shutil.rmtree(Path("~").expanduser().joinpath(_xxy_cache_foldername))
