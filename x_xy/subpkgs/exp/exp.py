@@ -15,7 +15,7 @@ from x_xy.io.xml.from_xml import _load_xml
 from x_xy.subpkgs import omc
 from x_xy.subpkgs import sys_composer
 
-_id2xml = {"S_06": "setups/arm.xml"}
+_id2xml = {"S_04": "setups/arm.xml", "S_06": "setups/arm.xml"}
 
 
 def _relative_to_this_file(path: str) -> Path:
@@ -98,12 +98,14 @@ def load_data(
         trial_data,
         hz_in=omc.hz_helper(trial_data.keys(), hz_imu=hz_imu, hz_omc=hz_omc),
         hz_out=resample_to_hz,
+        vecinterp_method="cubic",
     )
+    trial_data = omc.crop_tail(trial_data, resample_to_hz, strict=True, verbose=False)
 
     if motion_start is not None:
         assert (
             motion_start in timings
-        ), f"`motion_start` is not one of {load_timings(exp_id).keys()}"
+        ), f"`{motion_start}` is not one of {load_timings(exp_id).keys()}"
 
         motion_sequence = list(timings.keys())
         next_motion_i = motion_sequence.index(motion_start) + 1
@@ -114,7 +116,7 @@ def load_data(
 
         assert (
             motion_stop in timings
-        ), f"`motion_stop` is not one of {load_timings(exp_id).keys()}"
+        ), f"`{motion_stop}` is not one of {load_timings(exp_id).keys()}"
 
         assert motion_sequence.index(motion_start) < motion_sequence.index(
             motion_stop
@@ -146,6 +148,13 @@ def link_name_pos_rot_data(data: dict, xml_str: str) -> dict:
             comment["omcname"],
             int(comment["marker"]),
         )
+
+        # imagine we want to use the `arm.xml` for the trial S_04
+        # it does not have data of 5 segments but only of 3
+        # but that's okay since `data_out` is then usually feed into the function
+        # `xs_from_raw` which then gets the actual system at hand
+        if omcname not in data:
+            continue
 
         if "pos" not in comment:
             pos_offset = jnp.zeros((3,))
