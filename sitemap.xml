@@ -111,6 +111,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://x_xy.com/notebooks/machine_learning/</loc>
+         <lastmod>2023-10-18</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://x_xy.com/notebooks/morph_system/</loc>
          <lastmod>2023-10-18</lastmod>
          <changefreq>daily</changefreq>
