@@ -13,6 +13,7 @@ nav:
     - 'notebooks/experimental_data.ipynb'
     - 'notebooks/error_quaternion.ipynb'
     - 'notebooks/imu_modeling.ipynb'
+    - 'notebooks/machine_learning.ipynb'
   - API: 
     - System: api/system.md
     - State: api/state.md
