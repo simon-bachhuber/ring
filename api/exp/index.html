@@ -895,7 +895,7 @@
 
 
 <h4 id="x_xy.subpkgs.exp.exp.load_data" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">load_data</span><span class="p">(</span><span class="n">exp_id</span><span class="p">,</span> <span class="n">motion_start</span><span class="p">,</span> <span class="n">motion_stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left_padd</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">right_padd</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">start_for_start</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stop_for_stop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">load_data</span><span class="p">(</span><span class="n">exp_id</span><span class="p">,</span> <span class="n">motion_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">motion_stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left_padd</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">right_padd</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">resample_to_hz</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span></code>
 
 <a href="#x_xy.subpkgs.exp.exp.load_data" class="headerlink" title="Permanent link">¤</a></h4>
 
@@ -904,7 +904,12 @@
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/exp/exp.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 84</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
 <span class="normal"> 85</span>
 <span class="normal"> 86</span>
 <span class="normal"> 87</span>
@@ -945,46 +950,61 @@
 <span class="normal">122</span>
 <span class="normal">123</span>
 <span class="normal">124</span>
-<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span>
     <span class="n">exp_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">motion_start</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">motion_start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">motion_stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">left_padd</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="n">right_padd</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-    <span class="n">start_for_start</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">stop_for_stop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">resample_to_hz</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-    <span class="n">trial_data</span> <span class="o">=</span> <span class="n">joblib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">_relative_to_this_file</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;joblib/</span><span class="si">{</span><span class="n">exp_id</span><span class="si">}</span><span class="s2">.joblib&quot;</span><span class="p">))</span>
+    <span class="n">trial_data</span> <span class="o">=</span> <span class="n">joblib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">x_xy</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">download_from_repo</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/</span><span class="si">{</span><span class="n">exp_id</span><span class="si">}</span><span class="s2">.joblib&quot;</span><span class="p">))</span>
 
-    <span class="n">timings</span> <span class="o">=</span> <span class="n">_read_yaml</span><span class="p">(</span><span class="s2">&quot;timings.yaml&quot;</span><span class="p">)[</span><span class="n">exp_id</span><span class="p">][</span><span class="s2">&quot;timings&quot;</span><span class="p">]</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">_read_yaml</span><span class="p">(</span><span class="s2">&quot;metadata.yaml&quot;</span><span class="p">)[</span><span class="n">exp_id</span><span class="p">]</span>
+    <span class="n">timings</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;timings&quot;</span><span class="p">]</span>
+    <span class="n">hz_imu</span><span class="p">,</span> <span class="n">hz_omc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;hz&quot;</span><span class="p">][</span><span class="s2">&quot;imu&quot;</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;hz&quot;</span><span class="p">][</span><span class="s2">&quot;omc&quot;</span><span class="p">])</span>
 
-    <span class="k">if</span> <span class="n">motion_stop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">motion_stop</span> <span class="o">=</span> <span class="n">motion_start</span>
+    <span class="n">trial_data</span> <span class="o">=</span> <span class="n">omc</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span>
+        <span class="n">trial_data</span><span class="p">,</span>
+        <span class="n">hz_in</span><span class="o">=</span><span class="n">omc</span><span class="o">.</span><span class="n">hz_helper</span><span class="p">(</span><span class="n">trial_data</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">hz_imu</span><span class="o">=</span><span class="n">hz_imu</span><span class="p">,</span> <span class="n">hz_omc</span><span class="o">=</span><span class="n">hz_omc</span><span class="p">),</span>
+        <span class="n">hz_out</span><span class="o">=</span><span class="n">resample_to_hz</span><span class="p">,</span>
+        <span class="n">vecinterp_method</span><span class="o">=</span><span class="s2">&quot;cubic&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">trial_data</span> <span class="o">=</span> <span class="n">omc</span><span class="o">.</span><span class="n">crop_tail</span><span class="p">(</span><span class="n">trial_data</span><span class="p">,</span> <span class="n">resample_to_hz</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="n">motions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">timings</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-    <span class="k">assert</span> <span class="n">motions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">motion_start</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">motions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span>
-        <span class="n">motion_stop</span>
-    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;starting point motion </span><span class="si">{</span><span class="n">motion_start</span><span class="si">}</span><span class="s2"> is after the stopping &quot;</span>
-    <span class="s2">&quot;point motion </span><span class="si">{motion_stop}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">motion_start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">motion_start</span> <span class="ow">in</span> <span class="n">timings</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">motion_start</span><span class="si">}</span><span class="s2">` is not one of </span><span class="si">{</span><span class="n">load_timings</span><span class="p">(</span><span class="n">exp_id</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
 
-    <span class="k">if</span> <span class="n">motion_start</span> <span class="o">==</span> <span class="n">motion_stop</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">start_for_start</span> <span class="ow">and</span> <span class="n">stop_for_stop</span><span class="p">,</span> <span class="s2">&quot;Empty sequence, stop &lt;= start&quot;</span>
+        <span class="n">motion_sequence</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">timings</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">next_motion_i</span> <span class="o">=</span> <span class="n">motion_sequence</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">motion_start</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">assert</span> <span class="n">next_motion_i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">motion_sequence</span><span class="p">)</span>
 
-    <span class="n">t1</span> <span class="o">=</span> <span class="n">timings</span><span class="p">[</span><span class="n">motion_start</span><span class="p">][</span><span class="s2">&quot;start&quot;</span> <span class="k">if</span> <span class="n">start_for_start</span> <span class="k">else</span> <span class="s2">&quot;stop&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">left_padd</span>
-    <span class="c1"># ensure that t1 &gt;= 0</span>
-    <span class="n">t1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-    <span class="n">t2</span> <span class="o">=</span> <span class="n">timings</span><span class="p">[</span><span class="n">motion_stop</span><span class="p">][</span><span class="s2">&quot;stop&quot;</span> <span class="k">if</span> <span class="n">stop_for_stop</span> <span class="k">else</span> <span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">right_padd</span>
+        <span class="k">if</span> <span class="n">motion_stop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">motion_stop</span> <span class="o">=</span> <span class="n">motion_sequence</span><span class="p">[</span><span class="n">next_motion_i</span><span class="p">]</span>
 
-    <span class="c1"># TODO</span>
-    <span class="n">HZ</span> <span class="o">=</span> <span class="mf">100.0</span>
-    <span class="n">trial_data</span> <span class="o">=</span> <span class="n">_crop_sequence</span><span class="p">(</span><span class="n">trial_data</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">HZ</span><span class="p">,</span> <span class="n">t1</span><span class="o">=</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="o">=</span><span class="n">t2</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">motion_stop</span> <span class="ow">in</span> <span class="n">timings</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">motion_stop</span><span class="si">}</span><span class="s2">` is not one of </span><span class="si">{</span><span class="n">load_timings</span><span class="p">(</span><span class="n">exp_id</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
 
-    <span class="c1"># xml_path = _relative_to_this_file(_id2xml[exp_id])</span>
-    <span class="c1"># seg_to_marker_number = _marker_numbers_from_xml_file(xml_path)</span>
+        <span class="k">assert</span> <span class="n">motion_sequence</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">motion_start</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">motion_sequence</span><span class="o">.</span><span class="n">index</span><span class="p">(</span>
+            <span class="n">motion_stop</span>
+        <span class="p">),</span> <span class="s2">&quot;Empty sequence, stop &lt;= start&quot;</span>
 
-    <span class="c1"># TODO</span>
-    <span class="c1"># for seg in trial_data:</span>
-    <span class="c1">#    trial_data[seg][&quot;pos&quot;] = trial_data[seg][f&quot;marker{seg_to_marker_number[seg]}&quot;]</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="n">timings</span><span class="p">[</span><span class="n">motion_start</span><span class="p">]</span> <span class="o">-</span> <span class="n">left_padd</span>
+        <span class="c1"># ensure that t1 &gt;= 0</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">t2</span> <span class="o">=</span> <span class="n">timings</span><span class="p">[</span><span class="n">motion_stop</span><span class="p">]</span> <span class="o">+</span> <span class="n">right_padd</span>
+
+        <span class="n">trial_data</span> <span class="o">=</span> <span class="n">_crop_sequence</span><span class="p">(</span><span class="n">trial_data</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">resample_to_hz</span><span class="p">,</span> <span class="n">t1</span><span class="o">=</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="o">=</span><span class="n">t2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">motion_stop</span> <span class="ow">is</span> <span class="kc">None</span>
 
     <span class="k">return</span> <span class="n">trial_data</span>
 </code></pre></div></td></tr></table></div>
@@ -1009,7 +1029,12 @@
 
           <details class="quote">
             <summary>Source code in <code>x_xy/subpkgs/exp/exp.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">58</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
 <span class="normal">59</span>
 <span class="normal">60</span>
 <span class="normal">61</span>
@@ -1027,12 +1052,7 @@
 <span class="normal">73</span>
 <span class="normal">74</span>
 <span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_sys</span><span class="p">(</span>
+<span class="normal">76</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_sys</span><span class="p">(</span>
     <span class="n">exp_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">preprocess_sys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">morph_yaml_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
