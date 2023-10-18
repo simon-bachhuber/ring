@@ -138,6 +138,14 @@ def load_timings(exp_id: str) -> dict[str, float]:
     return _read_yaml("metadata.yaml")[exp_id]["timings"]
 
 
+def load_hz_omc(exp_id: str) -> int:
+    return int(_read_yaml("metadata.yaml")[exp_id]["hz"]["omc"])
+
+
+def load_hz_imu(exp_id: str) -> int:
+    return int(_read_yaml("metadata.yaml")[exp_id]["hz"]["imu"])
+
+
 def link_name_pos_rot_data(data: dict, xml_str: str) -> dict:
     comments = load_comments_from_str(xml_str, key="omc")
 
