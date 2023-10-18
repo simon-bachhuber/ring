@@ -40,12 +40,12 @@ def test_dict_nest():
 def test_download_from_repo():
     delete_download_cache(only="docs/img")
     icon_svg = "docs/img/icon.svg"
-    path_on_disk = Path(download_from_repo(icon_svg))
+    path_on_disk = Path(download_from_repo(icon_svg, "x_xy_v2"))
 
     assert path_on_disk.exists() and path_on_disk.is_file()
 
-    delete_download_cache(only="x_xy/subpkgs/ml/pretrained/ry_rz")
-    params = "x_xy/subpkgs/ml/pretrained/ry_rz/params_ry_rz.pickle"
+    delete_download_cache(only="params/ry_rz")
+    params = "params/ry_rz/params_ry_rz.pickle"
     path_on_disk = Path(download_from_repo(params))
 
     assert path_on_disk.exists() and path_on_disk.is_file()

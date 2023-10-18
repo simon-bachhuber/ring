@@ -96,16 +96,14 @@ def dict_to_nested(
 _xxy_cache_foldername = ".xxy_cache"
 
 
-def download_from_repo(path_in_repo: str) -> str:
+def download_from_repo(path_in_repo: str, repo: str = "x_xy_v2_datahost") -> str:
     "Download file from `x_xy_v2` Github repo. Returns path on disk."
     path_on_disk = (
         Path("~").expanduser().joinpath(_xxy_cache_foldername).joinpath(path_in_repo)
     )
     if not path_on_disk.exists():
         path_on_disk.parent.mkdir(parents=True, exist_ok=True)
-        # the the `raw` in the link, otherwise it would download the website
-        # url = f"https://github.com/SimiPixel/x_xy_v2/raw/main/{path_in_repo}"
-        url = f"https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/{path_in_repo}"
+        url = f"https://raw.githubusercontent.com/SimiPixel/{repo}/main/{path_in_repo}"
         print(f"Downloading file from url {url}.. (this might take a moment)")
         wget.download(url, out=str(path_on_disk.parent))
         print(

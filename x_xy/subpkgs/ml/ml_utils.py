@@ -7,6 +7,7 @@ from pathlib import Path
 import pickle
 import time
 from typing import Optional, Union
+import webbrowser
 
 import jax
 import joblib
@@ -64,34 +65,15 @@ def load(
         if pretrained_version is not None:
             # v0, v1, v2, ...
             version = f"_v{int(pretrained_version)}"
-        path_in_repo = (
-            f"x_xy/subpkgs/ml/pretrained/{pretrained}/"
-            f"params_{pretrained}{version}{suffix}"
-        )
+        path_in_repo = f"params/{pretrained}/params_{pretrained}{version}{suffix}"
         path_on_disk = download_from_repo(path_in_repo)
         return load(path_on_disk)
 
 
-def list_pretrained() -> list[tuple[str, int | None]]:
-    pretrained_folder = Path(__file__).parent.joinpath("pretrained")
-
-    def exclude(folder) -> list[str]:
-        subfolders = list(
-            set(os.listdir(folder)) - set((".DS_Store", "__init__.py", "readme.md"))
-        )
-        return subfolders
-
-    pretrained_version = []
-    for subfolder in exclude(pretrained_folder):
-        for file in exclude(pretrained_folder.joinpath(subfolder)):
-            version = str(Path(file).with_suffix(""))[-2:]
-            if version[0] == "v":
-                version = int(version[1])
-            else:
-                version = None
-            pretrained_version.append((subfolder, version))
-
-    return pretrained_version
+def list_pretrained() -> None:
+    "Open Github repo that hosts the pretrained parameters."
+    url = "https://github.com/SimiPixel/x_xy_v2_datahost/tree/main/params"
+    webbrowser.open(url)
 
 
 # An arbitrarily nested dictionary with jax.Array leaves; Or strings

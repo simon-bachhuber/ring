@@ -84,11 +84,7 @@ def load_data(
     right_padd: float = 0.0,
     resample_to_hz: float = 100.0,
 ) -> dict:
-    path_repo = (
-        "x_xy/subpkgs/exp/data_joblib_files/synced_aligned_nan_croptail/"
-        f"synced_aligned_nan_croptail_{exp_id}.joblib"
-    )
-    trial_data = joblib.load(x_xy.utils.download_from_repo(path_repo))
+    trial_data = joblib.load(x_xy.utils.download_from_repo(f"data/{exp_id}.joblib"))
 
     metadata = _read_yaml("metadata.yaml")[exp_id]
     timings = metadata["timings"]
