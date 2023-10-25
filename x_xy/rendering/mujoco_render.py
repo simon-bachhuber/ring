@@ -89,7 +89,7 @@ def _build_model_of_geoms(
   <visual>
     <headlight ambient=".4 .4 .4" diffuse=".8 .8 .8" specular="0.1 0.1 0.1"/>
     <map znear=".01"/>
-    <quality shadowsize="2048"/>
+    <quality shadowsize="8192"/>
     <global offwidth="1920" offheight="1080"/>
   </visual>
 
@@ -98,7 +98,7 @@ def _build_model_of_geoms(
 <camera pos="0 -1 1" name="target" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -3 3" name="targetfar" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -5 5" name="targetFar" mode="targetbodycom" target="{targetbody}"/>
-<light pos="0 0 10" dir="0 0 -1"/>
+<light pos="0 0 4" dir="0 0 -1"/>
 <geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>
 {_xyz_str if xyz else ""}
 {inside_worldbody_cameras}
