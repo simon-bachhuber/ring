@@ -18,8 +18,8 @@ S_04:
 S_06:
   timings:
     canonical: 33.0
-    pause1: 172.0
-    slow1: 183.0
+    pause1: 175.0
+    slow1: 184.0
     pause2: 224.0
     fast: 230.0
     pause3: 273.0
