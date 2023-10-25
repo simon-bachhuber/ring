@@ -30,6 +30,8 @@ def build_generator(
     finalize_fn: FINALIZE_FN = lambda key, q, x, sys: (q, x),
     randomize_positions: bool = False,
 ) -> Generator:
+    assert config.is_feasible()
+
     return GeneratorPipe(
         GeneratorTrafoSetupFn(setup_fn),
         GeneratorTrafoRandomizePositions()
@@ -59,7 +61,7 @@ def _generator_with_extras(
             draw_fn = _joint_types[link_type].rcmg_draw_fn
             if draw_fn is None:
                 raise Exception(f"The joint type {link_type} has no draw fn specified.")
-            q_link = draw_fn(config, key_t, key_value, joint_params)
+            q_link = draw_fn(config, key_t, key_value, sys.dt, joint_params)
             # even revolute and prismatic joints must be 2d arrays
             q_link = q_link if q_link.ndim == 2 else q_link[:, None]
             q_list.append(q_link)
