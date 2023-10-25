@@ -1009,13 +1009,17 @@
 <span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
-<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">build_generator</span><span class="p">(</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">build_generator</span><span class="p">(</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n">RCMG_Config</span> <span class="o">=</span> <span class="n">RCMG_Config</span><span class="p">(),</span>
     <span class="n">setup_fn</span><span class="p">:</span> <span class="n">SETUP_FN</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">,</span> <span class="n">sys</span><span class="p">:</span> <span class="n">sys</span><span class="p">,</span>
     <span class="n">finalize_fn</span><span class="p">:</span> <span class="n">FINALIZE_FN</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">sys</span><span class="p">:</span> <span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span>
     <span class="n">randomize_positions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">config</span><span class="o">.</span><span class="n">is_feasible</span><span class="p">()</span>
+
     <span class="k">return</span> <span class="n">GeneratorPipe</span><span class="p">(</span>
         <span class="n">GeneratorTrafoSetupFn</span><span class="p">(</span><span class="n">setup_fn</span><span class="p">),</span>
         <span class="n">GeneratorTrafoRandomizePositions</span><span class="p">()</span>
@@ -1052,8 +1056,7 @@
 
             <details class="quote">
               <summary>Source code in <code>x_xy/algorithms/jcalc.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">18</span>
-<span class="normal">19</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">19</span>
 <span class="normal">20</span>
 <span class="normal">21</span>
 <span class="normal">22</span>
@@ -1103,10 +1106,12 @@
 <span class="normal">66</span>
 <span class="normal">67</span>
 <span class="normal">68</span>
-<span class="normal">69</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">RCMG_Config</span><span class="p">:</span>
     <span class="n">T</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">60.0</span>  <span class="c1"># length of random motion</span>
-    <span class="n">Ts</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span>  <span class="c1"># sampling rate</span>
     <span class="n">t_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># min time between two generated angles</span>
     <span class="n">t_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">TimeDependentFloat</span> <span class="o">=</span> <span class="mf">0.30</span>  <span class="c1"># max time ..</span>
 
@@ -1155,6 +1160,9 @@
     <span class="n">cor_dpos_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">TimeDependentFloat</span> <span class="o">=</span> <span class="mf">0.5</span>
     <span class="n">cor_pos_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">TimeDependentFloat</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.4</span>
     <span class="n">cor_pos_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">TimeDependentFloat</span> <span class="o">=</span> <span class="mf">0.4</span>
+
+    <span class="k">def</span> <span class="nf">is_feasible</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_is_feasible_config1</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
 
@@ -1195,22 +1203,22 @@
 
             <details class="quote">
               <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span>
-<span class="normal">98</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorPipe</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorPipe</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">gen_trafos</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">GeneratorTrafo</span><span class="p">]):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_gen_trafos</span> <span class="o">=</span> <span class="n">gen_trafos</span>
 
@@ -1331,9 +1339,7 @@
 
             <details class="quote">
               <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">103</span>
 <span class="normal">104</span>
 <span class="normal">105</span>
 <span class="normal">106</span>
@@ -1342,7 +1348,9 @@
 <span class="normal">109</span>
 <span class="normal">110</span>
 <span class="normal">111</span>
-<span class="normal">112</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveInputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveInputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sys</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">System</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sys</span> <span class="o">=</span> <span class="n">sys</span>
 
@@ -1394,15 +1402,15 @@
 
             <details class="quote">
               <summary>Source code in <code>x_xy/algorithms/generator/base.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
 <span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
 <span class="normal">121</span>
 <span class="normal">122</span>
-<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveOutputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GeneratorTrafoRemoveOutputExtras</span><span class="p">(</span><span class="n">GeneratorTrafo</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">gen</span><span class="p">:</span> <span class="n">GeneratorWithOutputExtras</span> <span class="o">|</span> <span class="n">GeneratorWithInputOutputExtras</span><span class="p">,</span>
@@ -1501,36 +1509,36 @@
 
           <details class="quote">
             <summary>Source code in <code>x_xy/algorithms/jcalc.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">concat_configs</span><span class="p">(</span><span class="n">configs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">RCMG_Config</span><span class="p">],</span> <span class="n">boundaries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">RCMG_Config</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">concat_configs</span><span class="p">(</span><span class="n">configs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">RCMG_Config</span><span class="p">],</span> <span class="n">boundaries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">RCMG_Config</span><span class="p">:</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">configs</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span>
         <span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
     <span class="p">),</span> <span class="s2">&quot;length of `boundaries` should be one less than length of `configs`&quot;</span>
