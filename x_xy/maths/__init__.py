@@ -4,6 +4,7 @@ from .quat import angle_error
 from .quat import ensure_positive_w
 from .quat import euler_to_quat
 from .quat import quat_angle
+from .quat import quat_angle_constantAxisOverTime
 from .quat import quat_avg
 from .quat import quat_euler
 from .quat import quat_from_3x3

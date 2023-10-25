@@ -172,6 +172,19 @@ def quat_angle(q):
     return wrap_to_pi(phi)
 
 
+def quat_angle_constantAxisOverTime(qs):
+    assert qs.ndim == 2
+    assert qs.shape[-1] == 4
+
+    l2norm = lambda x: jnp.sqrt(jnp.sum(x**2, axis=-1))
+
+    axis = safe_normalize(qs[:, 1:])
+    angle = quat_angle(qs)[:, None]
+    convention = axis[0]
+    cond = (l2norm(convention - axis) > l2norm(convention + axis))[..., None]
+    return jnp.where(cond, -angle, angle)[:, 0]
+
+
 @partial(jnp.vectorize, signature="(4)->(3),()")
 def quat_to_rot_axis(q):
     "Extract unit-axis and angle from quaternion `q`."
