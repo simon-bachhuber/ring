@@ -36,6 +36,9 @@ def parse_system(sys: base.System) -> base.System:
     geoms.sort(key=lambda geom: geom.link_idx)
     sys = sys.replace(geoms=geoms)
 
+    # round dt
+    sys = sys.replace(dt=round(sys.dt, 8))
+
     return sys
 
 

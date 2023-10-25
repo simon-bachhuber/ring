@@ -110,7 +110,7 @@ def _initial_setup(xml_tree):
 
 
 DEFAULT_GRAVITY = jnp.array([0, 0, 9.81])
-DEFAULT_DT = jnp.array(0.01)
+DEFAULT_DT = 0.01
 
 
 def load_sys_from_str(xml_str: str) -> base.System:
@@ -216,7 +216,7 @@ def load_sys_from_str(xml_str: str) -> base.System:
         link_armature=armatures,
         link_spring_stiffness=spring_stiffnesses,
         link_spring_zeropoint=spring_zeropoints,
-        dt=options["dt"],
+        dt=float(options["dt"]),
         geoms=flat_geoms,
         gravity=options["gravity"],
         link_names=assert_order_then_to_list(link_names),

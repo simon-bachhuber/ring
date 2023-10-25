@@ -20,6 +20,7 @@ def test_concat_configs(T, seed):
     motion_config = x_xy.RCMG_Config()
 
     sys = x_xy.load_example("test_free")
+    dt = sys.dt
     q, x = x_xy.build_generator(
         sys,
         x_xy.concat_configs(
@@ -35,15 +36,15 @@ def test_concat_configs(T, seed):
             np.repeat(q[a : (a + 1), 4:], b - a, axis=0), q[a:b, 4:]
         )
 
-    T_i = int(T / nomotion_config.Ts)
+    T_i = int(T / dt)
     array_eq(0, T_i)
 
     with pytest.raises(AssertionError):
         T_i += 10
         array_eq(0, T_i)
 
-    T_i = int((2 * T + motion_config.t_max) / nomotion_config.Ts)
-    T_f = int(nomotion_config.T / nomotion_config.Ts)
+    T_i = int((2 * T + motion_config.t_max) / dt)
+    T_f = int(nomotion_config.T / dt)
     array_eq(T_i, T_f)
 
     with pytest.raises(AssertionError):
