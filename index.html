@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#x_xy-documentation-home" class="md-skip">
+        <a href="#x_xy_v2" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              x_xy - Documentation Home
+              Home
             
           </span>
         </div>
@@ -249,7 +249,7 @@
           
   
   <span class="md-ellipsis">
-    x_xy - Documentation Home
+    Home
   </span>
   
 
@@ -260,7 +260,7 @@
         
   
   <span class="md-ellipsis">
-    x_xy - Documentation Home
+    Home
   </span>
   
 
@@ -282,13 +282,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#x_xy_v2-a-tiny-kinematic-tree-simulator" class="md-nav__link">
-    x_xy_v2 -- A tiny Kinematic Tree Simulator
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#installation" class="md-nav__link">
     Installation
   </a>
@@ -300,6 +293,39 @@
   <a href="#installation-of-extras" class="md-nav__link">
     Installation of Extras
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    Documentation
+  </a>
+  
+    <nav class="md-nav" aria-label="Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#known-fixes" class="md-nav__link">
+    Known fixes
+  </a>
+  
+    <nav class="md-nav" aria-label="Known fixes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#offscreen-rendering-with-mujoco" class="md-nav__link">
+    Offscreen rendering with Mujoco
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -947,20 +973,21 @@
                   
 
 
-<h1 id="x_xy-documentation-home"><code>x_xy</code> - Documentation Home<a class="headerlink" href="#x_xy-documentation-home" title="Permanent link">¤</a></h1>
-<p>This is the documentation for the <code>x_xy</code> software library.</p>
 <p align="center">
-<img src="img/icon.svg" height="200" />
+<img src="https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/docs/img/icon.svg" height="200" />
 </p>
 
-<h2 id="x_xy_v2-a-tiny-kinematic-tree-simulator"><code>x_xy_v2</code> -- A <em>tiny</em> Kinematic Tree Simulator<a class="headerlink" href="#x_xy_v2-a-tiny-kinematic-tree-simulator" title="Permanent link">¤</a></h2>
-<p><img src="img/coverage_badge.svg" height="20" /></p>
+<h1 id="x_xy_v2"><code>x_xy_v2</code><a class="headerlink" href="#x_xy_v2" title="Permanent link">¤</a></h1>
+<p><img src="https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/docs/img/coverage_badge.svg" height="20" /></p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">¤</a></h2>
 <p>Supports <code>Python=3.10/3.11</code> (tested).</p>
 <p>Install with <code>pip</code> using</p>
 <p><code>pip install 'x_xy[all] @ git+https://github.com/SimiPixel/x_xy_v2'</code></p>
-<p>Typically, this will install <code>jax</code> as cpu-only version. CUDA version can be installed with
+<p>Typically, this will install <code>jax</code> as cpu-only version. Afterwards, gpu-enabled version can be installed with
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span><span class="s2">&quot;jax[cuda12_pip]&quot;</span><span class="w"> </span>-f<span class="w"> </span>https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+</code></pre></div></p>
+<p>or with (if NVIDIA driver is a little older)
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span><span class="s2">&quot;jax[cuda11_pip]&quot;</span><span class="w"> </span>-f<span class="w"> </span>https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 </code></pre></div></p>
 <h3 id="installation-of-extras">Installation of Extras<a class="headerlink" href="#installation-of-extras" title="Permanent link">¤</a></h3>
 <p>Seperates dependencies neatly per subpackage. E.g. the dependencies for subpkg <code>omc</code> can be installed via</p>
@@ -977,6 +1004,17 @@
 <p><code>pip install 'x_xy[dev] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base+ development dependencies)</p>
 <p>Can also be combined, e.g.
 <code>pip install 'x_xy[ml,omc] @ git+https://github.com/SimiPixel/x_xy_v2'</code> (base+ml+omc)</p>
+<h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">¤</a></h2>
+<p>Available <a href="https://simipixel.github.io/x_xy_v2/">here</a>.</p>
+<h3 id="known-fixes">Known fixes<a class="headerlink" href="#known-fixes" title="Permanent link">¤</a></h3>
+<h4 id="offscreen-rendering-with-mujoco">Offscreen rendering with Mujoco<a class="headerlink" href="#offscreen-rendering-with-mujoco" title="Permanent link">¤</a></h4>
+<blockquote>
+<p>mujoco.FatalError: an OpenGL platform library has not been loaded into this process, this most likely means that a valid OpenGL context has not been created before mjr_makeContext was called</p>
+</blockquote>
+<p>Solution:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;MUJOCO_GL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;egl&quot;</span>
+</code></pre></div>
 <h2 id="publications">Publications<a class="headerlink" href="#publications" title="Permanent link">¤</a></h2>
 <p>The following publications utilize this software library, and refer to it as the <em>Random Chain Motion Generator (RCMG)</em> (more specifically the function <code>x_xy.build_generator</code>):</p>
 <ul>
