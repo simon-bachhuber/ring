@@ -16,28 +16,91 @@ from .base import Filter
 _dt = 0.01
 
 
+def double_hinge_joint(
+    filter: Filter,
+    sparse_segments: list[str] = ["seg3"],
+    rigid_imus: bool = True,
+    joint_axes_from_sys: bool = False,
+    warmup: int = 500,
+    plot: bool = False,
+    render: bool = False,
+    render_kwargs: dict = dict(),
+):
+    sys = exp.load_sys("S_06", morph_yaml_key="seg2", delete_after_morph="seg5")
+    return _S06_double_triple_hinge_joint(
+        sys,
+        sparse_segments,
+        rigid_imus,
+        joint_axes_from_sys,
+        filter,
+        warmup,
+        plot,
+        render,
+        render_kwargs,
+    )
+
+
 def triple_hinge_joint(
     filter: Filter,
+    sparse_segments: list[str] = ["seg2", "seg3"],
+    rigid_imus: bool = True,
+    joint_axes_from_sys: bool = False,
     warmup: int = 500,
     plot: bool = False,
     render: bool = False,
     render_kwargs: dict = dict(),
 ):
     sys = exp.load_sys("S_06", morph_yaml_key="seg5", delete_after_morph="seg1")
+    return _S06_double_triple_hinge_joint(
+        sys,
+        sparse_segments,
+        rigid_imus,
+        joint_axes_from_sys,
+        filter,
+        warmup,
+        plot,
+        render,
+        render_kwargs,
+    )
+
+
+def _S06_double_triple_hinge_joint(
+    sys,
+    sparse_segments: list[str],
+    rigid: bool,
+    from_sys: bool,
+    filter: Filter,
+    warmup: int,
+    plot: bool,
+    render: bool,
+    render_kwargs: dict,
+) -> dict:
     sys = sys_composer.make_sys_noimu(sys)[0]
 
-    motion_start = ["slow", "fast", "fast_slow_fast", "fast_slow_fast", "fast_slow"]
-    motion_stop = ["slow", "fast", "fast_slow", "slow_end", "slow_end"]
+    imu_key = "imu_rigid" if rigid else "imu_flex"
+
+    motion_start = ["slow1", "fast", "fast_slow_fast", "fast_slow_fast", "fast_slow"]
+    motion_stop = ["pause2", "pause3", "freeze2", "shaking", "shaking"]
 
     results = dict()
     for sta, sto in zip(motion_start, motion_stop):
         data = exp.load_data("S_06", sta, sto)
-        xs = sim2real.xs_from_raw(sys, data)
-        X = x_xy.joint_axes(sys, xs, sys)
+
+        xml_str = exp.load_xml_str("S_06")
+        xs = sim2real.xs_from_raw(
+            sys, exp.link_name_pos_rot_data(data, xml_str), qinv=True
+        )
+        X = x_xy.joint_axes(sys, xs, sys, from_sys=from_sys)
+        if from_sys:
+            X_xs = x_xy.joint_axes(sys, xs, sys, from_sys=False)
+            for seg in X:
+                if sys.link_parents[sys.name_to_idx(seg)] == -1:
+                    X[seg].update(X_xs[seg])
+
         for seg in X:
-            imu_data = data[seg]["imu_rigid"]
+            imu_data = data[seg][imu_key]
             imu_data.pop("mag")
-            if seg in ["seg2", "seg3"]:
+            if seg in sparse_segments:
                 imu_data = tree_utils.tree_zeros_like(imu_data)
             X[seg].update(imu_data)
 

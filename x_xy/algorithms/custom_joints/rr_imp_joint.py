@@ -18,11 +18,11 @@ def register_rr_imp_joint(
         rot = x_xy.maths.quat_mul(rot_res, rot_pri)
         return x_xy.Transform.create(rot=rot)
 
-    def _draw_rr_imp(config, key_t, key_value, _):
+    def _draw_rr_imp(config, key_t, key_value, dt, _):
         key_t1, key_t2 = jax.random.split(key_t)
         key_value1, key_value2 = jax.random.split(key_value)
-        q_traj_pri = _draw_rxyz(config, key_t1, key_value1, _)
-        q_traj_res = _draw_rxyz(config_res, key_t2, key_value2, _)
+        q_traj_pri = _draw_rxyz(config, key_t1, key_value1, dt, _)
+        q_traj_res = _draw_rxyz(config_res, key_t2, key_value2, dt, _)
         # scale to be within bounds
         q_traj_res = q_traj_res * (jnp.deg2rad(ang_max_deg) / jnp.pi)
         # center

@@ -7,6 +7,7 @@ from pathlib import Path
 import pickle
 import time
 from typing import Optional, Union
+import webbrowser
 
 import jax
 import joblib
@@ -16,6 +17,7 @@ from tree_utils import PyTree
 from tree_utils import tree_batch
 
 import wandb
+from x_xy.utils import download_from_repo
 
 suffix = ".pickle"
 
@@ -63,17 +65,15 @@ def load(
         if pretrained_version is not None:
             # v0, v1, v2, ...
             version = f"_v{int(pretrained_version)}"
-        pretrained_folder = (
-            f"pretrained/{pretrained}/params_{pretrained}{version}{suffix}"
-        )
-        return load(Path(__file__).parent.joinpath(pretrained_folder))
+        path_in_repo = f"params/{pretrained}/params_{pretrained}{version}{suffix}"
+        path_on_disk = download_from_repo(path_in_repo)
+        return load(path_on_disk)
 
 
-def list_pretrained() -> list[str]:
-    return list(
-        set(os.listdir(Path(__file__).parent.joinpath("pretrained")))
-        - set((".DS_Store", "__init__.py"))
-    )
+def list_pretrained() -> None:
+    "Open Github repo that hosts the pretrained parameters."
+    url = "https://github.com/SimiPixel/x_xy_v2_datahost/tree/main/params"
+    webbrowser.open(url)
 
 
 # An arbitrarily nested dictionary with jax.Array leaves; Or strings

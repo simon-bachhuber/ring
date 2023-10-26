@@ -204,7 +204,27 @@ def joint_axes(
     sys_xs: base.System,
     key: Optional[jax.Array] = None,
     noisy: bool = False,
+    from_sys: bool = False,
 ):
+    if from_sys:
+        N = xs.shape(axis=0)
+        X = _joint_axes_from_sys(sys, N)
+    else:
+        X = _joint_axes_from_xs(sys, xs, sys_xs)
+
+    if noisy:
+        assert key is not None
+        for name in X:
+            key, c1, c2 = jax.random.split(key, 3)
+            bias = maths.quat_random(c1, maxval=jnp.deg2rad(5.0))
+            noise = maths.quat_random(c2, (N,), maxval=jnp.deg2rad(2.0))
+            dist = maths.quat_mul(noise, bias)
+            X[name]["joint_axes"] = maths.rotate(X[name]["joint_axes"], dist)
+
+    return X
+
+
+def _joint_axes_from_xs(sys, xs, sys_xs):
     # TODO
     from x_xy.subpkgs.sim2real import match_xs
     from x_xy.subpkgs.sim2real import unzip_xs
@@ -235,16 +255,30 @@ def joint_axes(
     axes = jnp.repeat(axes_average[:, None], N, axis=1)
 
     X = {name: {"joint_axes": axes[sys.name_to_idx(name)]} for name in sys.link_names}
+    return X
 
-    if noisy:
-        assert key is not None
-        for name in X:
-            key, c1, c2 = jax.random.split(key, 3)
-            bias = maths.quat_random(c1, maxval=jnp.deg2rad(5.0))
-            noise = maths.quat_random(c2, (N,), maxval=jnp.deg2rad(2.0))
-            dist = maths.quat_mul(noise, bias)
-            X[name]["joint_axes"] = maths.rotate(X[name]["joint_axes"], dist)
 
+def _joint_axes_from_sys(sys: base.Transform, N: int) -> dict:
+    "`sys` should be `sys_noimu`. `N` is number of timesteps"
+    xaxis = jnp.array([1.0, 0, 0])
+    yaxis = jnp.array([0.0, 1, 0])
+    zaxis = jnp.array([0.0, 0, 1])
+    id_to_axis = {"x": xaxis, "y": yaxis, "z": zaxis}
+    X = {}
+
+    def f(_, __, name, link_type, joint_params):
+        if link_type in ["rx", "ry", "rz"]:
+            joint_axes = id_to_axis[link_type[1]]
+        elif link_type == "rr":
+            joint_axes = joint_params
+        elif link_type == "rr_imp":
+            joint_axes = joint_params[:3]
+        else:
+            joint_axes = xaxis
+        X[name] = {"joint_axes": joint_axes}
+
+    scan_sys(sys, f, "lll", sys.link_names, sys.link_types, sys.links.joint_params)
+    X = jax.tree_map(lambda arr: jnp.repeat(arr[None], N, axis=0), X)
     return X
 
 

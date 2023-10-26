@@ -1,5 +1,10 @@
+from pathlib import Path
+import shutil
+from typing import Optional
+
 import jax
 import jax.numpy as jnp
+import wget
 
 from x_xy.base import _Base
 from x_xy.base import Geometry
@@ -86,3 +91,34 @@ def dict_to_nested(
 ) -> dict[str, dict[str, jax.Array]]:
     "Nests a dictonary by inserting a single key dictonary."
     return {key: {add_key: d[key]} for key in d.keys()}
+
+
+_xxy_cache_foldername = ".xxy_cache"
+
+
+def download_from_repo(path_in_repo: str, repo: str = "x_xy_v2_datahost") -> str:
+    "Download file from `x_xy_v2` Github repo. Returns path on disk."
+    path_on_disk = (
+        Path("~").expanduser().joinpath(_xxy_cache_foldername).joinpath(path_in_repo)
+    )
+    if not path_on_disk.exists():
+        path_on_disk.parent.mkdir(parents=True, exist_ok=True)
+        url = f"https://raw.githubusercontent.com/SimiPixel/{repo}/main/{path_in_repo}"
+        print(f"Downloading file from url {url}.. (this might take a moment)")
+        wget.download(url, out=str(path_on_disk.parent))
+        print(
+            f"Downloading finished. Saved to location {path_on_disk}. "
+            "All downloaded files can be deleted with "
+            "`x_xy.utils.delete_download_cache`."
+        )
+    return str(path_on_disk)
+
+
+def delete_download_cache(only: Optional[str] = None) -> None:
+    "Delete folder and all content in `~/.xxy_cache`."
+    path_cache_folder = Path("~").expanduser().joinpath(_xxy_cache_foldername)
+    if only is not None:
+        path_cache_folder = path_cache_folder.joinpath(only)
+
+    if Path(path_cache_folder).exists():
+        shutil.rmtree(path_cache_folder)

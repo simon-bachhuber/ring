@@ -10,6 +10,7 @@ from x_xy import algebra
 from x_xy import maths
 
 from .. import base
+from ._random import _to_float
 from ._random import random_angle_over_time
 from ._random import random_position_over_time
 from ._random import TimeDependentFloat
@@ -18,7 +19,6 @@ from ._random import TimeDependentFloat
 @dataclass
 class RCMG_Config:
     T: float = 60.0  # length of random motion
-    Ts: float = 0.01  # sampling rate
     t_min: float = 0.05  # min time between two generated angles
     t_max: float | TimeDependentFloat = 0.30  # max time ..
 
@@ -67,6 +67,35 @@ class RCMG_Config:
     cor_dpos_max: float | TimeDependentFloat = 0.5
     cor_pos_min: float | TimeDependentFloat = -0.4
     cor_pos_max: float | TimeDependentFloat = 0.4
+
+    def is_feasible(self) -> bool:
+        return _is_feasible_config1(self)
+
+
+def _is_feasible_config1(c: RCMG_Config) -> bool:
+    t_min, t_max = c.t_min, _to_float(c.t_max, 0.0)
+
+    def dx_deltax_check(dx_min, dx_max, deltax_min, deltax_max) -> bool:
+        dx_min, dx_max, deltax_min, deltax_max = map(
+            (lambda v: _to_float(v, 0.0)), (dx_min, dx_max, deltax_min, deltax_max)
+        )
+        if (deltax_max / t_min) < dx_min:
+            return False
+        if (deltax_min / t_max) > dx_max:
+            return False
+        return True
+
+    return all(
+        [
+            dx_deltax_check(*args)
+            for args in zip(
+                [c.dang_min, c.dang_min_free_spherical],
+                [c.dang_max, c.dang_max_free_spherical],
+                [c.delta_ang_min, c.delta_ang_min_free_spherical],
+                [c.delta_ang_max, c.delta_ang_max_free_spherical],
+            )
+        ]
+    )
 
 
 def _find_interval(t: jax.Array, boundaries: jax.Array):
@@ -123,7 +152,9 @@ def concat_configs(configs: list[RCMG_Config], boundaries: list[float]) -> RCMG_
 
 
 DRAW_FN = Callable[
-    [RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey, jax.Array], jax.Array
+    # config, key_t, key_value, dt, params
+    [RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey, float, jax.Array],
+    jax.Array,
 ]
 
 
@@ -188,6 +219,7 @@ def _draw_rxyz(
     config: RCMG_Config,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    dt: float,
     _: jax.Array,
     enable_range_of_motion: bool = True,
     free_spherical: bool = False,
@@ -210,7 +242,7 @@ def _draw_rxyz(
         config.t_min,
         config.t_max,
         config.T,
-        config.Ts,
+        dt,
         max_iter,
         config.randomized_interpolation_angle,
         config.range_of_motion_hinge if enable_range_of_motion else False,
@@ -225,6 +257,7 @@ def _draw_pxyz(
     config: RCMG_Config,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    dt: float,
     __: jax.Array,
     cor: bool = False,
 ) -> jax.Array:
@@ -241,7 +274,7 @@ def _draw_pxyz(
         config.cor_t_min if cor else config.t_min,
         config.cor_t_max if cor else config.t_max,
         config.T,
-        config.Ts,
+        dt,
         max_iter,
         config.randomized_interpolation_position,
         config.cdf_bins_min,
@@ -254,6 +287,7 @@ def _draw_spherical(
     config: RCMG_Config,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    dt: float,
     _: jax.Array,
 ) -> jax.Array:
     # NOTE: We draw 3 euler angles and then build a quaternion.
@@ -264,6 +298,7 @@ def _draw_spherical(
             config,
             key_t,
             key_value,
+            dt,
             None,
             enable_range_of_motion=False,
             free_spherical=True,
@@ -279,6 +314,7 @@ def _draw_saddle(
     config: RCMG_Config,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    dt: float,
     _: jax.Array,
 ) -> jax.Array:
     @jax.vmap
@@ -287,6 +323,7 @@ def _draw_saddle(
             config,
             key_t,
             key_value,
+            dt,
             None,
             enable_range_of_motion=False,
             free_spherical=False,
@@ -301,10 +338,11 @@ def _draw_p3d_and_cor(
     config: RCMG_Config,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    dt: float,
     __: jax.Array,
     cor: bool,
 ) -> jax.Array:
-    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key, None, cor))(
+    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key, dt, None, cor))(
         jax.random.split(key_value, 3)
     )
     return pos.T
@@ -314,20 +352,22 @@ def _draw_p3d(
     config: RCMG_Config,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    dt: float,
     __: jax.Array,
 ) -> jax.Array:
-    return _draw_p3d_and_cor(config, _, key_value, None, cor=False)
+    return _draw_p3d_and_cor(config, _, key_value, dt, None, cor=False)
 
 
 def _draw_cor(
     config: RCMG_Config,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    dt: float,
     __: jax.Array,
 ) -> jax.Array:
     key_value1, key_value2 = jax.random.split(key_value)
-    q_free = _draw_free(config, _, key_value1, None)
-    q_p3d = _draw_p3d_and_cor(config, _, key_value2, None, cor=True)
+    q_free = _draw_free(config, _, key_value1, dt, None)
+    q_p3d = _draw_p3d_and_cor(config, _, key_value2, dt, None, cor=True)
     return jnp.concatenate((q_free, q_p3d), axis=1)
 
 
@@ -335,16 +375,17 @@ def _draw_free(
     config: RCMG_Config,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
+    dt: float,
     __: jax.Array,
 ) -> jax.Array:
     key_value1, key_value2 = jax.random.split(key_value)
-    q = _draw_spherical(config, key_t, key_value1, None)
-    pos = _draw_p3d(config, None, key_value2, None)
+    q = _draw_spherical(config, key_t, key_value1, dt, None)
+    pos = _draw_p3d(config, None, key_value2, dt, None)
     return jnp.concatenate((q, pos), axis=1)
 
 
-def _draw_frozen(config: RCMG_Config, _, __, ___):
-    N = int(config.T / config.Ts)
+def _draw_frozen(config: RCMG_Config, _, __, dt: float, ___) -> jax.Array:
+    N = int(config.T / dt)
     return jnp.zeros((N, 0))
 
 

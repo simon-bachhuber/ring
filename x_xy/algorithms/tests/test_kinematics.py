@@ -1,13 +1,12 @@
 import jax
 import jax.numpy as jnp
-import pytest
 import tree_utils as tu
 
 import x_xy
 from x_xy import maths
 
 
-def SKIP_test_forward_kinematics_transforms():
+def test_forward_kinematics_transforms():
     sys = x_xy.load_example("test_kinematics")
     q = [
         jnp.array([1, 0, 0, 0, 1, 1, 1.0]),
@@ -31,7 +30,6 @@ def SKIP_test_forward_kinematics_transforms():
     assert tu.tree_close(maths.quat_mul(q4_2, q2_eps), ts.take(4).rot)
 
 
-@pytest.mark.long
 def test_inv_kinematics_endeffector():
     xml1 = """
 <x_xy model="spherical">

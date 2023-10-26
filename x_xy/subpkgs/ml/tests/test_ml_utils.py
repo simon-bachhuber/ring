@@ -16,15 +16,6 @@ from x_xy.subpkgs.ml.training_loop import TrainingLoop
 from x_xy.subpkgs.ml.training_loop import TrainingLoopCallback
 
 
-def test_pretrained():
-    exceptions = ["rr_rr_rr_known"]
-    for pretrained in ml.list_pretrained():
-        if pretrained in exceptions:
-            continue
-
-        ml.load(pretrained=pretrained)
-
-
 def test_save_load():
     params = {"matrix": jnp.zeros((100, 100))}
     test_file = "~/params1/params.pickle"

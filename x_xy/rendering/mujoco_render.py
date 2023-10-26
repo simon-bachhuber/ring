@@ -10,12 +10,19 @@ from ..base import Geometry
 from ..base import Sphere
 from ..base import Transform
 
+_xyz_str = """ # noqa: E501
+<geom name="earthframe_x" pos="0.2 0.05 0.05" size="0.2 0.05 0.05" type="box" rgba=".8 .2 .2 1" mass="0"/>
+<geom name="earthframe_y" pos="0.05 0.2 0.05" size="0.05 0.2 0.05" type="box" rgba=".2 .8 .2 1" mass="0"/>
+<geom name="earthframe_z" pos="0.05 0.05 0.2" size="0.05 0.05 .2" type="box" rgba=".2 .2 .8 1" mass="0"/>
+"""
+
 
 def _build_model_of_geoms(
     geoms: list[Geometry],
     cameras: dict[int, Sequence[str]],
     lights: dict[int, Sequence[str]],
     debug: bool,
+    xyz: bool,
 ) -> mujoco.MjModel:
     # sort in ascending order, this shouldn't be required as it is already done by
     # parse_system; do it for good measure anyways
@@ -82,7 +89,7 @@ def _build_model_of_geoms(
   <visual>
     <headlight ambient=".4 .4 .4" diffuse=".8 .8 .8" specular="0.1 0.1 0.1"/>
     <map znear=".01"/>
-    <quality shadowsize="2048"/>
+    <quality shadowsize="8192"/>
     <global offwidth="1920" offheight="1080"/>
   </visual>
 
@@ -91,11 +98,9 @@ def _build_model_of_geoms(
 <camera pos="0 -1 1" name="target" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -3 3" name="targetfar" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -5 5" name="targetFar" mode="targetbodycom" target="{targetbody}"/>
-<light pos="0 0 10" dir="0 0 -1"/>
+<light pos="0 0 4" dir="0 0 -1"/>
 <geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>
-<geom name="earthframe_x" pos="0.2 0.05 0.05" size="0.2 0.05 0.05" type="box" rgba=".8 .2 .2 1" mass="0"/>
-<geom name="earthframe_y" pos="0.05 0.2 0.05" size="0.05 0.2 0.05" type="box" rgba=".2 .8 .2 1" mass="0"/>
-<geom name="earthframe_z" pos="0.05 0.05 0.2" size="0.05 0.05 .2" type="box" rgba=".2 .2 .8 1" mass="0"/>
+{_xyz_str if xyz else ""}
 {inside_worldbody_cameras}
 {inside_worldbody_lights}
 {inside_worldbody}
@@ -168,9 +173,11 @@ class MujocoScene:
         add_cameras: dict[int, str | Sequence[str]] = {},
         add_lights: dict[int, str | Sequence[str]] = {},
         debug: bool = False,
+        xyz: bool = False,
     ) -> None:
         self.debug = debug
         self.height, self.width = height, width
+        self.xyz = xyz
 
         def to_list(dic: dict):
             for k, v in dic.items():
@@ -183,7 +190,7 @@ class MujocoScene:
     def init(self, geoms: list[Geometry]):
         self._parent_ids = list(set([geom.link_idx for geom in geoms]))
         self._model = _build_model_of_geoms(
-            geoms, self.add_cameras, self.add_lights, debug=self.debug
+            geoms, self.add_cameras, self.add_lights, debug=self.debug, xyz=self.xyz
         )
         self._data = mujoco.MjData(self._model)
         self._renderer = mujoco.Renderer(self._model, self.height, self.width)

@@ -1,13 +1,9 @@
-# `x_xy` - Documentation Home
-
-This is the documentation for the `x_xy` software library.
-
 <p align="center">
-<img src="img/icon.svg" height="200" />
+<img src="https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/docs/img/icon.svg" height="200" />
 </p>
 
-## `x_xy_v2` -- A *tiny* Kinematic Tree Simulator
-<img src="img/coverage_badge.svg" height="20" />
+# `x_xy_v2`
+<img src="https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/docs/img/coverage_badge.svg" height="20" />
 
 ## Installation
 
@@ -17,9 +13,14 @@ Install with `pip` using
 
 `pip install 'x_xy[all] @ git+https://github.com/SimiPixel/x_xy_v2'`
 
-Typically, this will install `jax` as cpu-only version. CUDA version can be installed with
+Typically, this will install `jax` as cpu-only version. Afterwards, gpu-enabled version can be installed with
 ```bash
 pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+```
+
+or with (if NVIDIA driver is a little older)
+```bash
+pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
 
 ### Installation of Extras
@@ -50,6 +51,23 @@ Also available installs are
 
 Can also be combined, e.g.
 `pip install 'x_xy[ml,omc] @ git+https://github.com/SimiPixel/x_xy_v2'` (base+ml+omc)
+
+## Documentation
+
+Available [here](https://simipixel.github.io/x_xy_v2/).
+
+### Known fixes
+
+#### Offscreen rendering with Mujoco
+
+> mujoco.FatalError: an OpenGL platform library has not been loaded into this process, this most likely means that a valid OpenGL context has not been created before mjr_makeContext was called
+
+Solution:
+
+```python
+import os
+os.environ["MUJOCO_GL"] = "egl"
+```
 
 ## Publications
 

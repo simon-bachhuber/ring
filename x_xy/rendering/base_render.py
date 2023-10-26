@@ -1,9 +1,11 @@
 from typing import Optional
 
+import jax
 import numpy as np
 import tqdm
 
 from .. import base
+from .. import maths
 from ..algorithms import forward_kinematics
 from ..utils import to_list
 
@@ -32,6 +34,10 @@ _rgbas = {
     "matplotlib_blue": (0.012, 0.263, 0.8745, 1.0),
     "matplotlib_lightblue": (0.482, 0.784, 0.9647, 1.0),
     "matplotlib_salmon": (0.98, 0.502, 0.447, 1.0),
+    "black": (0.1, 0.1, 0.1, 1.0),
+    "dustin_exp_blue": (75 / 255, 93 / 255, 208 / 255, 1.0),
+    "dustin_exp_white": (241 / 255, 239 / 255, 208 / 255, 1.0),
+    "dustin_exp_orange": (227 / 255, 139 / 255, 61 / 255, 1.0),
 }
 
 
@@ -60,6 +66,14 @@ def render(
 
         scene = MujocoScene(**scene_kwargs)
     elif backend == "vispy":
+        import vispy
+
+        if "vispy_backend" in scene_kwargs:
+            vispy_backend = scene_kwargs.pop("vispy_backend")
+        else:
+            vispy_backend = "pyqt6"
+        vispy.use(vispy_backend)
+
         from x_xy.rendering.vispy_render import VispyScene
 
         scene = VispyScene(**scene_kwargs)
@@ -98,6 +112,77 @@ def render(
     return frames
 
 
+def render_prediction(
+    sys: base.System,
+    xs: base.Transform | list[base.Transform],
+    yhat: dict,
+    stepframe: int = 1,
+    **kwargs,
+):
+    "`xs` matches `sys`. `yhat` matches `sys_noimu`."
+    from x_xy.subpkgs import sim2real
+    from x_xy.subpkgs import sys_composer
+
+    if isinstance(xs, list):
+        # list -> batched Transform
+        xs = xs[0].batch(*xs[1:])
+
+    sys_noimu, _ = sys_composer.make_sys_noimu(sys)
+
+    xs_noimu = sim2real.match_xs(sys_noimu, xs, sys)
+
+    # `yhat` are child-to-parent transforms, but we need parent-to-child
+    # this dictonary has now all links that don't connect to worldbody
+    transform2hat_rot = jax.tree_map(lambda quat: maths.quat_inv(quat), yhat)
+
+    transform1, transform2 = sim2real.unzip_xs(sys_noimu, xs_noimu)
+
+    # we add the missing links in transform2hat, links that connect to worldbody
+    transform2hat = []
+    for i, name in enumerate(sys_noimu.link_names):
+        if name in transform2hat_rot:
+            transform2_name = base.Transform.create(rot=transform2hat_rot[name])
+        else:
+            transform2_name = transform2.take(i, axis=1)
+        transform2hat.append(transform2_name)
+
+    # after transpose shape is (n_timesteps, n_links, ...)
+    transform2hat = transform2hat[0].batch(*transform2hat[1:]).transpose((1, 0, 2))
+
+    xshat = sim2real.zip_xs(sys_noimu, transform1, transform2hat)
+
+    # swap time axis, and link axis
+    xs, xshat = xs.transpose((1, 0, 2)), xshat.transpose((1, 0, 2))
+    # create mapping from `name` -> Transform
+    xs_dict = dict(
+        zip(
+            ["hat_" + name for name in sys_noimu.link_names],
+            [xshat[i] for i in range(sys_noimu.num_links())],
+        )
+    )
+    xs_dict.update(
+        dict(
+            zip(
+                sys.link_names,
+                [xs[i] for i in range(sys.num_links())],
+            )
+        )
+    )
+
+    sys_render = _sys_render(sys)
+    xs_render = []
+    for name in sys_render.link_names:
+        xs_render.append(xs_dict[name])
+    xs_render = xs_render[0].batch(*xs_render[1:])
+    xs_render = xs_render.transpose((1, 0, 2))
+    N = xs_render.shape()
+    xs_render = [xs_render[t] for t in range(0, N, stepframe)]
+
+    frames = render(sys_render, xs_render, **kwargs)
+
+    return frames
+
+
 def _color_to_rgba(geom: base.Geometry) -> base.Geometry:
     if geom.color is None:
         new_color = _rgbas["self"]
@@ -112,3 +197,23 @@ def _color_to_rgba(geom: base.Geometry) -> base.Geometry:
         raise NotImplementedError
 
     return geom.replace(color=new_color)
+
+
+def _sys_render(sys: base.Transform) -> base.Transform:
+    from x_xy.subpkgs import sys_composer
+
+    sys_noimu, _ = sys_composer.make_sys_noimu(sys)
+
+    def _geoms_replace_color(sys: base.System, color):
+        link_idx_to_root = 0
+        geoms = [
+            g.replace(color=color) for g in sys.geoms if g.link_idx != link_idx_to_root
+        ]
+        return sys.replace(geoms=geoms)
+
+    # replace render color of geoms for render of predicted motion
+    prediction_color = (78 / 255, 163 / 255, 243 / 255, 1.0)
+    sys_newcolor = _geoms_replace_color(sys_noimu, prediction_color)
+    sys_render = sys_composer.inject_system(sys, sys_newcolor.add_prefix_suffix("hat_"))
+
+    return sys_render

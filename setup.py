@@ -28,7 +28,7 @@ def find_data_files(package_dir, patterns, excludes=()):
 
 
 subpkg_ml_requires = ["wandb", "neptune", "optax", "dm-haiku", "joblib"]
-subpkg_omc_requires = ["qmt", "pandas"]
+subpkg_omc_requires = ["qmt", "pandas", "scipy"]
 subpkg_exp_requires = ["pyyaml", "joblib"]
 subpkg_bench_requires = subpkg_exp_requires + ["matplotlib", "mediapy"]
 mujoco_render_requires = ["mujoco"]
@@ -40,16 +40,24 @@ dev_requires = [
     "mkdocstrings-python",
     "mknotebooks",
     "pytest",
+    # for parallel test execution; $ pytest -n auto
+    "pytest-xdist",
+    # for testing of notebooks; $ pytest --nbmake **/*ipynb
+    "nbmake",
 ]
 
 
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.9.12",
+    version="0.10.2",
     package_data={
         "x_xy": find_data_files(
-            "x_xy", patterns=["*.xml", "*.yaml", "*.joblib", "*.json", "*.pickle"]
+            # parameters and datasets are now downloaded on-demand
+            # but could exclude with exludes = ["**/exp/*", "**/pretrained/*"]
+            package_dir="x_xy",
+            patterns=["*.xml", "*.yaml", "*.json"],
+            excludes=[],
         ),
     },
     include_package_data=True,
@@ -57,8 +65,10 @@ setuptools.setup(
         "jaxlib",
         "jax",
         "jaxopt",
+        "numpy",
         "flax",
         "tqdm",
+        "wget",
         "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
     ],
     extras_require={
