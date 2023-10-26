@@ -1,4 +1,5 @@
 import random
+import warnings
 
 import jax
 import jax.numpy as jnp
@@ -27,11 +28,14 @@ def batch_generator(
     """Create a large generator by stacking multiple generators lazily.
     NOTE: If `stochastic` then `batchsizes` must be a single integer.
     """
+
     if not isinstance(generators, list):
         # test if generator is already batched, then this is a no-op
         key = jax.random.PRNGKey(0)
-        X, y = generators(key)
-        if tree_utils.tree_ndim(X) > 2:
+        X, *_ = generators(key)
+        ndim = tree_utils.tree_ndim(X)
+        if ndim > 2:
+            warnings.warn(f"`generators` seem already batched. ndim={ndim}")
             return generators
 
     generators = utils.to_list(generators)
