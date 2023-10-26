@@ -1,9 +1,11 @@
 from typing import Optional
 
 import jax
+import jax.numpy as jnp
 import numpy as np
 import tqdm
 
+from .. import algebra
 from .. import base
 from .. import maths
 from ..algorithms import forward_kinematics
@@ -80,8 +82,14 @@ def render(
     else:
         raise NotImplementedError
 
+    # mujoco does not implement the xyz Geometry; instead replace it with
+    # three capsule Geometries
+    geoms = sys.geoms
+    if backend == "mujoco":
+        geoms = _replace_xyz_geoms(geoms)
+
     # convert all colors to rgbas
-    geoms_rgba = [_color_to_rgba(geom) for geom in sys.geoms]
+    geoms_rgba = [_color_to_rgba(geom) for geom in geoms]
 
     if xs is None:
         xs = forward_kinematics(sys, base.State.create(sys))[1].x
@@ -197,6 +205,33 @@ def _color_to_rgba(geom: base.Geometry) -> base.Geometry:
         raise NotImplementedError
 
     return geom.replace(color=new_color)
+
+
+def _xyz_to_three_capsules(xyz: base.XYZ) -> list[base.Geometry]:
+    capsules = []
+    length = xyz.size
+    radius = length / 6
+    colors = ["red", "green", "blue"]
+    rot_axis = [1, 0, 2]
+
+    for i, (color, axis) in enumerate(zip(colors, rot_axis)):
+        pos = maths.unit_vectors(i) * length / 2
+        rot = maths.quat_rot_axis(maths.unit_vectors(axis), jnp.pi / 2)
+        t = algebra.transform_mul(base.Transform(pos, rot), xyz.transform)
+        capsules.append(
+            base.Capsule(0.0, t, xyz.link_idx, color, xyz.edge_color, radius, length)
+        )
+    return capsules
+
+
+def _replace_xyz_geoms(geoms: list[base.Geometry]) -> list[base.Geometry]:
+    geoms_replaced = []
+    for geom in geoms:
+        if isinstance(geom, base.XYZ):
+            geoms_replaced += _xyz_to_three_capsules(geom)
+        else:
+            geoms_replaced.append(geom)
+    return geoms_replaced
 
 
 def _sys_render(sys: base.Transform) -> base.Transform:

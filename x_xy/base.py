@@ -234,9 +234,11 @@ class Geometry(_Base):
 class XYZ(Geometry):
     # TODO: possibly subclass this of _Base? does this need a mass, transform, and
     # link_idx? maybe just transform?
+    size: float
+
     @classmethod
-    def create(cls, link_idx: int):
-        return cls(0.0, Transform.zero(), link_idx, None, None)
+    def create(cls, link_idx: int, size: float):
+        return cls(0.0, Transform.zero(), link_idx, None, None, size)
 
     def get_it_3x3(self) -> jax.Array:
         return jnp.zeros((3, 3))

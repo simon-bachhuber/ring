@@ -225,13 +225,20 @@ class AbsGeomXYZ:
 
     @staticmethod
     def from_xml(geom_attr: ATTR, link_idx: int) -> base.XYZ:
-        # TODO; implement custom length of coordinate system indicators
-        del geom_attr
-        return base.XYZ.create(link_idx)
+        if "dim" in geom_attr:
+            dim = geom_attr["dim"]
+        else:
+            dim = 1.0
+
+        assert dim > 0, "Negative xyz dimensions"
+        return base.XYZ.create(link_idx, dim)
 
     @staticmethod
     def to_xml(element: T, geom: base.XYZ):
         element.set("type", geometry_to_xml_identifier[type(geom)])
+
+        if geom.size != 1.0:
+            element.set("dim", _to_str(geom.size))
 
 
 _ags = [
