@@ -1560,7 +1560,7 @@ steps per epoch.</p>
 
     <span class="k">if</span> <span class="n">tree_utils</span><span class="o">.</span><span class="n">tree_ndim</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
         <span class="c1"># .. if not then batch it</span>
-        <span class="n">generator</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">batch_generator</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">batch_generators_lazy</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="c1"># .. now it most certainly is; Queue it for data</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">generator</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>

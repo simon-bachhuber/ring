@@ -716,15 +716,29 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#x_xy.algorithms.generator.batch.batch_generator" class="md-nav__link">
-    batch_generator()
+  <a href="#x_xy.algorithms.generator.batch.batch_generators_lazy" class="md-nav__link">
+    batch_generators_lazy()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#x_xy.algorithms.generator.batch.offline_generator" class="md-nav__link">
-    offline_generator()
+  <a href="#x_xy.algorithms.generator.batch.batch_generators_eager" class="md-nav__link">
+    batch_generators_eager()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algorithms.generator.batch.batched_generator_from_list" class="md-nav__link">
+    batched_generator_from_list()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.algorithms.generator.batch.batch_generators_eager_to_list" class="md-nav__link">
+    batch_generators_eager_to_list()
   </a>
   
 </li>
@@ -1600,10 +1614,10 @@
 
 
 
-<h4 id="x_xy.algorithms.generator.batch.batch_generator" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">batch_generator</span><span class="p">(</span><span class="n">generators</span><span class="p">,</span> <span class="n">batchsizes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stochastic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<h4 id="x_xy.algorithms.generator.batch.batch_generators_lazy" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">batch_generators_lazy</span><span class="p">(</span><span class="n">generators</span><span class="p">,</span> <span class="n">batchsizes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stochastic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
-<a href="#x_xy.algorithms.generator.batch.batch_generator" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#x_xy.algorithms.generator.batch.batch_generators_lazy" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -1674,7 +1688,7 @@ NOTE: If <code>stochastic</code> then <code>batchsizes</code> must be a single i
 <span class="normal">81</span>
 <span class="normal">82</span>
 <span class="normal">83</span>
-<span class="normal">84</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">batch_generator</span><span class="p">(</span>
+<span class="normal">84</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">batch_generators_lazy</span><span class="p">(</span>
     <span class="n">generators</span><span class="p">:</span> <span class="n">Generator</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Generator</span><span class="p">],</span>
     <span class="n">batchsizes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">stochastic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1748,16 +1762,142 @@ NOTE: If <code>stochastic</code> then <code>batchsizes</code> must be a single i
 
 
 
-<h4 id="x_xy.algorithms.generator.batch.offline_generator" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">offline_generator</span><span class="p">(</span><span class="n">generators</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">batchsize</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">store_on_cpu</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<h4 id="x_xy.algorithms.generator.batch.batch_generators_eager" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">batch_generators_eager</span><span class="p">(</span><span class="n">generators</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">batchsize</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">transfer_to_cpu</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
-<a href="#x_xy.algorithms.generator.batch.offline_generator" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#x_xy.algorithms.generator.batch.batch_generators_eager" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
   
       <p>Eagerly create a large precomputed generator by calling multiple generators
 and stacking their output.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/algorithms/generator/batch.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">batch_generators_eager</span><span class="p">(</span>
+    <span class="n">generators</span><span class="p">:</span> <span class="n">Generator</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Generator</span><span class="p">],</span>
+    <span class="n">sizes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">batchsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">drop_last</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">transfer_to_cpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchedGenerator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Eagerly create a large precomputed generator by calling multiple generators</span>
+<span class="sd">    and stacking their output.&quot;&quot;&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">batch_generators_eager_to_list</span><span class="p">(</span>
+        <span class="n">generators</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">transfer_to_cpu</span><span class="o">=</span><span class="n">transfer_to_cpu</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">batched_generator_from_list</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">batchsize</span><span class="p">,</span> <span class="n">shuffle</span><span class="p">,</span> <span class="n">drop_last</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.algorithms.generator.batch.batched_generator_from_list" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">batched_generator_from_list</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">batchsize</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
+
+<a href="#x_xy.algorithms.generator.batch.batched_generator_from_list" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/algorithms/generator/batch.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">batched_generator_from_list</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">batchsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">drop_last</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchedGenerator</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">drop_last</span><span class="p">,</span> <span class="s2">&quot;Not `drop_last` is currently not implemented.&quot;</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">batchsize</span>
+
+    <span class="n">N</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">//</span> <span class="n">batchsize</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">generator</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">):</span>
+        <span class="k">nonlocal</span> <span class="n">i</span>
+        <span class="k">del</span> <span class="n">key</span>
+        <span class="k">if</span> <span class="n">shuffle</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">batchsize</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">batchsize</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">tree_batch</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">],</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;jax&quot;</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">N</span>
+        <span class="k">return</span> <span class="n">batch</span>
+
+    <span class="k">return</span> <span class="n">generator</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.algorithms.generator.batch.batch_generators_eager_to_list" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">batch_generators_eager_to_list</span><span class="p">(</span><span class="n">generators</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">transfer_to_cpu</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+<a href="#x_xy.algorithms.generator.batch.batch_generators_eager_to_list" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Returns list of unbatched sequences.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/algorithms/generator/batch.py</code></summary>
@@ -1779,65 +1919,25 @@ and stacking their output.</p>
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">offline_generator</span><span class="p">(</span>
+<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">batch_generators_eager_to_list</span><span class="p">(</span>
     <span class="n">generators</span><span class="p">:</span> <span class="n">Generator</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Generator</span><span class="p">],</span>
     <span class="n">sizes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-    <span class="n">batchsize</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">drop_last</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="n">store_on_cpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchedGenerator</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Eagerly create a large precomputed generator by calling multiple generators</span>
-<span class="sd">    and stacking their output.&quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">drop_last</span><span class="p">,</span> <span class="s2">&quot;Not `drop_last` is currently not implemented.&quot;</span>
+    <span class="n">transfer_to_cpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">tree_utils</span><span class="o">.</span><span class="n">PyTree</span><span class="p">]:</span>
+    <span class="s2">&quot;Returns list of unbatched sequences.&quot;</span>
     <span class="n">generators</span><span class="p">,</span> <span class="n">sizes</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">to_list</span><span class="p">(</span><span class="n">generators</span><span class="p">),</span> <span class="n">utils</span><span class="o">.</span><span class="n">to_list</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">generators</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
 
     <span class="n">key</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">gen</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">generators</span><span class="p">,</span> <span class="n">sizes</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;offline generator&quot;</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">gen</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">generators</span><span class="p">,</span> <span class="n">sizes</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;eager data generation&quot;</span><span class="p">):</span>
         <span class="n">key</span><span class="p">,</span> <span class="n">consume</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="n">sample</span> <span class="o">=</span> <span class="n">batch_generator</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="n">size</span><span class="p">)(</span><span class="n">consume</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">store_on_cpu</span><span class="p">:</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">batch_generators_lazy</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="n">size</span><span class="p">)(</span><span class="n">consume</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">transfer_to_cpu</span><span class="p">:</span>
             <span class="n">sample</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">device_put</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">devices</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">jax</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">sample</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)])</span>
-
-    <span class="n">N</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">//</span> <span class="n">batchsize</span><span class="p">,</span> <span class="mi">0</span>
-    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">generator</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">):</span>
-        <span class="k">nonlocal</span> <span class="n">i</span>
-        <span class="k">del</span> <span class="n">key</span>
-        <span class="k">if</span> <span class="n">shuffle</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">batchsize</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">batchsize</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="n">tree_batch</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">],</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;jax&quot;</span><span class="p">)</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">N</span>
-        <span class="k">return</span> <span class="n">batch</span>
-
-    <span class="k">return</span> <span class="n">generator</span>
+    <span class="k">return</span> <span class="n">data</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>

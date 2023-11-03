@@ -1119,7 +1119,7 @@
 <div class="cell border-box-sizing text_cell rendered">
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Batched kinematic simulation is done using either <code>x_xy.batch_generator</code> or <code>x_xy.offline_generator</code>.</p>
+<p>Batched kinematic simulation is done using either <code>x_xy.batch_generators_eager</code> or <code>x_xy.batch_generators_lazy</code>.</p>
 </div>
 </div>
 </div>
@@ -1128,7 +1128,7 @@
 
 <div class="highlight"><pre><span></span><code><span class="n">gen</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">build_generator</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">RCMG_Config</span><span class="p">(</span><span class="n">T</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">t_max</span><span class="o">=</span><span class="mf">1.5</span><span class="p">))</span>
 <span class="n">batchsize</span> <span class="o">=</span> <span class="mi">8</span>
-<span class="n">gen_batched</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">batch_generator</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="n">batchsizes</span><span class="o">=</span><span class="n">batchsize</span><span class="p">)</span>
+<span class="n">gen_batched</span> <span class="o">=</span> <span class="n">x_xy</span><span class="o">.</span><span class="n">batch_generators_lazy</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="n">batchsizes</span><span class="o">=</span><span class="n">batchsize</span><span class="p">)</span>
 <span class="n">seed</span> <span class="o">=</span> <span class="mi">1</span>
 <span class="n">qs</span><span class="p">,</span> <span class="n">xs</span> <span class="o">=</span> <span class="n">gen_batched</span><span class="p">(</span><span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="n">seed</span><span class="p">))</span>
 </code></pre></div>
