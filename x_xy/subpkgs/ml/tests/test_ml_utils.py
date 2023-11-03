@@ -7,8 +7,10 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+import tree_utils
 
 import wandb
+import x_xy
 from x_xy.subpkgs import ml
 from x_xy.subpkgs.ml.callbacks import SaveParamsTrainingLoopCallback
 from x_xy.subpkgs.ml.ml_utils import Logger
@@ -28,6 +30,27 @@ def test_save_load():
     # clean up
     os.system("rm ~/params1/params.pickle")
     os.system("rmdir ~/params1")
+
+
+def test_save_load_generators():
+    gen = x_xy.build_generator(x_xy.load_example("test_three_seg_seg2"))
+
+    data = x_xy.batch_generators_eager_to_list(gen, 1)
+    assert len(data) == 1
+
+    path = "~/data1/gen.pickle"
+    ml.save(data, path)
+
+    gen_reloaded = x_xy.batched_generator_from_list(ml.load(path), 1)
+    data_reloaded = tree_utils.to_2d_if_3d(
+        gen_reloaded(jax.random.PRNGKey(1)), strict=True
+    )
+
+    assert x_xy.utils.tree_equal(data[0], data_reloaded)
+
+    # clean up
+    os.system(f"rm {path}")
+    os.system("rmdir ~/data1")
 
 
 def generator(key):

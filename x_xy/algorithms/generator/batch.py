@@ -20,7 +20,7 @@ def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:
     return jnp.array(arr)
 
 
-def batch_generator(
+def batch_generators_lazy(
     generators: Generator | list[Generator],
     batchsizes: int | list[int] = 1,
     stochastic: bool = False,
@@ -84,29 +84,36 @@ def batch_generator(
     return generator
 
 
-def offline_generator(
+def batch_generators_eager_to_list(
     generators: Generator | list[Generator],
     sizes: int | list[int],
-    batchsize: int,
-    shuffle: bool = True,
-    drop_last: bool = True,
     seed: int = 1,
-    store_on_cpu: bool = True,
-) -> BatchedGenerator:
-    """Eagerly create a large precomputed generator by calling multiple generators
-    and stacking their output."""
-    assert drop_last, "Not `drop_last` is currently not implemented."
+    transfer_to_cpu: bool = True,
+) -> list[tree_utils.PyTree]:
+    "Returns list of unbatched sequences."
     generators, sizes = utils.to_list(generators), utils.to_list(sizes)
     assert len(generators) == len(sizes)
 
     key = jax.random.PRNGKey(seed)
     data = []
-    for gen, size in tqdm(zip(generators, sizes), desc="offline generator"):
+    for gen, size in tqdm(zip(generators, sizes), desc="eager data generation"):
         key, consume = jax.random.split(key)
-        sample = batch_generator(gen, size)(consume)
-        if store_on_cpu:
+        sample = batch_generators_lazy(gen, size)(consume)
+        if transfer_to_cpu:
             sample = jax.device_put(sample, jax.devices("cpu")[0])
         data.extend([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
+    return data
+
+
+def batched_generator_from_list(
+    data: list,
+    batchsize: int,
+    shuffle: bool = True,
+    drop_last: bool = True,
+    seed: int = 1,
+) -> BatchedGenerator:
+    assert drop_last, "Not `drop_last` is currently not implemented."
+    assert len(data) >= batchsize
 
     N, i = len(data) // batchsize, 0
     random.seed(seed)
@@ -123,3 +130,21 @@ def offline_generator(
         return batch
 
     return generator
+
+
+def batch_generators_eager(
+    generators: Generator | list[Generator],
+    sizes: int | list[int],
+    batchsize: int,
+    shuffle: bool = True,
+    drop_last: bool = True,
+    seed: int = 1,
+    transfer_to_cpu: bool = True,
+) -> BatchedGenerator:
+    """Eagerly create a large precomputed generator by calling multiple generators
+    and stacking their output."""
+
+    data = batch_generators_eager_to_list(
+        generators, sizes, seed=seed, transfer_to_cpu=transfer_to_cpu
+    )
+    return batched_generator_from_list(data, batchsize, shuffle, drop_last, seed=seed)

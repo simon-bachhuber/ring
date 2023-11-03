@@ -14,9 +14,13 @@
 
 ::: x_xy.algorithms.jcalc.concat_configs
 
-::: x_xy.algorithms.generator.batch.batch_generator
+::: x_xy.algorithms.generator.batch.batch_generators_lazy
 
-::: x_xy.algorithms.generator.batch.offline_generator
+::: x_xy.algorithms.generator.batch.batch_generators_eager
+
+::: x_xy.algorithms.generator.batch.batched_generator_from_list
+
+::: x_xy.algorithms.generator.batch.batch_generators_eager_to_list
 
 ::: x_xy.algorithms.forward_kinematics
 

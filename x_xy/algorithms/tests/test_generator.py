@@ -20,7 +20,7 @@ def finalize_fn_full_imu_setup(key, q, x, sys):
 def test_normalize():
     sys = x_xy.load_example("test_three_seg_seg2")
     gen = x_xy.build_generator(sys, finalize_fn=finalize_fn_full_imu_setup)
-    gen = x_xy.batch_generator(gen, 50)
+    gen = x_xy.batch_generators_lazy(gen, 50)
 
     normalizer = x_xy.make_normalizer_from_generator(
         gen, approx_with_large_batchsize=50

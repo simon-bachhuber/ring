@@ -7,7 +7,10 @@ from . import rendering
 from . import utils
 from .algebra import transform_inv
 from .algebra import transform_mul
-from .algorithms import batch_generator
+from .algorithms import batch_generators_eager
+from .algorithms import batch_generators_eager_to_list
+from .algorithms import batch_generators_lazy
+from .algorithms import batched_generator_from_list
 from .algorithms import build_generator
 from .algorithms import concat_configs
 from .algorithms import forward_kinematics
@@ -21,7 +24,6 @@ from .algorithms import inverse_kinematics_endeffector
 from .algorithms import joint_axes
 from .algorithms import JointModel
 from .algorithms import make_normalizer_from_generator
-from .algorithms import offline_generator
 from .algorithms import pd_control
 from .algorithms import RCMG_Config
 from .algorithms import register_new_joint_type

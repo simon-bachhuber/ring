@@ -6,7 +6,10 @@ from .dynamics import compute_mass_matrix
 from .dynamics import forward_dynamics
 from .dynamics import inverse_dynamics
 from .dynamics import step
-from .generator import batch_generator
+from .generator import batch_generators_eager
+from .generator import batch_generators_eager_to_list
+from .generator import batch_generators_lazy
+from .generator import batched_generator_from_list
 from .generator import build_generator
 from .generator import FINALIZE_FN
 from .generator import Generator
@@ -17,7 +20,6 @@ from .generator import GeneratorTrafoRemoveInputExtras
 from .generator import GeneratorTrafoRemoveOutputExtras
 from .generator import make_normalizer_from_generator
 from .generator import Normalizer
-from .generator import offline_generator
 from .generator import SETUP_FN
 from .jcalc import concat_configs
 from .jcalc import jcalc_motion

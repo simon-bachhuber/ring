@@ -159,7 +159,7 @@ def train(
 
     if tree_utils.tree_ndim(X) == 2:
         # .. if not then batch it
-        generator = x_xy.algorithms.batch_generator(generator, 1)
+        generator = x_xy.algorithms.batch_generators_lazy(generator, 1)
 
     # .. now it most certainly is; Queue it for data
     X, _ = generator(key)

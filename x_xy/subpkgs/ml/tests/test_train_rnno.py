@@ -21,7 +21,7 @@ def pipeline_make_generator(
         x_xy.GeneratorTrafoRemoveInputExtras(sys),
     )(config)
 
-    return x_xy.batch_generator(gen, bs)
+    return x_xy.batch_generators_lazy(gen, bs)
 
 
 def test_rnno():

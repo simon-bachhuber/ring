@@ -3,6 +3,8 @@ import argparse
 import jax
 import jax.numpy as jnp
 import tree_utils
+
+import wandb
 import x_xy
 from x_xy import maths
 from x_xy.algorithms.custom_joints import GeneratorTrafoRandomizeJointAxes
@@ -13,8 +15,6 @@ from x_xy.subpkgs import ml
 from x_xy.subpkgs import sim2real
 from x_xy.subpkgs import sys_composer
 from x_xy.utils import to_list
-
-import wandb
 
 __unique_exp_id = None
 
@@ -152,7 +152,7 @@ def pipeline_make_generator(
     assert (size // len(gens)) > 0, f"Batchsize too small. Must be at least {len(gens)}"
 
     sizes = len(gens) * [size // len(gens)]
-    return x_xy.offline_generator(gens, sizes, bs)
+    return x_xy.batch_generators_eager(gens, sizes, bs)
 
 
 def pipeline_load_data(sys: x_xy.System, motion_phase: str):

@@ -15,7 +15,7 @@ def test_batch_generator(N: int, seed: int):
     config2 = x_xy.RCMG_Config()
     gen1 = x_xy.build_generator(sys, config1)
     gen2 = x_xy.build_generator(sys, config2)
-    gen = x_xy.batch_generator([gen1, gen2, gen1], [N, N, N])
+    gen = x_xy.batch_generators_lazy([gen1, gen2, gen1], [N, N, N])
     q, _ = gen(jax.random.PRNGKey(seed))
 
     arr_eq = lambda a, b: np.testing.assert_allclose(
@@ -35,7 +35,7 @@ def test_initial_ang_pos_values():
     sys = x_xy.io.load_example("test_ang0_pos0")
 
     def rcmg(ang0_min=0, ang0_max=0, pos0_min=0, pos0_max=0, bs=bs):
-        q, _ = x_xy.batch_generator(
+        q, _ = x_xy.batch_generators_lazy(
             x_xy.build_generator(
                 sys,
                 x_xy.RCMG_Config(
@@ -80,7 +80,7 @@ def test_rcmg():
             )
             generator = x_xy.build_generator(sys, config)
             bs = 8
-            generator = x_xy.batch_generator(generator, bs)
+            generator = x_xy.batch_generators_lazy(generator, bs)
 
             seed = jax.random.PRNGKey(
                 1,
