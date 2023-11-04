@@ -24,7 +24,7 @@ def pipeline_make_generator(
     return x_xy.batch_generators_lazy(gen, bs)
 
 
-def test_rnno():
+def _test_train_rnno_lru(observer_fn):
     example = "test_three_seg_seg2"
     sys = x_xy.io.load_example(example)
     seed = jax.random.PRNGKey(1)
@@ -32,11 +32,11 @@ def test_rnno():
 
     X, y = gen(seed)
     sys_noimu, _ = sys_composer.make_sys_noimu(sys)
-    rnno = ml.make_rnno(sys_noimu, 10, 2)
-    params, state = rnno.init(seed, X)
+    observer = observer_fn(sys_noimu)
+    params, state = observer.init(seed, X)
 
     state = tree_utils.add_batch_dim(state)
-    y = rnno.apply(params, state, X)[0]
+    y = observer.apply(params, state, X)[0]
 
     for name in sys_noimu.link_names:
         assert name in X
@@ -54,5 +54,15 @@ def test_rnno():
     ml.train(
         gen,
         5,
-        rnno,
+        observer,
     )
+
+
+def test_rnno():
+    rnno_fn = lambda sys: ml.make_rnno(sys, 10, 5)
+    _test_train_rnno_lru(rnno_fn)
+
+
+def test_lru():
+    lru_fn = lambda sys: ml.make_lru_observer(sys, 10, 3, 4, 5, 2)
+    _test_train_rnno_lru(lru_fn)

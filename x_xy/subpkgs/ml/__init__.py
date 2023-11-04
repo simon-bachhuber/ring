@@ -1,4 +1,5 @@
 from .callbacks import EvalXy2TrainingLoopCallback
+from .lru import make_lru_observer
 from .ml_utils import disable_syncing_to_cloud
 from .ml_utils import list_pretrained
 from .ml_utils import load
