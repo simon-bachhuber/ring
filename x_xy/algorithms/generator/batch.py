@@ -45,8 +45,9 @@ def batch_generators_lazy(
         bs_total = batchsizes
         pmap, vmap = utils.distribute_batchsize(bs_total)
     else:
-        batchsizes = utils.to_list(batchsizes)
-        assert len(generators) == len(batchsizes)
+        generators, batchsizes = _process_sizes_batchsizes_generators(
+            generators, batchsizes
+        )
 
         batch_arr_nonstoch = _build_batch_matrix(batchsizes)
         bs_total = len(batch_arr_nonstoch)
@@ -91,8 +92,7 @@ def batch_generators_eager_to_list(
     transfer_to_cpu: bool = True,
 ) -> list[tree_utils.PyTree]:
     "Returns list of unbatched sequences."
-    generators, sizes = utils.to_list(generators), utils.to_list(sizes)
-    assert len(generators) == len(sizes)
+    generators, sizes = _process_sizes_batchsizes_generators(generators, sizes)
 
     key = jax.random.PRNGKey(seed)
     data = []
@@ -148,3 +148,23 @@ def batch_generators_eager(
         generators, sizes, seed=seed, transfer_to_cpu=transfer_to_cpu
     )
     return batched_generator_from_list(data, batchsize, shuffle, drop_last, seed=seed)
+
+
+def _process_sizes_batchsizes_generators(
+    generators: Generator | list[Generator],
+    batchsizes_or_sizes: int | list[int],
+) -> tuple[list, list]:
+    generators = utils.to_list(generators)
+    assert len(generators) > 0, "No generator was passed."
+
+    if isinstance(batchsizes_or_sizes, int):
+        assert (
+            batchsizes_or_sizes // len(generators)
+        ) > 0, f"Batchsize or size too small. {batchsizes_or_sizes} < {len(generators)}"
+        list_sizes = len(generators) * [batchsizes_or_sizes // len(generators)]
+    else:
+        list_sizes = batchsizes_or_sizes
+        assert 0 not in list_sizes
+
+    assert len(generators) == len(list_sizes)
+    return generators, list_sizes

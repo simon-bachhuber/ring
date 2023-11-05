@@ -5,7 +5,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from tree_utils import batch_concat_acme
-from tree_utils import tree_shape
 
 from x_xy import maths
 from x_xy import System
@@ -115,7 +114,6 @@ _MAX_OUTPUT_N_LINKS: int = 20
 
 class LRU_Observer(nn.Module):
     sys: System
-    output_dim: int
     hidden_state_dim_lru: int
     hidden_state_dim_encoder: int
     hidden_state_dim_decoder: int
@@ -124,50 +122,22 @@ class LRU_Observer(nn.Module):
     n_residual_blocks: int
 
     @nn.compact
-    def __call__(self, X):  # {name: {gyr: (bs, L, features), ..., }, ...}
-        n_links = self.sys.num_links()
-        bs, L = tree_shape(X), tree_shape(X, 1)
-
-        X_flat = jnp.stack(
-            [
-                batch_concat_acme(X[name], 2)[..., None, :]
-                for name in self.sys.link_names
-            ],
-            axis=-2,
-        ).reshape((bs * L, n_links, -1))
-
-        carry, _ = nn.RNN(
-            nn.GRUCell(), self.hidden_state_dim_encoder, return_carry=True
-        )(X_flat)
-        encoder_state = carry.reshape((bs, L, self.hidden_state_dim_encoder))
+    def __call__(self, X: dict):  # {name: {gyr: (bs, L, features), ..., }, ...}
+        # flatten to (bs, L, 36) (4 * 9)
+        x = batch_concat_acme(X, num_batch_dims=2)
 
         # embeed encoded state; (bs, L, H)
-        x = nn.Dense(self.embed_dim)(encoder_state)
+        x = nn.Dense(self.embed_dim)(x)
 
         for _ in range(self.n_residual_blocks):
             x = ResidualBlockLRU(self.hidden_state_dim_lru, self.embed_dim)(x)
 
-        # decoder; (bs, L, hidden_state_decoder)
-        decoder_state0 = nn.Dense(self.hidden_state_dim_decoder)(x)
-        pseudo_input = jnp.repeat(
-            jax.nn.one_hot(jnp.arange(n_links), _MAX_OUTPUT_N_LINKS)[None],
-            bs * L,
-            axis=0,
-        )
-        # (bs * L, n_links, hidden_state_decoder)
-        decoder_state_seq = nn.RNN(nn.GRUCell(), self.hidden_state_dim_decoder)(
-            pseudo_input,
-            initial_carry=decoder_state0.reshape(
-                (bs * L, self.hidden_state_dim_decoder)
-            ),
-        )
-        # (bs, L, n_links, hidden_state_decoder)
-        decoder_state_seq_4d = decoder_state_seq.reshape(
-            (bs, L, n_links, self.hidden_state_dim_decoder)
-        )
+        # create (bs, L, 3, 4) as output
+        bs, L, _ = x.shape
+        x = nn.Dense(12)(x).reshape((bs, L, 3, 4))
 
         # create final output
-        output = maths.safe_normalize(nn.Dense(self.output_dim)(decoder_state_seq_4d))
+        output = maths.safe_normalize(x)
 
         return {
             name: output[..., i, :]
@@ -176,7 +146,7 @@ class LRU_Observer(nn.Module):
         }
 
 
-def make_lru_observer(
+def make_lru_observer_4Seg(
     sys: System,
     hidden_state_dim_lru: int = 384,
     hidden_state_dim_encoder: int = 96,
@@ -189,7 +159,6 @@ def make_lru_observer(
     dummy_state = jnp.zeros((1,))
     lru_observer = LRU_Observer(
         sys=sys,
-        output_dim=4,
         hidden_state_dim_lru=hidden_state_dim_lru,
         hidden_state_dim_encoder=hidden_state_dim_encoder,
         hidden_state_dim_decoder=hidden_state_dim_decoder,

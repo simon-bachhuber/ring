@@ -13,6 +13,7 @@ from .algorithms import batch_generators_lazy
 from .algorithms import batched_generator_from_list
 from .algorithms import build_generator
 from .algorithms import concat_configs
+from .algorithms import express_Ximu_Yrelpose_data
 from .algorithms import forward_kinematics
 from .algorithms import GeneratorPipe
 from .algorithms import GeneratorTrafo
