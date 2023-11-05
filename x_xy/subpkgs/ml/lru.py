@@ -91,6 +91,15 @@ class UnrolledLRU(nn.Module):
         return forward(lru_parameters, input_sequence)
 
 
+_batch_module = lambda module: nn.vmap(
+    module,
+    in_axes=0,
+    out_axes=0,
+    variable_axes={"params": None},
+    split_rngs={"params": False},
+)
+
+
 class ResidualBlockLRU(nn.Module):
     N: int
     H: int
@@ -102,7 +111,7 @@ class ResidualBlockLRU(nn.Module):
         # norm
         x = nn.LayerNorm()(input_sequence)
         # recurrency
-        x = jax.vmap(UnrolledLRU(self.N, self.H))(x)
+        x = _batch_module(UnrolledLRU)(self.N, self.H)(x)
         # glu
         x = nn.Dense(self.H)(x) * nn.sigmoid(nn.Dense(self.H)(x))
         # skip connection
