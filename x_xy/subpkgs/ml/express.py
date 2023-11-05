@@ -91,7 +91,7 @@ def pipeline_make_generator(
 
 
 _configs = {
-    "hin_und_her": x_xy.RCMG_Config(
+    "hinUndHer": x_xy.RCMG_Config(
         t_min=0.3,
         t_max=1.5,
         dang_max=3.0,
@@ -119,7 +119,7 @@ _configs = {
         cdf_bins_max=5,
         cor=True,
     ),
-    "exp-fast": x_xy.RCMG_Config(
+    "expFast": x_xy.RCMG_Config(
         t_min=0.4,
         t_max=1.1,
         dang_max=jnp.deg2rad(180),
@@ -133,7 +133,7 @@ _configs = {
         cdf_bins_max=3,
         cor=True,
     ),
-    "exp-slow": x_xy.RCMG_Config(
+    "expSlow": x_xy.RCMG_Config(
         t_min=0.75,
         t_max=3.0,
         dang_min=0.1,
