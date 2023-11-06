@@ -146,7 +146,7 @@ class LRU_Observer(nn.Module):
         ).reshape((bs * L, n_links, -1))
 
         carry, _ = nn.RNN(
-            nn.GRUCell(), self.hidden_state_dim_encoder, return_carry=True
+            nn.GRUCell(features=self.hidden_state_dim_encoder), return_carry=True
         )(X_flat)
         encoder_state = carry.reshape((bs, L, self.hidden_state_dim_encoder))
 
@@ -164,7 +164,7 @@ class LRU_Observer(nn.Module):
             axis=0,
         )
         # (bs * L, n_links, hidden_state_decoder)
-        decoder_state_seq = nn.RNN(nn.GRUCell(), self.hidden_state_dim_decoder)(
+        decoder_state_seq = nn.RNN(nn.GRUCell(features=self.hidden_state_dim_decoder))(
             pseudo_input,
             initial_carry=decoder_state0.reshape(
                 (bs * L, self.hidden_state_dim_decoder)
