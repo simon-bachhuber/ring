@@ -109,7 +109,8 @@ class ResidualBlockLRU(nn.Module):
         assert input_sequence.ndim == 3
 
         # norm
-        x = nn.LayerNorm()(input_sequence)
+        # x = nn.LayerNorm()(input_sequence)
+        x = input_sequence
         # recurrency
         x = _batch_module(UnrolledLRU)(self.N, self.H)(x)
         # glu
@@ -187,11 +188,11 @@ class LRU_Observer(nn.Module):
 
 def make_lru_observer(
     sys: System,
-    hidden_state_dim_lru: int = 384,
+    hidden_state_dim_lru: int = 192,
     hidden_state_dim_encoder: int = 96,
     hidden_state_dim_decoder: int = 96,
     embed_dim: int = 192,
-    n_residual_blocks: int = 6,
+    n_residual_blocks: int = 2,
 ):
     assert sys.num_links() < _MAX_OUTPUT_N_LINKS
 
