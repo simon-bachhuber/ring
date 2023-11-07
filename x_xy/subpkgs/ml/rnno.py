@@ -4,6 +4,8 @@ from typing import Callable, Optional
 import haiku as hk
 import jax
 import jax.numpy as jnp
+from jax.random import normal
+from jax.random import uniform
 import tree_utils
 
 from x_xy import base
@@ -70,9 +72,15 @@ def _make_rnno_cell_apply_fn(
     def _rnno_cell_apply_fn(inputs, prev_state):
         empty_message = jnp.zeros((1, message_dim))
         mailbox = jnp.repeat(empty_message, sys.num_links(), axis=0)
+
         # message is sent using the hidden state of the last cell
         # for LSTM `prev_state` is of shape (2 * hidden_state_dim) du to cell state
         prev_last_hidden_state = prev_state[:, -1, :hidden_state_dim]
+
+        # lru cell has complex valued hidden state
+        if prev_last_hidden_state.dtype == jnp.complex64:
+            prev_last_hidden_state = prev_last_hidden_state.real
+
         if send_message_stop_grads:
             prev_last_hidden_state = jax.lax.stop_gradient(prev_last_hidden_state)
         msg = jnp.concatenate(
@@ -121,7 +129,7 @@ def make_rnno(
     sys: base.System,
     hidden_state_dim: int = 400,
     message_dim: int = 200,
-    use_gru: bool = True,
+    cell_type: str = "gru",
     stack_rnn_cells: int = 1,
     send_message_n_layers: int = 1,
     send_message_method: str = "mlp",
@@ -130,15 +138,24 @@ def make_rnno(
     link_output_dim: int = 4,
     link_output_normalize: bool = True,
     link_output_transform: Optional[Callable] = None,
+    layernorm: bool = False,
 ) -> SimpleNamespace:
     "Expects batched inputs."
 
-    if use_gru:
+    if cell_type == "gru":
         cell = hk.GRU
+        hidden_state_dtype = jnp.float32
         hidden_state_init = hidden_state_dim
-    else:
+    elif cell_type == "lstm":
         cell = LSTM
         hidden_state_init = hidden_state_dim * 2
+        hidden_state_dtype = jnp.float32
+    elif cell_type == "lru":
+        cell = LRU
+        hidden_state_init = hidden_state_dim
+        hidden_state_dtype = jnp.complex64
+    else:
+        raise NotImplementedError
 
     if link_output_normalize:
         assert link_output_transform is None
@@ -161,12 +178,15 @@ def make_rnno(
         else:
             raise NotImplementedError
 
-        inner_cell = StackedRNNCell(cell, hidden_state_dim, stack_rnn_cells)
+        inner_cell = StackedRNNCell(
+            cell, hidden_state_dim, stack_rnn_cells, layernorm=layernorm
+        )
         send_output = hk.nets.MLP([hidden_state_dim, link_output_dim])
         state = hk.get_state(
             "inner_cell_state",
             [sys.num_links(), stack_rnn_cells, hidden_state_init],
             init=jnp.zeros,
+            dtype=hidden_state_dtype,
         )
 
         y, state = hk.dynamic_unroll(
@@ -208,9 +228,24 @@ def make_rnno(
 
 
 class StackedRNNCell(hk.Module):
-    def __init__(self, cell, hidden_state_dim, stacks: int, name: str | None = None):
+    def __init__(
+        self,
+        cell,
+        hidden_state_dim,
+        stacks: int,
+        layernorm: bool = False,
+        name: str | None = None,
+    ):
         super().__init__(name)
-        self.cells = [cell(hidden_state_dim) for _ in range(stacks)]
+
+        self.cells = []
+        if isinstance(cell, LRU):
+            self.cells.append(LRU(hidden_state_dim, embed_size=hidden_state_dim))
+            stacks -= 1
+
+        self.cells.extend([cell(hidden_state_dim) for _ in range(stacks)])
+
+        self.layernorm = layernorm
 
     def __call__(self, x, state):
         output = x
@@ -218,6 +253,10 @@ class StackedRNNCell(hk.Module):
         for i in range(len(self.cells)):
             output, next_state_i = self.cells[i](output, state[i])
             next_state.append(next_state_i)
+
+            if self.layernorm:
+                output = hk.LayerNorm(-1, True, True)(output)
+
         return output, jnp.stack(next_state)
 
 
@@ -242,6 +281,115 @@ class LSTM(hk.RNNCore):
         c = f * prev_state_c + jax.nn.sigmoid(i) * jnp.tanh(g)
         h = jax.nn.sigmoid(o) * jnp.tanh(c)
         return h, jnp.concatenate((h, c))
+
+    def initial_state(self, batch_size: int | None):
+        raise NotImplementedError
+
+
+def _zeros_lru_parameters(N, H) -> tuple:
+    zeros = lambda *args: jnp.zeros(tuple(args))
+    return (
+        zeros(N),
+        zeros(N),
+        zeros(N, H),
+        zeros(N, H),
+        zeros(H, N),
+        zeros(H, N),
+        zeros(H),
+        zeros(N),
+    )
+
+
+def _flatten_lru_parameters(lru_params: tuple) -> jax.Array:
+    return jax.flatten_util.ravel_pytree(lru_params)[0]
+
+
+def _unflatten_lru_parameters(lru_params: jax.Array, N, H) -> tuple:
+    _, unflatten = jax.flatten_util.ravel_pytree(_zeros_lru_parameters(N, H))
+    return unflatten(lru_params)
+
+
+def _lru_timestep(lru_parameters: jax.Array, inner_state_tm1, u_t, N, H):
+    nu_log, theta_log, B_re, B_im, C_re, C_im, D, gamma_log = _unflatten_lru_parameters(
+        lru_parameters, N, H
+    )
+
+    # Materializing the diagonal of Lambda and projections
+    Lambda = jnp.exp(-jnp.exp(nu_log) + 1j * jnp.exp(theta_log))
+    B_norm = (B_re + 1j * B_im) * jnp.expand_dims(jnp.exp(gamma_log), axis=-1)
+    C = C_re + 1j * C_im
+
+    # Running the LRU + output projection
+    inner_state_t = Lambda * inner_state_tm1 + B_norm @ u_t
+    y = (C @ inner_state_t).real + D * u_t
+    return y, inner_state_t
+
+
+def _build_init_lru_parameters(N, H):
+    def _init_lru_parameters(shape, dtype):
+        """Initialize parameters of the LRU layer."""
+        r_min = jnp.array(0.0)
+        r_max = jnp.array(1.0)
+        max_phase = jnp.array(2 * jnp.pi)
+
+        # N: state dimension, H: model dimension
+        # Initialization of Lambda is complex valued distributed uniformly on ring
+        # between r_min and r_max, with phase in [0, max_phase].
+        u1 = uniform(hk.next_rng_key(), shape=(N,))
+        u2 = uniform(hk.next_rng_key(), shape=(N,))
+        nu_log = jnp.log(-0.5 * jnp.log(u1 * (r_max**2 - r_min**2) + r_min**2))
+        theta_log = jnp.log(max_phase * u2)
+
+        # Glorot initialized Ijnput/Output projection matrices
+        B_re = normal(hk.next_rng_key(), shape=(N, H)) / jnp.sqrt(2 * H)
+        B_im = normal(hk.next_rng_key(), shape=(N, H)) / jnp.sqrt(2 * H)
+        C_re = normal(hk.next_rng_key(), shape=(H, N)) / jnp.sqrt(N)
+        C_im = normal(hk.next_rng_key(), shape=(H, N)) / jnp.sqrt(N)
+        D = normal(hk.next_rng_key(), shape=(H,))
+
+        # Normalization factor
+        diag_lambda = jnp.exp(-jnp.exp(nu_log) + 1j * jnp.exp(theta_log))
+        gamma_log = jnp.log(jnp.sqrt(1 - jnp.abs(diag_lambda) ** 2))
+
+        params = nu_log, theta_log, B_re, B_im, C_re, C_im, D, gamma_log
+        return _flatten_lru_parameters(params)
+
+    return _init_lru_parameters
+
+
+class LRU(hk.RNNCore):
+    def __init__(self, hidden_size: int, embed_size: Optional[int] = None, name=None):
+        super().__init__(name=name)
+        self.hidden_size = hidden_size
+        self.embed_size = embed_size
+
+    def __call__(
+        self,
+        inputs: jax.Array,
+        prev_state: jax.Array,
+    ):
+        if self.embed_size is not None:
+            H = self.embed_size
+            hk.Linear(self.embed_size, name="encoder")
+        else:
+            H = inputs.size
+
+        lru_params_flat_size = _flatten_lru_parameters(
+            _zeros_lru_parameters(self.hidden_size, H)
+        ).size
+        lru_params = hk.get_parameter(
+            "lru_parameters",
+            shape=[lru_params_flat_size],
+            init=_build_init_lru_parameters(self.hidden_size, H),
+        )
+        y, next_state = _lru_timestep(
+            lru_params, prev_state, inputs, self.hidden_size, H
+        )
+
+        # glu + skip connection
+        y = (hk.Linear(H)(y) * jax.nn.sigmoid(hk.Linear(H)(y))) + inputs
+
+        return y, next_state
 
     def initial_state(self, batch_size: int | None):
         raise NotImplementedError

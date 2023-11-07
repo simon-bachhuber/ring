@@ -58,8 +58,13 @@ def _test_train_rnno_lru(observer_fn):
     )
 
 
-def test_rnno():
+def test_rnno_gru():
     rnno_fn = lambda sys: ml.make_rnno(sys, 10, 5)
+    _test_train_rnno_lru(rnno_fn)
+
+
+def test_rnno_lru():
+    rnno_fn = lambda sys: ml.make_rnno(sys, 10, 5, cell_type="lru")
     _test_train_rnno_lru(rnno_fn)
 
 
