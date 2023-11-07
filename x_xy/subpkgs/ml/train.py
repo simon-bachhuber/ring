@@ -132,6 +132,7 @@ def train(
     callback_kill_if_nan: bool = False,
     callback_kill_after_episode: Optional[int] = None,
     callback_kill_after_seconds: Optional[float] = None,
+    callback_kill_tag: Optional[str] = None,
     loss_fn: LOSS_FN = _default_loss_fn,
     metrices: METRICES = _default_metrices,
 ):
@@ -199,7 +200,10 @@ def train(
         metrices, network.apply, initial_state, pmap_size, vmap_size
     )
 
-    default_callbacks = [_DefaultEvalFnCallback(eval_fn), WandbKillRun()]
+    default_callbacks = [_DefaultEvalFnCallback(eval_fn)]
+
+    if callback_kill_tag is not None:
+        default_callbacks.append(WandbKillRun(stop_tag=callback_kill_tag))
 
     if callback_save_params is not None:
         default_callbacks.append(SaveParamsTrainingLoopCallback(callback_save_params))
