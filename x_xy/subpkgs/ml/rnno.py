@@ -66,6 +66,7 @@ def _make_rnno_cell_apply_fn(
     message_dim,
     send_message_stop_grads,
     output_transform: Callable,
+    message_layernorm: bool,
 ):
     parent_array = jnp.array(sys.link_parents, dtype=jnp.int32)
 
@@ -83,9 +84,13 @@ def _make_rnno_cell_apply_fn(
 
         if send_message_stop_grads:
             prev_last_hidden_state = jax.lax.stop_gradient(prev_last_hidden_state)
+
         msg = jnp.concatenate(
             (jax.vmap(send_msg)(prev_last_hidden_state), empty_message)
         )
+
+        if message_layernorm:
+            msg = hk.LayerNorm(-1, False, False)(msg)
 
         def accumulate_message(link):
             return jnp.sum(
@@ -135,6 +140,7 @@ def make_rnno(
     send_message_method: str = "mlp",
     send_message_init: hk.initializers.Initializer = hk.initializers.Orthogonal(),
     send_message_stop_grads: bool = False,
+    send_message_afterwards_layernorm: bool = False,
     link_output_dim: int = 4,
     link_output_normalize: bool = True,
     link_output_transform: Optional[Callable] = None,
@@ -199,6 +205,7 @@ def make_rnno(
                 message_dim,
                 send_message_stop_grads,
                 output_transform=link_output_transform,
+                message_layernorm=send_message_afterwards_layernorm,
             ),
             X,
             state,
@@ -238,13 +245,11 @@ class StackedRNNCell(hk.Module):
     ):
         super().__init__(name)
 
-        self.cells = []
         if isinstance(cell, LRU):
-            self.cells.append(LRU(hidden_state_dim, embed_size=hidden_state_dim))
-            stacks -= 1
-
-        self.cells.extend([cell(hidden_state_dim) for _ in range(stacks)])
-
+            cells = [LRU(hidden_state_dim, hidden_state_dim)]
+        else:
+            cells = [cell(hidden_state_dim)]
+        self.cells = cells + [cell(hidden_state_dim) for _ in range(stacks - 1)]
         self.layernorm = layernorm
 
     def __call__(self, x, state):
@@ -370,7 +375,7 @@ class LRU(hk.RNNCore):
     ):
         if self.embed_size is not None:
             H = self.embed_size
-            hk.Linear(self.embed_size, name="encoder")
+            inputs = hk.Linear(self.embed_size, name="encoder")(inputs)
         else:
             H = inputs.size
 
@@ -382,6 +387,7 @@ class LRU(hk.RNNCore):
             shape=[lru_params_flat_size],
             init=_build_init_lru_parameters(self.hidden_size, H),
         )
+
         y, next_state = _lru_timestep(
             lru_params, prev_state, inputs, self.hidden_size, H
         )
