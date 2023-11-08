@@ -10,7 +10,6 @@ from typing import Optional, Union
 import webbrowser
 
 import jax
-import joblib
 import neptune
 import numpy as np
 from tree_utils import PyTree
@@ -33,7 +32,7 @@ def save(data: PyTree, path: Union[str, Path], overwrite: bool = False):
         else:
             raise RuntimeError(f"File {path} already exists.")
     with open(path, "wb") as file:
-        pickle.dump(data, file)
+        pickle.dump(data, file, protocol=5)
 
 
 def load(
@@ -128,13 +127,15 @@ class DictLogger(Logger):
         self.save(self._output_path)
 
     def save(self, path: str):
-        path = Path(path).with_suffix(".joblib").expanduser()
+        path = Path(path).with_suffix(suffix).expanduser()
         path.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self._logs, path)
+        with open(path, "wb") as file:
+            pickle.dump(self._logs, file, protocol=5)
 
     @staticmethod
     def load(path: str):
-        logs = joblib.load(path)
+        with open(path, "rb") as file:
+            logs = pickle.load(file)
         logger = DictLogger(path)
         logger._logs = logs
         return DictLogger

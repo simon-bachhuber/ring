@@ -27,6 +27,7 @@ def find_data_files(package_dir, patterns, excludes=()):
     return list(paths)
 
 
+# TODO: replace joblib with pickle
 subpkg_ml_requires = ["wandb", "neptune", "optax", "dm-haiku", "joblib"]
 subpkg_omc_requires = ["qmt", "pandas", "scipy"]
 subpkg_exp_requires = ["pyyaml", "joblib"]
