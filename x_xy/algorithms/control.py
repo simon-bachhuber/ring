@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Optional
 
 from flax import struct
 import jax
@@ -69,6 +70,9 @@ def pd_control(P: jax.Array, D: jax.Array):
     """
 
     def init(sys: base.System, q_ref: jax.Array) -> dict:
+        assert sys.q_size() == q_ref.shape[1], f"q_ref.shape = {q_ref.shape}"
+        assert sys.qd_size() == P.size == D.size
+
         q_qd_ref = {}
         P_as_dict = {}
         D_as_dict = {}
@@ -154,46 +158,54 @@ def pd_control(P: jax.Array, D: jax.Array):
     return SimpleNamespace(init=init, apply=apply)
 
 
-DAMPING_SPHERICAL = 25.0
-DAMPING_ELSE = 25.0
+LARGE_DAMPING = 25.0
 
 
-def _sys_large_damping(sys: base.System) -> base.System:
-    damping = jnp.ones_like(sys.link_damping) * DAMPING_ELSE
+def _sys_large_damping(sys: base.System, exclude: list[str] = []) -> base.System:
+    damping = sys.link_damping
 
-    def f(_, idx_map, typ, idx):
+    def f(_, idx_map, idx, name):
         nonlocal damping
+
+        if name in exclude:
+            return
 
         slice = idx_map["d"](idx)
         a, b = slice.start, slice.stop
-        if typ == "free":
-            b -= 3
-        elif typ == "spherical":
-            pass
-        else:
-            return
-        damping = damping.at[a:b].set(DAMPING_SPHERICAL)
+        damping = damping.at[a:b].set(LARGE_DAMPING)
 
-    scan_sys(sys, f, "ll", sys.link_types, list(range(sys.num_links())))
+    scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_names)
     return sys.replace(link_damping=damping)
 
 
 def unroll_dynamics_pd_control(
     sys: base.System,
-    q: jax.Array,
+    q_ref: jax.Array,
     P: jax.Array,
-    D: jax.Array,
+    D: Optional[jax.Array] = None,
     nograv: bool = False,
+    sys_q_ref: Optional[base.System] = None,
 ):
+    if sys_q_ref is None:
+        sys_q_ref = sys
+
+    if D is None:
+        D = jnp.zeros((sys_q_ref.qd_size(),))
+
+    # there does not seem to be a "one fits all" value for damping..
+    if False:
+        # all joints that have a given trajectory in `q_ref` should get a
+        # damping; these are thus the joints present in `sys_q_ref`
+        exclude = list(set(sys.link_names) - set(sys_q_ref.link_names))
+        sys = _sys_large_damping(sys, exclude=exclude)
+
     if nograv:
         sys = sys.replace(gravity=sys.gravity * 0.0)
-
-    sys = _sys_large_damping(sys)
 
     state = base.State.create(sys)
 
     controller = pd_control(P, D)
-    cs = controller.init(sys, q)
+    cs = controller.init(sys_q_ref, q_ref)
 
     def step(carry, _):
         state, cs = carry
@@ -202,5 +214,5 @@ def unroll_dynamics_pd_control(
         carry = (state, cs)
         return carry, state
 
-    states = jax.lax.scan(step, (state, cs), None, length=len(q))[1]
+    states = jax.lax.scan(step, (state, cs), None, length=q_ref.shape[0])[1]
     return states
