@@ -67,3 +67,25 @@ def test_pd_control():
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
     # assert error < 0.1
     assert error < 0.46
+
+
+def test_dynamical_simulation_trafo():
+    P_gains = {
+        "free": jnp.array(3 * [50.0] + 3 * [200.0]),
+        "rz": jnp.array([400.0]),
+        "frozen": jnp.array([]),
+    }
+    P_gains["ry"] = P_gains["rz"]
+
+    for example in ["test_three_seg_seg2"]:
+        sys = x_xy.load_example(example)
+        sys = x_xy.algorithms.control._sys_large_damping(sys)
+        gen = x_xy.GeneratorPipe(
+            x_xy.algorithms.generator.transforms.GeneratorTrafoDynamicalSimulation(
+                P_gains, return_q_ref=True
+            ),
+            x_xy.GeneratorTrafoRemoveInputExtras(sys),
+        )(x_xy.RCMG_Config(T=20.0))
+        (X, _), (__, q_obs, ___, ____) = gen(jax.random.PRNGKey(1))
+        error = jnp.sqrt(jnp.mean((X["q_ref"][500:, -2:] - q_obs[500:, -2:]) ** 2))
+        assert error < 0.1
