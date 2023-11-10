@@ -10,11 +10,16 @@ from ..base import Geometry
 from ..base import Sphere
 from ..base import Transform
 
+_skybox = """<texture name="skybox" type="skybox" builtin="gradient" rgb1=".4 .6 .8" rgb2="0 0 0" width="800" height="800" mark="random" markrgb="1 1 1"/>"""  # noqa: E501
+_floor = """<geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>"""  # noqa: E501
+
 
 def _build_model_of_geoms(
     geoms: list[Geometry],
     cameras: dict[int, Sequence[str]],
     lights: dict[int, Sequence[str]],
+    floor: bool,
+    stars: bool,
     debug: bool,
 ) -> mujoco.MjModel:
     # sort in ascending order, this shouldn't be required as it is already done by
@@ -74,7 +79,7 @@ def _build_model_of_geoms(
   <asset>
     <texture name="texplane" type="2d" builtin="checker" rgb1=".25 .25 .25" rgb2=".3 .3 .3" width="512" height="512" mark="cross" markrgb=".8 .8 .8"/>
     <material name="matplane" reflectance="0.3" texture="texplane" texrepeat="1 1" texuniform="true"/>
-    <texture name="skybox" type="skybox" builtin="gradient" rgb1=".4 .6 .8" rgb2="0 0 0" width="800" height="800" mark="random" markrgb="1 1 1"/>
+    {_skybox if stars else ''}
     <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="300" height="300" mark="edge" markrgb=".2 .3 .4"/>
     <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2"/>
   </asset>
@@ -92,7 +97,7 @@ def _build_model_of_geoms(
 <camera pos="0 -3 3" name="targetfar" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -5 5" name="targetFar" mode="targetbodycom" target="{targetbody}"/>
 <light pos="0 0 4" dir="0 0 -1"/>
-<geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>
+{_floor if floor else ''}
 {inside_worldbody_cameras}
 {inside_worldbody_lights}
 {inside_worldbody}
@@ -164,6 +169,8 @@ class MujocoScene:
         width: int = 320,
         add_cameras: dict[int, str | Sequence[str]] = {},
         add_lights: dict[int, str | Sequence[str]] = {},
+        show_stars: bool = True,
+        show_floor: bool = True,
         debug: bool = False,
     ) -> None:
         self.debug = debug
@@ -176,11 +183,18 @@ class MujocoScene:
             return dic
 
         self.add_cameras, self.add_lights = to_list(add_cameras), to_list(add_lights)
+        self.show_stars = show_stars
+        self.show_floor = show_floor
 
     def init(self, geoms: list[Geometry]):
         self._parent_ids = list(set([geom.link_idx for geom in geoms]))
         self._model = _build_model_of_geoms(
-            geoms, self.add_cameras, self.add_lights, debug=self.debug
+            geoms,
+            self.add_cameras,
+            self.add_lights,
+            floor=self.show_floor,
+            stars=self.show_stars,
+            debug=self.debug,
         )
         self._data = mujoco.MjData(self._model)
         self._renderer = mujoco.Renderer(self._model, self.height, self.width)
