@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
 from dataclasses import replace
@@ -70,6 +71,21 @@ class RCMG_Config:
 
     def is_feasible(self) -> bool:
         return _is_feasible_config1(self)
+
+    def to_nomotion_config(self) -> "RCMG_Config":
+        kwargs = asdict(self)
+        for key in [
+            "dang_min",
+            "dang_max",
+            "dang_min_free_spherical",
+            "dang_max_free_spherical",
+            "dpos_min",
+            "dpos_max",
+        ]:
+            kwargs[key] = 0.0
+        nomotion_config = RCMG_Config(**kwargs)
+        assert nomotion_config.is_feasible()
+        return nomotion_config
 
 
 def _is_feasible_config1(c: RCMG_Config) -> bool:
