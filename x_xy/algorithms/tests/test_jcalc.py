@@ -9,15 +9,8 @@ from x_xy.algorithms.jcalc import _find_interval
 
 @pytest.mark.parametrize("T,seed", [(10.0, 0), (20.0, 0), (10.0, 1), (20.0, 1)])
 def test_concat_configs(T, seed):
-    nomotion_config = x_xy.RCMG_Config(
-        dang_min=0.0,
-        dang_max=0.0,
-        dang_max_free_spherical=0.0,
-        dang_min_free_spherical=0.0,
-        dpos_min=0.0,
-        dpos_max=0.0,
-    )
     motion_config = x_xy.RCMG_Config()
+    nomotion_config = motion_config.to_nomotion_config()
 
     sys = x_xy.load_example("test_free")
     dt = sys.dt
