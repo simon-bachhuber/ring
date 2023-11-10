@@ -3,7 +3,9 @@ import jax.numpy as jnp
 
 from ... import base
 from ... import maths
+from ...scan import scan_sys
 from ...utils import dict_union
+from ..control import unroll_dynamics_pd_control
 from ..sensors import imu as imu_fn
 from ..sensors import joint_axes
 from ..sensors import rel_pose
@@ -166,6 +168,7 @@ def _imu_data(
                 sys_xs.gravity,
                 sys_xs.dt,
                 consume,
+                noisy=True,
                 low_pass_filter_pos_f_cutoff=13.5,
                 low_pass_filter_rot_alpha=0.5,
             )
@@ -186,3 +189,52 @@ def _imu_data(
             }
         X[segment] = imu_measurements
     return X
+
+
+class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
+    def __init__(
+        self,
+        P_gains: dict[str, jax.Array],
+        unactuated_subsystems: list[str] = [],
+        return_q_ref: bool = False,
+    ):
+        self.unactuated_links = unactuated_subsystems
+        self.p_gains_dict = P_gains
+        self.return_q_ref = return_q_ref
+
+    def __call__(self, gen):
+        from x_xy.subpkgs import sys_composer
+
+        def _gen(*args):
+            (X, y), (key, q, _, sys_x) = gen(*args)
+
+            sys_q_ref = sys_x
+            if len(self.unactuated_links) > 0:
+                sys_q_ref = sys_composer.delete_subsystem(sys_x, self.unactuated_links)
+
+            q_ref, p_gains_array = [], []
+            q = q.T
+            idx_map_sys_x = sys_x.idx_map("q")
+
+            def build_q_ref(_, __, name, link_type):
+                q_ref.append(q[idx_map_sys_x[name]])
+                p_gains_array.append(self.p_gains_dict[link_type])
+
+            scan_sys(
+                sys_q_ref, build_q_ref, "ll", sys_q_ref.link_names, sys_q_ref.link_types
+            )
+            q_ref, p_gains_array = jnp.concatenate(q_ref).T, jnp.concatenate(
+                p_gains_array
+            )
+
+            # perform dynamical simulation
+            states = unroll_dynamics_pd_control(
+                sys_x, q_ref, p_gains_array, sys_q_ref=sys_q_ref
+            )
+
+            if self.return_q_ref:
+                X = dict_union(X, dict(q_ref=q_ref))
+
+            return (X, y), (key, states.q, states.x, sys_x)
+
+        return _gen
