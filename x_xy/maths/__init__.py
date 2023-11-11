@@ -12,6 +12,8 @@ from .quat import quat_angle_constantAxisOverTime
 from .quat import quat_avg
 from .quat import quat_euler
 from .quat import quat_from_3x3
+from .quat import quat_headingAngle
+from .quat import quat_inclinationAngle
 from .quat import quat_inv
 from .quat import quat_lowpassfilter
 from .quat import quat_mul

@@ -282,3 +282,13 @@ def quat_lowpassfilter(qs: jax.Array, alpha: float = 0.55) -> jax.Array:
 
     qs_filtered = jax.lax.scan(f, qs[0], qs[1:])[1]
     return jnp.vstack((qs[0:1], qs_filtered))
+
+
+def quat_inclinationAngle(q: jax.Array):
+    head, incl = quat_project(q, jnp.array([0.0, 0, 1]))
+    return quat_angle(incl)
+
+
+def quat_headingAngle(q: jax.Array):
+    head, incl = quat_project(q, jnp.array([0.0, 0, 1]))
+    return quat_angle(head)
