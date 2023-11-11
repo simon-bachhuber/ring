@@ -52,8 +52,19 @@ def gyroscope(rot: jax.Array, dt: float) -> jax.Array:
     return jnp.where(jnp.abs(angle) > 1e-10, gyr, jnp.zeros(3))
 
 
-NOISE_LEVELS = {"acc": 0.05, "gyr": jnp.deg2rad(0.5)}
-BIAS_LEVELS = {"acc": 0.1, "gyr": jnp.deg2rad(1.0)}
+def _draw_random_magvec(key):
+    c1, c2 = jax.random.split(key)
+    phi = jax.random.uniform(c1, minval=jnp.deg2rad(20.0), maxval=jnp.deg2rad(70.0))
+    norm = jax.random.uniform(c2, minval=0.3, maxval=1.1)
+    return jnp.array([0.0, jnp.cos(phi), -jnp.sin(phi)]) * norm
+
+
+def magnetometer(rot: jax.Array, magvec: jax.Array) -> jax.Array:
+    return maths.rotate(magvec, rot)
+
+
+NOISE_LEVELS = {"acc": 0.05, "gyr": jnp.deg2rad(0.5), "mag": 0.3}
+BIAS_LEVELS = {"acc": 0.1, "gyr": jnp.deg2rad(1.0), "mag": 0.3}
 
 
 def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
@@ -68,7 +79,7 @@ def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
         dict: IMU measurements with noise and bias.
     """
     noisy_imu_measurements = {}
-    for sensor in ["acc", "gyr"]:
+    for sensor in imu_measurements:
         key, c1, c2 = jax.random.split(key, 3)
         noise = (
             jax.random.normal(c1, shape=imu_measurements[sensor].shape)
@@ -93,6 +104,8 @@ def imu(
     quasi_physical: bool = False,
     low_pass_filter_pos_f_cutoff: Optional[float] = None,
     low_pass_filter_rot_alpha: Optional[bool] = None,
+    has_magnetometer: bool = False,
+    magvec: Optional[jax.Array] = None,
 ) -> dict:
     """Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu.
     NOTE: `smoothen_degree` is used as window size for moving average.
@@ -121,6 +134,13 @@ def imu(
         xs = xs.replace(rot=maths.quat_lowpassfilter(xs.rot, low_pass_filter_rot_alpha))
 
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
+
+    if has_magnetometer:
+        if magvec is None:
+            assert key is not None
+            key, consume = jax.random.split(key)
+            magvec = _draw_random_magvec(consume)
+        measurements["mag"] = magnetometer(xs.rot, magvec)
 
     if smoothen_degree is not None:
         measurements = jax.tree_map(

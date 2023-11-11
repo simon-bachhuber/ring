@@ -136,22 +136,21 @@ class GeneratorTrafoRelPose(GeneratorTrafo):
 
 
 class GeneratorTrafoIMU(GeneratorTrafo):
+    def __init__(self, has_magnetometer: bool = False):
+        self.has_magnetometer = has_magnetometer
+
     def __call__(self, gen: GeneratorWithOutputExtras | GeneratorWithInputOutputExtras):
         def _gen(*args):
             (X, y), (key, q, x, sys) = gen(*args)
             key, consume = jax.random.split(key)
-            X_imu = _imu_data(consume, x, sys)
+            X_imu = _imu_data(consume, x, sys, self.has_magnetometer)
             X = dict_union(X, X_imu)
             return (X, y), (key, q, x, sys)
 
         return _gen
 
 
-def _imu_data(
-    key,
-    xs,
-    sys_xs,
-) -> dict:
+def _imu_data(key, xs, sys_xs, has_magnetometer) -> dict:
     # TODO
     from x_xy.subpkgs import sys_composer
 
@@ -171,6 +170,7 @@ def _imu_data(
                 noisy=True,
                 low_pass_filter_pos_f_cutoff=13.5,
                 low_pass_filter_rot_alpha=0.5,
+                has_magnetometer=has_magnetometer,
             )
         else:
             imu_measurements = {
