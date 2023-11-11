@@ -10,16 +10,19 @@ def register_rr_joint():
     x_xy.update_n_joint_params(3)
 
     def _rr_transform(q, params):
-        def _rxyz_transform(q, _, axis):
-            q = jnp.squeeze(q)
-            rot = maths.quat_rot_axis(axis, q)
-            return x_xy.Transform.create(rot=rot)
+        axis = params
+        q = jnp.squeeze(q)
+        rot = x_xy.maths.quat_rot_axis(axis, q)
+        return x_xy.Transform.create(rot=rot)
 
-        return _rxyz_transform(q, None, params)
+    def _motion_fn(params):
+        return x_xy.base.Motion.create(ang=params)
 
-    rr_joint = x_xy.JointModel(_rr_transform, rcmg_draw_fn=_draw_rxyz)
+    rr_joint = x_xy.JointModel(
+        _rr_transform, motion=[_motion_fn], rcmg_draw_fn=_draw_rxyz
+    )
     try:
-        x_xy.register_new_joint_type("rr", rr_joint, 1, 0)
+        x_xy.register_new_joint_type("rr", rr_joint, 1)
     except AssertionError:
         pass
 

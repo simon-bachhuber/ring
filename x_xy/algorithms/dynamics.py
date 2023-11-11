@@ -22,8 +22,11 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
 
     vel, acc, fs = {}, {}, {}
 
-    def forward_scan(_, __, link_idx, parent_idx, link_type, qd, qdd, p_to_l_trafo, it):
-        vJ, aJ = jcalc_motion(link_type, qd), jcalc_motion(link_type, qdd)
+    def forward_scan(
+        _, __, link_idx, parent_idx, link_type, qd, qdd, p_to_l_trafo, it, joint_params
+    ):
+        vJ = jcalc_motion(link_type, qd, joint_params)
+        aJ = jcalc_motion(link_type, qdd, joint_params)
 
         t = lambda m: algebra.transform_motion(p_to_l_trafo, m)
 
@@ -43,7 +46,7 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
     scan_sys(
         sys,
         forward_scan,
-        "lllddll",
+        "lllddlll",
         list(range(sys.num_links())),
         sys.link_parents,
         sys.link_types,
@@ -51,12 +54,15 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
         qdd,
         sys.links.transform,
         sys.links.inertia,
+        sys.links.joint_params,
     )
 
     taus = []
 
-    def backwards_scan(_, __, link_idx, parent_idx, link_type, l_to_p_trafo):
-        tau = jcalc_tau(link_type, fs[link_idx])
+    def backwards_scan(
+        _, __, link_idx, parent_idx, link_type, l_to_p_trafo, joint_params
+    ):
+        tau = jcalc_tau(link_type, fs[link_idx], joint_params)
         taus.insert(0, tau)
         if parent_idx != -1:
             fs[parent_idx] = fs[parent_idx] + algebra.transform_force(
@@ -66,11 +72,12 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
     scan_sys(
         sys,
         backwards_scan,
-        "llll",
+        "lllll",
         list(range(sys.num_links())),
         sys.link_parents,
         sys.link_types,
         jax.vmap(algebra.transform_inv)(sys.links.transform),
+        sys.links.joint_params,
         reverse=True,
     )
 
@@ -113,7 +120,10 @@ def compute_mass_matrix(sys: base.System) -> jax.Array:
     # Now we go into matrix mode
 
     def _jcalc_motion_matrix(i: int):
-        list_motion = _joint_types[sys.link_types[i]].motion
+        joint_params = sys.links.joint_params[i]
+        _to_motion = lambda m: m if isinstance(m, base.Motion) else m(joint_params)
+        list_motion = [_to_motion(m) for m in _joint_types[sys.link_types[i]].motion]
+
         if len(list_motion) == 0:
             # joint is frozen
             return None

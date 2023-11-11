@@ -179,7 +179,10 @@ class JointModel:
     # (q, params) -> Transform
     transform: Callable[[jax.Array, jax.Array], base.Transform]
     # len(motion) == len(qd)
-    motion: list[base.Motion] = field(default_factory=lambda: [])
+    # if callable: joint_params -> base.Motion
+    motion: list[base.Motion | Callable[[jax.Array], base.Motion]] = field(
+        default_factory=lambda: []
+    )
     # (config, key_t, key_value, params) -> jax.Array
     rcmg_draw_fn: Optional[DRAW_FN] = None
 
@@ -455,14 +458,26 @@ def jcalc_transform(
     return _joint_types[joint_type].transform(q, joint_params)
 
 
-def jcalc_motion(joint_type: str, qd: jax.Array) -> base.Motion:
+def _to_motion(
+    m: base.Motion | Callable[[jax.Array], base.Motion], joint_params: jax.Array
+) -> base.Motion:
+    if isinstance(m, base.Motion):
+        return m
+    return m(joint_params)
+
+
+def jcalc_motion(
+    joint_type: str, qd: jax.Array, joint_params: jax.Array
+) -> base.Motion:
     list_motion = _joint_types[joint_type].motion
     m = base.Motion.zero()
     for dof in range(len(list_motion)):
-        m += list_motion[dof] * qd[dof]
+        m += _to_motion(list_motion[dof], joint_params) * qd[dof]
     return m
 
 
-def jcalc_tau(joint_type: str, f: base.Force) -> jax.Array:
+def jcalc_tau(joint_type: str, f: base.Force, joint_params: jax.Array) -> jax.Array:
     list_motion = _joint_types[joint_type].motion
-    return jnp.array([algebra.motion_dot(m, f) for m in list_motion])
+    return jnp.array(
+        [algebra.motion_dot(_to_motion(m, joint_params), f) for m in list_motion]
+    )
