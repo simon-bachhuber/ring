@@ -188,7 +188,9 @@ def train(
 
     if optimizer is None:
         # TODO; hardcoded `n_steps_per_episode`
-        optimizer = make_optimizer(3e-3, n_episodes, n_steps_per_episode=6)
+        optimizer = make_optimizer(
+            3e-3, n_episodes, n_steps_per_episode=6, skip_large_update_max_normsq=100.0
+        )
 
     opt_state = optimizer.init(params)
 
