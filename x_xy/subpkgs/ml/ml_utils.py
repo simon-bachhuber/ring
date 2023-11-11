@@ -388,3 +388,13 @@ def on_cluster() -> bool:
     """Return `true` if executed on cluster."""
     env_var = os.environ.get("ON_CLUSTER", None)
     return False if env_var is None else True
+
+
+__unique_exp_id = None
+
+
+def unique_id(reset: bool = False) -> str:
+    global __unique_exp_id
+    if reset or (__unique_exp_id is None):
+        __unique_exp_id = hash(time.time())
+    return hex(__unique_exp_id)

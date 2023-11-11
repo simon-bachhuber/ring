@@ -10,6 +10,7 @@ from .ml_utils import n_params
 from .ml_utils import NeptuneLogger
 from .ml_utils import on_cluster
 from .ml_utils import save
+from .ml_utils import unique_id
 from .ml_utils import WandbLogger
 from .optimizer import make_optimizer
 from .rnno import make_rnno
