@@ -21,6 +21,7 @@ from .callbacks import NanKillRunCallback
 from .callbacks import SaveParamsTrainingLoopCallback
 from .callbacks import TimingKillRunCallback
 from .callbacks import WandbKillRun
+from .ml_utils import load
 from .ml_utils import Logger
 from .optimizer import make_optimizer
 from .training_loop import TrainingLoop
@@ -123,7 +124,8 @@ def train(
     tbp_skip_keep_grads: bool = False,
     loggers: list[Logger] = [],
     callbacks: list[TrainingLoopCallback] = [],
-    initial_params: Optional[dict] = None,
+    initial_params: Optional[str] = None,
+    initial_params_pretrained: Optional[tuple[str, int]] = None,
     key_network: jax.random.PRNGKey = key_network,
     key_generator: jax.random.PRNGKey = key_generator,
     callback_save_params: Optional[str] = None,
@@ -174,8 +176,14 @@ def train(
     )
     initial_state = _repeat_state(initial_state, batchsize)
 
+    assert not (
+        initial_params is not None and initial_params_pretrained is not None
+    ), "Either or, not both"
     if initial_params is not None:
-        params = initial_params
+        params = load(initial_params)
+    if initial_params_pretrained is not None:
+        pre_name, pre_version = initial_params_pretrained
+        params = load(pretrained=pre_name, pretrained_version=pre_version)
     del initial_params
 
     if optimizer is None:
