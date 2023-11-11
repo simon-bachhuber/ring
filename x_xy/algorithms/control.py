@@ -121,7 +121,7 @@ def pd_control(P: jax.Array, D: jax.Array):
                 )
             elif typ == "spherical":
                 P_term = _p_control_quaternion(q_curr, q_ref)
-            elif typ in ["rx", "ry", "rz"]:
+            elif typ in ["rx", "ry", "rz", "rr"]:
                 # q_ref comes from rcmg. Thus, it is already wrapped
                 # TODO: Currently state.q is not wrapped. Change that?
                 P_term = maths.wrap_to_pi(q_ref - maths.wrap_to_pi(q_curr))
