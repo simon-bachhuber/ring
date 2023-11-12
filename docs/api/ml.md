@@ -4,7 +4,7 @@
 
 ::: x_xy.subpkgs.ml.optimizer.make_optimizer
 
-::: x_xy.subpkgs.ml.callbacks.EvalXy2TrainingLoopCallback
+::: x_xy.subpkgs.ml.callbacks.EvalXyTrainingLoopCallback
 
 ::: x_xy.subpkgs.ml.ml_utils.load
 

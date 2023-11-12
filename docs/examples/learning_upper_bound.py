@@ -224,7 +224,7 @@ def _make_3Seg_4Seg_callbacks(args):
                 pipeline_load_data(sys_xs, motion_phase)
             )
             callbacks.append(
-                ml.EvalXy2TrainingLoopCallback(
+                ml.EvalXyTrainingLoopCallback(
                     _unique_exp_id(),
                     rnno_fn,
                     sys_composer.make_sys_noimu(sys_xs)[0],
@@ -254,7 +254,7 @@ def _make_config_callback(args, configs: dict):
             config, batchsize, batchsize, sys_4Seg, return_Xyx=True
         )(consume)
         callbacks.append(
-            ml.EvalXy2TrainingLoopCallback(
+            ml.EvalXyTrainingLoopCallback(
                 _unique_exp_id(),
                 rnno_fn,
                 sys_noimu,

@@ -1,5 +1,5 @@
 from . import express
-from .callbacks import EvalXy2TrainingLoopCallback
+from .callbacks import EvalXyTrainingLoopCallback
 from .lru import make_lru_observer
 from .ml_utils import disable_syncing_to_cloud
 from .ml_utils import list_pretrained

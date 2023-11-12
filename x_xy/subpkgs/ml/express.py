@@ -6,6 +6,7 @@ import x_xy
 from x_xy.algorithms.custom_joints import GeneratorTrafoRandomizeJointAxes
 from x_xy.algorithms.generator import transforms
 from x_xy.subpkgs import exp
+from x_xy.subpkgs import ml
 from x_xy.subpkgs import sys_composer
 from x_xy.utils import to_list
 
@@ -155,3 +156,63 @@ _configs = {
 
 def load_config(config_name: str) -> x_xy.RCMG_Config:
     return _configs[config_name]
+
+
+_mae_metrices = {
+    "mae_deg": (
+        lambda q, qhat: x_xy.maths.angle_error(q, qhat),
+        lambda arr: jnp.rad2deg(jnp.mean(arr[:, 500:], axis=1)),
+        jnp.mean,
+    )
+}
+
+
+def build_experimental_validation_callback(
+    network,
+    exp_id: str,
+    motion_phase: str,
+    interpret: dict[str, str],
+    X_imus: dict[str, str],
+    y_from_to_incl: dict[str, tuple[None | str, None | str, bool]],
+    flex: bool = False,
+    mag: bool = False,
+):
+    imu_key = "imu_flex" if flex else "imu_rigid"
+    sensors = ["acc", "gyr"]
+    if mag:
+        sensors += ["mag"]
+
+    exp_data = exp.load_data(exp_id, motion_phase)
+    exp_data_interpreted = dict()
+    for old, new in interpret.items():
+        exp_data_interpreted[new] = exp_data[old].copy()
+    exp_data = exp_data_interpreted
+
+    X = dict()
+    for new, imu in X_imus.items():
+        X[new] = {s: exp_data[imu][imu_key][s] for s in sensors}
+
+    y = dict()
+    for new, (_from, _to, incl) in y_from_to_incl.items():
+        assert not (_from is None and _to is None)
+        if _to is None:
+            assert not incl
+            quat = exp_data[_from]["quat"]
+        elif _from is None:
+            quat = x_xy.maths.quat_inv(exp_data[_to]["quat"])
+            if incl:
+                quat = x_xy.maths.quat_project(quat, jnp.array([0.0, 0, 1]))[1]
+        else:
+            assert not incl
+            quat = x_xy.maths.quat_mul(
+                x_xy.maths.quat_inv(exp_data[_to]["quat"]), exp_data[_from]["quat"]
+            )
+        y[new] = quat
+
+    return ml.EvalXyTrainingLoopCallback(
+        network,
+        _mae_metrices,
+        X,
+        y,
+        metric_identifier=f"{exp_id}_{motion_phase}",
+    )
