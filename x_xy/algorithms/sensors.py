@@ -56,18 +56,18 @@ def _draw_random_magvec(key):
     "Unit is in a.u. (40 microTesla)"
     c1, c2 = jax.random.split(key)
 
-    dip_angle_min, dip_angle_max = -80.0, -50.0  # degrees
+    dip_angle_min, dip_angle_max = -85.0, -50.0  # degrees
     dip_angle = jnp.deg2rad(
         jax.random.uniform(c1, minval=dip_angle_min, maxval=dip_angle_max)
     )
 
-    norm_minval, norm_maxval = 25e-6, 65e-6  # Tesla; from lecture script page 10
+    norm_minval, norm_maxval = 15e-6, 65e-6  # Tesla; from lecture script page 10
     # convert Tesla -> a.u. where (1 a.u. ~ 40 microTesla)
     au = 40e-6
     norm_minval, norm_maxval = norm_minval / au, norm_maxval / au
     norm = jax.random.uniform(c2, minval=norm_minval, maxval=norm_maxval)
 
-    return jnp.array([0.0, jnp.cos(dip_angle), -jnp.sin(dip_angle)]) * norm
+    return jnp.array([0.0, jnp.cos(dip_angle), jnp.sin(dip_angle)]) * norm
 
 
 def magnetometer(rot: jax.Array, magvec: jax.Array) -> jax.Array:
