@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import time
 from typing import Callable, NamedTuple, Optional, Tuple
+import warnings
 
 import jax
 import jax.numpy as jnp
@@ -195,7 +196,16 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
 
             save(ele.params, filename, overwrite=True)
             if self.upload:
-                _find_multimedia_logger(self._loggers).log_params(filename)
+                multimedia_logger = _find_multimedia_logger(
+                    self._loggers, raise_exception=False
+                )
+                if multimedia_logger is not None:
+                    multimedia_logger.log_params(filename)
+                else:
+                    warnings.warn(
+                        "Upload of parameters was requested but no `MultimediaLogger`"
+                        " was found."
+                    )
 
             filenames.append(filename)
 
@@ -210,11 +220,19 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
             os.system(f"rmdir {str(Path(filename).parent)}")
 
 
-def _find_multimedia_logger(loggers):
+def _find_multimedia_logger(
+    loggers, raise_exception: bool = True
+) -> MultimediaLogger | None:
     for logger in loggers:
         if isinstance(logger, MultimediaLogger):
             return logger
-    raise Exception(f"Neither `NeptuneLogger` nor `WandbLogger` was found in {loggers}")
+
+    if raise_exception:
+        raise Exception(
+            f"Neither `NeptuneLogger` nor `WandbLogger` was found in {loggers}"
+        )
+    else:
+        return None
 
 
 class LogGradsTrainingLoopCallBack(TrainingLoopCallback):
