@@ -8,6 +8,7 @@ import jax.numpy as jnp
 import optax
 import tree_utils
 
+import wandb
 import x_xy
 from x_xy import maths
 from x_xy.utils import distribute_batchsize
@@ -23,6 +24,7 @@ from .callbacks import TimingKillRunCallback
 from .callbacks import WandbKillRun
 from .ml_utils import load
 from .ml_utils import Logger
+from .ml_utils import WandbLogger
 from .optimizer import make_optimizer
 from .training_loop import TrainingLoop
 from .training_loop import TrainingLoopCallback
@@ -253,6 +255,15 @@ def train(
                 cleanup=True,
             )
         )
+
+    # if wandb is initialized, then add the appropriate logger
+    if wandb.run is not None:
+        wandb_logger_found = False
+        for logger in loggers:
+            if isinstance(logger, WandbLogger):
+                wandb_logger_found = True
+        if not wandb_logger_found:
+            loggers.append(WandbLogger())
 
     loop = TrainingLoop(
         key_generator,
