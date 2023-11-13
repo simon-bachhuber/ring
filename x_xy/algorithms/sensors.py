@@ -53,18 +53,77 @@ def gyroscope(rot: jax.Array, dt: float) -> jax.Array:
 
 
 def _draw_random_magvec(key):
+    "Unit is in a.u. (40 microTesla)"
     c1, c2 = jax.random.split(key)
-    phi = jax.random.uniform(c1, minval=jnp.deg2rad(20.0), maxval=jnp.deg2rad(70.0))
-    norm = jax.random.uniform(c2, minval=0.3, maxval=1.1)
-    return jnp.array([0.0, jnp.cos(phi), -jnp.sin(phi)]) * norm
+
+    dip_angle_min, dip_angle_max = -80.0, -50.0  # degrees
+    dip_angle = jnp.deg2rad(
+        jax.random.uniform(c1, minval=dip_angle_min, maxval=dip_angle_max)
+    )
+
+    norm_minval, norm_maxval = 25e-6, 65e-6  # Tesla; from lecture script page 10
+    # convert Tesla -> a.u. where (1 a.u. ~ 40 microTesla)
+    au = 40e-6
+    norm_minval, norm_maxval = norm_minval / au, norm_maxval / au
+    norm = jax.random.uniform(c2, minval=norm_minval, maxval=norm_maxval)
+
+    return jnp.array([0.0, jnp.cos(dip_angle), -jnp.sin(dip_angle)]) * norm
 
 
 def magnetometer(rot: jax.Array, magvec: jax.Array) -> jax.Array:
     return maths.rotate(magvec, rot)
 
 
-NOISE_LEVELS = {"acc": 0.05, "gyr": jnp.deg2rad(0.5), "mag": 0.05}
-BIAS_LEVELS = {"acc": 0.1, "gyr": jnp.deg2rad(1.0), "mag": 0.05}
+# Xsens MTI 10
+# gyr:
+# - bias error: 0.2 deg/s
+# - bias stability: 18 deg/h
+# - noise density: 0.03 deg/s/sqrt(hz)
+# -> 40 hz: 0.2 deg/s
+# -> 100 hz: 0.3 deg/s
+# acc:
+# - bias error: 0.05 m/s/s
+# - bias stability: 15 micro g (<- gravity)
+# - noise density: 60 micro g/sqrt(hz)
+# -> 40 hz: 0.0036 m/s/s
+# -> 100 hz: 0.006 m/s/s
+# mag:
+# - Total RMS noise: 0.5 milliGauss (1 Gauss = 1e-4 Tesla)
+# -------------
+# Xsens MTI 100
+# gyr:
+# - bias error: 0.2 deg/s
+# - bias stability: 10 deg/h
+# - noise density: 0.01 deg/s/sqrt(hz)
+# -> 40 hz: 0.067 deg/s
+# -> 100 hz: 0.1 deg/s
+# acc:
+# - bias error: 0.05 m/s/s
+# - bias stability: 15 micro g (<- gravity)
+# - noise density: 60 micro g/sqrt(hz)
+# -> 40 hz: 0.0036 m/s/s
+# -> 100 hz: 0.006 m/s/s
+# mag:
+# - Total RMS noise: 0.5 milliGauss
+# -------------
+# Movella Dot
+# gyr:
+# - bias error: ?
+# - bias stability: 10 deg/h
+# - noise density: 0.007 deg/s/sqrt(hz)
+# acc:
+# - bias error: ?
+# - bias stability: 30 micro g
+# - noise density: 120 micro g/sqrt(hz)
+# mag:
+# - Total RMS noise: 0.5 milliGauss = 5e-8 Tesla
+
+# units are:
+# - acc: m/s/s
+# - gyr: rad/s
+# - mag: a.u.
+NOISE_LEVELS = {"acc": 0.03, "gyr": jnp.deg2rad(0.5), "mag": 0.01}
+BIAS_LEVELS = {"acc": 0.1, "gyr": jnp.deg2rad(0.5), "mag": 0.0}
 
 
 def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
@@ -73,7 +132,7 @@ def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
     Args:
         key (jax.random.PRNGKey): Random seed.
         imu_measurements (dict): IMU measurements without noise and bias.
-            Format is {"gyr": Array, "acc": Array}.
+            Format is {"gyr": Array, "acc": Array, "mag": Array}.
 
     Returns:
         dict: IMU measurements with noise and bias.
