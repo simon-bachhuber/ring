@@ -1,25 +1,25 @@
 <x_xy model="knee_flexible_imus">
     <options gravity="0 0 9.81" dt="0.01"/>
     <worldbody>
-        <body name="femur" joint="free" euler="90 90 0" pos="0.5 0.5 0.8" damping="5 5 5 25 25 25">
+        <body name="femur" joint="free" pos="0.5 0.5 0.3" damping="5 5 5 25 25 25">
             <geom type="xyz" dim="0.1"/>
             <geom type="capsule" mass="1" euler="0 90 0" pos="0.2 0 0" dim="0.05 0.4"/>
-            <body name="_imu1" joint="spherical" pos="0.2 0 0" pos_min=".02 -.05 -.05" pos_max="0.38 .05 .05" euler="90 0 0" spring_stiff=".3 .3 .3" damping=".03 .03 .03">
+            <body name="_imu1" joint="spherical" pos="0.2 0 0" pos_min="0.05 0 0" pos_max="0.35 0 0" spring_stiff=".3 .3 .3" damping=".03 .03 .03">
                 <body name="imu1" joint="p3d" pos="0 0 .06" pos_min="-.03 -.03 .03" pos_max=".03 .03 .09" spring_stiff="50 50 50" damping="5 5 5">
                     <geom type="xyz" dim="0.05"/>
                     <geom type="box" mass="0.1" dim="0.05 0.05 0.02" color="orange"/>
                 </body>
             </body>
-            <body name="tibia" joint="rz" pos="0.4 0 0" damping="3">
+            <body name="tibia" joint="ry" pos="0.4 0 0" damping="3">
                 <geom type="xyz" dim="0.1"/>
                 <geom type="capsule" mass="1" euler="0 90 0" pos="0.2 0 0" dim="0.04 0.4"/>
-                <body name="_imu2" joint="spherical" pos="0.2 0 0" pos_min=".02 -.05 -.05" pos_max="0.38 .05 .05" euler="90 0 0" spring_stiff=".3 .3 .3" damping=".03 .03 .03">
+                <body name="_imu2" joint="spherical" pos="0.2 0 0" pos_min="0.05 0 0" pos_max="0.35 0 0" spring_stiff=".3 .3 .3" damping=".03 .03 .03">
                     <body name="imu2" joint="p3d" pos="0 0 .05" pos_min="-.03 -.03 .03" pos_max=".03 .03 .09" spring_stiff="50 50 50" damping="5 5 5">
                         <geom type="xyz" dim="0.05"/>
                         <geom type="box" mass="0.1" dim="0.05 0.05 0.02" color="orange"/>
                     </body>
                 </body>
-                <geom type="box" mass="0" pos="0.45 -.1 0" dim="0.025 0.2 0.05"/>
+                <geom type="box" mass="0" pos="0.45 0 .1" dim="0.025 0.05 0.2"/>
             </body>
         </body>
     </worldbody>
