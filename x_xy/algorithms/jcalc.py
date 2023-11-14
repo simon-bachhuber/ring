@@ -77,8 +77,10 @@ class RCMG_Config:
         for key in [
             "dang_min",
             "dang_max",
+            "delta_ang_min",
             "dang_min_free_spherical",
             "dang_max_free_spherical",
+            "delta_ang_min_free_spherical",
             "dpos_min",
             "dpos_max",
         ]:
