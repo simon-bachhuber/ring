@@ -589,11 +589,11 @@ class State(_Base):
         if q is None:
             q = jnp.zeros((sys.q_size(),))
 
-            # free and spherical joints are not zeros but unit quaternions
-            def replace_by_unit_quat(carry, idx_map, link_typ, link_idx):
+            # free, cor, spherical joints are not zeros but have unit quaternions
+            def replace_by_unit_quat(_, idx_map, link_typ, link_idx):
                 nonlocal q
 
-                if link_typ == "spherical" or link_typ == "free":
+                if link_typ in ["free", "cor", "spherical"]:
                     q_idxs_link = idx_map["q"](link_idx)
                     q = q.at[q_idxs_link.start].set(1.0)
 
