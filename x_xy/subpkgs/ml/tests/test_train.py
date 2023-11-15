@@ -1,4 +1,5 @@
 import jax
+import jax.numpy as jnp
 import tree_utils
 
 import x_xy
@@ -71,3 +72,24 @@ def test_rnno_lru():
 def test_lru():
     lru_fn = lambda sys: ml.make_lru_observer(sys, 10, 3, 4, 5, 2)
     _test_train_rnno_lru(lru_fn)
+
+
+def test_train_rnno_nonsocial():
+    def gen(_):
+        X = dict(a=jnp.ones((1, 1000, 2)), b=dict(c=jnp.zeros((1, 1000, 3))))
+        y = jnp.ones((1, 1000, 4))
+        return X, y
+
+    X, _ = gen(None)
+    observer = ml.make_rnno(hidden_state_dim=20, message_dim=1)
+    params, state = observer.init(jax.random.PRNGKey(1), X)
+
+    state = tree_utils.add_batch_dim(state)
+    y = observer.apply(params, state, X)[0]
+    assert y.shape == (1, 1000, 4)
+
+    ml.train(
+        gen,
+        5,
+        observer,
+    )

@@ -9,6 +9,7 @@ from jax.random import uniform
 import tree_utils
 
 from x_xy import base
+from x_xy import load_sys_from_str
 from x_xy import scan_sys
 from x_xy.maths import safe_normalize
 from x_xy.subpkgs import ml
@@ -131,8 +132,18 @@ def _make_rnno_cell_apply_fn(
     return _rnno_cell_apply_fn
 
 
+_DUMMY_BODY_NAME = "global"
+_dummy_sys = f"""
+<x_xy model="free">
+    <worldbody>
+        <body name="{_DUMMY_BODY_NAME}" joint="frozen"></body>
+    </worldbody>
+</x_xy>
+"""
+
+
 def make_rnno(
-    sys: base.System,
+    sys: Optional[base.System] = None,
     hidden_state_dim: int = 400,
     message_dim: int = 200,
     cell_type: str = "gru",
@@ -149,6 +160,24 @@ def make_rnno(
     keep_toRoot_output: bool = False,
 ) -> SimpleNamespace:
     "Expects batched inputs."
+
+    # NON SOCIAL RNNO
+    if sys is None:
+        kwargs = locals()
+        kwargs["sys"] = load_sys_from_str(_dummy_sys)
+        kwargs["keep_toRoot_output"] = True
+        dummy_rnno = make_rnno(**kwargs)
+
+        def non_social_init(key, X):
+            return dummy_rnno.init(key, {_DUMMY_BODY_NAME: X})
+
+        def non_social_apply(params, state, X):
+            yhat, state = dummy_rnno.apply(params, state, {_DUMMY_BODY_NAME: X})
+            return yhat[_DUMMY_BODY_NAME], state
+
+        return SimpleNamespace(init=non_social_init, apply=non_social_apply)
+
+    # SOCIAL RNNO
 
     if cell_type == "gru":
         cell = hk.GRU
@@ -168,6 +197,9 @@ def make_rnno(
     if link_output_normalize:
         assert link_output_transform is None
         link_output_transform = safe_normalize
+    else:
+        if link_output_transform is None:
+            link_output_transform = lambda x: x
 
     @hk.without_apply_rng
     @hk.transform_with_state

@@ -1,0 +1,26 @@
+<x_xy model="knee_trans_dot">
+    <options gravity="0 0 9.81" dt="0.01"/>
+    <worldbody>
+        <geom type="xyz" dim="0.15"/>
+        <body name="_femur" joint="py" euler="90 90 0" pos="0.5 0.5 0.8">
+            <geom type="xyz" dim="0.1"/>
+            <body name="femur" joint="rz">
+                <geom type="xyz" dim="0.1"/>
+                <geom type="capsule" mass="10" euler="0 90 0" pos="0.2 0 0" dim="0.05 0.4"/>
+                <body name="imu1" joint="frozen" pos="0.2 0 0.06" pos_min=".05 -.06 -.06" pos_max=".35 .06 .06">
+                    <geom type="xyz" dim="0.05"/>
+                    <geom type="box" mass="0" dim="0.05 0.05 0.02" color="orange"/>
+                </body>
+                <body name="tibia" joint="knee" pos="0.4 0 0">
+                    <geom type="xyz" dim="0.1"/>
+                    <geom type="capsule" mass="10" euler="0 90 0" pos="0.2 0 0" dim="0.04 0.4"/>
+                    <body name="imu2" joint="frozen" pos="0.2 0 0.06" pos_min=".05 -.06 -.06" pos_max=".35 .06 .06">
+                        <geom type="xyz" dim="0.05"/>
+                        <geom type="box" mass="0" dim="0.05 0.05 0.02" color="orange"/>
+                    </body>
+                    <geom type="box" mass="5.0" pos="0.45 -.1 0" dim="0.025 0.2 0.05"/>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+</x_xy>

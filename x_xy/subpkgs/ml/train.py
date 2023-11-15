@@ -138,7 +138,7 @@ def train(
     callback_kill_after_seconds: Optional[float] = None,
     callback_kill_tag: Optional[str] = None,
     loss_fn: LOSS_FN = _default_loss_fn,
-    metrices: METRICES = _default_metrices,
+    metrices: Optional[METRICES] = _default_metrices,
 ):
     """Trains RNNO
 
@@ -208,11 +208,12 @@ def train(
         tbp_skip_keep_grads=tbp_skip_keep_grads,
     )
 
-    eval_fn = _build_eval_fn(
-        metrices, network.apply, initial_state, pmap_size, vmap_size
-    )
-
-    default_callbacks = [_DefaultEvalFnCallback(eval_fn)]
+    default_callbacks = []
+    if metrices is not None:
+        eval_fn = _build_eval_fn(
+            metrices, network.apply, initial_state, pmap_size, vmap_size
+        )
+        default_callbacks.append(_DefaultEvalFnCallback(eval_fn))
 
     if callback_kill_tag is not None:
         default_callbacks.append(WandbKillRun(stop_tag=callback_kill_tag))
