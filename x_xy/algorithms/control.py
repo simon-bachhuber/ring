@@ -80,7 +80,7 @@ def pd_control(P: jax.Array, D: jax.Array):
         def f(_, __, q_ref_link, name, typ, P_link, D_link):
             q_ref_link = q_ref_link.T
 
-            if typ == "free":
+            if typ in ["free", "cor"]:
                 dq = _derivative_quaternion(q_ref_link[:, :4], sys.dt)
                 qd_ref = jnp.hstack((dq, _derivative(q_ref_link[:, 4:], sys.dt)))
             elif typ == "spherical":
@@ -112,7 +112,7 @@ def pd_control(P: jax.Array, D: jax.Array):
                 return
 
             q_ref, qd_ref = q_qd_ref[name]
-            if typ == "free":
+            if typ in ["free", "cor"]:
                 P_term = jnp.concatenate(
                     (
                         _p_control_quaternion(q_curr[:4], q_ref[:4]),
