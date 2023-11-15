@@ -48,7 +48,7 @@ def _generator_with_extras(
 ) -> GeneratorWithInputOutputExtras:
     def generator(key: PRNGKey, sys: base.System) -> tuple[Xy, OutputExtras]:
         if config.cor:
-            sys = _replace_free_with_cor(sys)
+            sys = sys._replace_free_with_cor()
 
         key_start = key
         # build generalized coordintes vector `q`
@@ -123,17 +123,3 @@ class GeneratorTrafoRemoveOutputExtras(GeneratorTrafo):
             return gen(*args)[0]
 
         return _gen
-
-
-def _replace_free_with_cor(sys: base.System) -> base.System:
-    # checks
-    for i, p in enumerate(sys.link_parents):
-        link_type = sys.link_types[i]
-        if p == -1:
-            assert link_type == "free"
-        if link_type == "free":
-            assert p == -1
-
-    return sys.replace(
-        link_types=["cor" if typ == "free" else typ for typ in sys.link_types]
-    )

@@ -42,3 +42,8 @@ def test_inverse_dynamics_and_mass_matrix():
         atol=1e-5,
         rtol=1e-7,
     )
+
+
+def test_cor_step_fn():
+    sys = x_xy.load_example("test_free")._replace_free_with_cor()
+    jax.jit(x_xy.step)(sys, x_xy.State.create(sys))

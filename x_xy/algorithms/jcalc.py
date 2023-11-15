@@ -415,7 +415,9 @@ _joint_types = {
     "frozen": JointModel(_frozen_transform, [], _draw_frozen),
     "spherical": JointModel(_spherical_transform, [mrx, mry, mrz], _draw_spherical),
     "p3d": JointModel(_p3d_transform, [mpx, mpy, mpz], _draw_p3d),
-    "cor": JointModel(_cor_transform, [], _draw_cor),
+    "cor": JointModel(
+        _cor_transform, [mrx, mry, mrz, mpx, mpy, mpz, mpx, mpy, mpz], _draw_cor
+    ),
     "rx": JointModel(
         lambda q, _: _rxyz_transform(q, _, jnp.array([1.0, 0, 0])), [mrx], _draw_rxyz
     ),

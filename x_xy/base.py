@@ -382,8 +382,7 @@ QD_WIDTHS = {
     "frozen": 0,
     "spherical": 3,
     "p3d": 3,
-    # `cor` is a purely kinematic joint, does not support dynamical simulation
-    "cor": 0,
+    "cor": 9,
     "px": 1,
     "py": 1,
     "pz": 1,
@@ -490,6 +489,65 @@ class System(_Base):
         if isinstance(a, (np.ndarray, jnp.ndarray, jax.Array)):
             return jnp.array_equal(a, b)
         return a == b
+
+    def _replace_free_with_cor(self) -> "System":
+        # check that
+        # - all free joints connect to -1
+        # - all joints connecting to -1 are free joints
+        for i, p in enumerate(self.link_parents):
+            link_type = self.link_types[i]
+            if (p == -1 and link_type != "free") or (link_type == "free" and p != -1):
+                raise InvalidSystemError(
+                    f"link={self.idx_to_name(i)}, parent={self.idx_to_name(p)},"
+                    f" joint={link_type}"
+                )
+
+        lt, la, ld, ls, lz = [], [], [], [], []
+
+        def f(_, __, olt, ola, old, ols, olz):
+            nlt, nla, nld, nls, nlz = olt, ola, old, ols, olz
+            # old link type == free
+            if olt == "free":
+                # cor joint is (free, p3d) stacked
+                nlt = "cor"
+                # entries of old armature are 3*ang (spherical), 3*pos (p3d)
+                nla = jnp.concatenate((ola, ola[3:]))
+                nld = jnp.concatenate((old, old[3:]))
+                nls = jnp.concatenate((ols, ols[3:]))
+                nlz = jnp.concatenate((olz, olz[4:]))
+            lt.append(nlt)
+            la.append(nla)
+            ld.append(nld)
+            ls.append(nls)
+            lz.append(nlz)
+
+        from x_xy import scan_sys
+
+        scan_sys(
+            self,
+            f,
+            "ldddq",
+            self.link_types,
+            self.link_armature,
+            self.link_damping,
+            self.link_spring_stiffness,
+            self.link_spring_zeropoint,
+        )
+
+        # lt is supposed to be a list of strings; no concat required
+        la, ld, ls, lz = map(jnp.concatenate, (la, ld, ls, lz))
+
+        return self.replace(
+            link_types=lt,
+            link_armature=la,
+            link_damping=ld,
+            link_spring_stiffness=ls,
+            link_spring_zeropoint=lz,
+        )
+
+
+class InvalidSystemError(Exception):
+    pass
 
 
 @struct.dataclass
