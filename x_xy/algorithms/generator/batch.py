@@ -1,3 +1,4 @@
+import math
 import random
 import warnings
 
@@ -20,10 +21,69 @@ def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:
     return jnp.array(arr)
 
 
+def _size_per_device_sweetspot() -> int:
+    backend = jax.default_backend()
+    if backend == "cpu":
+        return 4
+    elif backend == "gpu":
+        return 64
+    else:
+        raise NotImplementedError(f"The backend '{backend}' is not 'cpu' nor 'gpu'.")
+
+
+def _single_call_optimized(
+    generators: Generator | list[Generator],
+    batchsizes: int | list[int] = 1,
+    stochastic: bool = False,
+):
+    # currently supports only batchsizes being int, not list[int]
+    if isinstance(batchsizes, list):
+        return batch_generators_lazy(
+            generators=generators,
+            batchsizes=batchsizes,
+            stochastic=stochastic,
+            single_call_opt=False,
+        )
+
+    size = batchsizes
+    size_sweetspot = (
+        jax.device_count(jax.default_backend()) * _size_per_device_sweetspot()
+    )
+    size_sweetspot = min(size, size_sweetspot)
+
+    gen_sweetspot = batch_generators_lazy(
+        generators=generators,
+        batchsizes=size_sweetspot,
+        stochastic=stochastic,
+        single_call_opt=False,
+    )
+    n_calls = math.ceil(size / size_sweetspot)
+
+    def forloop_generator(key):
+        keys = jax.random.split(key, n_calls + 1)
+
+        data = []
+        for key in keys[:-1]:
+            data.append(gen_sweetspot(key))
+
+        # permute the data from last call because it might be not used completely
+        # and then we wouldn't get a uniform sample from the generators as we
+        # exepect to get
+        data[-1] = jax.tree_map(
+            lambda arr: jax.random.permutation(keys[-1], arr), data[-1]
+        )
+
+        data = tree_utils.tree_batch(data, True, "jax")
+        return tree_utils.tree_slice(data, start=0, slice_size=size)
+
+    return forloop_generator
+
+
 def batch_generators_lazy(
     generators: Generator | list[Generator],
     batchsizes: int | list[int] = 1,
     stochastic: bool = False,
+    single_call_opt: bool = False,
 ) -> BatchedGenerator:
     """Create a large generator by stacking multiple generators lazily.
     NOTE: If `stochastic` then `batchsizes` must be a single integer.
@@ -37,6 +97,15 @@ def batch_generators_lazy(
         if ndim > 2:
             warnings.warn(f"`generators` seem already batched. ndim={ndim}")
             return generators
+
+    if single_call_opt:
+        warnings.warn(
+            "Unfortunately, the flag `single_call_opt` seems to always"
+            " decrease performance."
+        )
+        return _single_call_optimized(
+            generators=generators, batchsizes=batchsizes, stochastic=stochastic
+        )
 
     generators = utils.to_list(generators)
 
@@ -167,4 +236,14 @@ def _process_sizes_batchsizes_generators(
         assert 0 not in list_sizes
 
     assert len(generators) == len(list_sizes)
+
+    _WARN_SIZE = 4096
+    for size in list_sizes:
+        if size >= _WARN_SIZE:
+            warnings.warn(
+                f"A generator will be called with a large batchsize of {size} "
+                f"(warn limit is {_WARN_SIZE}). The generator sizes are {list_sizes}."
+            )
+            break
+
     return generators, list_sizes
