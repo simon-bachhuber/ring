@@ -125,9 +125,11 @@ def render_prediction(
     xs: base.Transform | list[base.Transform],
     yhat: dict,
     stepframe: int = 1,
+    # by default we don't predict the global rotation
+    transparent_segment_to_root: bool = True,
     **kwargs,
 ):
-    "`xs` matches `sys`. `yhat` matches `sys_noimu`."
+    "`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent."
     from x_xy.subpkgs import sim2real
     from x_xy.subpkgs import sys_composer
 
@@ -140,7 +142,6 @@ def render_prediction(
     xs_noimu = sim2real.match_xs(sys_noimu, xs, sys)
 
     # `yhat` are child-to-parent transforms, but we need parent-to-child
-    # this dictonary has now all links that don't connect to worldbody
     transform2hat_rot = jax.tree_map(lambda quat: maths.quat_inv(quat), yhat)
 
     transform1, transform2 = sim2real.unzip_xs(sys_noimu, xs_noimu)
@@ -177,7 +178,7 @@ def render_prediction(
         )
     )
 
-    sys_render = _sys_render(sys)
+    sys_render = _sys_render(sys, transparent_segment_to_root)
     xs_render = []
     for name in sys_render.link_names:
         xs_render.append(xs_dict[name])
@@ -234,16 +235,16 @@ def _replace_xyz_geoms(geoms: list[base.Geometry]) -> list[base.Geometry]:
     return geoms_replaced
 
 
-def _sys_render(sys: base.Transform) -> base.Transform:
+def _sys_render(
+    sys: base.Transform, transparent_segment_to_root: bool
+) -> base.Transform:
     from x_xy.subpkgs import sys_composer
 
     sys_noimu, _ = sys_composer.make_sys_noimu(sys)
 
     def _geoms_replace_color(sys: base.System, color):
-        link_idx_to_root = 0
-        geoms = [
-            g.replace(color=color) for g in sys.geoms if g.link_idx != link_idx_to_root
-        ]
+        keep = lambda i: (not transparent_segment_to_root) or sys.link_parents[i] != -1
+        geoms = [g.replace(color=color) for g in sys.geoms if keep(g.link_idx)]
         return sys.replace(geoms=geoms)
 
     # replace render color of geoms for render of predicted motion
