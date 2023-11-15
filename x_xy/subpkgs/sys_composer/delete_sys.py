@@ -96,7 +96,12 @@ def _find_subsystem_indices(parents: list[int], k: int) -> list[int]:
 
 def _idx_map_and_keepers(parents: list[int], subsys: list[int]):
     num_links = len(parents)
-    keep = list(set(range(num_links)) - set(subsys))
+    # keep must be in ascending order
+    keep = []
+    for i in range(num_links):
+        if i not in subsys:
+            keep.append(i)
+
     idx_map = dict(zip([-1] + keep, range(-1, len(keep))))
     return idx_map, keep
 

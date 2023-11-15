@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 import x_xy
+from x_xy.subpkgs import exp
 from x_xy.subpkgs.sys_composer import delete_subsystem
 from x_xy.subpkgs.sys_composer import identify_system
 from x_xy.subpkgs.sys_composer import inject_system
@@ -62,6 +63,23 @@ def test_delete_subsystem():
 
     # test jit
     jax.jit(delete_subsystem, static_argnums=1)(inject_system(sys1, sys2), "upper")
+
+
+def test_delete_subsystem_cut_twice_versus_cut_once():
+    # seg3 connects to -1
+    sys = morph_system(
+        x_xy.io.load_example("test_three_seg_seg2"),
+        ["seg3", "seg2", "seg1", -1, "seg3"],
+    )
+
+    assert sys_compare(
+        delete_subsystem(sys, ["seg1", "seg2"]), delete_subsystem(sys, ["seg2"])
+    )
+
+    sys = exp.load_sys("S_06", morph_yaml_key="seg3")
+    assert sys_compare(
+        delete_subsystem(sys, ["seg5", "seg2"]), delete_subsystem(sys, ["seg2"])
+    )
 
 
 def test_tree_equal():
