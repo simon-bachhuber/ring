@@ -26,7 +26,11 @@ class RNNOFilter:
         self._identifier = identifier
         self.key = key
         self.params = params
-        self.rnno_fn = lambda sys: ml.make_rnno(sys, **rnno_kwargs)
+        if "sys" in rnno_kwargs and rnno_kwargs["sys"] is None:
+            rnno_kwargs.pop("sys")
+            self.rnno_fn = lambda sys: ml.make_rnno(sys=None, **rnno_kwargs)
+        else:
+            self.rnno_fn = lambda sys: ml.make_rnno(sys, **rnno_kwargs)
 
     def init(self, sys, X_t0):
         X_batched = tree_utils.to_3d_if_2d(tree_utils.add_batch_dim(X_t0), strict=True)
