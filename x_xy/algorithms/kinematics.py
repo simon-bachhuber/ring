@@ -83,7 +83,7 @@ def inverse_kinematics_endeffector(
             q0 = base.State.create(sys).q
         else:
             q0s = jax.random.normal(key, shape=(random_q0_starts, sys.q_size()))
-            qs, results = jax.vmap(
+            qs, values, results = jax.vmap(
                 lambda q0: inverse_kinematics_endeffector(
                     sys,
                     endeffector_link_name,
@@ -93,19 +93,24 @@ def inverse_kinematics_endeffector(
                     q0,
                     None,
                     None,
+                    custom_joints,
                     jaxopt_solver,
                     **jaxopt_solver_kwargs,
                 )
             )(q0s)
-            # find best result
-            best_q_index = jnp.argmin(results.state.value)
-            best_q, best_result = jax.tree_map(
+
+            # find result of best q0 initial value
+            best_q_index = jnp.argmin(values)
+            best_q, best_q_value = jax.tree_map(
                 lambda arr: jax.lax.dynamic_index_in_dim(
                     arr, best_q_index, keepdims=False
                 ),
-                (qs, results),
+                (
+                    qs,
+                    values,
+                ),
             )
-            return best_q, best_result
+            return best_q, best_q_value, results
     else:
         assert len(q0) == sys.q_size()
 
@@ -142,4 +147,6 @@ def inverse_kinematics_endeffector(
 
     solver = jaxopt_solver(objective, **jaxopt_solver_kwargs)
     results = solver.run(q0)
-    return preprocess_q(results.params), results
+    q_sol = preprocess_q(results.params)
+    q_sol_value = objective(results.params)
+    return q_sol, q_sol_value, results
