@@ -502,10 +502,10 @@ class System(_Base):
                     f" joint={link_type}"
                 )
 
-        lt, la, ld, ls, lz = [], [], [], [], []
-
-        def f(_, __, olt, ola, old, ols, olz):
+        def logic_replace_free_with_cor(name, olt, ola, old, ols, olz):
+            # by default new is equal to old
             nlt, nla, nld, nls, nlz = olt, ola, old, ols, olz
+
             # old link type == free
             if olt == "free":
                 # cor joint is (free, p3d) stacked
@@ -515,35 +515,66 @@ class System(_Base):
                 nld = jnp.concatenate((old, old[3:]))
                 nls = jnp.concatenate((ols, ols[3:]))
                 nlz = jnp.concatenate((olz, olz[4:]))
-            lt.append(nlt)
-            la.append(nla)
-            ld.append(nld)
-            ls.append(nls)
-            lz.append(nlz)
 
-        from x_xy import scan_sys
+            return nlt, nla, nld, nls, nlz
 
-        scan_sys(
-            self,
-            f,
-            "ldddq",
-            self.link_types,
-            self.link_armature,
-            self.link_damping,
-            self.link_spring_stiffness,
-            self.link_spring_zeropoint,
-        )
+        return _update_sys_if_replace_joint_type(self, logic_replace_free_with_cor)
 
-        # lt is supposed to be a list of strings; no concat required
-        la, ld, ls, lz = map(jnp.concatenate, (la, ld, ls, lz))
+    def freeze(self, name: str | list[str]):
+        if isinstance(name, list):
+            sys = self
+            for n in name:
+                sys = sys.freeze(n)
+            return sys
 
-        return self.replace(
-            link_types=lt,
-            link_armature=la,
-            link_damping=ld,
-            link_spring_stiffness=ls,
-            link_spring_zeropoint=lz,
-        )
+        def logic_freeze(link_name, olt, ola, old, ols, olz):
+            nlt, nla, nld, nls, nlz = olt, ola, old, ols, olz
+
+            if link_name == name:
+                nlt = "frozen"
+                nla = nld = nls = nlz = jnp.array([])
+
+            return nlt, nla, nld, nls, nlz
+
+        return _update_sys_if_replace_joint_type(self, logic_freeze)
+
+
+def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
+    lt, la, ld, ls, lz = [], [], [], [], []
+
+    def f(_, __, name, olt, ola, old, ols, olz):
+        nlt, nla, nld, nls, nlz = logic(name, olt, ola, old, ols, olz)
+
+        lt.append(nlt)
+        la.append(nla)
+        ld.append(nld)
+        ls.append(nls)
+        lz.append(nlz)
+
+    from x_xy import scan_sys
+
+    scan_sys(
+        sys,
+        f,
+        "lldddq",
+        sys.link_names,
+        sys.link_types,
+        sys.link_armature,
+        sys.link_damping,
+        sys.link_spring_stiffness,
+        sys.link_spring_zeropoint,
+    )
+
+    # lt is supposed to be a list of strings; no concat required
+    la, ld, ls, lz = map(jnp.concatenate, (la, ld, ls, lz))
+
+    return sys.replace(
+        link_types=lt,
+        link_armature=la,
+        link_damping=ld,
+        link_spring_stiffness=ls,
+        link_spring_zeropoint=lz,
+    )
 
 
 class InvalidSystemError(Exception):
