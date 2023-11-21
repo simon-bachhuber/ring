@@ -8,7 +8,7 @@ from .xml import load_sys_from_xml
 
 EXAMPLES_DIR = Path(__file__).parent.joinpath("examples")
 FOLDERS = ["", "test_morph_system"]
-EXCLUDE_FOLDERS = ["DELETE", "experiments"]
+EXCLUDE_FOLDERS = ["exclude"]
 
 
 def load_example(name: str):

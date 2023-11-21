@@ -1,4 +1,4 @@
-<x_xy model="knee_trans_dot">
+<x_xy model="knee_trans_dof">
     <options gravity="0 0 9.81" dt="0.01"/>
     <worldbody>
         <geom type="xyz" dim="0.15"/>

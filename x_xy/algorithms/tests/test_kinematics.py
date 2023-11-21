@@ -71,13 +71,13 @@ def test_inv_kinematics_endeffector():
             )[1].x[sys.name_to_idx("endeffector")]
 
             q0 = jax.random.normal(c2, (sys.q_size(),))
-            _, results = x_xy.inverse_kinematics_endeffector(
+            _, value, _ = x_xy.inverse_kinematics_endeffector(
                 sys,
                 "endeffector",
                 endeffector_x,
                 q0=q0,
             )
-            return results.state.value
+            return value
 
         for trial in range(20):
             print(sys.model_name, trial)
