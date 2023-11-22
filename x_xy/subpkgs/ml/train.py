@@ -139,7 +139,7 @@ def train(
     callback_kill_tag: Optional[str] = None,
     loss_fn: LOSS_FN = _default_loss_fn,
     metrices: Optional[METRICES] = _default_metrices,
-):
+) -> bool:
     """Trains RNNO
 
     Args:
@@ -156,6 +156,9 @@ def train(
         initial_params: If given uses as initial parameters.
         key_network: PRNG Key that inits the network state and parameters.
         key_generator: PRNG Key that inits the data stream of the generator.
+
+    Returns: bool
+        Wether or not the training run was killed by a callback.
     """
 
     # test if generator is batched..
@@ -276,7 +279,7 @@ def train(
         callbacks=callbacks_all,
     )
 
-    loop.run(n_episodes)
+    return loop.run(n_episodes)
 
 
 def _build_eval_fn(

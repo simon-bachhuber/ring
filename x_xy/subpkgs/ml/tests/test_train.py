@@ -95,8 +95,5 @@ def test_train_rnno_lru_nonsocial():
         y = observer.apply(params, state, X)[0]
         assert y.shape == (1, 1000, 4)
 
-        ml.train(
-            gen,
-            5,
-            observer,
-        )
+        killed = ml.train(gen, 5, observer, callback_kill_if_nan=True)
+        assert not killed

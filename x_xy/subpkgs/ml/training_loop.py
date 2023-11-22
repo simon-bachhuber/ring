@@ -76,7 +76,7 @@ class TrainingLoop:
             self._key, consume = jax.random.split(self._key)
             return consume
 
-    def run(self, n_episodes: int = 1, close_afterwards: bool = True):
+    def run(self, n_episodes: int = 1, close_afterwards: bool = True) -> bool:
         for _ in tqdm.tqdm(range(n_episodes)):
             self.step()
 
@@ -85,6 +85,8 @@ class TrainingLoop:
 
         if close_afterwards:
             self.close()
+
+        return _KILL_RUN
 
     def step(self):
         self.i_episode += 1
