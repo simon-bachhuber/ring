@@ -126,8 +126,13 @@ NOISE_LEVELS = {"acc": 0.03, "gyr": jnp.deg2rad(0.5), "mag": 0.01}
 BIAS_LEVELS = {"acc": 0.1, "gyr": jnp.deg2rad(0.5), "mag": 0.0}
 
 
-def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
-    """Add noise and bias to 6D imu measurements.
+def add_noise_bias(
+    key: jax.random.PRNGKey,
+    imu_measurements: dict[str, jax.Array],
+    noise_levels: Optional[dict[str, float | None]] = None,
+    bias_levels: Optional[dict[str, float | None]] = None,
+) -> dict[str, jax.Array]:
+    """Add noise and bias to 6D or 9D imu measurements.
 
     Args:
         key (jax.random.PRNGKey): Random seed.
@@ -137,17 +142,32 @@ def add_noise_bias(key: jax.random.PRNGKey, imu_measurements: dict) -> dict:
     Returns:
         dict: IMU measurements with noise and bias.
     """
+    noise_levels = {} if noise_levels is None else noise_levels
+    bias_levels = {} if bias_levels is None else bias_levels
+
     noisy_imu_measurements = {}
     for sensor in imu_measurements:
         key, c1, c2 = jax.random.split(key, 3)
-        noise = (
-            jax.random.normal(c1, shape=imu_measurements[sensor].shape)
-            * NOISE_LEVELS[sensor]
-        )
-        bias = jax.random.uniform(
-            c2, minval=-BIAS_LEVELS[sensor], maxval=BIAS_LEVELS[sensor], shape=(3,)
-        )
+
+        noise_scale = noise_levels.get(sensor, NOISE_LEVELS[sensor])
+        if noise_scale is not None:
+            noise = (
+                jax.random.normal(c1, shape=imu_measurements[sensor].shape)
+                * noise_scale
+            )
+        else:
+            noise = 0.0
+
+        bias_maxval = bias_levels.get(sensor, BIAS_LEVELS[sensor])
+        if bias_maxval is not None:
+            bias = jax.random.uniform(
+                c2, minval=-bias_maxval, maxval=bias_maxval, shape=(3,)
+            )
+        else:
+            bias = 0.0
+
         noisy_imu_measurements[sensor] = imu_measurements[sensor] + noise + bias
+
     return noisy_imu_measurements
 
 
