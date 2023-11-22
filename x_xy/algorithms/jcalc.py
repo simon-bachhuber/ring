@@ -445,12 +445,21 @@ def register_new_joint_type(
     joint_model: JointModel,
     q_width: int,
     qd_width: Optional[int] = None,
+    overwrite: bool = False,
 ):
+    exists = joint_type in _joint_types
+    if exists and overwrite:
+        for dic in [base.Q_WIDTHS, base.QD_WIDTHS, _joint_types]:
+            dic.pop(joint_type)
+    else:
+        assert (
+            not exists
+        ), f"joint type `{joint_type}`already exists, use `overwrite=True`"
+
     if qd_width is None:
         qd_width = q_width
 
     assert len(joint_model.motion) == qd_width
-    assert joint_type not in _joint_types, "already exists"
     _joint_types.update({joint_type: joint_model})
     base.Q_WIDTHS.update({joint_type: q_width})
     base.QD_WIDTHS.update({joint_type: qd_width})
