@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import pickle
 import time
+from types import SimpleNamespace
 from typing import Optional, Union
 import webbrowser
 
@@ -16,6 +17,7 @@ from tree_utils import PyTree
 from tree_utils import tree_batch
 
 import wandb
+from x_xy.io import load_sys_from_str
 from x_xy.utils import download_from_repo
 
 suffix = ".pickle"
@@ -398,3 +400,28 @@ def unique_id(reset: bool = False) -> str:
     if reset or (__unique_exp_id is None):
         __unique_exp_id = hash(time.time())
     return hex(__unique_exp_id)
+
+
+_DUMMY_BODY_NAME = "global"
+_dummy_sys_xml_str = f"""
+<x_xy model="free">
+    <worldbody>
+        <body name="{_DUMMY_BODY_NAME}" joint="frozen"></body>
+    </worldbody>
+</x_xy>
+"""
+
+
+def make_non_social_version(make_social_version, kwargs: dict):
+    kwargs["sys"] = load_sys_from_str(_dummy_sys_xml_str)
+    kwargs["keep_toRoot_output"] = True
+    dummy_rnno = make_social_version(**kwargs)
+
+    def non_social_init(key, X):
+        return dummy_rnno.init(key, {_DUMMY_BODY_NAME: X})
+
+    def non_social_apply(params, state, X):
+        yhat, state = dummy_rnno.apply(params, state, {_DUMMY_BODY_NAME: X})
+        return yhat[_DUMMY_BODY_NAME], state
+
+    return SimpleNamespace(init=non_social_init, apply=non_social_apply)

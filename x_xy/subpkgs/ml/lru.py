@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Callable, Optional
 
 import flax.linen as nn
 import jax
@@ -9,6 +10,8 @@ from tree_utils import tree_shape
 
 from x_xy import maths
 from x_xy import System
+
+from .ml_utils import make_non_social_version
 
 parallel_scan = jax.lax.associative_scan
 
@@ -103,14 +106,17 @@ _batch_module = lambda module: nn.vmap(
 class ResidualBlockLRU(nn.Module):
     N: int
     H: int
+    layernorm: bool
 
     @nn.compact
     def __call__(self, input_sequence):
         assert input_sequence.ndim == 3
 
         # norm
-        # x = nn.LayerNorm()(input_sequence)
-        x = input_sequence
+        if self.layernorm:
+            x = nn.LayerNorm()(input_sequence)
+        else:
+            x = input_sequence
         # recurrency
         x = _batch_module(UnrolledLRU)(self.N, self.H)(x)
         # glu
@@ -132,6 +138,8 @@ class LRU_Observer(nn.Module):
     # embeeding dimension - H
     embed_dim: int
     n_residual_blocks: int
+    layernorm: bool
+    link_output_transform: Callable
 
     @nn.compact
     def __call__(self, X):  # {name: {gyr: (bs, L, features), ..., }, ...}
@@ -155,7 +163,9 @@ class LRU_Observer(nn.Module):
         x = nn.Dense(self.embed_dim)(encoder_state)
 
         for _ in range(self.n_residual_blocks):
-            x = ResidualBlockLRU(self.hidden_state_dim_lru, self.embed_dim)(x)
+            x = ResidualBlockLRU(
+                self.hidden_state_dim_lru, self.embed_dim, self.layernorm
+            )(x)
 
         # decoder; (bs, L, hidden_state_decoder)
         decoder_state0 = nn.Dense(self.hidden_state_dim_decoder)(x)
@@ -177,34 +187,52 @@ class LRU_Observer(nn.Module):
         )
 
         # create final output
-        output = maths.safe_normalize(nn.Dense(self.output_dim)(decoder_state_seq_4d))
+        output = nn.Dense(self.output_dim)(decoder_state_seq_4d)
+        output = self.link_output_transform(output)
 
         return {
             name: output[..., i, :]
             for i, name in enumerate(self.sys.link_names)
-            if self.sys.link_parents[i] != -1
+            # if self.sys.link_parents[i] != -1
         }
 
 
 def make_lru_observer(
-    sys: System,
+    sys: Optional[System] = None,
     hidden_state_dim_lru: int = 192,
     hidden_state_dim_encoder: int = 96,
     hidden_state_dim_decoder: int = 96,
     embed_dim: int = 192,
     n_residual_blocks: int = 2,
+    layernorm: bool = False,
+    keep_toRoot_output: bool = False,
+    link_output_dim: int = 4,
+    link_output_normalize: bool = True,
+    link_output_transform: Optional[Callable] = None,
 ):
+    if sys is None:
+        return make_non_social_version(make_lru_observer, kwargs=locals())
+
     assert sys.num_links() < _MAX_OUTPUT_N_LINKS
+
+    if link_output_normalize:
+        assert link_output_transform is None
+        link_output_transform = maths.safe_normalize
+    else:
+        if link_output_transform is None:
+            link_output_transform = lambda x: x
 
     dummy_state = jnp.zeros((1,))
     lru_observer = LRU_Observer(
         sys=sys,
-        output_dim=4,
+        output_dim=link_output_dim,
         hidden_state_dim_lru=hidden_state_dim_lru,
         hidden_state_dim_encoder=hidden_state_dim_encoder,
         hidden_state_dim_decoder=hidden_state_dim_decoder,
         embed_dim=embed_dim,
         n_residual_blocks=n_residual_blocks,
+        layernorm=layernorm,
+        link_output_transform=link_output_transform,
     )
 
     def init(key, X):
@@ -213,6 +241,10 @@ def make_lru_observer(
 
     def apply(params, state, X):
         yhat = lru_observer.apply(params, X)
+        if not keep_toRoot_output:
+            for i, name in enumerate(sys.link_names):
+                if sys.link_parents[i] == -1:
+                    yhat.pop(name)
         return yhat, state
 
     return SimpleNamespace(init=init, apply=apply)

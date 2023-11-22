@@ -51,7 +51,7 @@ dev_requires = [
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.10.11",
+    version="0.10.12",
     package_data={
         "x_xy": find_data_files(
             # parameters and datasets are now downloaded on-demand

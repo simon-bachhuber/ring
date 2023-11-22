@@ -74,22 +74,29 @@ def test_lru():
     _test_train_rnno_lru(lru_fn)
 
 
-def test_train_rnno_nonsocial():
+def test_train_rnno_lru_nonsocial():
     def gen(_):
         X = dict(a=jnp.ones((1, 1000, 2)), b=dict(c=jnp.zeros((1, 1000, 3))))
         y = jnp.ones((1, 1000, 4))
         return X, y
 
-    X, _ = gen(None)
-    observer = ml.make_rnno(hidden_state_dim=20, message_dim=1)
-    params, state = observer.init(jax.random.PRNGKey(1), X)
+    for observer in [
+        ml.make_rnno(hidden_state_dim=20, message_dim=1),
+        ml.make_lru_observer(
+            hidden_state_dim_decoder=4,
+            hidden_state_dim_encoder=4,
+            hidden_state_dim_lru=10,
+        ),
+    ]:
+        X, _ = gen(None)
+        params, state = observer.init(jax.random.PRNGKey(1), X)
 
-    state = tree_utils.add_batch_dim(state)
-    y = observer.apply(params, state, X)[0]
-    assert y.shape == (1, 1000, 4)
+        state = tree_utils.add_batch_dim(state)
+        y = observer.apply(params, state, X)[0]
+        assert y.shape == (1, 1000, 4)
 
-    ml.train(
-        gen,
-        5,
-        observer,
-    )
+        ml.train(
+            gen,
+            5,
+            observer,
+        )

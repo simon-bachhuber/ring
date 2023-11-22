@@ -9,10 +9,10 @@ from jax.random import uniform
 import tree_utils
 
 from x_xy import base
-from x_xy import load_sys_from_str
 from x_xy import scan_sys
 from x_xy.maths import safe_normalize
-from x_xy.subpkgs import ml
+
+from .ml_utils import make_non_social_version
 
 
 class RNNOFilter:
@@ -28,9 +28,9 @@ class RNNOFilter:
         self.params = params
         if "sys" in rnno_kwargs and rnno_kwargs["sys"] is None:
             rnno_kwargs.pop("sys")
-            self.rnno_fn = lambda sys: ml.make_rnno(sys=None, **rnno_kwargs)
+            self.rnno_fn = lambda sys: make_rnno(sys=None, **rnno_kwargs)
         else:
-            self.rnno_fn = lambda sys: ml.make_rnno(sys, **rnno_kwargs)
+            self.rnno_fn = lambda sys: make_rnno(sys, **rnno_kwargs)
 
     def init(self, sys, X_t0):
         X_batched = tree_utils.to_3d_if_2d(tree_utils.add_batch_dim(X_t0), strict=True)
@@ -136,16 +136,6 @@ def _make_rnno_cell_apply_fn(
     return _rnno_cell_apply_fn
 
 
-_DUMMY_BODY_NAME = "global"
-_dummy_sys = f"""
-<x_xy model="free">
-    <worldbody>
-        <body name="{_DUMMY_BODY_NAME}" joint="frozen"></body>
-    </worldbody>
-</x_xy>
-"""
-
-
 def make_rnno(
     sys: Optional[base.System] = None,
     hidden_state_dim: int = 400,
@@ -165,23 +155,8 @@ def make_rnno(
 ) -> SimpleNamespace:
     "Expects batched inputs."
 
-    # NON SOCIAL RNNO
     if sys is None:
-        kwargs = locals()
-        kwargs["sys"] = load_sys_from_str(_dummy_sys)
-        kwargs["keep_toRoot_output"] = True
-        dummy_rnno = make_rnno(**kwargs)
-
-        def non_social_init(key, X):
-            return dummy_rnno.init(key, {_DUMMY_BODY_NAME: X})
-
-        def non_social_apply(params, state, X):
-            yhat, state = dummy_rnno.apply(params, state, {_DUMMY_BODY_NAME: X})
-            return yhat[_DUMMY_BODY_NAME], state
-
-        return SimpleNamespace(init=non_social_init, apply=non_social_apply)
-
-    # SOCIAL RNNO
+        return make_non_social_version(make_rnno, kwargs=locals())
 
     if cell_type == "gru":
         cell = hk.GRU
