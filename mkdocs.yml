@@ -15,22 +15,15 @@ nav:
     - 'notebooks/imu_modeling.ipynb'
     - 'notebooks/machine_learning.ipynb'
     - 'notebooks/knee_joint_translational_dof.ipynb'
-  - API: 
-    - System: api/system.md
-    - State: api/state.md
-    - Transform: api/transform.md
-    - Dynamic Simulation: api/dyn_sim.md
-    - Kinematic Simulation: api/kin_sim.md
-    - Sensors: api/sensors.md
-    - Rendering: api/rendering.md
-    - Register New Joint Types: api/register.md
+  - API (x_xy): 
+    - x_xy: api/x_xy.md
     - x_xy.maths: api/maths.md
-  - API (subpkgs):
-    - sys_composer: api/sys_composer.md
-    - sim2real: api/sim2real.md
-    - exp: api/exp.md
-    - omc: api/omc.md
-    - ml: api/ml.md
+  - API (from x_xy.subpkgs import ...):
+    - sys_composer: api/subpkgs/sys_composer.md
+    - sim2real: api/subpkgs/sim2real.md
+    - exp: api/subpkgs/exp.md
+    - omc: api/subpkgs/omc.md
+    - ml: api/subpkgs/ml.md
 
 theme:
     name: material

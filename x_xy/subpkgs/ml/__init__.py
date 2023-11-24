@@ -1,4 +1,7 @@
 from . import express
+from .base import AbstractFilter
+from .base import AbstractFilter2d
+from .base import InitApplyFnFilter
 from .callbacks import EvalXyTrainingLoopCallback
 from .lru import make_lru_observer
 from .ml_utils import disable_syncing_to_cloud
@@ -14,5 +17,4 @@ from .ml_utils import unique_id
 from .ml_utils import WandbLogger
 from .optimizer import make_optimizer
 from .rnno import make_rnno
-from .rnno import RNNOFilter
 from .train import train

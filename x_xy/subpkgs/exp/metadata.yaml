@@ -35,24 +35,29 @@ S_06:
     imu: 40.0
 S_07:
   timings:
-    canonical:
-    pause1:
-    slow_fast_mix:
-    pause2:
-    canonical:
-    pause3:
-    slow_fast_freeze_mix:
-    pause4:
+    canonical: 37.5
+    pause1: 140.5
+    slow_fast_mix: 145.75
+    pause2: 212.0
+    canonical: 218.0
+    pause3: 308.5
+    slow_fast_freeze_mix: 313.5
+    pause4: 381.5
   hz:
     omc: 30.0
     imu: 40.0
 S_08:
   timings:
-    slow:
-    dangle1:
-    pause1:
-    dangle2:
-    pause2:
+    slow1: 35.0
+    dangle1: 50.0
+    pause1: 80.25
+    dangle2: 82.5
+    pause2: 155.0
+    slow2: 178.75
+    dangle3: 195.0
+    pause3: 222.5
+    dangle4: 228.75
+    pause4: 301.25
   hz:
     omc: 30.0
     imu: 40.0

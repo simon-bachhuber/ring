@@ -1,5 +1,13 @@
 ::: x_xy.subpkgs.ml.rnno.make_rnno
 
+::: x_xy.subpkgs.ml.lru.make_lru_observer
+
+::: x_xy.subpkgs.ml.base.AbstractFilter
+
+::: x_xy.subpkgs.ml.base.AbstractFilter2d
+
+::: x_xy.subpkgs.ml.base.InitApplyFnFilter
+
 ::: x_xy.subpkgs.ml.train.train
 
 ::: x_xy.subpkgs.ml.optimizer.make_optimizer
