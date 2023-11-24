@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://x_xy.com/api/maths/">
       
       
-        <link rel="prev" href="../register/">
+        <link rel="prev" href="../x_xy/">
       
       
-        <link rel="next" href="../sys_composer/">
+        <link rel="next" href="../subpkgs/sys_composer/">
       
       
       <link rel="icon" href="../../img/favicon.ico">
@@ -518,7 +518,7 @@
             
   
   <span class="md-ellipsis">
-    API
+    API (x_xy)
   </span>
   
 
@@ -528,7 +528,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            API
+            API (x_xy)
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -538,151 +538,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../system/" class="md-nav__link">
+      <a href="../x_xy/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    System
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../state/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    State
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../transform/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Transform
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dyn_sim/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dynamic Simulation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../kin_sim/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Kinematic Simulation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sensors/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Sensors
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../rendering/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Rendering
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../register/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Register New Joint Types
+    x_xy
   </span>
   
 
@@ -756,6 +616,13 @@
         <li class="md-nav__item">
   <a href="#x_xy.maths.quat.quat_random" class="md-nav__link">
     quat_random()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.quat.unit_quats_like" class="md-nav__link">
+    unit_quats_like()
   </a>
   
 </li>
@@ -838,8 +705,50 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#x_xy.maths.quat.rotate_matrix" class="md-nav__link">
+    rotate_matrix()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.quat.quat_angle" class="md-nav__link">
+    quat_angle()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.quat.quat_angle_constantAxisOverTime" class="md-nav__link">
+    quat_angle_constantAxisOverTime()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#x_xy.maths.quat.angle_error" class="md-nav__link">
     angle_error()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.quat.quat_inclinationAngle" class="md-nav__link">
+    quat_inclinationAngle()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.quat.quat_headingAngle" class="md-nav__link">
+    quat_headingAngle()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.safe.safe_norm" class="md-nav__link">
+    safe_norm()
   </a>
   
 </li>
@@ -852,8 +761,57 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#x_xy.maths.safe.safe_arccos" class="md-nav__link">
+    safe_arccos()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.safe.safe_arcsin" class="md-nav__link">
+    safe_arcsin()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#x_xy.maths.basic.wrap_to_pi" class="md-nav__link">
     wrap_to_pi()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.quat.ensure_positive_w" class="md-nav__link">
+    ensure_positive_w()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.basic.unit_vectors" class="md-nav__link">
+    unit_vectors()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.basic.x_unit_vector" class="md-nav__link">
+    x_unit_vector
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.basic.y_unit_vector" class="md-nav__link">
+    y_unit_vector
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#x_xy.maths.basic.z_unit_vector" class="md-nav__link">
+    z_unit_vector
   </a>
   
 </li>
@@ -896,7 +854,7 @@
             
   
   <span class="md-ellipsis">
-    API (subpkgs)
+    API (from x_xy.subpkgs import ...)
   </span>
   
 
@@ -906,7 +864,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            API (subpkgs)
+            API (from x_xy.subpkgs import ...)
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -916,7 +874,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sys_composer/" class="md-nav__link">
+      <a href="../subpkgs/sys_composer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -936,7 +894,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sim2real/" class="md-nav__link">
+      <a href="../subpkgs/sim2real/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -956,7 +914,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../exp/" class="md-nav__link">
+      <a href="../subpkgs/exp/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -976,7 +934,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../omc/" class="md-nav__link">
+      <a href="../subpkgs/omc/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -996,7 +954,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ml/" class="md-nav__link">
+      <a href="../subpkgs/ml/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1152,6 +1110,41 @@
         <span class="k">return</span> <span class="n">quat_rot_axis</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">angle_scaled</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">maxval</span> <span class="o">==</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">qs</span><span class="p">,</span> <span class="n">_scale_angle</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.quat.unit_quats_like" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">unit_quats_like</span><span class="p">(</span><span class="n">array</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.quat.unit_quats_like" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Array of <em>unit</em> quaternions of identical shape.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">unit_quats_like</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="s2">&quot;Array of *unit* quaternions of identical shape.&quot;</span>
+    <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -1686,7 +1679,7 @@ the residual rotation's angle is minimized.</p>
 
 
 <h4 id="x_xy.maths.quat.quat_lowpassfilter" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">quat_lowpassfilter</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.55</span><span class="p">)</span></code>
+          <code class="highlight language-python"><span class="n">quat_lowpassfilter</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="n">cutoff_freq</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">samp_freq</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">filtfilt</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 <a href="#x_xy.maths.quat.quat_lowpassfilter" class="headerlink" title="Permanent link">¤</a></h4>
 
@@ -1695,11 +1688,7 @@ the residual rotation's angle is minimized.</p>
 
           <details class="quote">
             <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">267</span>
 <span class="normal">268</span>
 <span class="normal">269</span>
 <span class="normal">270</span>
@@ -1716,7 +1705,48 @@ the residual rotation's angle is minimized.</p>
 <span class="normal">281</span>
 <span class="normal">282</span>
 <span class="normal">283</span>
-<span class="normal">284</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">quat_lowpassfilter</span><span class="p">(</span><span class="n">qs</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.55</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">:</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">quat_lowpassfilter</span><span class="p">(</span>
+    <span class="n">qs</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span>
+    <span class="n">cutoff_freq</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
+    <span class="n">samp_freq</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+    <span class="n">filtfilt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">qs</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="k">assert</span> <span class="n">qs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span>
+
+    <span class="k">if</span> <span class="n">filtfilt</span><span class="p">:</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">quat_lowpassfilter</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="n">cutoff_freq</span><span class="p">,</span> <span class="n">samp_freq</span><span class="p">,</span> <span class="n">filtfilt</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">quat_lowpassfilter</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">cutoff_freq</span><span class="p">,</span> <span class="n">samp_freq</span><span class="p">,</span> <span class="n">filtfilt</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">qs</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">omega_times_Ts</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">cutoff_freq</span> <span class="o">/</span> <span class="n">samp_freq</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">omega_times_Ts</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">omega_times_Ts</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="c1"># error quaternion; current state -&gt; target</span>
         <span class="n">q_err</span> <span class="o">=</span> <span class="n">quat_mul</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">quat_inv</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
@@ -1737,7 +1767,12 @@ the residual rotation's angle is minimized.</p>
         <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">y</span>
 
     <span class="n">qs_filtered</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">qs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qs</span><span class="p">[</span><span class="mi">1</span><span class="p">:])[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">qs</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">],</span> <span class="n">qs_filtered</span><span class="p">))</span>
+
+    <span class="c1"># padd with first value, such that length remains equal</span>
+    <span class="n">qs_filtered</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">qs</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">],</span> <span class="n">qs_filtered</span><span class="p">))</span>
+
+    <span class="c1"># renormalize due to float32 numerical errors accumulating</span>
+    <span class="k">return</span> <span class="n">qs_filtered</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">qs_filtered</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -1812,6 +1847,113 @@ the residual rotation's angle is minimized.</p>
 
 
 
+<h4 id="x_xy.maths.quat.rotate_matrix" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">rotate_matrix</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">quat</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.quat.rotate_matrix" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Rotate matrix <code>matrix</code> by a <em>unit</em> quaternion <code>quat</code>.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rotate_matrix</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">quat</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">):</span>
+    <span class="s2">&quot;Rotate matrix `matrix` by a *unit* quaternion `quat`.&quot;</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="n">quat_to_3x3</span><span class="p">(</span><span class="n">quat</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">E</span> <span class="o">@</span> <span class="n">matrix</span> <span class="o">@</span> <span class="n">E</span><span class="o">.</span><span class="n">T</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.quat.quat_angle" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">quat_angle</span><span class="p">(</span><span class="n">q</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.quat.quat_angle" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Extract rotation angle (radians) of quaternion <code>q</code>.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@partial</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">vectorize</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="s2">&quot;(4)-&gt;()&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">quat_angle</span><span class="p">(</span><span class="n">q</span><span class="p">):</span>
+    <span class="s2">&quot;Extract rotation angle (radians) of quaternion `q`.&quot;</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">safe_norm</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">:])[</span><span class="mi">0</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">wrap_to_pi</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.quat.quat_angle_constantAxisOverTime" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">quat_angle_constantAxisOverTime</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.quat.quat_angle_constantAxisOverTime" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">quat_angle_constantAxisOverTime</span><span class="p">(</span><span class="n">qs</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">qs</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="k">assert</span> <span class="n">qs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span>
+
+    <span class="n">l2norm</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">axis</span> <span class="o">=</span> <span class="n">safe_normalize</span><span class="p">(</span><span class="n">qs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:])</span>
+    <span class="n">angle</span> <span class="o">=</span> <span class="n">quat_angle</span><span class="p">(</span><span class="n">qs</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">convention</span> <span class="o">=</span> <span class="n">axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">cond</span> <span class="o">=</span> <span class="p">(</span><span class="n">l2norm</span><span class="p">(</span><span class="n">convention</span> <span class="o">-</span> <span class="n">axis</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">l2norm</span><span class="p">(</span><span class="n">convention</span> <span class="o">+</span> <span class="n">axis</span><span class="p">))[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cond</span><span class="p">,</span> <span class="o">-</span><span class="n">angle</span><span class="p">,</span> <span class="n">angle</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h4 id="x_xy.maths.quat.angle_error" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">angle_error</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">qhat</span><span class="p">)</span></code>
 
@@ -1829,6 +1971,107 @@ the residual rotation's angle is minimized.</p>
 <span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">angle_error</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">qhat</span><span class="p">):</span>
     <span class="s2">&quot;Absolute angle in radians between `q` and `qhat`.&quot;</span>
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">quat_angle</span><span class="p">(</span><span class="n">quat_mul</span><span class="p">(</span><span class="n">quat_inv</span><span class="p">(</span><span class="n">q</span><span class="p">),</span> <span class="n">qhat</span><span class="p">)))</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.quat.quat_inclinationAngle" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">quat_inclinationAngle</span><span class="p">(</span><span class="n">q</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.quat.quat_inclinationAngle" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">quat_inclinationAngle</span><span class="p">(</span><span class="n">q</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">):</span>
+    <span class="n">head</span><span class="p">,</span> <span class="n">incl</span> <span class="o">=</span> <span class="n">quat_project</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">quat_angle</span><span class="p">(</span><span class="n">incl</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.quat.quat_headingAngle" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">quat_headingAngle</span><span class="p">(</span><span class="n">q</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.quat.quat_headingAngle" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">quat_headingAngle</span><span class="p">(</span><span class="n">q</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">):</span>
+    <span class="n">head</span><span class="p">,</span> <span class="n">incl</span> <span class="o">=</span> <span class="n">quat_project</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">quat_angle</span><span class="p">(</span><span class="n">head</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.safe.safe_norm" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">safe_norm</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.safe.safe_norm" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Grad-safe for x=0.0. Norm along last axis.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/safe.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@partial</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">vectorize</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="s2">&quot;(k)-&gt;(1)&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">safe_norm</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Grad-safe for x=0.0. Norm along last axis.&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
+
+    <span class="n">is_zero</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span>
+        <span class="n">is_zero</span><span class="p">,</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">x</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -1888,6 +2131,68 @@ the residual rotation's angle is minimized.</p>
 
 
 
+<h4 id="x_xy.maths.safe.safe_arccos" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">safe_arccos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.safe.safe_arccos" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Trigonometric inverse cosine, element-wise with safety clipping in grad.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/safe.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@custom_jvp</span>
+<span class="k">def</span> <span class="nf">safe_arccos</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trigonometric inverse cosine, element-wise with safety clipping in grad.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.safe.safe_arcsin" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">safe_arcsin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.safe.safe_arcsin" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Trigonometric inverse sine, element-wise with safety clipping in grad.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/safe.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@custom_jvp</span>
+<span class="k">def</span> <span class="nf">safe_arcsin</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trigonometric inverse sine, element-wise with safety clipping in grad.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h4 id="x_xy.maths.basic.wrap_to_pi" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">wrap_to_pi</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span></code>
 
@@ -1907,6 +2212,122 @@ the residual rotation's angle is minimized.</p>
     <span class="k">return</span> <span class="p">(</span><span class="n">phi</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span>
 </code></pre></div></td></tr></table></div>
           </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.quat.ensure_positive_w" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">ensure_positive_w</span><span class="p">(</span><span class="n">q</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.quat.ensure_positive_w" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/quat.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@partial</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">vectorize</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="s2">&quot;(4)-&gt;(4)&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">ensure_positive_w</span><span class="p">(</span><span class="n">q</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">q</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="x_xy.maths.basic.unit_vectors" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">unit_vectors</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span></code>
+
+<a href="#x_xy.maths.basic.unit_vectors" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+
+          <details class="quote">
+            <summary>Source code in <code>x_xy/maths/basic.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">unit_vectors</span><span class="p">(</span><span class="n">xyz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">xyz</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}[</span><span class="n">xyz</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">x_unit_vector</span><span class="p">,</span> <span class="n">y_unit_vector</span><span class="p">,</span> <span class="n">z_unit_vector</span><span class="p">][</span><span class="n">xyz</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h4 id="x_xy.maths.basic.x_unit_vector" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">x_unit_vector</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#x_xy.maths.basic.x_unit_vector" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h4 id="x_xy.maths.basic.y_unit_vector" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">y_unit_vector</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#x_xy.maths.basic.y_unit_vector" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h4 id="x_xy.maths.basic.z_unit_vector" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">z_unit_vector</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#x_xy.maths.basic.z_unit_vector" class="headerlink" title="Permanent link">¤</a></h4>
+
+
+  <div class="doc doc-contents first">
   </div>
 
 </div>
