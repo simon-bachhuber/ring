@@ -63,79 +63,89 @@ S_08:
     imu: 40.0
 S_09:
   timings:
-    slow_global:
-    pause1:
-    fast_global:
-    pause2:
-    dangle_global:
-    pause3:
+    slow_global: 38.75
+    pause1: 88.0
+    fast_global: 90.25
+    pause2: 131.5
+    dangle_global1: 140.25
+    pause3: 185.25
+    dangle_global2: 187.5
+    pause4: 240.0
   hz:
     omc: 120.0
     imu: 40.0
 S_10:
   timings:
-    pickandplace:
-    pause:
+    pickandplace: 40.0
+    pause: 115.0
   hz:
     omc: 120.0
     imu: 40.0
 S_12:
   timings:
-    canonical:
-    pause1: 
-    slow1: 
-    pause2: 
-    fast: 
-    pause3: 
-    fast_slow_fast: 
-    freeze1: 
-    fast_slow: 
-    freeze2: 
-    slow2: 
-    shaking: 
-    pause4: 
+    canonical: 36.25
+    pause1:  146.25
+    slow1: 150.0
+    pause2: 188.0
+    fast: 196.75
+    pause3: 233.5
+    fast_slow_fast: 253.0
+    freeze1: 286.25
+    fast_slow: 288.75
+    freeze2: 309.75
+    slow2: 312.25
+    pause4: 326.0
   hz:
     omc: 120.0
     imu: 40.0
 S_13:
   timings:
-    canonical:
-    pause1:
-    slow_fast_mix:
-    pause2:
-    canonical:
-    pause3:
-    slow_fast_freeze_mix:
-    pause4:
+    canonical: 37.5
+    pause1: 140.0
+    slow_fast_mix: 147.5
+    pause2: 215.0
+    canonical: 226.25
+    pause3: 321.25
+    slow_fast_freeze_mix: 325.0
+    pause4: 390.0
   hz:
     omc: 120.0
     imu: 40.0
 S_14:
   timings:
-    slow:
-    dangle1:
-    pause1:
-    dangle2:
-    pause2:
+    slow: 32.5
+    dangle1: 49.0
+    pause1: 80.0
+    dangle2: 87.75
+    pause2: 162.75
+    dangle3: 170.25
+    pause3: 219.0
+    dangle4: 224.0
+    pause4: 295.25
   hz:
     omc: 120.0
     imu: 40.0
 S_15:
   timings:
-    slow_global:
-    pause1:
-    fast_global:
-    pause2:
-    dangle_global:
-    pause3:
+    slow_global: 34.5
+    pause1: 73.25
+    fast_global: 77.75
+    pause2: 117.75
+    # S4's IMU fell off
+    dangle_global1: 122.75
+    pause3: 177.75
+    # dangle from other end
+    dangle_global2: 190.25
+    pause4: 240.25
   hz:
     omc: 120.0
     imu: 40.0
 S_16:
   timings:
-    gait_slow:
-    gait_fast:
-    pause:
+    gait_slow: 33.75
+    # padding at the bottom of left "foot" falls off at around 30s
+    gait_fast: 98.75
+    pause: 181.25
   hz:
     omc: 120.0
     imu: 40.0
@@ -144,6 +154,14 @@ D_01:
     omc: 120.0
     imu: 40.0
 T_01:
+  timings:
+    quasistatic: 11.25
+    slow: 63.75
+    rotation: 80.75
+    shaking: 106.75
+    quasistatic: 143.25
+    explosiv: 183.75
+    pause: 208.75
   hz:
     omc: 120.0
     imu: 40.0
