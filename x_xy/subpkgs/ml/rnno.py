@@ -15,42 +15,6 @@ from x_xy.maths import safe_normalize
 from .ml_utils import make_non_social_version
 
 
-class RNNOFilter:
-    def __init__(
-        self,
-        identifier: Optional[str] = None,
-        params: Optional[dict] = None,
-        key: jax.Array = jax.random.PRNGKey(1),
-        **rnno_kwargs,
-    ):
-        self._identifier = identifier
-        self.key = key
-        self.params = params
-        if "sys" in rnno_kwargs and rnno_kwargs["sys"] is None:
-            rnno_kwargs.pop("sys")
-            self.rnno_fn = lambda sys: make_rnno(sys=None, **rnno_kwargs)
-        else:
-            self.rnno_fn = lambda sys: make_rnno(sys, **rnno_kwargs)
-
-    def init(self, sys, X_t0):
-        X_batched = tree_utils.to_3d_if_2d(tree_utils.add_batch_dim(X_t0), strict=True)
-        self.rnno = self.rnno_fn(sys)
-        params, self.state = self.rnno.init(self.key, X_batched)
-        if self.params is None:
-            self.params = params
-
-    def predict(self, X: dict) -> dict:
-        assert tree_utils.tree_ndim(X) == 3
-        bs = tree_utils.tree_shape(X)
-        state = jax.tree_map(lambda arr: jnp.repeat(arr[None], bs, axis=0), self.state)
-        return self.rnno.apply(self.params, state, X)[0]
-
-    def identifier(self) -> str:
-        if self._identifier is None:
-            raise RuntimeError("No `identifier` was given.")
-        return self._identifier
-
-
 def _tree(sys, f):
     return scan_sys(
         sys,
