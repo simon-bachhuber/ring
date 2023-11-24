@@ -36,9 +36,9 @@
 
 ::: x_xy.maths.quat.angle_error
 
-::: x_xy.maths.quat.inclinationAngle
+::: x_xy.maths.quat.quat_inclinationAngle
 
-::: x_xy.maths.quat.headingAngle
+::: x_xy.maths.quat.quat_headingAngle
 
 ::: x_xy.maths.safe.safe_norm
 
