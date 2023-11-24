@@ -1,9 +1,11 @@
+import io
 from pathlib import Path
 import shutil
 from typing import Optional
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import wget
 
 from x_xy.base import _Base
@@ -122,3 +124,13 @@ def delete_download_cache(only: Optional[str] = None) -> None:
 
     if Path(path_cache_folder).exists():
         shutil.rmtree(path_cache_folder)
+
+
+def save_figure_to_rgba(fig) -> np.ndarray:
+    with io.BytesIO() as buff:
+        fig.savefig(buff, format="raw")
+        buff.seek(0)
+        data = np.frombuffer(buff.getvalue(), dtype=np.uint8)
+    w, h = fig.canvas.get_width_height()
+    im = data.reshape((int(h), int(w), -1))
+    return im
