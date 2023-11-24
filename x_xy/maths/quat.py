@@ -260,7 +260,27 @@ def quat_avg(qs: jax.Array):
     )[1][:, -1]
 
 
-def quat_lowpassfilter(qs: jax.Array, alpha: float = 0.55) -> jax.Array:
+# cutoff_freq=20.0; sampe_freq=100.0
+# -> alpha = 0.55686
+# cutoff_freq=15.0
+# -> alpha = 0.48519
+def quat_lowpassfilter(
+    qs: jax.Array,
+    cutoff_freq: float = 20.0,
+    samp_freq: float = 100.0,
+    filtfilt: bool = False,
+) -> jax.Array:
+    assert qs.ndim == 2
+    assert qs.shape[1] == 4
+
+    if filtfilt:
+        qs = quat_lowpassfilter(qs, cutoff_freq, samp_freq, filtfilt=False)
+        qs = quat_lowpassfilter(jnp.flip(qs, 0), cutoff_freq, samp_freq, filtfilt=False)
+        return jnp.flip(qs, 0)
+
+    omega_times_Ts = 2 * jnp.pi * cutoff_freq / samp_freq
+    alpha = omega_times_Ts / (1 + omega_times_Ts)
+
     def f(y, x):
         # error quaternion; current state -> target
         q_err = quat_mul(x, quat_inv(y))
@@ -281,7 +301,12 @@ def quat_lowpassfilter(qs: jax.Array, alpha: float = 0.55) -> jax.Array:
         return y, y
 
     qs_filtered = jax.lax.scan(f, qs[0], qs[1:])[1]
-    return jnp.vstack((qs[0:1], qs_filtered))
+
+    # padd with first value, such that length remains equal
+    qs_filtered = jnp.vstack((qs[0:1], qs_filtered))
+
+    # renormalize due to float32 numerical errors accumulating
+    return qs_filtered / jnp.linalg.norm(qs_filtered, axis=-1, keepdims=True)
 
 
 def quat_inclinationAngle(q: jax.Array):
