@@ -22,9 +22,9 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
 
     vel, acc, fs = {}, {}, {}
 
-    def forward_scan(
-        _, __, link_idx, parent_idx, link_type, qd, qdd, p_to_l_trafo, it, joint_params
-    ):
+    def forward_scan(_, __, link_idx, parent_idx, link_type, qd, qdd, link):
+        p_to_l_trafo, it, joint_params = link.transform, link.inertia, link.joint_params
+
         vJ = jcalc_motion(link_type, qd, joint_params)
         aJ = jcalc_motion(link_type, qdd, joint_params)
 
@@ -46,23 +46,19 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
     scan_sys(
         sys,
         forward_scan,
-        "lllddlll",
+        "lllddl",
         list(range(sys.num_links())),
         sys.link_parents,
         sys.link_types,
         qd,
         qdd,
-        sys.links.transform,
-        sys.links.inertia,
-        sys.links.joint_params,
+        sys.links,
     )
 
     taus = []
 
-    def backwards_scan(
-        _, __, link_idx, parent_idx, link_type, l_to_p_trafo, joint_params
-    ):
-        tau = jcalc_tau(link_type, fs[link_idx], joint_params)
+    def backwards_scan(_, __, link_idx, parent_idx, link_type, l_to_p_trafo, link):
+        tau = jcalc_tau(link_type, fs[link_idx], link.joint_params)
         taus.insert(0, tau)
         if parent_idx != -1:
             fs[parent_idx] = fs[parent_idx] + algebra.transform_force(
@@ -77,7 +73,7 @@ def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Arr
         sys.link_parents,
         sys.link_types,
         jax.vmap(algebra.transform_inv)(sys.links.transform),
-        sys.links.joint_params,
+        sys.links,
         reverse=True,
     )
 
@@ -120,9 +116,17 @@ def compute_mass_matrix(sys: base.System) -> jax.Array:
     # Now we go into matrix mode
 
     def _jcalc_motion_matrix(i: int):
-        joint_params = sys.links.joint_params[i]
+        joint_params = (sys.links[i]).joint_params
+        link_type = sys.link_types[i]
+        # limit scope; only pass in params of this joint type
+        joint_params = (
+            joint_params[link_type]
+            if link_type in joint_params
+            else joint_params["default"]
+        )
+
         _to_motion = lambda m: m if isinstance(m, base.Motion) else m(joint_params)
-        list_motion = [_to_motion(m) for m in _joint_types[sys.link_types[i]].motion]
+        list_motion = [_to_motion(m) for m in _joint_types[link_type].motion]
 
         if len(list_motion) == 0:
             # joint is frozen

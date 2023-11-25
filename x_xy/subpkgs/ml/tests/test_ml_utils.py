@@ -138,6 +138,7 @@ def test_save_params_metric_tracking():
         [LogMetrices(), callback],
     )
     loop.run(n_episodes)
+    wandb.finish()
 
 
 def test_neptune_logger():
@@ -162,3 +163,4 @@ def test_wandb_logger():
     logger.log_image(str(root.joinpath("image1.png")))
     logger.log_image(str(root.joinpath("image2.png")))
     logger.log_video(str(root.joinpath("video.mp4")))
+    wandb.finish()

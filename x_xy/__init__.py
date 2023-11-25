@@ -33,7 +33,7 @@ from .algorithms import step
 from .base import State
 from .base import System
 from .base import Transform
-from .base import update_n_joint_params
+from .base import update_joint_params_dict
 from .io import load_example
 from .io import load_sys_from_str
 from .io import load_sys_from_xml

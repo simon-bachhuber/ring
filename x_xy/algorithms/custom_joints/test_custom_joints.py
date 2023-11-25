@@ -31,7 +31,7 @@ def test_virtual_input_joint_axes_rr_joint():
 
     sys = load_example("test_three_seg_seg2")
     sys = setup_fn_randomize_joint_axes(jax.random.PRNGKey(1), sys)
-    joint_axes = sys.links.joint_params
+    joint_axes = sys.links.joint_params["rr"]["joint_axes"]
     sys_rr = sys.replace(
         link_types=[
             "rr" if link_type in ["ry", "rz"] else link_type
@@ -69,7 +69,7 @@ def test_virtual_input_joint_axes_rr_imp_joint():
 
     sys = load_example("test_three_seg_seg2")
     sys = setup_fn_randomize_joint_axes_primary_residual(jax.random.PRNGKey(1), sys)
-    joint_axes = sys.links.joint_params[:, :3]
+    joint_axes = sys.links.joint_params["rr_imp"]["joint_axes"]
     sys_rr_imp = sys.replace(
         link_types=[
             "rr_imp" if link_type in ["ry", "rz"] else link_type

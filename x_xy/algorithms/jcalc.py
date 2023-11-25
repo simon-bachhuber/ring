@@ -6,6 +6,7 @@ from typing import Callable, get_type_hints, Optional
 
 import jax
 import jax.numpy as jnp
+import tree_utils
 
 from x_xy import algebra
 from x_xy import maths
@@ -174,6 +175,11 @@ DRAW_FN = Callable[
     [RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey, float, jax.Array],
     jax.Array,
 ]
+P_CONTROL_TERM = Callable[
+    # q, q_ref -> qdd
+    [jax.Array, jax.Array],
+    jax.Array,
+]
 
 
 @dataclass
@@ -187,6 +193,9 @@ class JointModel:
     )
     # (config, key_t, key_value, params) -> jax.Array
     rcmg_draw_fn: Optional[DRAW_FN] = None
+
+    # only used by `pd_control`
+    p_control_term: Optional[P_CONTROL_TERM] = None
 
 
 def _free_transform(q, _):
@@ -410,6 +419,24 @@ def _draw_frozen(config: RCMG_Config, _, __, dt: float, ___) -> jax.Array:
     return jnp.zeros((N, 0))
 
 
+def _p_control_term_rxyz(q, q_ref):
+    # q_ref comes from rcmg. Thus, it is already wrapped
+    # TODO: Currently state.q is not wrapped. Change that?
+    return maths.wrap_to_pi(q_ref - maths.wrap_to_pi(q))
+
+
+def _p_control_term_pxyz(q, q_ref):
+    return q_ref - q
+
+
+def _p_control_term_frozen(q, q_ref):
+    return jnp.array([])
+
+
+def _p_control_term_spherical(q, q_ref):
+    ...
+
+
 _joint_types = {
     "free": JointModel(_free_transform, [mrx, mry, mrz, mpx, mpy, mpz], _draw_free),
     "frozen": JointModel(_frozen_transform, [], _draw_frozen),
@@ -445,12 +472,20 @@ def register_new_joint_type(
     joint_model: JointModel,
     q_width: int,
     qd_width: Optional[int] = None,
+    # if None, gets joint_params['default']
+    joint_params_pytree: Optional[tree_utils.PyTree] = None,
     overwrite: bool = False,
 ):
     exists = joint_type in _joint_types
     if exists and overwrite:
-        for dic in [base.Q_WIDTHS, base.QD_WIDTHS, _joint_types]:
-            dic.pop(joint_type)
+        for dic in [
+            base.Q_WIDTHS,
+            base.QD_WIDTHS,
+            _joint_types,
+            base._JOINT_PARAMS_DICT,
+        ]:
+            # give default because maybe the custom joint has no defined joint_params
+            dic.pop(joint_type, None)
     else:
         assert (
             not exists
@@ -460,19 +495,33 @@ def register_new_joint_type(
         qd_width = q_width
 
     assert len(joint_model.motion) == qd_width
+
     _joint_types.update({joint_type: joint_model})
     base.Q_WIDTHS.update({joint_type: q_width})
     base.QD_WIDTHS.update({joint_type: qd_width})
 
+    if joint_params_pytree is not None:
+        base.update_joint_params_dict(joint_type, joint_params_pytree)
+
+
+def _limit_scope_of_joint_params(
+    joint_type: str, joint_params: dict[str, tree_utils.PyTree]
+) -> tree_utils.PyTree:
+    if joint_type not in joint_params:
+        return joint_params["default"]
+    else:
+        return joint_params[joint_type]
+
 
 def jcalc_transform(
-    joint_type: str, q: jax.Array, joint_params: jax.Array
+    joint_type: str, q: jax.Array, joint_params: dict[str, tree_utils.PyTree]
 ) -> base.Transform:
+    joint_params = _limit_scope_of_joint_params(joint_type, joint_params)
     return _joint_types[joint_type].transform(q, joint_params)
 
 
 def _to_motion(
-    m: base.Motion | Callable[[jax.Array], base.Motion], joint_params: jax.Array
+    m: base.Motion | Callable[[jax.Array], base.Motion], joint_params: tree_utils.PyTree
 ) -> base.Motion:
     if isinstance(m, base.Motion):
         return m
@@ -480,8 +529,9 @@ def _to_motion(
 
 
 def jcalc_motion(
-    joint_type: str, qd: jax.Array, joint_params: jax.Array
+    joint_type: str, qd: jax.Array, joint_params: dict[str, tree_utils.PyTree]
 ) -> base.Motion:
+    joint_params = _limit_scope_of_joint_params(joint_type, joint_params)
     list_motion = _joint_types[joint_type].motion
     m = base.Motion.zero()
     for dof in range(len(list_motion)):
@@ -489,7 +539,10 @@ def jcalc_motion(
     return m
 
 
-def jcalc_tau(joint_type: str, f: base.Force, joint_params: jax.Array) -> jax.Array:
+def jcalc_tau(
+    joint_type: str, f: base.Force, joint_params: dict[str, tree_utils.PyTree]
+) -> jax.Array:
+    joint_params = _limit_scope_of_joint_params(joint_type, joint_params)
     list_motion = _joint_types[joint_type].motion
     return jnp.array(
         [algebra.motion_dot(_to_motion(m, joint_params), f) for m in list_motion]

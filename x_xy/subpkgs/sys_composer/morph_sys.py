@@ -2,6 +2,7 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
+from tree_utils import tree_batch
 
 import x_xy
 from x_xy import algebra
@@ -102,7 +103,9 @@ def morph_system(sys: base.System, new_parents: list[int | str]) -> base.System:
     morphed_system = base.System(
         link_parents=new_parent_array,
         links=_permute(links).replace(
-            joint_params=jnp.vstack([link[5] for link in _joint_properties])
+            joint_params=tree_batch(
+                [link[5] for link in _joint_properties], backend="jax"
+            )
         ),
         link_types=[link[4] for link in _joint_properties],
         link_damping=stack_joint_properties(0),
@@ -222,9 +225,11 @@ def _per_link_arrays(sys: base.System):
     return d, a, ss, sz
 
 
-def _swapped_joint_properties(sys: base.System, structure: list[Node]):
+def _swapped_joint_properties(sys: base.System, structure: list[Node]) -> list:
+    # convert joint_params from dict to list of dict; list if link-axis
+    joint_params_list = [(sys.links[i]).joint_params for i in range(sys.num_links())]
     joint_properties = list(
-        zip(*(_per_link_arrays(sys) + (sys.link_types, sys.links.joint_params)))
+        zip(*(_per_link_arrays(sys) + (sys.link_types, joint_params_list)))
     )
 
     swapped_joint_properties = []

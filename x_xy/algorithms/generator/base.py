@@ -54,7 +54,14 @@ def _generator_with_extras(
         # build generalized coordintes vector `q`
         q_list = []
 
-        def draw_q(key, __, link_type, joint_params):
+        def draw_q(key, __, link_type, link):
+            joint_params = link.joint_params
+            # limit scope
+            joint_params = (
+                joint_params[link_type]
+                if link_type in joint_params
+                else joint_params["default"]
+            )
             if key is None:
                 key = key_start
             key, key_t, key_value = jax.random.split(key, 3)
@@ -67,7 +74,7 @@ def _generator_with_extras(
             q_list.append(q_link)
             return key
 
-        keys = scan_sys(sys, draw_q, "ll", sys.link_types, sys.links.joint_params)
+        keys = scan_sys(sys, draw_q, "ll", sys.link_types, sys.links)
         # stack of keys; only the last key is unused
         key = keys[-1]
 

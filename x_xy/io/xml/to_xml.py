@@ -5,6 +5,7 @@ from xml.etree.ElementTree import SubElement
 from xml.etree.ElementTree import tostring
 
 import jax.numpy as jnp
+from tree_utils import batch_concat
 
 from x_xy.io.xml import abstract
 from x_xy.io.xml.abstract import _to_str
@@ -13,11 +14,16 @@ from ... import base
 
 
 def save_sys_to_str(sys: base.System) -> str:
-    if not jnp.all(sys.links.joint_params == 0.0):
-        warnings.warn(
-            "The system has `sys.links.joint_params` unequal to the default value (of"
-            " zeros). This will not be preserved in the xml."
-        )
+    for joint_type in sys.links.joint_params:
+        for i, link_name in enumerate(sys.link_names):
+            joint_params_flat = batch_concat((sys.links[i]).joint_params[joint_type], 0)
+            if not jnp.all(joint_params_flat == 0.0):
+                warnings.warn(
+                    "The system has `sys.links.joint_params` unequal to the 'default'"
+                    f" value (of zeros). In particular the link `{link_name}` has for"
+                    f" the jointtype `{joint_type}` the values {joint_params_flat}. "
+                    "This will not be preserved in the xml."
+                )
     global_index_map = {qd: sys.idx_map(qd) for qd in ["q", "d"]}
 
     # Create root element

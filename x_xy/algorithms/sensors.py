@@ -365,18 +365,19 @@ def _joint_axes_from_sys(sys: base.Transform, N: int) -> dict:
     id_to_axis = {"x": xaxis, "y": yaxis, "z": zaxis}
     X = {}
 
-    def f(_, __, name, link_type, joint_params):
+    def f(_, __, name, link_type, link):
+        joint_params = link.joint_params
         if link_type in ["rx", "ry", "rz"]:
             joint_axes = id_to_axis[link_type[1]]
         elif link_type == "rr":
-            joint_axes = joint_params
+            joint_axes = joint_params["rr"]["joint_axes"]
         elif link_type == "rr_imp":
-            joint_axes = joint_params[:3]
+            joint_axes = joint_params["rr_imp"]["joint_axes"]
         else:
             joint_axes = xaxis
         X[name] = {"joint_axes": joint_axes}
 
-    scan_sys(sys, f, "lll", sys.link_names, sys.link_types, sys.links.joint_params)
+    scan_sys(sys, f, "lll", sys.link_names, sys.link_types, sys.links)
     X = jax.tree_map(lambda arr: jnp.repeat(arr[None], N, axis=0), X)
     return X
 

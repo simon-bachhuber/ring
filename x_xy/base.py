@@ -324,18 +324,23 @@ class Capsule(Geometry):
         return jnp.diag(jnp.array([I_b, I_a, I_a]))
 
 
-_DEFAULT_N_JOINT_PARAMS: int = 3
-_N_JOINT_PARAMS: int = _DEFAULT_N_JOINT_PARAMS
+_DEFAULT_JOINT_PARAMS_DICT: dict[str, tu.PyTree] = {"default": jnp.array([])}
+_JOINT_PARAMS_DICT: dict[str, tu.PyTree] = _DEFAULT_JOINT_PARAMS_DICT
 
 
-def update_n_joint_params(n_joint_params: Optional[int] = None) -> None:
+def update_joint_params_dict(
+    field: Optional[str] = None, pytree_value: Optional[tu.PyTree] = None
+) -> None:
     "If None then reset to default value."
-    global _N_JOINT_PARAMS
-    global _DEFAULT_N_JOINT_PARAMS
-    if n_joint_params is None:
-        _N_JOINT_PARAMS = _DEFAULT_N_JOINT_PARAMS
-    else:
-        _N_JOINT_PARAMS = n_joint_params
+    global _JOINT_PARAMS_DICT
+    global _DEFAULT_JOINT_PARAMS_DICT
+
+    # reset
+    if field is None:
+        assert pytree_value is None
+        _JOINT_PARAMS_DICT = _DEFAULT_JOINT_PARAMS_DICT
+    else:  # else update
+        _JOINT_PARAMS_DICT.update({field: pytree_value})
 
 
 @struct.dataclass
@@ -348,10 +353,7 @@ class Link(_Base):
 
     # these parameters can be used to model joints that have parameters
     # they are directly feed into the `jcalc` routine
-    # this array *must* be of shape (N_JOINT_PARAMS,)
-    joint_params: jax.Array = struct.field(
-        default_factory=lambda: jnp.zeros((_N_JOINT_PARAMS,))
-    )
+    joint_params: jax.Array = struct.field(default_factory=lambda: _JOINT_PARAMS_DICT)
 
     # internal useage
     # gets populated by `parse_system`
