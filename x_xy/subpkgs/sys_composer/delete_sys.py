@@ -23,12 +23,20 @@ def make_sys_noimu(sys: x_xy.System, imu_link_names: Optional[list[str]] = None)
     return sys_noimu, imu_attachment
 
 
-def delete_subsystem(sys: base.System, link_name: str | list[str]) -> base.System:
+def delete_subsystem(
+    sys: base.System, link_name: str | list[str], strict: bool = True
+) -> base.System:
     "Cut subsystem starting at `link_name` (inclusive) from tree."
     if isinstance(link_name, list):
         for ln in link_name:
-            sys = delete_subsystem(sys, ln)
+            sys = delete_subsystem(sys, ln, strict)
         return sys
+
+    if not strict:
+        try:
+            return delete_subsystem(sys, link_name, strict=True)
+        except AssertionError:
+            return sys
 
     assert (
         link_name in sys.link_names
