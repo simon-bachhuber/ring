@@ -15,7 +15,22 @@ from x_xy.io.xml.from_xml import _load_xml
 from x_xy.subpkgs import omc
 from x_xy.subpkgs import sys_composer
 
-_id2xml = {"S_04": "setups/arm.xml", "S_06": "setups/arm.xml"}
+arm_xml = "setups/arm.xml"
+gait_xml = "setups/gait.xml"
+_id2xml = {
+    "S_04": arm_xml,
+    "S_06": arm_xml,
+    "S_07": arm_xml,
+    "S_08": arm_xml,
+    "S_09": arm_xml,
+    "S_10": arm_xml,
+    "S_12": gait_xml,
+    "S_13": gait_xml,
+    "S_14": gait_xml,
+    "S_15": gait_xml,
+    "S_16": gait_xml,
+    "T_01": gait_xml,
+}
 
 
 def _relative_to_this_file(path: str) -> Path:
@@ -46,6 +61,14 @@ def _morph_new_parents_from_xml_file(file_path: str) -> dict[str, list]:
     return seg_new_parents_map
 
 
+def load_arm_or_gait(exp_id: str) -> str:
+    "Returns either `arm` or `gait`"
+    xml = _id2xml[exp_id]
+    if xml == arm_xml:
+        return "arm"
+    return "gait"
+
+
 def load_xml_str(exp_id: str) -> str:
     return _load_xml(_relative_to_this_file(_id2xml[exp_id]))
 
@@ -67,8 +90,15 @@ def load_sys(
         sys = _replace_rxyz_with(sys, replace_rxyz)
 
     if morph_yaml_key is not None:
-        new_parents = _morph_new_parents_from_xml_file(xml_path)[morph_yaml_key]
-        sys = sys_composer.morph_system(sys, new_parents)
+        skip_morph = False
+        if load_arm_or_gait(exp_id) == "arm" and morph_yaml_key == "seg1":
+            skip_morph = True
+        if load_arm_or_gait(exp_id) == "gait" and morph_yaml_key == "seg4":
+            skip_morph = True
+
+        if not skip_morph:
+            new_parents = _morph_new_parents_from_xml_file(xml_path)[morph_yaml_key]
+            sys = sys_composer.morph_system(sys, new_parents)
 
     if delete_after_morph is not None:
         sys = sys_composer.delete_subsystem(sys, delete_after_morph)
