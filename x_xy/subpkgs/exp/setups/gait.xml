@@ -1,4 +1,4 @@
-<x_xy model="S_06">
+<x_xy model="gait">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
         <geom edge_color="black" color="1 0.8 0.7 1"/>
@@ -35,13 +35,18 @@
             </body>
         </body>
     </worldbody>
-    <!--seg4, marker=4-->
-    <!--seg1, marker=2-->
-    <!--seg5, marker=2-->
-    <!--seg2, marker=1-->
-    <!--seg3, marker=2-->
-    <!--seg1: ["seg1", "seg4", -1, "seg1", "seg1", "seg5", "seg5", "seg2", "seg2", "seg3"]-->
-    <!--seg5: ["seg1", "seg4", "seg5", "seg1", -1, "seg5", "seg5", "seg2", "seg2", "seg3"]-->
-    <!--seg2: ["seg1", "seg4", "seg5", "seg1", "seg2", "seg5", -1, "seg2", "seg2", "seg3"]-->
-    <!--seg3: ["seg1", "seg4", "seg5", "seg1", "seg2", "seg5", "seg3", "seg2", -1, "seg3"]-->
+    <!--omc bodyname=seg1 omcname=seg1 marker=2 pos=0,0,-.02-->
+    <!--omc bodyname=seg5 omcname=seg5 marker=2 pos=0,0,-.02-->
+    <!--omc bodyname=seg2 omcname=seg2 marker=1 pos=0,0,-.02-->
+    <!--omc bodyname=seg3 omcname=seg3 marker=2 pos=0,0,-.02-->
+    <!--omc bodyname=seg4 omcname=seg4 marker=4 pos=0,0,-.02-->
+    <!--omc bodyname=imu1 omcname=seg1 marker=2 pos=.1,.0,.015-->
+    <!--omc bodyname=imu5 omcname=seg5 marker=2 pos=.1,.0,.015-->
+    <!--omc bodyname=imu2 omcname=seg2 marker=1 pos=.1,.0,.015-->
+    <!--omc bodyname=imu3 omcname=seg3 marker=2 pos=.1,.0,.015-->
+    <!--omc bodyname=imu4 omcname=seg4 marker=4 pos=.1,.0,.015-->
+    <!--morph key=seg1 parents=["seg1","seg4",-1,"seg1","seg1","seg5","seg5","seg2","seg2","seg3"]-->
+    <!--morph key=seg5 parents=["seg1","seg4","seg5","seg1",-1,"seg5","seg5","seg2","seg2","seg3"]-->
+    <!--moprh key=seg2 parents=["seg1","seg4","seg5","seg1","seg2","seg5",-1,"seg2","seg2","seg3"]-->
+    <!--morph key=seg3 parents=["seg1","seg4","seg5","seg1","seg2","seg5","seg3","seg2",-1,"seg3"]-->
 </x_xy>

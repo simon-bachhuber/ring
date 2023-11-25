@@ -1,4 +1,4 @@
-<x_xy model="S_06">
+<x_xy model="arm">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
         <geom edge_color="black" color="self"/>
