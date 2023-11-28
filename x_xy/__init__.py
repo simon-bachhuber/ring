@@ -25,7 +25,6 @@ from .algorithms import inverse_kinematics_endeffector
 from .algorithms import joint_axes
 from .algorithms import JointModel
 from .algorithms import make_normalizer_from_generator
-from .algorithms import pd_control
 from .algorithms import RCMG_Config
 from .algorithms import register_new_joint_type
 from .algorithms import rel_pose
@@ -33,7 +32,6 @@ from .algorithms import step
 from .base import State
 from .base import System
 from .base import Transform
-from .base import update_joint_params_dict
 from .io import load_example
 from .io import load_sys_from_str
 from .io import load_sys_from_xml

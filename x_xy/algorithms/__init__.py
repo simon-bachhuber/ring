@@ -1,7 +1,5 @@
 from ._random import random_angle_over_time
 from ._random import random_position_over_time
-from .control import pd_control
-from .control import unroll_dynamics_pd_control
 from .dynamics import compute_mass_matrix
 from .dynamics import forward_dynamics
 from .dynamics import inverse_dynamics
