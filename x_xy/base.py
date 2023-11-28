@@ -320,27 +320,10 @@ class Capsule(Geometry):
         )
         I_b = (0.5 * m_cyl + 0.4 * m_cap) * r**2
 
-        # return jnp.array([[I_b, 0, 0], [0, I_a, 0], [0, 0, I_a]])
         return jnp.diag(jnp.array([I_b, I_a, I_a]))
 
 
 _DEFAULT_JOINT_PARAMS_DICT: dict[str, tu.PyTree] = {"default": jnp.array([])}
-_JOINT_PARAMS_DICT: dict[str, tu.PyTree] = _DEFAULT_JOINT_PARAMS_DICT
-
-
-def update_joint_params_dict(
-    field: Optional[str] = None, pytree_value: Optional[tu.PyTree] = None
-) -> None:
-    "If None then reset to default value."
-    global _JOINT_PARAMS_DICT
-    global _DEFAULT_JOINT_PARAMS_DICT
-
-    # reset
-    if field is None:
-        assert pytree_value is None
-        _JOINT_PARAMS_DICT = _DEFAULT_JOINT_PARAMS_DICT
-    else:  # else update
-        _JOINT_PARAMS_DICT.update({field: pytree_value})
 
 
 @struct.dataclass
@@ -352,8 +335,10 @@ class Link(_Base):
     pos_max: jax.Array = struct.field(default_factory=lambda: jnp.zeros((3,)))
 
     # these parameters can be used to model joints that have parameters
-    # they are directly feed into the `jcalc` routine
-    joint_params: jax.Array = struct.field(default_factory=lambda: _JOINT_PARAMS_DICT)
+    # they are directly feed into the `jcalc` routines
+    joint_params: dict[str, tu.PyTree] = struct.field(
+        default_factory=lambda: _DEFAULT_JOINT_PARAMS_DICT
+    )
 
     # internal useage
     # gets populated by `parse_system`
@@ -458,7 +443,7 @@ class System(_Base):
     def change_model_name(self, name: str) -> "System":
         return self.replace(model_name=name)
 
-    def rename_link(self, old_name: str, new_name) -> "System":
+    def rename_link(self, old_name: str, new_name: str) -> "System":
         old_idx = self.name_to_idx(old_name)
         new_link_names = self.link_names.copy()
         new_link_names[old_idx] = new_name
@@ -540,6 +525,34 @@ class System(_Base):
 
         return _update_sys_if_replace_joint_type(self, logic_freeze)
 
+    def unfreeze(self, name: str, new_joint_type: str):
+        assert self.link_types[self.name_to_idx(name)] == "frozen"
+        assert new_joint_type != "frozen"
+
+        return self.change_joint_type(name, new_joint_type)
+
+    def change_joint_type(self, name: str, new_joint_type: str):
+        q_size, qd_size = Q_WIDTHS[new_joint_type], QD_WIDTHS[new_joint_type]
+
+        def logic_unfreeze_to_spherical(link_name, olt, ola, old, ols, olz):
+            nlt, nla, nld, nls, nlz = olt, ola, old, ols, olz
+
+            if link_name == name:
+                nlt = new_joint_type
+                nla = nld = nls = jnp.zeros((qd_size,))
+                nlz = jnp.zeros((q_size))
+
+                # unit quaternion
+                if new_joint_type in ["spherical", "free", "cor"]:
+                    nlz = nlz.at[0].set(1.0)
+
+            return nlt, nla, nld, nls, nlz
+
+        return _update_sys_if_replace_joint_type(self, logic_unfreeze_to_spherical)
+
+    def findall_imus(self) -> list[str]:
+        return [name for name in self.link_names if name[:3] == "imu"]
+
 
 def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
     lt, la, ld, ls, lz = [], [], [], [], []
@@ -570,13 +583,19 @@ def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
     # lt is supposed to be a list of strings; no concat required
     la, ld, ls, lz = map(jnp.concatenate, (la, ld, ls, lz))
 
-    return sys.replace(
+    sys = sys.replace(
         link_types=lt,
         link_armature=la,
         link_damping=ld,
         link_spring_stiffness=ls,
         link_spring_zeropoint=lz,
     )
+
+    from x_xy.io import parse_system
+
+    # parse system such that it checks if all joint types have the
+    # correct dimensionality of damping / stiffness / zeropoint / armature
+    return parse_system(sys)
 
 
 class InvalidSystemError(Exception):
