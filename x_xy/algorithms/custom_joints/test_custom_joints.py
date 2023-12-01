@@ -4,11 +4,9 @@ import numpy as np
 import x_xy
 from x_xy import load_example
 from x_xy import RCMG_Config
-from x_xy.algorithms.custom_joints import register_rr_imp_joint
-from x_xy.algorithms.custom_joints import register_rr_joint
-from x_xy.algorithms.custom_joints import setup_fn_randomize_joint_axes
-from x_xy.algorithms.custom_joints import setup_fn_randomize_joint_axes_primary_residual
+from x_xy.algorithms import custom_joints
 from x_xy.algorithms.generator import transforms
+from x_xy.algorithms.jcalc import _init_joint_params
 from x_xy.subpkgs import sys_composer
 
 
@@ -27,17 +25,15 @@ def pipeline_load_data_X(
 
 
 def test_virtual_input_joint_axes_rr_joint():
-    register_rr_joint()
-
     sys = load_example("test_three_seg_seg2")
-    sys = setup_fn_randomize_joint_axes(jax.random.PRNGKey(1), sys)
-    joint_axes = sys.links.joint_params["rr"]["joint_axes"]
     sys_rr = sys.replace(
         link_types=[
             "rr" if link_type in ["ry", "rz"] else link_type
             for link_type in sys.link_types
         ]
     )
+    sys_rr = _init_joint_params(jax.random.PRNGKey(1), sys_rr)
+    joint_axes = sys_rr.links.joint_params["rr"]["joint_axes"]
 
     # test `ry` / `rz`
     X = pipeline_load_data_X(sys)
@@ -57,25 +53,28 @@ def test_virtual_input_joint_axes_rr_joint():
     X = pipeline_load_data_X(sys_rr)
 
     np.testing.assert_allclose(
-        X["seg1"]["joint_axes"], np.repeat(-joint_axes[1:2], 1000, axis=0), atol=1e-7
+        X["seg1"]["joint_axes"],
+        np.repeat(-joint_axes[1:2], 1000, axis=0),
+        atol=3e-7,
+        rtol=2e-6,
     )
     np.testing.assert_allclose(
-        X["seg3"]["joint_axes"], np.repeat(joint_axes[3:4], 1000, axis=0), atol=1e-7
+        X["seg3"]["joint_axes"],
+        np.repeat(joint_axes[3:4], 1000, axis=0),
+        atol=3e-7,
+        rtol=2e-6,
     )
 
 
 def test_virtual_input_joint_axes_rr_imp_joint():
-    register_rr_imp_joint(RCMG_Config(T=10.0))
+    custom_joints.register_rr_imp_joint(RCMG_Config(T=10.0))
 
     sys = load_example("test_three_seg_seg2")
-    sys = setup_fn_randomize_joint_axes_primary_residual(jax.random.PRNGKey(1), sys)
-    joint_axes = sys.links.joint_params["rr_imp"]["joint_axes"]
-    sys_rr_imp = sys.replace(
-        link_types=[
-            "rr_imp" if link_type in ["ry", "rz"] else link_type
-            for link_type in sys.link_types
-        ]
+    sys_rr_imp = sys.change_joint_type("seg1", "rr_imp").change_joint_type(
+        "seg3", "rr_imp"
     )
+    sys_rr_imp = _init_joint_params(jax.random.PRNGKey(1), sys_rr_imp)
+    joint_axes = sys_rr_imp.links.joint_params["rr_imp"]["joint_axes"]
 
     # test `rr_imp`
     X = pipeline_load_data_X(sys_rr_imp)

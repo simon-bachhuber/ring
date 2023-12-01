@@ -1,14 +1,13 @@
-import jax
 import jax.numpy as jnp
 
 import x_xy
 from x_xy import maths
 from x_xy.algorithms.jcalc import _draw_rxyz
+from x_xy.algorithms.jcalc import _p_control_term_rxyz
+from x_xy.algorithms.jcalc import _qd_from_q_cartesian
 
 
 def register_rr_joint():
-    joint_params_pytree = dict(joint_axes=jnp.zeros((3,)))
-
     def _rr_transform(q, params):
         axis = params["joint_axes"]
         q = jnp.squeeze(q)
@@ -16,23 +15,20 @@ def register_rr_joint():
         return x_xy.Transform.create(rot=rot)
 
     def _motion_fn(params):
-        return x_xy.base.Motion.create(ang=params)
+        axis = params["joint_axes"]
+        return x_xy.base.Motion.create(ang=axis)
 
     rr_joint = x_xy.JointModel(
-        _rr_transform, motion=[_motion_fn], rcmg_draw_fn=_draw_rxyz
+        _rr_transform,
+        motion=[_motion_fn],
+        rcmg_draw_fn=_draw_rxyz,
+        p_control_term=_p_control_term_rxyz,
+        qd_from_q=_qd_from_q_cartesian,
+        init_joint_params=_draw_random_joint_axis,
     )
 
-    x_xy.register_new_joint_type(
-        "rr", rr_joint, 1, joint_params_pytree=joint_params_pytree, overwrite=True
-    )
+    x_xy.register_new_joint_type("rr", rr_joint, 1, overwrite=True)
 
 
-def setup_fn_randomize_joint_axes(key, sys: x_xy.System) -> x_xy.System:
-    joint_axes = _draw_random_joint_axis(jax.random.split(key, sys.num_links()))
-    sys.links.joint_params["rr"]["joint_axes"] = joint_axes
-    return sys
-
-
-@jax.vmap
 def _draw_random_joint_axis(key):
-    return maths.rotate(jnp.array([1.0, 0, 0]), maths.quat_random(key))
+    return dict(joint_axes=maths.rotate(jnp.array([1.0, 0, 0]), maths.quat_random(key)))

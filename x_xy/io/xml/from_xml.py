@@ -1,11 +1,13 @@
 from xml.etree import ElementTree
 
+import jax
 import jax.numpy as jnp
 
 from x_xy.utils import parse_path
 
 from . import abstract
 from ... import base
+from ...algorithms.jcalc import _init_joint_params
 from ..parse import parse_system
 
 
@@ -113,7 +115,7 @@ DEFAULT_GRAVITY = jnp.array([0, 0, 9.81])
 DEFAULT_DT = 0.01
 
 
-def load_sys_from_str(xml_str: str) -> base.System:
+def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
     """Load system from string input.
 
     Args:
@@ -157,6 +159,13 @@ def load_sys_from_str(xml_str: str) -> base.System:
         global_link_idx += 1
         current_link_idx = global_link_idx
         current_link_typ = body.attrib["joint"]
+
+        if current_link_typ == "cor":
+            raise Exception(
+                "`cor` joint type is not meant to be used like this. Either use a "
+                "`free` joint instead of `cor` and set RCMG_Config.cor=True or, use"
+                " a free joint and call sys._replace_free_with_cor."
+            )
 
         link_parents[current_link_idx] = parent
         link_types[current_link_idx] = current_link_typ
@@ -223,11 +232,13 @@ def load_sys_from_str(xml_str: str) -> base.System:
         model_name=model_name,
     )
 
+    sys = _init_joint_params(jax.random.PRNGKey(seed), sys)
+
     return parse_system(sys)
 
 
-def load_sys_from_xml(xml_path: str):
-    return load_sys_from_str(_load_xml(xml_path))
+def load_sys_from_xml(xml_path: str, seed: int = 1):
+    return load_sys_from_str(_load_xml(xml_path), seed=seed)
 
 
 def _load_xml(xml_path: str) -> str:
