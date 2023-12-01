@@ -91,15 +91,6 @@ def batch_generators_lazy(
     NOTE: If `stochastic` then `batchsizes` must be a single integer.
     """
 
-    if not isinstance(generators, list):
-        # test if generator is already batched, then this is a no-op
-        key = jax.random.PRNGKey(0)
-        X, *_ = generators(key)
-        ndim = tree_utils.tree_ndim(X)
-        if ndim > 2:
-            warnings.warn(f"`generators` seem already batched. ndim={ndim}")
-            return generators
-
     if single_call_opt:
         warnings.warn(
             "Unfortunately, the flag `single_call_opt` seems to always"
