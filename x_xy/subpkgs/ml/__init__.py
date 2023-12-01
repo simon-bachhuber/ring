@@ -1,4 +1,4 @@
-from . import express
+from . import convenient
 from .base import AbstractFilter
 from .base import AbstractFilter2d
 from .base import InitApplyFnFilter

@@ -247,12 +247,8 @@ def pipeline_load_data(
 
     y = x_xy.rel_pose(sys_noimu, xs)
     if rootincl:
-        for name, parent in zip(sys_noimu.link_names, sys_noimu.link_parents):
-            if parent == -1:
-                assert name not in y
-                quat = x_xy.maths.quat_inv(exp_data[name]["quat"])
-                quat = x_xy.maths.quat_project(quat, jnp.array([0.0, 0, 1]))[1]
-                y[name] = quat
+        y_rootincl = x_xy.algorithms.sensors.root_incl(sys_noimu, xs, sys_noimu)
+        y = x_xy.utils.dict_union(y, y_rootincl)
 
     return X, y, xs
 

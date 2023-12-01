@@ -58,7 +58,7 @@ class AbstractFilter2d(AbstractFilter):
 class InitApplyFnFilter(AbstractFilter):
     def __init__(
         self,
-        init_apply_fn_factory: Callable[[x_xy.System], SimpleNamespace],
+        init_apply_fn_factory: Callable[[x_xy.System | None], SimpleNamespace],
         name: Optional[str] = None,
         params: Optional[str | tree_utils.PyTree] = None,
         key: jax.Array = jax.random.PRNGKey(1),
