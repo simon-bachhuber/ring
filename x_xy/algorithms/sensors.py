@@ -297,6 +297,25 @@ def rel_pose(
     return y
 
 
+def root_incl(
+    sys: base.System, x: base.Transform, sys_x: base.System
+) -> dict[str, jax.Array]:
+    # (time, nlinks, 4) -> (nlinks, time, 4)
+    rots = x.rot.transpose((1, 0, 2))
+    l_map = sys_x.idx_map("l")
+
+    y = dict()
+
+    def f(_, __, name: str, parent: int):
+        if parent != -1:
+            return
+        y[name] = maths.quat_project(rots[l_map[name]], jnp.array([0.0, 0, 1]))[1]
+
+    scan_sys(sys, f, "ll", sys.link_names, sys.link_parents)
+
+    return y
+
+
 def joint_axes(
     sys: base.System,
     xs: base.Transform,
