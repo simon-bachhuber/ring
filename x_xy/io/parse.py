@@ -1,4 +1,5 @@
 from jax.core import Tracer
+from jax.errors import TracerBoolConversionError
 import jax.numpy as jnp
 
 from .. import base
@@ -14,6 +15,11 @@ def parse_system(sys: base.System) -> base.System:
     - check that names are strings
     - check that all pos_min <= pos_max (unless traced)
     - order geoms in ascending order based on their parent link idx
+    - check that all links have the correct size of
+        - damping
+        - armature
+        - stiffness
+        - zeropoint
     """
     assert len(sys.link_parents) == len(sys.link_types) == sys.links.batch_dim()
 
@@ -22,8 +28,11 @@ def parse_system(sys: base.System) -> base.System:
         assert isinstance(name, str)
 
     pos_min, pos_max = sys.links.pos_min, sys.links.pos_max
-    if not isinstance(pos_min, Tracer):
+    # if not isinstance(pos_min, Tracer):
+    try:
         assert jnp.all(pos_max >= pos_min), f"min={pos_min}, max={pos_max}"
+    except TracerBoolConversionError:
+        pass
 
     for geom in sys.geoms:
         assert geom.link_idx in list(range(sys.num_links())) + [-1]
@@ -38,6 +47,35 @@ def parse_system(sys: base.System) -> base.System:
 
     # round dt
     sys = sys.replace(dt=round(sys.dt, 8))
+
+    # check sizes of damping / arma / stiff / zeropoint
+    def check_dasz_unitq(_, __, name, typ, d, a, s, z):
+        q_size, qd_size = base.Q_WIDTHS[typ], base.QD_WIDTHS[typ]
+
+        error_msg = (
+            f"wrong size for link `{name}` of typ `{typ}` in model {sys.model_name}"
+        )
+
+        assert d.size == a.size == s.size == qd_size, error_msg
+        assert z.size == q_size, error_msg
+
+        if typ in ["spherical", "free", "cor"] and not isinstance(z, Tracer):
+            assert jnp.allclose(
+                jnp.linalg.norm(z[:4]), 1.0
+            ), f"not unit quat for link `{name}` of typ `{typ}` in model"
+            f" {sys.model_name}"
+
+    scan_sys(
+        sys,
+        check_dasz_unitq,
+        "lldddq",
+        sys.link_names,
+        sys.link_types,
+        sys.link_damping,
+        sys.link_armature,
+        sys.link_spring_stiffness,
+        sys.link_spring_zeropoint,
+    )
 
     return sys
 
