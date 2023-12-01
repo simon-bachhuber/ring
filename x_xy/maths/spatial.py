@@ -54,7 +54,7 @@ def rz(theta):
 
 def cross(r):
     assert r.shape == (3,)
-    return jnp.array([[0, -r[2], r[1]], [r[3], 0, -r[0]], [-r[1], r[0], 0]])
+    return jnp.array([[0, -r[2], r[1]], [r[2], 0, -r[0]], [-r[1], r[0], 0]])
 
 
 def quadrants(aa=None, ab=None, ba=None, bb=None, default=jnp.zeros):
