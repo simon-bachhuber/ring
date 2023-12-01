@@ -1,3 +1,5 @@
+from typing import Optional
+
 import jax
 import jax.numpy as jnp
 
@@ -5,16 +7,83 @@ from ... import base
 from ... import maths
 from ...scan import scan_sys
 from ...utils import dict_union
-from ..control import unroll_dynamics_pd_control
 from ..sensors import imu as imu_fn
 from ..sensors import joint_axes
 from ..sensors import rel_pose
+from ..sensors import root_incl
+from .pd_control import _unroll_dynamics_pd_control
 from .types import FINALIZE_FN
 from .types import GeneratorTrafo
 from .types import GeneratorWithInputExtras
 from .types import GeneratorWithInputOutputExtras
 from .types import GeneratorWithOutputExtras
 from .types import SETUP_FN
+
+
+def _dropout_imu_jointaxes_factory(dropout_rates: dict[str, tuple[float, float]]):
+    """
+    Args:
+        dropout_rates: {'seg': (imu_rate, joint_axes_rate)}
+
+    Returns:
+        Function: (key, X) -> X
+
+    """
+
+    def _X_transform(key, X):
+        for segments, (imu_rate, jointaxes_rate) in dropout_rates.items():
+            key, c1, c2 = jax.random.split(key, 3)
+            factor_imu = jax.random.bernoulli(c1, p=(1 - imu_rate)).astype(int)
+            factor_jointaxes = jax.random.bernoulli(c2, p=(1 - jointaxes_rate)).astype(
+                int
+            )
+
+            for gyraccmag in ["gyr", "acc", "mag"]:
+                if gyraccmag in X[segments]:
+                    X[segments][gyraccmag] *= factor_imu
+
+            if "joint_axes" in X[segments]:
+                X[segments]["joint_axes"] *= factor_jointaxes
+        return X
+
+    return _X_transform
+
+
+class GeneratorTrafoDropout(GeneratorTrafo):
+    def __init__(self, dropout_rates: dict[str, tuple[float, float]]):
+        "dropout_rates: {'seg': (imu_rate, joint_axes_rate)}"
+        self.dropout_rates = dropout_rates
+
+    def __call__(self, gen):
+        _X_transform = _dropout_imu_jointaxes_factory(self.dropout_rates)
+
+        def _gen(*args):
+            # X: dict[str, dict[str, Array]]
+            (X, y), (key, *extras) = gen(*args)
+            key, consume = jax.random.split(key)
+            X = _X_transform(consume, X)
+            return (X, y), tuple([key] + extras)
+
+        return _gen
+
+
+class GeneratorTrafoLambda(GeneratorTrafo):
+    def __init__(self, f, input: bool = False):
+        self.f = f
+        self.input = input
+
+    def __call__(self, gen):
+        if self.input:
+
+            def _gen(*args):
+                return gen(*self.f(*args))
+
+        else:
+
+            def _gen(*args):
+                return self.f(gen(*args))
+
+        return _gen
 
 
 class GeneratorTrafoSetupFn(GeneratorTrafo):
@@ -42,10 +111,12 @@ class GeneratorTrafoFinalizeFn(GeneratorTrafo):
         gen: GeneratorWithOutputExtras | GeneratorWithInputOutputExtras,
     ) -> GeneratorWithOutputExtras | GeneratorWithInputOutputExtras:
         def _gen(*args):
-            _, (key, *extras) = gen(*args)
+            (X, y), (key, *extras) = gen(*args)
+            # make sure we aren't overwriting anything
+            assert len(X) == len(y) == 0, f"X.keys={X.keys()}, y.keys={y.keys()}"
             key, consume = jax.random.split(key)
             Xy = self.finalize_fn(consume, *extras)
-            return Xy, tuple(list(key) + extras)
+            return Xy, tuple([key] + extras)
 
         return _gen
 
@@ -135,6 +206,20 @@ class GeneratorTrafoRelPose(GeneratorTrafo):
         return _gen
 
 
+class GeneratorTrafoRootIncl(GeneratorTrafo):
+    def __init__(self, sys: base.System):
+        self.sys = sys
+
+    def __call__(self, gen):
+        def _gen(*args):
+            (X, y), (key, q, x, sys_x) = gen(*args)
+            y_root_incl = root_incl(self.sys, x, sys_x)
+            y = dict_union(y, y_root_incl)
+            return (X, y), (key, q, x, sys_x)
+
+        return _gen
+
+
 class GeneratorTrafoIMU(GeneratorTrafo):
     def __init__(self, has_magnetometer: bool = False):
         self.has_magnetometer = has_magnetometer
@@ -191,16 +276,40 @@ def _imu_data(key, xs, sys_xs, has_magnetometer) -> dict:
     return X
 
 
+P_rot, P_pos = 50.0, 200.0
+_P_gains = {
+    "free": jnp.array(3 * [P_rot] + 3 * [P_pos]),
+    "px": jnp.array([P_pos]),
+    "py": jnp.array([P_pos]),
+    "pz": jnp.array([P_pos]),
+    "rx": jnp.array([P_rot]),
+    "ry": jnp.array([P_rot]),
+    "rz": jnp.array([P_rot]),
+    "rr": jnp.array([P_rot]),
+    # primary, residual
+    "rr_imp": jnp.array([P_rot, P_rot]),
+    "cor": jnp.array(3 * [P_rot] + 6 * [P_pos]),
+    "spherical": jnp.array(3 * [P_rot]),
+    "p3d": jnp.array(3 * [P_pos]),
+    "saddle": jnp.array([P_rot, P_rot]),
+    "frozen": jnp.array([]),
+}
+
+
 class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
     def __init__(
         self,
-        P_gains: dict[str, jax.Array],
+        custom_P_gains: dict[str, jax.Array] = dict(),
         unactuated_subsystems: list[str] = [],
         return_q_ref: bool = False,
+        overwrite_q_ref: Optional[jax.Array] = None,
+        **unroll_kwargs,
     ):
         self.unactuated_links = unactuated_subsystems
-        self.p_gains_dict = P_gains
+        self.custom_P_gains = custom_P_gains
         self.return_q_ref = return_q_ref
+        self.overwrite_q_ref = overwrite_q_ref
+        self.unroll_kwargs = unroll_kwargs
 
     def __call__(self, gen):
         from x_xy.subpkgs import sys_composer
@@ -208,28 +317,50 @@ class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
         def _gen(*args):
             (X, y), (key, q, _, sys_x) = gen(*args)
 
+            if self.overwrite_q_ref is not None:
+                q = self.overwrite_q_ref
+                assert q.shape[-1] == sys_x.q_size()
+
             sys_q_ref = sys_x
             if len(self.unactuated_links) > 0:
                 sys_q_ref = sys_composer.delete_subsystem(sys_x, self.unactuated_links)
 
-            q_ref, p_gains_array = [], []
+            q_ref = []
+            p_gains_list = []
             q = q.T
             idx_map_sys_x = sys_x.idx_map("q")
 
             def build_q_ref(_, __, name, link_type):
                 q_ref.append(q[idx_map_sys_x[name]])
-                p_gains_array.append(self.p_gains_dict[link_type])
+
+                if link_type in self.custom_P_gains:
+                    p_gain_this_link = self.custom_P_gains[link_type]
+                elif link_type in _P_gains:
+                    p_gain_this_link = _P_gains[link_type]
+                else:
+                    raise RuntimeError(
+                        f"Please proved gain parameters for the joint typ `{link_type}`"
+                        " via the argument `custom_P_gains: dict[str, Array]`"
+                    )
+
+                required_qd_size = base.QD_WIDTHS[link_type]
+                assert (
+                    required_qd_size == p_gain_this_link.size
+                ), f"The gain parameters must be of qd_size=`{required_qd_size}`"
+                f" but got `{p_gain_this_link.size}`. This happened for the link "
+                f"`{name}` of type `{link_type}`."
+                p_gains_list.append(p_gain_this_link)
 
             scan_sys(
                 sys_q_ref, build_q_ref, "ll", sys_q_ref.link_names, sys_q_ref.link_types
             )
             q_ref, p_gains_array = jnp.concatenate(q_ref).T, jnp.concatenate(
-                p_gains_array
+                p_gains_list
             )
 
             # perform dynamical simulation
-            states = unroll_dynamics_pd_control(
-                sys_x, q_ref, p_gains_array, sys_q_ref=sys_q_ref
+            states = _unroll_dynamics_pd_control(
+                sys_x, q_ref, p_gains_array, sys_q_ref=sys_q_ref, **self.unroll_kwargs
             )
 
             if self.return_q_ref:

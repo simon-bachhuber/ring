@@ -125,7 +125,7 @@ def test_forward_kinematics_omc():
 def test_zip_unzip_scale():
     for sys in x_xy.io.list_load_examples():
         print(sys.model_name)
-        _, xs = x_xy.algorithms.build_generator(sys)(
+        _, xs = x_xy.algorithms.build_generator(sys, _compat=True)(
             jax.random.PRNGKey(
                 1,
             )

@@ -1,10 +1,18 @@
 from typing import Optional
 
+import jax
+import jax.numpy as jnp
 from tree_utils import tree_batch
 
 from x_xy.io import parse_system
 
 from ... import base
+
+
+def _tree_nan_like(tree, repeats: int):
+    return jax.tree_map(
+        lambda arr: jnp.repeat(arr[0:1] * jnp.nan, repeats, axis=0), tree
+    )
 
 
 # TODO
@@ -57,6 +65,26 @@ def inject_system(
             geom.replace(link_idx=new_parent(geom.link_idx)) for geom in sub_sys.geoms
         ]
     )
+
+    # build union of two joint_params dictionaries because each system might have custom
+    # joints that the other does not have
+    missing_in_sys = set(sub_sys.links.joint_params.keys()) - set(
+        sys.links.joint_params.keys()
+    )
+    sys_n_links = sys.num_links()
+    for typ in missing_in_sys:
+        sys.links.joint_params[typ] = _tree_nan_like(
+            sub_sys.links.joint_params[typ], sys_n_links
+        )
+
+    missing_in_subsys = set(
+        sys.links.joint_params.keys() - sub_sys.links.joint_params.keys()
+    )
+    subsys_n_links = sub_sys.num_links()
+    for typ in missing_in_subsys:
+        sub_sys.links.joint_params[typ] = _tree_nan_like(
+            sys.links.joint_params[typ], subsys_n_links
+        )
 
     # merge two systems
     concat = lambda a1, a2: tree_batch([a1, a2], True, "jax")

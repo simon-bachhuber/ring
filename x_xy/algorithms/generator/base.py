@@ -1,15 +1,30 @@
-from typing import Sequence
+from typing import Callable, Optional, Sequence
+import warnings
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
+from . import motion_artifacts
 from ... import base
 from ...scan import scan_sys
+from ...utils import to_list
+from ..jcalc import _init_joint_params
 from ..jcalc import _joint_types
 from ..jcalc import RCMG_Config
 from ..kinematics import forward_kinematics_transforms
+from .batch import batch_generators_eager
+from .batch import batch_generators_eager_to_list
+from .batch import batch_generators_lazy
+from .transforms import GeneratorTrafoDropout
+from .transforms import GeneratorTrafoDynamicalSimulation
 from .transforms import GeneratorTrafoFinalizeFn
+from .transforms import GeneratorTrafoIMU
+from .transforms import GeneratorTrafoJointAxisSensor
+from .transforms import GeneratorTrafoLambda
 from .transforms import GeneratorTrafoRandomizePositions
+from .transforms import GeneratorTrafoRelPose
+from .transforms import GeneratorTrafoRootIncl
 from .transforms import GeneratorTrafoSetupFn
 from .types import FINALIZE_FN
 from .types import Generator
@@ -23,23 +38,176 @@ from .types import SETUP_FN
 from .types import Xy
 
 
+def _copy_kwargs(kwargs: dict | None) -> dict:
+    return dict() if kwargs is None else kwargs.copy()
+
+
 def build_generator(
-    sys: base.System,
-    config: RCMG_Config = RCMG_Config(),
-    setup_fn: SETUP_FN = lambda key, sys: sys,
-    finalize_fn: FINALIZE_FN = lambda key, q, x, sys: (q, x),
+    sys: base.System | list[base.System],
+    config: RCMG_Config | list[RCMG_Config] = RCMG_Config(),
+    setup_fn: Optional[SETUP_FN] = None,
+    finalize_fn: Optional[FINALIZE_FN] = None,
+    add_X_imus: bool = False,
+    add_X_imus_kwargs: Optional[dict] = None,
+    add_X_jointaxes: bool = False,
+    add_X_dropout: Optional[dict[str, tuple[float, float]]] = None,
+    add_y_relpose: bool = False,
+    add_y_rootincl: bool = False,
+    sys_ml: Optional[base.System] = None,
     randomize_positions: bool = False,
-) -> Generator:
+    randomize_motion_artifacts: bool = False,
+    randomize_joint_params: bool = False,
+    imu_motion_artifacts: bool = False,
+    imu_motion_artifacts_kwargs: Optional[dict] = None,
+    dynamic_simulation: bool = False,
+    dynamic_simulation_kwargs: Optional[dict] = None,
+    output_transform: Optional[Callable] = None,
+    keep_output_extras: bool = False,
+    eager: bool = False,
+    aslist: bool = False,
+    seed: Optional[int] = None,
+    sizes: Optional[int | list[int]] = None,
+    batchsize: Optional[int] = None,
+    _compat: bool = False,
+) -> Generator | GeneratorWithOutputExtras:
+    # capture all function args
+    kwargs = locals()
+
+    batch = False
+    if (
+        sizes is not None
+        or isinstance(sys, list)
+        or isinstance(config, list)
+        or eager
+        or aslist
+    ):
+        batch = True
+
+    if batch:
+        assert sizes is not None
+        if aslist:
+            assert eager
+        if eager and not aslist:
+            assert batchsize is not None
+        else:
+            assert (
+                batchsize is None
+            ), "Use `sizes` instead to provide the sizes per batch."
+        if eager:
+            assert seed is not None
+
+        sys, config = to_list(sys), to_list(config)
+
+        if "sys_ml" not in kwargs and len(sys) > 1:
+            warnings.warn("Batched simulation with multiple systems but no `sys_ml`")
+
+        gens = []
+        kwargs["eager"] = False
+        kwargs["aslist"] = False
+        kwargs["sizes"] = None
+        for _sys in sys:
+            for _config in config:
+                kwargs["sys"] = _sys
+                kwargs["config"] = _config
+                gens.append(build_generator(**kwargs))
+
+        if eager:
+            if aslist:
+                data = batch_generators_eager_to_list(gens, sizes, seed=seed)
+                return jax.tree_map(np.asarray, data)
+            else:
+                return batch_generators_eager(gens, sizes, batchsize, seed=seed)
+        else:
+            return batch_generators_lazy(gens, sizes)
+
+    # end of batch generator logic - non-batched build_generator logic starts
     assert config.is_feasible()
 
+    # re-enable old finalize_fn logic such that all tests can still work
+    if _compat:
+
+        def finalize_fn(key, q, x, sys):
+            return q, x
+
+    imu_motion_artifacts_kwargs = _copy_kwargs(imu_motion_artifacts_kwargs)
+    dynamic_simulation_kwargs = _copy_kwargs(dynamic_simulation_kwargs)
+    add_X_imus_kwargs = _copy_kwargs(add_X_imus_kwargs)
+
+    # default kwargs values
+    if "hide_injected_bodies" not in imu_motion_artifacts_kwargs:
+        imu_motion_artifacts_kwargs["hide_injected_bodies"] = True
+
+    if sys_ml is None:
+        sys_ml = sys
+
+    if add_X_jointaxes or add_y_relpose or add_y_rootincl:
+        if len(sys_ml.findall_imus()) > 0:
+            warnings.warn("Automatically removed the IMUs from `sys_ml`.")
+
+            from x_xy.subpkgs import sys_composer
+
+            sys_noimu, _ = sys_composer.make_sys_noimu(sys_ml)
+        else:
+            sys_noimu = sys_ml
+
+    unactuated_subsystems = []
+    if imu_motion_artifacts:
+        assert dynamic_simulation
+        unactuated_subsystems = motion_artifacts.unactuated_subsystem(sys)
+        sys = motion_artifacts.inject_subsystems(sys, **imu_motion_artifacts_kwargs)
+        assert "unactuated_subsystems" not in dynamic_simulation_kwargs
+        dynamic_simulation_kwargs["unactuated_subsystems"] = unactuated_subsystems
+
+        if not randomize_motion_artifacts:
+            warnings.warn(
+                "`imu_motion_artifacts` is enabled but not `randomize_motion_artifacts`"
+            )
+
+        if "hide_injected_bodies" in imu_motion_artifacts_kwargs:
+            if imu_motion_artifacts_kwargs["hide_injected_bodies"]:
+                warnings.warn(
+                    "The flag `hide_injected_bodies` in `imu_motion_artifacts_kwargs` "
+                    "is set. This will try to hide injected bodies. This feature is "
+                    "experimental."
+                )
+
+        if "prob_rigid" in imu_motion_artifacts_kwargs:
+            assert (
+                randomize_motion_artifacts
+            ), "`prob_rigid` works by overwriting damping and stiffness parameters "
+            "using the `randomize_motion_artifacts` flag, so it must be enabled."
+
+    noop = lambda gen: gen
     return GeneratorPipe(
-        GeneratorTrafoSetupFn(setup_fn),
-        GeneratorTrafoRandomizePositions()
-        if randomize_positions
-        else (lambda gen: gen),
-        GeneratorTrafoFinalizeFn(finalize_fn),
+        GeneratorTrafoSetupFn(_init_joint_params) if randomize_joint_params else noop,
+        GeneratorTrafoRandomizePositions() if randomize_positions else noop,
+        GeneratorTrafoSetupFn(
+            motion_artifacts.setup_fn_randomize_damping_stiffness_factory(
+                imu_motion_artifacts_kwargs.get("prob_rigid", 0.0)
+            )
+        )
+        if (imu_motion_artifacts and randomize_motion_artifacts)
+        else noop,
+        GeneratorTrafoSetupFn(setup_fn) if setup_fn is not None else noop,
+        GeneratorTrafoDynamicalSimulation(**dynamic_simulation_kwargs)
+        if dynamic_simulation
+        else noop,
+        motion_artifacts.GeneratorTrafoHideInjectedBodies()
+        if (
+            imu_motion_artifacts and imu_motion_artifacts_kwargs["hide_injected_bodies"]
+        )
+        else noop,
+        GeneratorTrafoFinalizeFn(finalize_fn) if finalize_fn is not None else noop,
+        GeneratorTrafoIMU(**add_X_imus_kwargs) if add_X_imus else noop,
+        GeneratorTrafoJointAxisSensor(sys_noimu) if add_X_jointaxes else noop,
+        GeneratorTrafoDropout(add_X_dropout) if add_X_dropout is not None else noop,
+        GeneratorTrafoRelPose(sys_noimu) if add_y_relpose else noop,
+        GeneratorTrafoRootIncl(sys_noimu) if add_y_rootincl else noop,
         GeneratorTrafoRemoveInputExtras(sys),
-        GeneratorTrafoRemoveOutputExtras(),
+        noop if keep_output_extras else GeneratorTrafoRemoveOutputExtras(),
+        GeneratorTrafoLambda(output_transform, input=False)
+        if output_transform is not None
+        else noop,
     )(config)
 
 

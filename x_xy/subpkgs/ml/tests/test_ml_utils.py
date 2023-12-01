@@ -33,7 +33,7 @@ def test_save_load():
 
 
 def test_save_load_generators():
-    gen = x_xy.build_generator(x_xy.load_example("test_three_seg_seg2"))
+    gen = x_xy.build_generator(x_xy.load_example("test_three_seg_seg2"), _compat=True)
 
     data = x_xy.batch_generators_eager_to_list(gen, 1)
     assert len(data) == 1

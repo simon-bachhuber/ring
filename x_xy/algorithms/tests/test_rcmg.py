@@ -13,8 +13,8 @@ def test_batch_generator(N: int, seed: int):
     sys = x_xy.io.load_example("test_free")
     config1 = x_xy.RCMG_Config(ang0_min=0.0, ang0_max=0.0)
     config2 = x_xy.RCMG_Config()
-    gen1 = x_xy.build_generator(sys, config1)
-    gen2 = x_xy.build_generator(sys, config2)
+    gen1 = x_xy.build_generator(sys, config1, _compat=True)
+    gen2 = x_xy.build_generator(sys, config2, _compat=True)
     gen = x_xy.batch_generators_lazy([gen1, gen2, gen1], [N, N, N])
     q, _ = gen(jax.random.PRNGKey(seed))
 
@@ -45,6 +45,7 @@ def test_initial_ang_pos_values():
                     pos0_max=pos0_max,
                     T=T,
                 ),
+                _compat=True,
             ),
             bs,
         )(jax.random.PRNGKey(1))
@@ -78,7 +79,7 @@ def test_rcmg():
                 # this tests `TimeDependentFloat`-logic
                 dang_max=_dang_max,
             )
-            generator = x_xy.build_generator(sys, config)
+            generator = x_xy.build_generator(sys, config, _compat=True)
             bs = 8
             generator = x_xy.batch_generators_lazy(generator, bs)
 

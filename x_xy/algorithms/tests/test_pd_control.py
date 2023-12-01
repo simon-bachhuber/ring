@@ -3,6 +3,7 @@ import jax.numpy as jnp
 import numpy as np
 
 import x_xy
+from x_xy.algorithms.generator.pd_control import _pd_control
 
 
 def test_pd_control():
@@ -22,7 +23,8 @@ def test_pd_control():
                 t_min=0.15,
                 dpos_max=0.1,
             ),
-        )(jax.random.PRNGKey(1))
+            _compat=True,
+        )(jax.random.PRNGKey(2))
 
         jit_step_fn = jax.jit(lambda sys, state, tau: x_xy.step(sys, state, tau, 1))
 
@@ -41,8 +43,8 @@ def test_pd_control():
         q_reconst = np.vstack(q_reconst)
         return q, q_reconst
 
-    gains = jnp.array(3 * [10_000] + 5 * [250])
-    controller = x_xy.pd_control(gains, gains * 0.1)
+    gains = jnp.array(3 * [10_000] + 3 * [250] + 2 * [250])
+    controller = _pd_control(gains, gains * 0.1)
     q, q_reconst = evaluate(controller, "test_control")
     error = jnp.mean(
         x_xy.maths.angle_error(q[:, :4], q_reconst[:, :4]) ** 2
@@ -50,13 +52,13 @@ def test_pd_control():
     assert error <= 0.42
 
     gains = jnp.array(3 * [17] + 3 * [300])
-    controller = x_xy.pd_control(gains, gains)
+    controller = _pd_control(gains, gains)
     q, q_reconst = evaluate(controller, "test_free")
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
     assert error <= 0.5
 
-    gains = jnp.array([300.0, 300])
-    controller = x_xy.pd_control(gains, gains)
+    gains = jnp.array([50.0, 50.0])
+    controller = _pd_control(gains, gains * 0.1)
     q, q_reconst = evaluate(controller, "test_double_pendulum")
     error = jnp.sqrt(jnp.mean((q - q_reconst) ** 2))
     # TODO investigate why errors are higher after upgrading python, jax, and cuda
@@ -69,6 +71,26 @@ def test_pd_control():
     assert error < 0.46
 
 
+LARGE_DAMPING = 25.0
+
+
+def _sys_large_damping(sys: x_xy.System, exclude: list[str] = []) -> x_xy.System:
+    damping = sys.link_damping
+
+    def f(_, idx_map, idx, name):
+        nonlocal damping
+
+        if name in exclude:
+            return
+
+        slice = idx_map["d"](idx)
+        a, b = slice.start, slice.stop
+        damping = damping.at[a:b].set(LARGE_DAMPING)
+
+    x_xy.scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_names)
+    return sys.replace(link_damping=damping)
+
+
 def test_dynamical_simulation_trafo():
     P_gains = {
         "free": jnp.array(3 * [50.0] + 3 * [200.0]),
@@ -79,7 +101,7 @@ def test_dynamical_simulation_trafo():
 
     for example in ["test_three_seg_seg2"]:
         sys = x_xy.load_example(example)
-        sys = x_xy.algorithms.control._sys_large_damping(sys)
+        sys = _sys_large_damping(sys)
         gen = x_xy.GeneratorPipe(
             x_xy.algorithms.generator.transforms.GeneratorTrafoDynamicalSimulation(
                 P_gains, return_q_ref=True
