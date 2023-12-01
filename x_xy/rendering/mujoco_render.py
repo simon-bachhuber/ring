@@ -1,6 +1,7 @@
 from typing import Optional, Sequence
 
 import mujoco
+import numpy as np
 
 from .. import maths
 from ..base import Box
@@ -159,7 +160,7 @@ def _xml_str_one_geom(geom: Geometry) -> str:
 
 def _array_to_str(arr: Sequence[float]) -> str:
     # TODO; remove round & truncation
-    return "".join(["{:.4f} ".format(round(value, 4)) for value in arr])[:-1]
+    return "".join(["{:.4f} ".format(np.round(value, 4)) for value in arr])[:-1]
 
 
 class MujocoScene:

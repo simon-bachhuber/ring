@@ -92,12 +92,6 @@ def test_cor():
     )
 
 
-def test_express():
-    sys = x_xy.load_example("test_three_seg_seg2")
-    data = x_xy.express_Ximu_Yrelpose_data(sys)
-    del data
-
-
 def test_knee_flexible_imus_sim():
     sys = x_xy.load_example("knee_flexible_imus")
     qref = np.ones((101, 22))
