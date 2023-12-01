@@ -13,7 +13,6 @@ from .algorithms import batch_generators_lazy
 from .algorithms import batched_generator_from_list
 from .algorithms import build_generator
 from .algorithms import concat_configs
-from .algorithms import express_Ximu_Yrelpose_data
 from .algorithms import forward_kinematics
 from .algorithms import GeneratorPipe
 from .algorithms import GeneratorTrafo
@@ -40,3 +39,11 @@ from .io import save_sys_to_xml
 from .rendering import render
 from .rendering import render_prediction
 from .scan import scan_sys
+
+
+def setup():
+    # this defines `rr` and `rr_imp`
+    from x_xy.algorithms import custom_joints
+
+
+setup()
