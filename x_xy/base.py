@@ -440,7 +440,19 @@ class System(_Base):
     def add_prefix(self, prefix: str = "") -> "System":
         return self.replace(link_names=[prefix + name for name in self.link_names])
 
-    def change_model_name(self, name: str) -> "System":
+    def change_model_name(
+        self,
+        new_name: Optional[str] = None,
+        prefix: Optional[str] = None,
+        suffix: Optional[str] = None,
+    ) -> "System":
+        if prefix is None:
+            prefix = ""
+        if suffix is None:
+            suffix = ""
+        if new_name is None:
+            new_name = self.model_name
+        name = prefix + new_name + suffix
         return self.replace(model_name=name)
 
     def rename_link(self, old_name: str, new_name: str) -> "System":
@@ -531,7 +543,15 @@ class System(_Base):
 
         return self.change_joint_type(name, new_joint_type)
 
-    def change_joint_type(self, name: str, new_joint_type: str):
+    def change_joint_type(
+        self,
+        name: str,
+        new_joint_type: str,
+        new_arma: Optional[jax.Array] = None,
+        new_damp: Optional[jax.Array] = None,
+        new_stif: Optional[jax.Array] = None,
+        new_zero: Optional[jax.Array] = None,
+    ):
         q_size, qd_size = Q_WIDTHS[new_joint_type], QD_WIDTHS[new_joint_type]
 
         def logic_unfreeze_to_spherical(link_name, olt, ola, old, ols, olz):
@@ -539,11 +559,16 @@ class System(_Base):
 
             if link_name == name:
                 nlt = new_joint_type
-                nla = nld = nls = jnp.zeros((qd_size,))
-                nlz = jnp.zeros((q_size))
+                q_zeros = jnp.zeros((q_size))
+                qd_zeros = jnp.zeros((qd_size,))
+
+                nla = qd_zeros if new_arma is None else new_arma
+                nld = qd_zeros if new_damp is None else new_damp
+                nls = qd_zeros if new_stif is None else new_stif
+                nlz = q_zeros if new_zero is None else new_zero
 
                 # unit quaternion
-                if new_joint_type in ["spherical", "free", "cor"]:
+                if new_joint_type in ["spherical", "free", "cor"] and new_zero is None:
                     nlz = nlz.at[0].set(1.0)
 
             return nlt, nla, nld, nls, nlz
