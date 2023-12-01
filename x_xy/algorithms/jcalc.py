@@ -177,9 +177,44 @@ DRAW_FN = Callable[
 ]
 P_CONTROL_TERM = Callable[
     # q, q_ref -> qdd
+    # (q_size,), (q_size), -> (qd_size,)
     [jax.Array, jax.Array],
     jax.Array,
 ]
+# this function is used to generate the velocity reference trajectory from the
+# reference trajectory q, which both are required for the pd control, which it is
+# required if the simulation is not kinematic but dynamic
+QD_FROM_Q = Callable[
+    # qs, dt -> dqs
+    # (N, q_size), (1,) -> (N, qd_size)
+    [jax.Array, jax.Array],
+    jax.Array,
+]
+# used by x_xy.algorithms.inverse_kinematics_endeffector to  maps from
+# [-inf, inf] -> feasible joint value range. Defaults to {}.
+# For example: By default, for a hinge joint it uses `maths.wrap_to_pi`.
+# For a spherical joint it would normalize to create a unit quaternion.
+INV_KIN_PREPROCESS = Callable[
+    # (q_size,) -> (q_size)
+    [jax.Array],
+    jax.Array,
+]
+
+# used only by `sim2real.project_xs`, and it receives a transform object
+# and projects it into the feasible subspace as defined by the joint
+# and returns this new transform object
+PROJECT_TRANSFORM_TO_FEASIBLE = Callable[
+    # base.Transform, Pytree (joint_params)
+    [base.Transform, tree_utils.PyTree],
+    base.Transform,
+]
+
+# used by load_sys_from_xml and by build_generator
+# (key) -> Pytree
+# if it is not given and None, then there will be no specific
+# joint_parameters for the custom joint and it will simply receive
+# the defaults parameters, that is joint_params['default']
+INIT_JOINT_PARAMS = Callable[[jax.Array], tree_utils.PyTree]
 
 
 @dataclass
@@ -196,6 +231,15 @@ class JointModel:
 
     # only used by `pd_control`
     p_control_term: Optional[P_CONTROL_TERM] = None
+    qd_from_q: Optional[QD_FROM_Q] = None
+
+    # only used by `inverse_kinematics_endeffector`
+    inv_kin_preprocess: Optional[INV_KIN_PREPROCESS] = None
+
+    # only used by `sim2real.project_xs`
+    project_transform_to_feasible: Optional[PROJECT_TRANSFORM_TO_FEASIBLE] = None
+
+    init_joint_params: Optional[INIT_JOINT_PARAMS] = None
 
 
 def _free_transform(q, _):
@@ -419,13 +463,37 @@ def _draw_frozen(config: RCMG_Config, _, __, dt: float, ___) -> jax.Array:
     return jnp.zeros((N, 0))
 
 
+qrel = lambda q1, q2: maths.quat_mul(q1, maths.quat_inv(q2))
+
+
+def _qd_from_q_quaternion(qs, dt):
+    axis, angle = maths.quat_to_rot_axis(qrel(qs[2:], qs[:-2]))
+    # axis.shape = (n_timesteps, 3); angle.shape = (n_timesteps,)
+    # Thus add singleton dimesions otherwise broadcast error
+    dq = axis * angle[:, None] / (2 * dt)
+    dq = jnp.vstack((jnp.zeros((3,)), dq, jnp.zeros((3,))))
+    return dq
+
+
+def _qd_from_q_cartesian(qs, dt):
+    dq = jnp.vstack(
+        (jnp.zeros_like(qs[0]), (qs[2:] - qs[:-2]) / (2 * dt), jnp.zeros_like(qs[0]))
+    )
+    return dq
+
+
+def _p_control_quaternion(q, q_ref):
+    axis, angle = maths.quat_to_rot_axis(qrel(q_ref, q))
+    return axis * angle
+
+
 def _p_control_term_rxyz(q, q_ref):
     # q_ref comes from rcmg. Thus, it is already wrapped
     # TODO: Currently state.q is not wrapped. Change that?
     return maths.wrap_to_pi(q_ref - maths.wrap_to_pi(q))
 
 
-def _p_control_term_pxyz(q, q_ref):
+def _p_control_term_pxyz_p3d(q, q_ref):
     return q_ref - q
 
 
@@ -434,36 +502,163 @@ def _p_control_term_frozen(q, q_ref):
 
 
 def _p_control_term_spherical(q, q_ref):
-    ...
+    return _p_control_quaternion(q, q_ref)
+
+
+def _p_control_term_free(q, q_ref):
+    return jnp.concatenate(
+        (
+            _p_control_quaternion(q[:4], q_ref[:4]),
+            (q_ref[4:] - q[4:]),
+        )
+    )
+
+
+def _p_control_term_cor(q, q_ref):
+    return _p_control_term_free(q, q_ref)
+
+
+def _qd_from_q_free(qs, dt):
+    qd_quat = _qd_from_q_quaternion(qs[:, :4], dt)
+    qd_pos = _qd_from_q_cartesian(qs[:, 4:], dt)
+    return jnp.hstack((qd_quat, qd_pos))
+
+
+def _inv_kin_preprocess_free_spherical_cor(q):
+    return q.at[:4].set(maths.safe_normalize(q[:4]))
+
+
+_str2idx = {"x": 0, "y": 1, "z": 2}
+
+
+def _project_transform_to_feasible_rxyz_factory(xyz: str):
+    def _project_transform_to_feasible_rxyz(x: base.Transform, _) -> base.Transform:
+        angles = maths.quat_to_euler(x.rot)
+        idx = _str2idx[xyz]
+        proj_angles = jnp.zeros((3,)).at[idx].set(angles[idx])
+        rot = maths.euler_to_quat(proj_angles)
+        return base.Transform.create(rot=rot)
+
+    return _project_transform_to_feasible_rxyz
+
+
+def _project_transform_to_feasible_pxyz_factory(xyz: str):
+    def _project_transform_to_feasible_pxyz(x: base.Transform, _) -> base.Transform:
+        idx = _str2idx[xyz]
+        pos = jnp.zeros((3,)).at[idx].set(x.pos[idx])
+        return base.Transform.create(pos=pos)
+
+    return _project_transform_to_feasible_pxyz
 
 
 _joint_types = {
-    "free": JointModel(_free_transform, [mrx, mry, mrz, mpx, mpy, mpz], _draw_free),
-    "frozen": JointModel(_frozen_transform, [], _draw_frozen),
-    "spherical": JointModel(_spherical_transform, [mrx, mry, mrz], _draw_spherical),
-    "p3d": JointModel(_p3d_transform, [mpx, mpy, mpz], _draw_p3d),
+    "free": JointModel(
+        _free_transform,
+        [mrx, mry, mrz, mpx, mpy, mpz],
+        _draw_free,
+        _p_control_term_free,
+        _qd_from_q_free,
+        _inv_kin_preprocess_free_spherical_cor,
+        lambda x, _: x,
+    ),
+    "frozen": JointModel(
+        _frozen_transform,
+        [],
+        _draw_frozen,
+        _p_control_term_frozen,
+        _qd_from_q_cartesian,
+        lambda q: q,
+        lambda x, _: base.Transform.zero(),
+    ),
+    "spherical": JointModel(
+        _spherical_transform,
+        [mrx, mry, mrz],
+        _draw_spherical,
+        _p_control_term_spherical,
+        _qd_from_q_quaternion,
+        _inv_kin_preprocess_free_spherical_cor,
+        lambda x, _: base.Transform.create(rot=x.rot),
+    ),
+    "p3d": JointModel(
+        _p3d_transform,
+        [mpx, mpy, mpz],
+        _draw_p3d,
+        _p_control_term_pxyz_p3d,
+        _qd_from_q_cartesian,
+        lambda q: q,
+        lambda x, _: base.Transform.create(pos=x.pos),
+    ),
     "cor": JointModel(
-        _cor_transform, [mrx, mry, mrz, mpx, mpy, mpz, mpx, mpy, mpz], _draw_cor
+        _cor_transform,
+        [mrx, mry, mrz, mpx, mpy, mpz, mpx, mpy, mpz],
+        _draw_cor,
+        _p_control_term_cor,
+        _qd_from_q_free,
+        _inv_kin_preprocess_free_spherical_cor,
+        lambda x, _: x,
     ),
     "rx": JointModel(
-        lambda q, _: _rxyz_transform(q, _, jnp.array([1.0, 0, 0])), [mrx], _draw_rxyz
+        lambda q, _: _rxyz_transform(q, _, jnp.array([1.0, 0, 0])),
+        [mrx],
+        _draw_rxyz,
+        _p_control_term_rxyz,
+        _qd_from_q_cartesian,
+        maths.wrap_to_pi,
+        _project_transform_to_feasible_rxyz_factory("x"),
     ),
     "ry": JointModel(
-        lambda q, _: _rxyz_transform(q, _, jnp.array([0.0, 1, 0])), [mry], _draw_rxyz
+        lambda q, _: _rxyz_transform(q, _, jnp.array([0.0, 1, 0])),
+        [mry],
+        _draw_rxyz,
+        _p_control_term_rxyz,
+        _qd_from_q_cartesian,
+        maths.wrap_to_pi,
+        _project_transform_to_feasible_rxyz_factory("y"),
     ),
     "rz": JointModel(
-        lambda q, _: _rxyz_transform(q, _, jnp.array([0.0, 0, 1])), [mrz], _draw_rxyz
+        lambda q, _: _rxyz_transform(q, _, jnp.array([0.0, 0, 1])),
+        [mrz],
+        _draw_rxyz,
+        _p_control_term_rxyz,
+        _qd_from_q_cartesian,
+        maths.wrap_to_pi,
+        _project_transform_to_feasible_rxyz_factory("z"),
     ),
     "px": JointModel(
-        lambda q, _: _pxyz_transform(q, _, jnp.array([1.0, 0, 0])), [mpx], _draw_pxyz
+        lambda q, _: _pxyz_transform(q, _, jnp.array([1.0, 0, 0])),
+        [mpx],
+        _draw_pxyz,
+        _p_control_term_pxyz_p3d,
+        _qd_from_q_cartesian,
+        lambda q: q,
+        _project_transform_to_feasible_pxyz_factory("x"),
     ),
     "py": JointModel(
-        lambda q, _: _pxyz_transform(q, _, jnp.array([0.0, 1, 0])), [mpy], _draw_pxyz
+        lambda q, _: _pxyz_transform(q, _, jnp.array([0.0, 1, 0])),
+        [mpy],
+        _draw_pxyz,
+        _p_control_term_pxyz_p3d,
+        _qd_from_q_cartesian,
+        lambda q: q,
+        _project_transform_to_feasible_pxyz_factory("y"),
     ),
     "pz": JointModel(
-        lambda q, _: _pxyz_transform(q, _, jnp.array([0.0, 0, 1])), [mpz], _draw_pxyz
+        lambda q, _: _pxyz_transform(q, _, jnp.array([0.0, 0, 1])),
+        [mpz],
+        _draw_pxyz,
+        _p_control_term_pxyz_p3d,
+        _qd_from_q_cartesian,
+        lambda q: q,
+        _project_transform_to_feasible_pxyz_factory("z"),
     ),
-    "saddle": JointModel(_saddle_transform, [mry, mrz], _draw_saddle),
+    "saddle": JointModel(
+        _saddle_transform,
+        [mry, mrz],
+        _draw_saddle,
+        _p_control_term_rxyz,
+        _qd_from_q_cartesian,
+        maths.wrap_to_pi,
+    ),
 }
 
 
@@ -472,20 +667,19 @@ def register_new_joint_type(
     joint_model: JointModel,
     q_width: int,
     qd_width: Optional[int] = None,
-    # if None, gets joint_params['default']
-    joint_params_pytree: Optional[tree_utils.PyTree] = None,
     overwrite: bool = False,
 ):
+    # this name is used
+    assert joint_type != "default", "Please use another name."
+
     exists = joint_type in _joint_types
     if exists and overwrite:
         for dic in [
             base.Q_WIDTHS,
             base.QD_WIDTHS,
             _joint_types,
-            base._JOINT_PARAMS_DICT,
         ]:
-            # give default because maybe the custom joint has no defined joint_params
-            dic.pop(joint_type, None)
+            dic.pop(joint_type)
     else:
         assert (
             not exists
@@ -499,9 +693,6 @@ def register_new_joint_type(
     _joint_types.update({joint_type: joint_model})
     base.Q_WIDTHS.update({joint_type: q_width})
     base.QD_WIDTHS.update({joint_type: qd_width})
-
-    if joint_params_pytree is not None:
-        base.update_joint_params_dict(joint_type, joint_params_pytree)
 
 
 def _limit_scope_of_joint_params(
@@ -547,3 +738,27 @@ def jcalc_tau(
     return jnp.array(
         [algebra.motion_dot(_to_motion(m, joint_params), f) for m in list_motion]
     )
+
+
+def _init_joint_params(key: jax.Array, sys: base.System) -> base.System:
+    """Search systems for custom joints and call their JointModel.init_joint_params
+    functions. Then return updated system."""
+
+    joint_params_init_fns = {}
+    for typ in sys.link_types:
+        if typ not in joint_params_init_fns:
+            init_joint_params = _joint_types[typ].init_joint_params
+            if init_joint_params is not None:
+                joint_params_init_fns[typ] = init_joint_params
+
+    joint_params: dict[str, tree_utils.PyTree] = {}
+    n_links = sys.num_links()
+    for typ in joint_params_init_fns:
+        keys = jax.random.split(key, num=n_links + 1)
+        key, consume = keys[0], keys[1:]
+        joint_params[typ] = jax.vmap(joint_params_init_fns[typ])(consume)
+
+    # add batch default parameters
+    joint_params["default"] = jnp.zeros((n_links, 0))
+
+    return sys.replace(links=sys.links.replace(joint_params=joint_params))

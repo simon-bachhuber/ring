@@ -1,8 +1,6 @@
 from typing import Optional, Tuple
-import warnings
 
 import jax
-import jax.numpy as jnp
 import tree_utils
 
 import x_xy
@@ -14,6 +12,7 @@ from x_xy import RCMG_Config
 from x_xy import scan_sys
 from x_xy import System
 from x_xy import Transform
+from x_xy.algorithms.jcalc import _joint_types
 
 
 def xs_from_raw(
@@ -282,41 +281,27 @@ def project_xs(sys: System, transform2: Transform) -> Transform:
     joints in the system."""
     _checks_time_series_of_xs(sys, transform2)
 
-    _str2idx = {"x": 0, "y": 1, "z": 2}
-
     @jax.vmap
     def _project_xs(transform2):
         def f(_, __, i: int, link_type: str, link):
             t = transform2[i]
             joint_params = link.joint_params
-            rot, pos = jnp.array([1.0, 0, 0, 0]), jnp.zeros((3,))
+            # limit scope
+            joint_params = (
+                joint_params[link_type]
+                if link_type in joint_params
+                else joint_params["default"]
+            )
 
-            if link_type in ["rx", "ry", "rz"]:
-                angles = maths.quat_to_euler(t.rot)
-                idx = _str2idx[link_type[1]]
-                proj_angles = jnp.zeros((3,)).at[idx].set(angles[idx])
-                rot = maths.euler_to_quat(proj_angles)
-            elif link_type in ["px", "py", "pz"]:
-                idx = _str2idx[link_type[1]]
-                pos = pos.at[idx].set(t.pos[idx])
-            elif link_type == "spherical":
-                rot = t.rot
-            elif link_type in ["p3d", "cor"]:
-                pos = t.pos
-            elif link_type == "free":
-                pos, rot = t.pos, t.rot
-            # TODO; Consider removing the case of `rr` and `rr_imp`
-            # after all these joints are not part of the standard library
-            elif link_type == "rr":
-                rot = maths.quat_project(t.rot, joint_params["rr"]["joint_axes"])
-            elif link_type == "rr_imp":
-                warnings.warn("`rr_imp` cannot be projected.")
-                rot = t.rot
-            elif link_type == "frozen":
-                pass
-            else:
-                raise NotImplementedError
-            return Transform(pos=pos, rot=rot)
+            project_transform_to_feasible = _joint_types[
+                link_type
+            ].project_transform_to_feasible
+            if project_transform_to_feasible is None:
+                raise NotImplementedError(
+                    "Please specify JointModel.project_transform_to_feasible"
+                    f" for joint type `{link_type}`."
+                )
+            return project_transform_to_feasible(t, joint_params)
 
         return scan_sys(
             sys,

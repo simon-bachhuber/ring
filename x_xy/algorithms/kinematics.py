@@ -11,6 +11,7 @@ from .. import base
 from .. import maths
 from .. import scan
 from ..scan import scan_sys
+from .jcalc import _joint_types
 from .jcalc import jcalc_transform
 
 
@@ -153,16 +154,17 @@ def inverse_kinematics_endeffector(
         q_preproc = []
 
         def preprocess(_, __, link_type, q):
-            if link_type in ["free", "cor", "spherical"]:
-                new_q = q.at[:4].set(maths.safe_normalize(q[:4]))
-            elif link_type in ["rx", "ry", "rz", "saddle"]:
-                new_q = maths.wrap_to_pi(q)
-            elif link_type in ["frozen", "p3d", "px", "py", "pz"]:
-                new_q = q
-            elif link_type in custom_joints:
-                new_q = custom_joints[link_type](q)
-            else:
-                raise NotImplementedError
+            inv_kin_preprocess = _joint_types[link_type].inv_kin_preprocess
+            # function in custom_joints has priority over JointModel
+            if link_type in custom_joints:
+                inv_kin_preprocess = custom_joints[link_type]
+            if inv_kin_preprocess is None:
+                raise NotImplementedError(
+                    f"Please specify the custom joint `{link_type}`"
+                    " either using the `custom_joints` arguments or using the"
+                    " JointModel.inv_kin_preprocess field."
+                )
+            new_q = inv_kin_preprocess(q)
             q_preproc.append(new_q)
 
         scan.scan_sys(sys, preprocess, "lq", sys.link_types, q)

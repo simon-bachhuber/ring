@@ -19,9 +19,11 @@ def test_concat_configs(T, seed):
         x_xy.concat_configs(
             [nomotion_config, motion_config, nomotion_config], [T, 2 * T]
         ),
+        _compat=True,
     )(jax.random.PRNGKey(seed))
 
     def array_eq(a: int, b: int):
+        "Test if `q` is constant from between `a` and `b` indices."
         np.testing.assert_allclose(
             np.repeat(q[a : (a + 1), :4], b - a, axis=0), q[a:b, :4]
         )
@@ -41,7 +43,7 @@ def test_concat_configs(T, seed):
     array_eq(T_i, T_f)
 
     with pytest.raises(AssertionError):
-        T_i -= 10
+        T_i = int((2 * T) / dt)
         array_eq(T_i, T_f)
 
     # test that two configs that disagree with values that are not
