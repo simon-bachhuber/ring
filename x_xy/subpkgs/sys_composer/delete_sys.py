@@ -10,8 +10,8 @@ from x_xy.io import parse_system
 from ... import base
 
 
-def _autodetermine_imu_names(sys) -> list[str]:
-    return [name for name in sys.link_names if name[:3] == "imu"]
+def _autodetermine_imu_names(sys: base.System) -> list[str]:
+    return sys.findall_imus()
 
 
 def make_sys_noimu(sys: x_xy.System, imu_link_names: Optional[list[str]] = None):
