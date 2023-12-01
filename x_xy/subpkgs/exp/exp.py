@@ -44,12 +44,18 @@ def _read_yaml(path: str):
 
 
 def _replace_rxyz_with(sys: x_xy.base.System, replace_with: str):
-    return sys.replace(
-        link_types=[
-            replace_with if (typ in ["rx", "ry", "rz"]) else typ
-            for typ in sys.link_types
-        ]
-    )
+    if replace_with == "rr":
+        new_damp = jnp.array([3.0])
+    elif replace_with == "rr_imp":
+        new_damp = jnp.array([3.0, 3.0])
+    else:
+        raise Exception()
+
+    for name, typ in zip(sys.link_names, sys.link_types):
+        if typ in ["rx", "ry", "rz"]:
+            sys = sys.change_joint_type(name, replace_with, new_damp=new_damp)
+
+    return sys
 
 
 def _morph_new_parents_from_xml_file(file_path: str) -> dict[str, list]:
@@ -88,6 +94,9 @@ def load_sys(
 
     if replace_rxyz is not None:
         sys = _replace_rxyz_with(sys, replace_rxyz)
+
+    # save to xml_str and reload such that joint_params get populated
+    sys = x_xy.load_sys_from_str(x_xy.save_sys_to_str(sys))
 
     if morph_yaml_key is not None:
         skip_morph = False
