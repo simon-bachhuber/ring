@@ -1,11 +1,13 @@
 import math
 import random
+from typing import Callable, Optional
 import warnings
 
 import jax
 import jax.numpy as jnp
 from tqdm import tqdm
 import tree_utils
+from tree_utils import PyTree
 from tree_utils import tree_batch
 
 from x_xy import utils
@@ -180,6 +182,7 @@ def batched_generator_from_list(
     shuffle: bool = True,
     drop_last: bool = True,
     seed: int = 1,
+    output_transform: Optional[Callable[[jax.Array, PyTree], PyTree]] = None,
 ) -> BatchedGenerator:
     assert drop_last, "Not `drop_last` is currently not implemented."
     assert len(data) >= batchsize
@@ -189,12 +192,13 @@ def batched_generator_from_list(
 
     def generator(key: jax.Array):
         nonlocal i
-        del key
         if shuffle and i == 0:
             random.shuffle(data)
 
         start, stop = i * batchsize, (i + 1) * batchsize
         batch = tree_batch(data[start:stop], backend="jax")
+        batch = batch if output_transform is None else output_transform(key, batch)
+
         i = (i + 1) % N
         return batch
 
