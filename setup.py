@@ -30,7 +30,8 @@ def find_data_files(package_dir, patterns, excludes=()):
 # TODO: replace joblib with pickle
 subpkg_ml_requires = ["wandb", "neptune", "optax", "dm-haiku", "joblib"]
 subpkg_omc_requires = ["qmt", "pandas", "scipy"]
-subpkg_exp_requires = ["pyyaml", "joblib"]
+# TODO: qmt and scipy is due to exp.py importing omc/utils.py
+subpkg_exp_requires = ["pyyaml", "joblib"] + ["qmt", "scipy"]
 subpkg_bench_requires = subpkg_exp_requires + ["matplotlib", "mediapy"]
 mujoco_render_requires = ["mujoco"]
 vispy_render_requires = ["vispy", "pyqt6"]

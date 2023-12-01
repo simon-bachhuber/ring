@@ -12,8 +12,10 @@ from x_xy import maths
 from x_xy.io import load_comments_from_str
 from x_xy.io import load_comments_from_xml
 from x_xy.io.xml.from_xml import _load_xml
-from x_xy.subpkgs import omc
 from x_xy.subpkgs import sys_composer
+
+# TODO exp imports omc; pip install x_xy[exp] works still correctly because of setup.py
+from x_xy.subpkgs.omc import utils as omc_utils
 
 arm_xml = "setups/arm.xml"
 gait_xml = "setups/gait.xml"
@@ -129,13 +131,15 @@ def load_data(
     timings = metadata["timings"]
     hz_imu, hz_omc = float(metadata["hz"]["imu"]), float(metadata["hz"]["omc"])
 
-    trial_data = omc.resample(
+    trial_data = omc_utils.resample(
         trial_data,
-        hz_in=omc.hz_helper(trial_data.keys(), hz_imu=hz_imu, hz_omc=hz_omc),
+        hz_in=omc_utils.hz_helper(trial_data.keys(), hz_imu=hz_imu, hz_omc=hz_omc),
         hz_out=resample_to_hz,
         vecinterp_method="cubic",
     )
-    trial_data = omc.crop_tail(trial_data, resample_to_hz, strict=True, verbose=False)
+    trial_data = omc_utils.crop_tail(
+        trial_data, resample_to_hz, strict=True, verbose=False
+    )
 
     if motion_start is not None:
         assert (
