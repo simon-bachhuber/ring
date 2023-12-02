@@ -1,4 +1,7 @@
+from typing import Callable, Optional
+
 import jax.numpy as jnp
+from tree_utils import PyTree
 
 import x_xy
 from x_xy.subpkgs import exp
@@ -262,10 +265,27 @@ def build_experimental_validation_callback2(
     flex: bool = False,
     mag: bool = False,
     rootincl: bool = False,
+    # (X,) -> X
+    normalizer: Optional[Callable[[PyTree], PyTree]] = None,
+    normalizer_names: Optional[list[str]] = None,
 ):
     X, y, _ = pipeline_load_data(
         sys_with_imus, exp_id, motion_phase, flex, mag, jointaxes, rootincl
     )
+
+    if normalizer is not None:
+        assert normalizer_names is not None
+        # this system does not have suffix in link names, so
+        # normalizer: {"seg2_2Seg": ...}
+        # but, X: {"seg2": ...}
+        suffix = "_" + sys_with_imus.model_name.split("_")[-1]
+        dummy_X_link = X[list(X.keys())[0]]
+        X_dummy = {name: dummy_X_link.copy() for name in normalizer_names}
+        X = {name + suffix: X[name] for name in X}
+        X_dummy.update(X)
+        X_dummy = normalizer(X_dummy)
+        # get ride of dummy values and remove suffix
+        X = {name[: -len(suffix)]: X_dummy[name] for name in X}
 
     return ml.EvalXyTrainingLoopCallback(
         init_apply_factory(sys_composer.make_sys_noimu(sys_with_imus)[0]),
