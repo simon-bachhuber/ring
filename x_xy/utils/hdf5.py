@@ -31,7 +31,7 @@ def save(filepath: str, tree, overwrite: bool = False):
 
 def load(
     filepath: str,
-    indices: Optional[int | list[int]] = None,
+    indices: Optional[int | list[int] | slice] = None,
     axis: int = 0,
 ):
     """Loads a pytree from an hdf5 file.
@@ -119,11 +119,15 @@ def _savetree(tree, group, name):
             raise ValueError(f"Unrecognized type {type(tree)}")
 
 
-def _loadtree(tree, indices: int | list[int] | None, axis: int):
+def _loadtree(tree, indices: int | list[int] | slice | None, axis: int):
     """Recursively load a pytree from an h5 file group."""
 
     if indices is None:
         return _lazy_tree_map(lambda leaf: np.asarray(leaf), tree)
+
+    if isinstance(indices, list):
+        # must be in increasing order for h5py
+        indices = sorted(indices)
 
     def func(leaf):
         shape = leaf.shape
