@@ -11,6 +11,7 @@ from .algorithms import batch_generators_eager
 from .algorithms import batch_generators_eager_to_list
 from .algorithms import batch_generators_lazy
 from .algorithms import batched_generator_from_list
+from .algorithms import batched_generator_from_paths
 from .algorithms import build_generator
 from .algorithms import concat_configs
 from .algorithms import forward_kinematics

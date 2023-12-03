@@ -8,6 +8,7 @@ from .generator import batch_generators_eager
 from .generator import batch_generators_eager_to_list
 from .generator import batch_generators_lazy
 from .generator import batched_generator_from_list
+from .generator import batched_generator_from_paths
 from .generator import build_generator
 from .generator import FINALIZE_FN
 from .generator import Generator

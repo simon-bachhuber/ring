@@ -4,6 +4,8 @@
 """
 
 import collections
+from concurrent.futures import ThreadPoolExecutor as PoolExecutor
+from functools import partial
 import os
 from pathlib import Path
 from typing import Optional
@@ -49,6 +51,38 @@ def load(
         return _loadtree(f["pytree"], indices, axis)
 
 
+def _call_fn(fn):
+    return fn()
+
+
+def load_from_multiple(
+    filepaths: list[str], indices: list[int], parallel: bool = False
+):
+    assert len(filepaths) > 1
+
+    borders = np.cumsum([load_length(fp) for fp in filepaths])
+    indices = np.sort(indices)
+    belongs_to = np.searchsorted(borders - 1, indices)
+
+    assert indices[-1] < borders[-1]
+
+    borders = np.concatenate((np.array([0]), borders))
+    loaders = []
+    for i, fp in enumerate(filepaths):
+        indices_fp = list(indices[belongs_to == i] - borders[i])
+        if len(indices_fp) == 0:
+            continue
+        loaders.append(partial(load, fp, indices_fp))
+
+    if parallel:
+        with PoolExecutor() as pool:
+            trees = list(pool.map(_call_fn, loaders))
+    else:
+        trees = [loader() for loader in loaders]
+
+    return _tree_concat(trees)
+
+
 @struct.dataclass
 class _Shape:
     shape: tuple
@@ -89,6 +123,18 @@ def _parse_path(
         raise Exception(f"File {path} already exists but shouldn't")
 
     return str(path)
+
+
+def _tree_concat(trees: list):
+    # otherwise scalar-arrays will lead to indexing error
+    trees = jax.tree_map(lambda arr: np.atleast_1d(arr), trees)
+
+    if len(trees) == 0:
+        return trees
+    if len(trees) == 1:
+        return trees[0]
+
+    return jax.tree_util.tree_map(lambda *arrs: np.concatenate(arrs, axis=0), *trees)
 
 
 def _is_namedtuple(x):

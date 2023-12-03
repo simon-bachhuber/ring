@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 import random
 from typing import Callable, Optional
 import warnings
@@ -10,8 +11,7 @@ import tree_utils
 from tree_utils import PyTree
 from tree_utils import tree_batch
 
-from x_xy import utils
-
+from ... import utils
 from .types import BatchedGenerator
 from .types import Generator
 
@@ -194,6 +194,66 @@ def batched_generator_from_list(
         return batch
 
     return generator
+
+
+def batched_generator_from_paths(
+    paths: list[str],
+    batchsize: int,
+    include_samples: Optional[list[int]] = None,
+    shuffle: bool = True,
+    seed: int = 1,
+    output_transform: Optional[Callable[[jax.Array, PyTree], PyTree]] = None,
+):
+    # expanduser
+    paths = [utils.parse_path(p, mkdir=False) for p in paths]
+
+    extensions = list(set([Path(p).suffix for p in paths]))
+    assert len(extensions) == 1
+
+    if extensions[0] == ".h5":
+        N = sum([utils.hdf5_load_length(p) for p in paths])
+
+        def data_fn(indices: list[int]):
+            return utils.hdf5_load_from_multiple(paths, indices)
+
+    else:
+        # TODO
+        from x_xy.subpkgs import ml
+
+        list_of_data = []
+        for p in paths:
+            list_of_data += ml.load(p)
+
+        N = len(list_of_data)
+
+        def data_fn(indices: list[int]):
+            return tree_batch([list_of_data[i] for i in indices], backend="jax")
+
+    if include_samples is None:
+        include_samples = list(range(N))
+    else:
+        # safety copy; we shuffle it below
+        include_samples = include_samples.copy()
+
+    N = len(include_samples)
+    assert N >= batchsize
+
+    n_batches, i = N // batchsize, 0
+    random.seed(seed)
+
+    def generator(key: jax.Array):
+        nonlocal i
+        if shuffle and i == 0:
+            random.shuffle(include_samples)
+
+        start, stop = i * batchsize, (i + 1) * batchsize
+        batch = data_fn(include_samples[start:stop])
+        batch = batch if output_transform is None else output_transform(key, batch)
+
+        i = (i + 1) % n_batches
+        return batch
+
+    return generator, N
 
 
 def batch_generators_eager(
