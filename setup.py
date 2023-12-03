@@ -52,7 +52,7 @@ dev_requires = [
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.11.1",
+    version="0.11.2",
     package_data={
         "x_xy": find_data_files(
             # parameters and datasets are now downloaded on-demand
@@ -71,6 +71,7 @@ setuptools.setup(
         "flax",
         "tqdm",
         "wget",
+        "h5py",
         "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
     ],
     extras_require={

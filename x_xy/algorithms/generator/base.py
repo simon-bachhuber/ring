@@ -4,10 +4,12 @@ import warnings
 import jax
 import jax.numpy as jnp
 import numpy as np
+import tree_utils
 
 from . import motion_artifacts
 from ... import base
 from ...scan import scan_sys
+from ...utils import hdf5_save
 from ...utils import to_list
 from ..jcalc import _init_joint_params
 from ..jcalc import _joint_types
@@ -65,11 +67,12 @@ def build_generator(
     keep_output_extras: bool = False,
     eager: bool = False,
     aslist: bool = False,
+    ashdf5: Optional[str] = None,
     seed: Optional[int] = None,
     sizes: Optional[int | list[int]] = None,
     batchsize: Optional[int] = None,
     _compat: bool = False,
-) -> Generator | GeneratorWithOutputExtras:
+) -> Generator | GeneratorWithOutputExtras | None | list:
     # capture all function args
     kwargs = locals()
 
@@ -80,11 +83,17 @@ def build_generator(
         or isinstance(config, list)
         or eager
         or aslist
+        or ashdf5 is not None
     ):
         batch = True
 
     if batch:
         assert sizes is not None
+
+        if ashdf5 is not None:
+            assert not aslist
+            aslist = True
+
         if aslist:
             assert eager
         if eager and not aslist:
@@ -104,6 +113,7 @@ def build_generator(
         gens = []
         kwargs["eager"] = False
         kwargs["aslist"] = False
+        kwargs["ashdf5"] = None
         kwargs["sizes"] = None
         for _sys in sys:
             for _config in config:
@@ -114,11 +124,19 @@ def build_generator(
         if eager:
             if aslist:
                 data = batch_generators_eager_to_list(gens, sizes, seed=seed)
-                return jax.tree_map(np.asarray, data)
+                if ashdf5 is None:
+                    return jax.tree_map(np.asarray, data)
+                else:
+                    data = tree_utils.tree_batch(data, backend="jax")
+                    hdf5_save(ashdf5, data, overwrite=True)
             else:
                 return batch_generators_eager(gens, sizes, batchsize, seed=seed)
         else:
             return batch_generators_lazy(gens, sizes)
+
+        # if `batch` is True, then this function must always recursively call
+        # itself, so we exit here; all work is done
+        return
 
     # end of batch generator logic - non-batched build_generator logic starts
     assert config.is_feasible()
@@ -172,10 +190,10 @@ def build_generator(
                 )
 
         if "prob_rigid" in imu_motion_artifacts_kwargs:
-            assert (
-                randomize_motion_artifacts
-            ), "`prob_rigid` works by overwriting damping and stiffness parameters "
-            "using the `randomize_motion_artifacts` flag, so it must be enabled."
+            assert randomize_motion_artifacts, (
+                "`prob_rigid` works by overwriting damping and stiffness parameters "
+                "using the `randomize_motion_artifacts` flag, so it must be enabled."
+            )
 
     noop = lambda gen: gen
     return GeneratorPipe(
