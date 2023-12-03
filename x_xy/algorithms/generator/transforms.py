@@ -302,7 +302,7 @@ class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
         custom_P_gains: dict[str, jax.Array] = dict(),
         unactuated_subsystems: list[str] = [],
         return_q_ref: bool = False,
-        overwrite_q_ref: Optional[jax.Array] = None,
+        overwrite_q_ref: Optional[tuple[jax.Array, dict[str, slice]]] = None,
         **unroll_kwargs,
     ):
         self.unactuated_links = unactuated_subsystems
@@ -316,10 +316,13 @@ class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
 
         def _gen(*args):
             (X, y), (key, q, _, sys_x) = gen(*args)
+            idx_map_q = sys_x.idx_map("q")
 
             if self.overwrite_q_ref is not None:
-                q = self.overwrite_q_ref
-                assert q.shape[-1] == sys_x.q_size()
+                q, idx_map_q = self.overwrite_q_ref
+                assert q.shape[-1] == sum(
+                    [s.stop - s.start for s in idx_map_q.values()]
+                )
 
             sys_q_ref = sys_x
             if len(self.unactuated_links) > 0:
@@ -328,10 +331,9 @@ class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
             q_ref = []
             p_gains_list = []
             q = q.T
-            idx_map_sys_x = sys_x.idx_map("q")
 
             def build_q_ref(_, __, name, link_type):
-                q_ref.append(q[idx_map_sys_x[name]])
+                q_ref.append(q[idx_map_q[name]])
 
                 if link_type in self.custom_P_gains:
                     p_gain_this_link = self.custom_P_gains[link_type]
