@@ -107,8 +107,11 @@ def build_generator(
 
         sys, config = to_list(sys), to_list(config)
 
-        if "sys_ml" not in kwargs and len(sys) > 1:
-            warnings.warn("Batched simulation with multiple systems but no `sys_ml`")
+        if kwargs["sys_ml"] is None and len(sys) > 1:
+            warnings.warn(
+                "Batched simulation with multiple systems but no explicit `sys_ml`"
+            )
+            kwargs["sys_ml"] = sys[0]
 
         gens = []
         kwargs["eager"] = False
