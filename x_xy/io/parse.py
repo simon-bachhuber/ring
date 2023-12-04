@@ -1,5 +1,4 @@
 from jax.core import Tracer
-from jax.errors import TracerBoolConversionError
 import jax.numpy as jnp
 
 from .. import base
@@ -28,10 +27,16 @@ def parse_system(sys: base.System) -> base.System:
         assert isinstance(name, str)
 
     pos_min, pos_max = sys.links.pos_min, sys.links.pos_max
-    # if not isinstance(pos_min, Tracer):
+
     try:
-        assert jnp.all(pos_max >= pos_min), f"min={pos_min}, max={pos_max}"
-    except TracerBoolConversionError:
+        from jax.errors import TracerBoolConversionError
+
+        try:
+            assert jnp.all(pos_max >= pos_min), f"min={pos_min}, max={pos_max}"
+        except TracerBoolConversionError:
+            pass
+    # on older versions of jax this import is not possible
+    except ImportError:
         pass
 
     for geom in sys.geoms:
