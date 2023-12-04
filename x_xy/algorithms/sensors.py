@@ -182,7 +182,7 @@ def imu(
     random_s2s_ori: Optional[float] = None,
     quasi_physical: bool = False,
     low_pass_filter_pos_f_cutoff: Optional[float] = None,
-    low_pass_filter_rot_alpha: Optional[bool] = None,
+    low_pass_filter_rot_cutoff: Optional[float] = None,
     has_magnetometer: bool = False,
     magvec: Optional[jax.Array] = None,
 ) -> dict:
@@ -207,10 +207,18 @@ def imu(
         xs = _quasi_physical_simulation(xs, dt)
 
     if low_pass_filter_pos_f_cutoff is not None:
-        xs = xs.replace(pos=_butterworth(xs.pos, 1 / dt, low_pass_filter_pos_f_cutoff))
+        xs = xs.replace(
+            pos=_butterworth(
+                xs.pos, f_sampling=1 / dt, f_cutoff=low_pass_filter_pos_f_cutoff
+            )
+        )
 
-    if low_pass_filter_rot_alpha is not None:
-        xs = xs.replace(rot=maths.quat_lowpassfilter(xs.rot, low_pass_filter_rot_alpha))
+    if low_pass_filter_rot_cutoff is not None:
+        xs = xs.replace(
+            rot=maths.quat_lowpassfilter(
+                xs.rot, cutoff_freq=low_pass_filter_rot_cutoff, samp_freq=1 / dt
+            )
+        )
 
     measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
 
