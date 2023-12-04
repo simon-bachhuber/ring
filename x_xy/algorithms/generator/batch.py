@@ -203,6 +203,7 @@ def batched_generator_from_paths(
     shuffle: bool = True,
     seed: int = 1,
     output_transform: Optional[Callable[[jax.Array, PyTree], PyTree]] = None,
+    h5_parallel: bool = False,
 ):
     # expanduser
     paths = [utils.parse_path(p, mkdir=False) for p in paths]
@@ -214,7 +215,7 @@ def batched_generator_from_paths(
         N = sum([utils.hdf5_load_length(p) for p in paths])
 
         def data_fn(indices: list[int]):
-            return utils.hdf5_load_from_multiple(paths, indices)
+            return utils.hdf5_load_from_multiple(paths, indices, parallel=h5_parallel)
 
     else:
         # TODO
