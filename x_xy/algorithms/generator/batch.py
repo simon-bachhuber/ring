@@ -236,10 +236,6 @@ def _data_fn_from_paths(
     return data_fn, include_samples
 
 
-def _to_jax(tree):
-    return jax.tree_map(jnp.asarray, tree)
-
-
 def _generator_from_data_fn_torch(
     data_fn,
     include_samples: list[int],
@@ -296,7 +292,7 @@ def _generator_from_data_fn_notorch(
         batch = batch if output_transform is None else output_transform(batch)
 
         i = (i + 1) % n_batches
-        return _to_jax(batch)
+        return batch
 
     return generator
 
@@ -312,6 +308,7 @@ def batched_generator_from_paths(
     ] = None,
     use_torch: bool = False,
 ):
+    "Returns: gen, where gen(key) -> Pytree[numpy]"
     data_fn, include_samples = _data_fn_from_paths(paths, include_samples)
 
     N = len(include_samples)
