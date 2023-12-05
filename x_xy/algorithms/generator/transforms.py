@@ -227,22 +227,30 @@ class GeneratorTrafoRootIncl(GeneratorTrafo):
         return _gen
 
 
+_default_imu_kwargs = dict(
+    noisy=True,
+    low_pass_filter_pos_f_cutoff=13.5,
+    low_pass_filter_rot_cutoff=16.0,
+)
+
+
 class GeneratorTrafoIMU(GeneratorTrafo):
-    def __init__(self, has_magnetometer: bool = False):
-        self.has_magnetometer = has_magnetometer
+    def __init__(self, **imu_kwargs):
+        self.kwargs = _default_imu_kwargs.copy()
+        self.kwargs.update(imu_kwargs)
 
     def __call__(self, gen: GeneratorWithOutputExtras | GeneratorWithInputOutputExtras):
         def _gen(*args):
             (X, y), (key, q, x, sys) = gen(*args)
             key, consume = jax.random.split(key)
-            X_imu = _imu_data(consume, x, sys, self.has_magnetometer)
+            X_imu = _imu_data(consume, x, sys, **self.kwargs)
             X = dict_union(X, X_imu)
             return (X, y), (key, q, x, sys)
 
         return _gen
 
 
-def _imu_data(key, xs, sys_xs, has_magnetometer) -> dict:
+def _imu_data(key, xs, sys_xs, **kwargs) -> dict:
     # TODO
     from x_xy.subpkgs import sys_composer
 
@@ -255,14 +263,11 @@ def _imu_data(key, xs, sys_xs, has_magnetometer) -> dict:
             imu = inv_imu_attachment[segment]
             key, consume = jax.random.split(key)
             imu_measurements = imu_fn(
-                xs.take(sys_xs.name_to_idx(imu), 1),
-                sys_xs.gravity,
-                sys_xs.dt,
-                consume,
-                noisy=True,
-                low_pass_filter_pos_f_cutoff=13.5,
-                low_pass_filter_rot_cutoff=16.0,
-                has_magnetometer=has_magnetometer,
+                xs=xs.take(sys_xs.name_to_idx(imu), 1),
+                gravity=sys_xs.gravity,
+                dt=sys_xs.dt,
+                key=consume,
+                **kwargs,
             )
         else:
             imu_measurements = {
