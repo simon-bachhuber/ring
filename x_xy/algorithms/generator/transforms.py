@@ -254,7 +254,7 @@ def _imu_data(key, xs, sys_xs, has_magnetometer) -> dict:
                 consume,
                 noisy=True,
                 low_pass_filter_pos_f_cutoff=13.5,
-                low_pass_filter_rot_cutoff=20.0,
+                low_pass_filter_rot_cutoff=16.0,
                 has_magnetometer=has_magnetometer,
             )
         else:
