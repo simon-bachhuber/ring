@@ -6,6 +6,7 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from tqdm import tqdm
 import tree_utils
 from tree_utils import PyTree
@@ -196,15 +197,11 @@ def batched_generator_from_list(
     return generator
 
 
-def batched_generator_from_paths(
+def _data_fn_from_paths(
     paths: list[str],
-    batchsize: int,
     include_samples: Optional[list[int]] = None,
-    shuffle: bool = True,
-    seed: int = 1,
-    output_transform: Optional[Callable[[jax.Array, PyTree], PyTree]] = None,
-    h5_parallel: bool = False,
 ):
+    "`data_fn` returns numpy arrays."
     # expanduser
     paths = [utils.parse_path(p, mkdir=False) for p in paths]
 
@@ -215,7 +212,7 @@ def batched_generator_from_paths(
         N = sum([utils.hdf5_load_length(p) for p in paths])
 
         def data_fn(indices: list[int]):
-            return utils.hdf5_load_from_multiple(paths, indices, parallel=h5_parallel)
+            return utils.hdf5_load_from_multiple(paths, indices)
 
     else:
         # TODO
@@ -228,19 +225,66 @@ def batched_generator_from_paths(
         N = len(list_of_data)
 
         def data_fn(indices: list[int]):
-            return tree_batch([list_of_data[i] for i in indices], backend="jax")
+            return tree_batch([list_of_data[i] for i in indices], backend="numpy")
 
     if include_samples is None:
         include_samples = list(range(N))
     else:
-        # safety copy; we shuffle it below
+        # safety copy; we shuffle it in the next function
         include_samples = include_samples.copy()
 
-    N = len(include_samples)
-    assert N >= batchsize
+    return data_fn, include_samples
 
+
+def _to_jax(tree):
+    return jax.tree_map(jnp.asarray, tree)
+
+
+def _generator_from_data_fn_torch(
+    data_fn,
+    include_samples: list[int],
+    output_transform,
+    shuffle: bool,
+    batchsize: int,
+):
+    from torch.utils.data import DataLoader
+    from torch.utils.data import Dataset
+
+    class _Dataset(Dataset):
+        def __len__(self):
+            return len(include_samples)
+
+        def __getitem__(self, idx: int):
+            element = data_fn([include_samples[idx]])
+            if output_transform is not None:
+                element = output_transform(element)
+            return jax.tree_map(lambda a: a[0], element)
+
+    dl = DataLoader(
+        _Dataset(), batch_size=batchsize, shuffle=shuffle, collate_fn=tree_batch
+    )
+    dl_iter = iter(dl)
+
+    def generator(key: jax.Array):
+        nonlocal dl, dl_iter
+        try:
+            return next(dl_iter)
+        except StopIteration:
+            dl_iter = iter(dl)
+            return next(dl_iter)
+
+    return generator
+
+
+def _generator_from_data_fn_notorch(
+    data_fn,
+    include_samples: list[int],
+    output_transform,
+    shuffle: bool,
+    batchsize: int,
+):
+    N = len(include_samples)
     n_batches, i = N // batchsize, 0
-    random.seed(seed)
 
     def generator(key: jax.Array):
         nonlocal i
@@ -249,10 +293,41 @@ def batched_generator_from_paths(
 
         start, stop = i * batchsize, (i + 1) * batchsize
         batch = data_fn(include_samples[start:stop])
-        batch = batch if output_transform is None else output_transform(key, batch)
+        batch = batch if output_transform is None else output_transform(batch)
 
         i = (i + 1) % n_batches
-        return batch
+        return _to_jax(batch)
+
+    return generator
+
+
+def batched_generator_from_paths(
+    paths: list[str],
+    batchsize: int,
+    include_samples: Optional[list[int]] = None,
+    shuffle: bool = True,
+    seed: int = 1,
+    output_transform: Optional[
+        Callable[[PyTree[np.ndarray]], PyTree[np.ndarray]]
+    ] = None,
+    use_torch: bool = False,
+):
+    data_fn, include_samples = _data_fn_from_paths(paths, include_samples)
+
+    N = len(include_samples)
+    assert N >= batchsize
+
+    random.seed(seed)
+    np.random.seed(seed)
+
+    if use_torch:
+        generator = _generator_from_data_fn_torch(
+            data_fn, include_samples, output_transform, shuffle, batchsize
+        )
+    else:
+        generator = _generator_from_data_fn_notorch(
+            data_fn, include_samples, output_transform, shuffle, batchsize
+        )
 
     return generator, N
 
