@@ -198,8 +198,7 @@ def batched_generator_from_list(
 
 
 def _data_fn_from_paths(
-    paths: list[str],
-    include_samples: Optional[list[int]] = None,
+    paths: list[str], include_samples: list[int] | None, load_all_into_memory: bool
 ):
     "`data_fn` returns numpy arrays."
     # expanduser
@@ -208,7 +207,7 @@ def _data_fn_from_paths(
     extensions = list(set([Path(p).suffix for p in paths]))
     assert len(extensions) == 1
 
-    if extensions[0] == ".h5":
+    if extensions[0] == ".h5" and not load_all_into_memory:
         N = sum([utils.hdf5_load_length(p) for p in paths])
 
         def data_fn(indices: list[int]):
@@ -218,11 +217,28 @@ def _data_fn_from_paths(
         # TODO
         from x_xy.subpkgs import ml
 
+        if extensions[0] == ".h5":
+
+            def load_fn(path):
+                tree = utils.hdf5_load(path)
+                return [
+                    jax.tree_map(lambda arr: arr[i], tree)
+                    for i in range(tree_utils.tree_shape(tree))
+                ]
+
+        else:
+            load_fn = ml.load
+
         list_of_data = []
         for p in paths:
-            list_of_data += ml.load(p)
+            list_of_data += load_fn(p)
 
         N = len(list_of_data)
+        if include_samples is not None:
+            list_of_data = [
+                ele if i in include_samples else None
+                for i, ele in enumerate(list_of_data)
+            ]
 
         def data_fn(indices: list[int]):
             return tree_batch([list_of_data[i] for i in indices], backend="numpy")
@@ -292,7 +308,9 @@ def _generator_from_data_fn_notorch(
         batch = batch if output_transform is None else output_transform(batch)
 
         i = (i + 1) % n_batches
-        return batch
+        # TODO
+        # only to check why it's suddenly slow
+        return jax.tree_map(jnp.asarray, batch)
 
     return generator
 
@@ -302,20 +320,21 @@ def batched_generator_from_paths(
     batchsize: int,
     include_samples: Optional[list[int]] = None,
     shuffle: bool = True,
-    seed: int = 1,
     output_transform: Optional[
         Callable[[PyTree[np.ndarray]], PyTree[np.ndarray]]
     ] = None,
     use_torch: bool = False,
+    load_all_into_memory: bool = False,
 ):
     "Returns: gen, where gen(key) -> Pytree[numpy]"
-    data_fn, include_samples = _data_fn_from_paths(paths, include_samples)
+    data_fn, include_samples = _data_fn_from_paths(
+        paths,
+        include_samples,
+        load_all_into_memory,
+    )
 
     N = len(include_samples)
     assert N >= batchsize
-
-    random.seed(seed)
-    np.random.seed(seed)
 
     if use_torch:
         generator = _generator_from_data_fn_torch(
