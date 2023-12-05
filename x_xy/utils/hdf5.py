@@ -102,7 +102,7 @@ def load_length(filepath: str, axis: int = 0) -> int:
 
     with h5py.File(filepath, "r") as f:
         tree_of_shapes = _lazy_tree_map(lambda leaf: _Shape(leaf.shape), f["pytree"])
-        return jax.tree_flatten(
+        return jax.tree_util.tree_flatten(
             tree_of_shapes, is_leaf=lambda leaf: isinstance(leaf, _Shape)
         )[0][0].shape[axis]
 
