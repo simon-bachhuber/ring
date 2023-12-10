@@ -308,6 +308,7 @@ def _generator_from_data_fn_notorch(
         batch = batch if output_transform is None else output_transform(batch)
 
         i = (i + 1) % n_batches
+        return batch
         # TODO
         # only to check why it's suddenly slow
         return jax.tree_map(jnp.asarray, batch)
