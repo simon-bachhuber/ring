@@ -272,8 +272,11 @@ def _generator_from_data_fn_torch(
                 element = output_transform(element)
             return jax.tree_map(lambda a: a[0], element)
 
+    def collate_fn(list_of_elements: list):
+        return tree_batch(list_of_elements, backend="jax")
+
     dl = DataLoader(
-        _Dataset(), batch_size=batchsize, shuffle=shuffle, collate_fn=tree_batch
+        _Dataset(), batch_size=batchsize, shuffle=shuffle, collate_fn=collate_fn
     )
     dl_iter = iter(dl)
 
@@ -308,8 +311,6 @@ def _generator_from_data_fn_notorch(
         batch = batch if output_transform is None else output_transform(batch)
 
         i = (i + 1) % n_batches
-        # TODO
-        # only to check why it's suddenly slow
         return jax.tree_map(jnp.asarray, batch)
 
     return generator
@@ -326,7 +327,7 @@ def batched_generator_from_paths(
     use_torch: bool = False,
     load_all_into_memory: bool = False,
 ):
-    "Returns: gen, where gen(key) -> Pytree[numpy]"
+    "Returns: gen, where gen(key) -> Pytree[jax.Array]"
     data_fn, include_samples = _data_fn_from_paths(
         paths,
         include_samples,
