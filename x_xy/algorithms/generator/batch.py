@@ -258,6 +258,7 @@ def _generator_from_data_fn_torch(
     output_transform,
     shuffle: bool,
     batchsize: int,
+    to_jax: bool,
 ):
     from torch.utils.data import DataLoader
     from torch.utils.data import Dataset
@@ -273,7 +274,11 @@ def _generator_from_data_fn_torch(
             return jax.tree_map(lambda a: a[0], element)
 
     def collate_fn(list_of_elements: list):
-        return tree_batch(list_of_elements, backend="jax")
+        if to_jax:
+            batch = tree_batch(list_of_elements, backend="jax")
+            return jax.tree_map(jnp.asarray, batch)
+        else:
+            return tree_batch(list_of_elements)
 
     dl = DataLoader(
         _Dataset(), batch_size=batchsize, shuffle=shuffle, collate_fn=collate_fn
@@ -297,6 +302,7 @@ def _generator_from_data_fn_notorch(
     output_transform,
     shuffle: bool,
     batchsize: int,
+    to_jax,
 ):
     N = len(include_samples)
     n_batches, i = N // batchsize, 0
@@ -311,7 +317,10 @@ def _generator_from_data_fn_notorch(
         batch = batch if output_transform is None else output_transform(batch)
 
         i = (i + 1) % n_batches
-        return jax.tree_map(jnp.asarray, batch)
+        if to_jax:
+            return jax.tree_map(jnp.asarray, batch)
+        else:
+            return batch
 
     return generator
 
@@ -326,6 +335,7 @@ def batched_generator_from_paths(
     ] = None,
     use_torch: bool = False,
     load_all_into_memory: bool = False,
+    to_jax: bool = False,
 ):
     "Returns: gen, where gen(key) -> Pytree[jax.Array]"
     data_fn, include_samples = _data_fn_from_paths(
@@ -339,11 +349,11 @@ def batched_generator_from_paths(
 
     if use_torch:
         generator = _generator_from_data_fn_torch(
-            data_fn, include_samples, output_transform, shuffle, batchsize
+            data_fn, include_samples, output_transform, shuffle, batchsize, to_jax
         )
     else:
         generator = _generator_from_data_fn_notorch(
-            data_fn, include_samples, output_transform, shuffle, batchsize
+            data_fn, include_samples, output_transform, shuffle, batchsize, to_jax
         )
 
     return generator, N
