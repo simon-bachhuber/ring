@@ -73,6 +73,9 @@ def build_generator(
     batchsize: Optional[int] = None,
     _compat: bool = False,
 ) -> Generator | GeneratorWithOutputExtras | None | list:
+    """
+    If `eager` then returns numpy, else jax.
+    """
     # capture all function args
     kwargs = locals()
 
@@ -130,6 +133,8 @@ def build_generator(
                 if ashdf5 is None:
                     return jax.tree_map(np.asarray, data)
                 else:
+                    # use `backend`=jax here, because `hdf5_save` converts to numpy
+                    # afterwards anyway
                     data = tree_utils.tree_batch(data, backend="jax")
                     hdf5_save(ashdf5, data, overwrite=True)
             else:
