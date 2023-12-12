@@ -92,12 +92,32 @@ def test_cor():
     )
 
 
+P_rot, P_pos = 50.0, 200.0
+_P_gains = {
+    "free": jnp.array(3 * [P_rot] + 3 * [P_pos]),
+    "px": jnp.array([P_pos]),
+    "py": jnp.array([P_pos]),
+    "pz": jnp.array([P_pos]),
+    "rx": jnp.array([P_rot]),
+    "ry": jnp.array([P_rot]),
+    "rz": jnp.array([P_rot]),
+    "rr": jnp.array([P_rot]),
+    # primary, residual
+    "rr_imp": jnp.array([P_rot, P_rot]),
+    "cor": jnp.array(3 * [P_rot] + 6 * [P_pos]),
+    "spherical": jnp.array(3 * [P_rot]),
+    "p3d": jnp.array(3 * [P_pos]),
+    "saddle": jnp.array([P_rot, P_rot]),
+    "frozen": jnp.array([]),
+}
+
+
 def test_knee_flexible_imus_sim():
     sys = x_xy.load_example("knee_flexible_imus")
-    qref = np.ones((101, 22))
+    qref = np.ones((101, 8))
     qref[:, :4] /= np.linalg.norm(qref[:, :4], axis=-1, keepdims=True)
-    qref[:, 7:11] /= np.linalg.norm(qref[:, 7:11], axis=-1, keepdims=True)
-    qref[:, 15:19] /= np.linalg.norm(qref[:, 15:19], axis=-1, keepdims=True)
+    # qref[:, 7:11] /= np.linalg.norm(qref[:, 7:11], axis=-1, keepdims=True)
+    # qref[:, 15:19] /= np.linalg.norm(qref[:, 15:19], axis=-1, keepdims=True)
 
     q_target = jnp.array(
         [
@@ -135,8 +155,9 @@ def test_knee_flexible_imus_sim():
             # back then i used `initial_sim_state_is_zeros` = False in combination
             # with `concat_configs` to create two seconds of initial nomotion phase
             # but the new logic is better (that is with initial_sim_state_... = False)
-            overwrite_q_ref=qref,
+            overwrite_q_ref=(qref, sys.idx_map("q")),
             initial_sim_state_is_zeros=True,
+            custom_P_gains=_P_gains,
         ),
         imu_motion_artifacts_kwargs=dict(hide_injected_bodies=False),
         _compat=True,
