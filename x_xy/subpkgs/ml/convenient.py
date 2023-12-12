@@ -147,7 +147,9 @@ def load_config(config_name: str) -> x_xy.RCMG_Config:
 _mae_metrices = {
     "mae_deg": (
         lambda q, qhat: x_xy.maths.angle_error(q, qhat),
-        lambda arr: jnp.rad2deg(jnp.mean(arr[:, 500:], axis=1)),
+        # back then we skipped 2500 steps which is a lot but
+        # just to keep it consistent / comparable
+        lambda arr: jnp.rad2deg(jnp.mean(arr[:, 2500:], axis=1)),
         jnp.mean,
     )
 }
