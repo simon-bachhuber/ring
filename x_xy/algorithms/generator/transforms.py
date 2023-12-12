@@ -288,7 +288,7 @@ def _imu_data(key, xs, sys_xs, **kwargs) -> dict:
     return X
 
 
-P_rot, P_pos = 50.0, 200.0
+P_rot, P_pos = 100.0, 250.0
 _P_gains = {
     "free": jnp.array(3 * [P_rot] + 3 * [P_pos]),
     "px": jnp.array([P_pos]),
