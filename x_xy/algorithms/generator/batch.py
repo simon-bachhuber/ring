@@ -1,4 +1,3 @@
-import math
 from pathlib import Path
 import random
 from typing import Callable, Optional
@@ -24,98 +23,21 @@ def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:
     return jnp.array(arr)
 
 
-def _size_per_device_sweetspot() -> int:
-    backend = jax.default_backend()
-    if backend == "cpu":
-        return 4
-    elif backend == "gpu":
-        return 64
-    else:
-        raise NotImplementedError(f"The backend '{backend}' is not 'cpu' nor 'gpu'.")
-
-
-def _single_call_optimized(
-    generators: Generator | list[Generator],
-    batchsizes: int | list[int] = 1,
-    stochastic: bool = False,
-):
-    # currently supports only batchsizes being int, not list[int]
-    if isinstance(batchsizes, list):
-        return batch_generators_lazy(
-            generators=generators,
-            batchsizes=batchsizes,
-            stochastic=stochastic,
-            single_call_opt=False,
-        )
-
-    size = batchsizes
-    size_sweetspot = (
-        jax.device_count(jax.default_backend()) * _size_per_device_sweetspot()
-    )
-    size_sweetspot = min(size, size_sweetspot)
-
-    gen_sweetspot = batch_generators_lazy(
-        generators=generators,
-        batchsizes=size_sweetspot,
-        stochastic=stochastic,
-        single_call_opt=False,
-    )
-    n_calls = math.ceil(size / size_sweetspot)
-
-    def forloop_generator(key):
-        keys = jax.random.split(key, n_calls + 1)
-
-        data = []
-        for key in keys[:-1]:
-            data.append(gen_sweetspot(key))
-
-        # permute the data from last call because it might be not used completely
-        # and then we wouldn't get a uniform sample from the generators as we
-        # exepect to get
-        data[-1] = jax.tree_map(
-            lambda arr: jax.random.permutation(keys[-1], arr), data[-1]
-        )
-
-        data = tree_utils.tree_batch(data, True, "jax")
-        return tree_utils.tree_slice(data, start=0, slice_size=size)
-
-    return forloop_generator
-
-
 def batch_generators_lazy(
     generators: Generator | list[Generator],
     batchsizes: int | list[int] = 1,
-    stochastic: bool = False,
-    single_call_opt: bool = False,
 ) -> BatchedGenerator:
-    """Create a large generator by stacking multiple generators lazily.
-    NOTE: If `stochastic` then `batchsizes` must be a single integer.
-    """
-
-    if single_call_opt:
-        warnings.warn(
-            "Unfortunately, the flag `single_call_opt` seems to always"
-            " decrease performance."
-        )
-        return _single_call_optimized(
-            generators=generators, batchsizes=batchsizes, stochastic=stochastic
-        )
-
+    """Create a large generator by stacking multiple generators lazily."""
     generators = utils.to_list(generators)
 
-    if stochastic:
-        assert isinstance(batchsizes, int)
-        bs_total = batchsizes
-        pmap, vmap = utils.distribute_batchsize(bs_total)
-    else:
-        generators, batchsizes = _process_sizes_batchsizes_generators(
-            generators, batchsizes
-        )
+    generators, batchsizes = _process_sizes_batchsizes_generators(
+        generators, batchsizes
+    )
 
-        batch_arr_nonstoch = _build_batch_matrix(batchsizes)
-        bs_total = len(batch_arr_nonstoch)
-        pmap, vmap = utils.distribute_batchsize(bs_total)
-        batch_arr_nonstoch = batch_arr_nonstoch.reshape((pmap, vmap))
+    batch_arr = _build_batch_matrix(batchsizes)
+    bs_total = len(batch_arr)
+    pmap, vmap = utils.distribute_batchsize(bs_total)
+    batch_arr = batch_arr.reshape((pmap, vmap))
 
     pmap_trafo = jax.pmap
     # single GPU node, then do jit + vmap instead of pmap
@@ -129,20 +51,11 @@ def batch_generators_lazy(
         return jax.lax.switch(which_gen, generators, key)
 
     def generator(key):
-        if stochastic:
-            key, consume = jax.random.split(key)
-            batch_arr = jax.random.choice(
-                consume, jnp.arange(len(generators)), shape=(pmap, vmap)
-            )
-        else:
-            batch_arr = batch_arr_nonstoch
-
         pmap_vmap_keys = jax.random.split(key, bs_total).reshape((pmap, vmap, 2))
         data = _generator(pmap_vmap_keys, batch_arr)
 
         # merge pmap and vmap axis
         data = utils.merge_batchsize(data, pmap, vmap)
-
         return data
 
     return generator
@@ -152,7 +65,6 @@ def batch_generators_eager_to_list(
     generators: Generator | list[Generator],
     sizes: int | list[int],
     seed: int = 1,
-    transfer_to_cpu: bool = True,
 ) -> list[tree_utils.PyTree]:
     "Returns list of unbatched sequences."
     generators, sizes = _process_sizes_batchsizes_generators(generators, sizes)
@@ -162,39 +74,8 @@ def batch_generators_eager_to_list(
     for gen, size in tqdm(zip(generators, sizes), desc="eager data generation"):
         key, consume = jax.random.split(key)
         sample = batch_generators_lazy(gen, size)(consume)
-        if transfer_to_cpu:
-            sample = jax.device_put(sample, jax.devices("cpu")[0])
         data.extend([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
     return data
-
-
-def batched_generator_from_list(
-    data: list,
-    batchsize: int,
-    shuffle: bool = True,
-    drop_last: bool = True,
-    seed: int = 1,
-    output_transform: Optional[Callable[[jax.Array, PyTree], PyTree]] = None,
-) -> BatchedGenerator:
-    assert drop_last, "Not `drop_last` is currently not implemented."
-    assert len(data) >= batchsize
-
-    N, i = len(data) // batchsize, 0
-    random.seed(seed)
-
-    def generator(key: jax.Array):
-        nonlocal i
-        if shuffle and i == 0:
-            random.shuffle(data)
-
-        start, stop = i * batchsize, (i + 1) * batchsize
-        batch = tree_batch(data[start:stop], backend="jax")
-        batch = batch if output_transform is None else output_transform(key, batch)
-
-        i = (i + 1) % N
-        return batch
-
-    return generator
 
 
 def _data_fn_from_paths(
@@ -252,57 +133,12 @@ def _data_fn_from_paths(
     return data_fn, include_samples
 
 
-def _generator_from_data_fn_torch(
+def _generator_from_data_fn(
     data_fn,
     include_samples: list[int],
     output_transform,
     shuffle: bool,
     batchsize: int,
-    to_jax: bool,
-):
-    from torch.utils.data import DataLoader
-    from torch.utils.data import Dataset
-
-    class _Dataset(Dataset):
-        def __len__(self):
-            return len(include_samples)
-
-        def __getitem__(self, idx: int):
-            element = data_fn([include_samples[idx]])
-            if output_transform is not None:
-                element = output_transform(element)
-            return jax.tree_map(lambda a: a[0], element)
-
-    def collate_fn(list_of_elements: list):
-        if to_jax:
-            batch = tree_batch(list_of_elements, backend="jax")
-            return jax.tree_map(jnp.asarray, batch)
-        else:
-            return tree_batch(list_of_elements)
-
-    dl = DataLoader(
-        _Dataset(), batch_size=batchsize, shuffle=shuffle, collate_fn=collate_fn
-    )
-    dl_iter = iter(dl)
-
-    def generator(key: jax.Array):
-        nonlocal dl, dl_iter
-        try:
-            return next(dl_iter)
-        except StopIteration:
-            dl_iter = iter(dl)
-            return next(dl_iter)
-
-    return generator
-
-
-def _generator_from_data_fn_notorch(
-    data_fn,
-    include_samples: list[int],
-    output_transform,
-    shuffle: bool,
-    batchsize: int,
-    to_jax,
 ):
     N = len(include_samples)
     n_batches, i = N // batchsize, 0
@@ -317,10 +153,7 @@ def _generator_from_data_fn_notorch(
         batch = batch if output_transform is None else output_transform(batch)
 
         i = (i + 1) % n_batches
-        if to_jax:
-            return jax.tree_map(jnp.asarray, batch)
-        else:
-            return batch
+        return batch
 
     return generator
 
@@ -333,11 +166,9 @@ def batched_generator_from_paths(
     output_transform: Optional[
         Callable[[PyTree[np.ndarray]], PyTree[np.ndarray]]
     ] = None,
-    use_torch: bool = False,
     load_all_into_memory: bool = False,
-    to_jax: bool = False,
 ):
-    "Returns: gen, where gen(key) -> Pytree[jax.Array]"
+    "Returns: gen, where gen(key) -> Pytree[numpy]"
     data_fn, include_samples = _data_fn_from_paths(
         paths,
         include_samples,
@@ -347,16 +178,40 @@ def batched_generator_from_paths(
     N = len(include_samples)
     assert N >= batchsize
 
-    if use_torch:
-        generator = _generator_from_data_fn_torch(
-            data_fn, include_samples, output_transform, shuffle, batchsize, to_jax
-        )
-    else:
-        generator = _generator_from_data_fn_notorch(
-            data_fn, include_samples, output_transform, shuffle, batchsize, to_jax
-        )
+    generator = _generator_from_data_fn(
+        data_fn, include_samples, output_transform, shuffle, batchsize
+    )
 
     return generator, N
+
+
+def batched_generator_from_list(
+    data: list,
+    batchsize: int,
+    shuffle: bool = True,
+    drop_last: bool = True,
+    seed: int = 1,
+    # output_transform: Optional[Callable[[jax.Array, PyTree], PyTree]] = None,
+) -> BatchedGenerator:
+    assert drop_last, "Not `drop_last` is currently not implemented."
+    assert len(data) >= batchsize
+
+    N, i = len(data) // batchsize, 0
+    random.seed(seed)
+
+    def generator(key: jax.Array):
+        nonlocal i
+        if shuffle and i == 0:
+            random.shuffle(data)
+
+        start, stop = i * batchsize, (i + 1) * batchsize
+        batch = tree_batch(data[start:stop])
+        # batch = batch if output_transform is None else output_transform(key, batch)
+
+        i = (i + 1) % N
+        return batch
+
+    return generator
 
 
 def batch_generators_eager(
@@ -366,14 +221,13 @@ def batch_generators_eager(
     shuffle: bool = True,
     drop_last: bool = True,
     seed: int = 1,
-    transfer_to_cpu: bool = True,
 ) -> BatchedGenerator:
     """Eagerly create a large precomputed generator by calling multiple generators
     and stacking their output."""
 
-    data = batch_generators_eager_to_list(
-        generators, sizes, seed=seed, transfer_to_cpu=transfer_to_cpu
-    )
+    data = batch_generators_eager_to_list(generators, sizes, seed=seed)
+    # currently still on device; copy to host / numpy
+    data = jax.device_get(data)
     return batched_generator_from_list(data, batchsize, shuffle, drop_last, seed=seed)
 
 
