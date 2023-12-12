@@ -4,7 +4,6 @@
 """
 
 import collections
-from concurrent.futures import ThreadPoolExecutor as PoolExecutor
 from functools import partial
 import os
 from pathlib import Path
@@ -28,6 +27,7 @@ def save(filepath: str, tree, overwrite: bool = False):
     """
     filepath = _parse_path(filepath, hdf5_extension, overwrite)
     with h5py.File(filepath, "w") as f:
+        # jax.device_get converts to numpy array
         _savetree(jax.device_get(tree), f, "pytree")
 
 
@@ -55,9 +55,7 @@ def _call_fn(fn):
     return fn()
 
 
-def load_from_multiple(
-    filepaths: list[str], indices: list[int], parallel: bool = False
-):
+def load_from_multiple(filepaths: list[str], indices: list[int]):
     assert len(filepaths) > 1
 
     borders = np.cumsum([load_length(fp) for fp in filepaths])
@@ -74,11 +72,7 @@ def load_from_multiple(
             continue
         loaders.append(partial(load, fp, indices_fp))
 
-    if parallel:
-        with PoolExecutor() as pool:
-            trees = list(pool.map(_call_fn, loaders))
-    else:
-        trees = [loader() for loader in loaders]
+    trees = [loader() for loader in loaders]
 
     return _tree_concat(trees)
 
