@@ -27,7 +27,7 @@ def accelerometer(xs: base.Transform, gravity: jax.Array, dt: float) -> jax.Arra
     return maths.rotate(acc, xs.rot)
 
 
-def gyroscope(rot: jax.Array, dt: float) -> jax.Array:
+def gyroscope(rot: jax.Array, dt: float, second_order: bool) -> jax.Array:
     """Compute measurements of a gyroscope that follows a frame with an orientation
     given by trajectory of quaternions `rot`."""
     # this was not needed before
@@ -38,12 +38,18 @@ def gyroscope(rot: jax.Array, dt: float) -> jax.Array:
     # q = maths.quat_inv(rot)
 
     q = rot
-    # 1st-order approx to derivative
-    dq = maths.quat_mul(q[1:], maths.quat_inv(q[:-1]))
+    if second_order:
+        dq = maths.quat_mul(q[2:], maths.quat_inv(q[:-2]))
+        dq = jnp.vstack((dq[0][None], dq, dq[-1][None]))
 
-    # due to 1st order derivative, shape (N,) -> (N-1,)
-    # append one element at the end to keep shape size
-    dq = jnp.vstack((dq, dq[-1][None]))
+        dt = 2 * dt
+    else:
+        # 1st-order approx to derivative
+        dq = maths.quat_mul(q[1:], maths.quat_inv(q[:-1]))
+
+        # due to 1st order derivative, shape (N,) -> (N-1,)
+        # append one element at the end to keep shape size
+        dq = jnp.vstack((dq, dq[-1][None]))
 
     axis, angle = maths.quat_to_rot_axis(dq)
     angle = angle[:, None]
@@ -185,6 +191,7 @@ def imu(
     low_pass_filter_rot_cutoff: Optional[float] = None,
     has_magnetometer: bool = False,
     magvec: Optional[jax.Array] = None,
+    gyro_second_order: bool = False,
 ) -> dict:
     """Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu.
     NOTE: `smoothen_degree` is used as window size for moving average.
@@ -220,7 +227,10 @@ def imu(
             )
         )
 
-    measurements = {"acc": accelerometer(xs, gravity, dt), "gyr": gyroscope(xs.rot, dt)}
+    measurements = {
+        "acc": accelerometer(xs, gravity, dt),
+        "gyr": gyroscope(xs.rot, dt, gyro_second_order),
+    }
 
     if has_magnetometer:
         if magvec is None:
