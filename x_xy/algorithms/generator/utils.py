@@ -16,7 +16,9 @@ Normalizer = Callable[[X], X]
 
 
 def make_normalizer_from_generator(
-    generator: BatchedGenerator, approx_with_large_batchsize: int = 512
+    generator: BatchedGenerator,
+    approx_with_large_batchsize: int = 512,
+    verbose: bool = False,
 ) -> Normalizer:
     "Returns a pure function that normalizes `X`."
 
@@ -42,6 +44,10 @@ def make_normalizer_from_generator(
     # obtain statistics
     mean = jax.tree_map(lambda arr: jnp.mean(arr, axis=(0, 1)), Xs)
     std = jax.tree_map(lambda arr: jnp.std(arr, axis=(0, 1)), Xs)
+
+    if verbose:
+        print("Mean: ", mean)
+        print("Std: ", std)
 
     eps = 1e-8
 
