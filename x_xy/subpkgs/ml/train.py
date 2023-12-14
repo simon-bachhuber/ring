@@ -24,6 +24,7 @@ from .callbacks import TimingKillRunCallback
 from .callbacks import WandbKillRun
 from .ml_utils import load
 from .ml_utils import Logger
+from .ml_utils import unique_id
 from .ml_utils import WandbLogger
 from .optimizer import make_optimizer
 from .training_loop import TrainingLoop
@@ -130,7 +131,7 @@ def train(
     initial_params_pretrained: Optional[tuple[str, int]] = None,
     key_network: jax.random.PRNGKey = key_network,
     key_generator: jax.random.PRNGKey = key_generator,
-    callback_save_params: Optional[str] = None,
+    callback_save_params: bool | str = False,
     callback_save_params_track_metrices: Optional[list[list[str]]] = None,
     callback_kill_if_grads_larger: Optional[float] = None,
     callback_kill_if_nan: bool = False,
@@ -221,7 +222,9 @@ def train(
     if callback_kill_tag is not None:
         default_callbacks.append(WandbKillRun(stop_tag=callback_kill_tag))
 
-    if callback_save_params is not None:
+    if not (callback_save_params is False):
+        if callback_save_params is True:
+            callback_save_params = f"~/params/{unique_id()}.pickle"
         default_callbacks.append(SaveParamsTrainingLoopCallback(callback_save_params))
 
     if callback_kill_if_grads_larger is not None:
@@ -249,7 +252,7 @@ def train(
     if callback_save_params_track_metrices is not None:
         assert (
             callback_save_params is not None
-        ), "Required field if `callback_save_params_track_metrices` is set."
+        ), "Required field if `callback_save_params_track_metrices` is set. Used below."
 
         callbacks_all.append(
             SaveParamsTrainingLoopCallback(
