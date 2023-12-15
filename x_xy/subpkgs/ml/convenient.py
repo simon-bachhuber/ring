@@ -272,6 +272,7 @@ def build_experimental_validation_callback2(
     normalizer: Optional[Callable[[PyTree], PyTree]] = None,
     normalizer_names: Optional[list[str]] = None,
     natural_units: bool = False,
+    X_transform=None,
 ):
     X, y, _ = pipeline_load_data(
         sys_with_imus, exp_id, motion_phase, flex, mag, jointaxes, rootincl
@@ -296,6 +297,9 @@ def build_experimental_validation_callback2(
         X_dummy = normalizer(X_dummy)
         # get ride of dummy values and remove suffix
         X = {name[: -len(suffix)]: X_dummy[name] for name in X}
+
+    if X_transform is not None:
+        X = X_transform(X)
 
     return ml.EvalXyTrainingLoopCallback(
         init_apply_factory(sys_composer.make_sys_noimu(sys_with_imus)[0]),
