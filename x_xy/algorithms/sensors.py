@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Optional
 
 import jax
@@ -192,6 +193,7 @@ def imu(
     has_magnetometer: bool = False,
     magvec: Optional[jax.Array] = None,
     gyro_second_order: bool = False,
+    natural_units: bool = False,
 ) -> dict:
     """Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu.
     NOTE: `smoothen_degree` is used as window size for moving average.
@@ -261,7 +263,19 @@ def imu(
         assert key is not None, "For noisy sensors random seed `key` must be provided."
         measurements = add_noise_bias(key, measurements)
 
+    if natural_units:
+        measurements = rescale_natural_units(measurements)
+
     return measurements
+
+
+_rescale_natural_units_fns = defaultdict(lambda arr: arr)
+_rescale_natural_units_fns["gyr"] = lambda gyr: gyr / jnp.pi
+_rescale_natural_units_fns["acc"] = lambda acc: acc / 9.81
+
+
+def rescale_natural_units(X: dict[str, jax.Array]):
+    return {key: _rescale_natural_units_fns[key](val) for key, val in X.items()}
 
 
 def rel_pose(

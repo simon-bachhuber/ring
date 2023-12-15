@@ -4,6 +4,7 @@ import jax.numpy as jnp
 from tree_utils import PyTree
 
 import x_xy
+from x_xy.algorithms.sensors import rescale_natural_units
 from x_xy.subpkgs import exp
 from x_xy.subpkgs import ml
 from x_xy.subpkgs import sim2real
@@ -270,10 +271,17 @@ def build_experimental_validation_callback2(
     # (X,) -> X
     normalizer: Optional[Callable[[PyTree], PyTree]] = None,
     normalizer_names: Optional[list[str]] = None,
+    natural_units: bool = False,
 ):
     X, y, _ = pipeline_load_data(
         sys_with_imus, exp_id, motion_phase, flex, mag, jointaxes, rootincl
     )
+
+    if natural_units:
+        assert (
+            normalizer is None
+        ), "Both `normalizer` and `natural_units` should not be used at the same time."
+        X = {key: rescale_natural_units(val) for key, val in X.items()}
 
     if normalizer is not None:
         assert normalizer_names is not None
