@@ -3,7 +3,6 @@ import warnings
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 import tree_utils
 
 from . import motion_artifacts
@@ -129,13 +128,12 @@ def build_generator(
 
         if eager:
             if aslist:
+                # returns pytree of numpy arrays
                 data = batch_generators_eager_to_list(gens, sizes, seed=seed)
                 if ashdf5 is None:
-                    return jax.tree_map(np.asarray, data)
+                    return data
                 else:
-                    # use `backend`=jax here, because `hdf5_save` converts to numpy
-                    # afterwards anyway
-                    data = tree_utils.tree_batch(data, backend="jax")
+                    data = tree_utils.tree_batch(data)
                     hdf5_save(ashdf5, data, overwrite=True)
             else:
                 return batch_generators_eager(gens, sizes, batchsize, seed=seed)
