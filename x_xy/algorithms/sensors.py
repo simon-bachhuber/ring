@@ -269,7 +269,7 @@ def imu(
     return measurements
 
 
-_rescale_natural_units_fns = defaultdict(lambda arr: arr)
+_rescale_natural_units_fns = defaultdict(lambda: (lambda arr: arr))
 _rescale_natural_units_fns["gyr"] = lambda gyr: gyr / jnp.pi
 _rescale_natural_units_fns["acc"] = lambda acc: acc / 9.81
 
