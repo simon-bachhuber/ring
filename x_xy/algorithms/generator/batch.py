@@ -65,6 +65,7 @@ def batch_generators_eager_to_list(
     generators: Generator | list[Generator],
     sizes: int | list[int],
     seed: int = 1,
+    transfer_to_host: bool = False,
 ) -> list[tree_utils.PyTree]:
     "Returns list of unbatched sequences."
     generators, sizes = _process_sizes_batchsizes_generators(generators, sizes)
@@ -74,6 +75,8 @@ def batch_generators_eager_to_list(
     for gen, size in tqdm(zip(generators, sizes), desc="eager data generation"):
         key, consume = jax.random.split(key)
         sample = batch_generators_lazy(gen, size)(consume)
+        if transfer_to_host:
+            sample = jax.device_get(sample)
         data.extend([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
     return data
 
@@ -197,6 +200,7 @@ def batched_generator_from_list(
     assert len(data) >= batchsize
 
     N, i = len(data) // batchsize, 0
+    # TODO Remove this
     random.seed(seed)
 
     def generator(key: jax.Array):
@@ -225,7 +229,9 @@ def batch_generators_eager(
     """Eagerly create a large precomputed generator by calling multiple generators
     and stacking their output."""
 
-    data = batch_generators_eager_to_list(generators, sizes, seed=seed)
+    data = batch_generators_eager_to_list(
+        generators, sizes, seed=seed, transfer_to_host=True
+    )
     # currently still on device; copy to host / numpy
     data = jax.device_get(data)
     return batched_generator_from_list(data, batchsize, shuffle, drop_last, seed=seed)
