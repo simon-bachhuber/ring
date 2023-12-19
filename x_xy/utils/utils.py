@@ -26,7 +26,7 @@ def tree_equal(a, b):
         if len(a) != len(b):
             return False
         return all(tree_equal(a[i], b[i]) for i in range(len(a)))
-    if isinstance(a, jax.Array):
+    if isinstance(a, (jax.Array, np.ndarray)):
         return jnp.allclose(a, b)
     return a == b
 

@@ -7,7 +7,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-import tree_utils
 
 import wandb
 import x_xy
@@ -33,20 +32,34 @@ def test_save_load():
 
 
 def test_save_load_generators():
-    gen = x_xy.build_generator(x_xy.load_example("test_three_seg_seg2"), _compat=True)
+    path = "~/data1/gen.h5"
 
-    data = x_xy.batch_generators_eager_to_list(gen, 1)
-    assert len(data) == 1
-
-    path = "~/data1/gen.pickle"
-    ml.save(data, path)
-
-    gen_reloaded = x_xy.batched_generator_from_list(ml.load(path), 1)
-    data_reloaded = tree_utils.to_2d_if_3d(
-        gen_reloaded(jax.random.PRNGKey(1)), strict=True
+    sys = x_xy.load_example("test_three_seg_seg2")
+    data = x_xy.build_generator(
+        sys,
+        eager=True,
+        aslist=True,
+        sizes=1,
+        seed=1,
+        add_X_imus=True,
+        add_y_relpose=True,
+    )[0]
+    x_xy.build_generator(
+        sys,
+        eager=True,
+        ashdf5=path,
+        sizes=1,
+        seed=1,
+        add_X_imus=True,
+        add_y_relpose=True,
     )
 
-    assert x_xy.utils.tree_equal(data[0], data_reloaded)
+    gen_reloaded, _ = x_xy.batched_generator_from_paths([path, path], 1)
+    data_reloaded = jax.tree_map(
+        lambda arr: arr[0], gen_reloaded(jax.random.PRNGKey(1))
+    )
+
+    assert x_xy.utils.tree_equal(data, data_reloaded)
 
     # clean up
     os.system(f"rm {path}")
