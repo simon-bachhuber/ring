@@ -3,6 +3,7 @@ import jax.numpy as jnp
 import numpy as np
 
 import x_xy
+from x_xy.algorithms.sensors import rescale_natural_units
 
 
 def _simulate_imus(qd: float, no_grav: bool = False):
@@ -106,3 +107,34 @@ def test_rel_pose():
     assert "hinge" not in y
     np.testing.assert_array_equal(y["imu2"], qrel(qs[0], qs[2]))
     np.testing.assert_array_equal(y["imu1"], qrel(qs[2], qs[1]))
+
+
+def test_natural_units():
+    sys = x_xy.load_example("test_three_seg_seg2")
+    X, y = x_xy.build_generator(
+        sys,
+        add_X_imus=True,
+        add_X_imus_kwargs=dict(natural_units=False),
+        seed=1,
+        aslist=True,
+        sizes=1,
+        eager=True,
+    )[0]
+    X_nat, y_nat = x_xy.build_generator(
+        sys,
+        add_X_imus=True,
+        add_X_imus_kwargs=dict(natural_units=True),
+        seed=1,
+        aslist=True,
+        sizes=1,
+        eager=True,
+    )[0]
+
+    imu_name = "seg1"
+    imu, imu_nat = X[imu_name], X_nat[imu_name]
+
+    np.testing.assert_allclose(imu["gyr"], imu_nat["gyr"] * np.pi, atol=1e-6, rtol=1e-6)
+    np.testing.assert_allclose(imu["acc"], imu_nat["acc"] * 9.81, atol=1e-6, rtol=1e-6)
+
+    # just test that this works
+    {key: rescale_natural_units(val) for key, val in X.items()}
