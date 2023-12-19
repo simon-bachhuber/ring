@@ -1,5 +1,7 @@
+from collections import defaultdict
 from typing import Callable, Optional
 
+import jax
 import jax.numpy as jnp
 from tree_utils import PyTree
 
@@ -308,3 +310,17 @@ def build_experimental_validation_callback2(
         y,
         metric_identifier=f"{sys_with_imus.model_name}_{exp_id}_{motion_phase}",
     )
+
+
+def rescale_natural_units_X_transform(
+    X: dict[str, dict[str, jax.Array]], factor_gyr: float = 2.2, factor_ja: float = 0.57
+) -> dict:
+    _rescale_natural_units_fns = defaultdict(lambda: (lambda arr: arr))
+    _rescale_natural_units_fns["gyr"] = lambda gyr: gyr / factor_gyr
+    _rescale_natural_units_fns["acc"] = lambda acc: acc / 9.81
+    _rescale_natural_units_fns["joint_axes"] = lambda arr: arr / factor_ja
+
+    inner = lambda X: {
+        key: _rescale_natural_units_fns[key](val) for key, val in X.items()
+    }
+    return {key: inner(val) for key, val in X.items()}
