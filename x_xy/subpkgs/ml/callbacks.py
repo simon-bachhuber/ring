@@ -100,6 +100,26 @@ class EvalXyTrainingLoopCallback(TrainingLoopCallback):
         metrices.update(self.last_metrices)
 
 
+class AverageMetricesTLCB(TrainingLoopCallback):
+    def __init__(self, metrices_names: list[list[str]], name: str):
+        self.zoom_ins = metrices_names
+        self.name = name
+
+    def after_training_step(
+        self,
+        i_episode: int,
+        metrices: dict,
+        params: dict,
+        grads: list[dict],
+        sample_eval: dict,
+        loggers: list[Logger],
+    ) -> None:
+        value = 0
+        for zoom_in in self.zoom_ins:
+            value += _zoom_into_metrices(metrices, zoom_in)
+        metrices.update({self.name: value / len(self.zoom_ins)})
+
+
 class QueueElement(NamedTuple):
     value: float
     params: dict
@@ -128,6 +148,13 @@ class Queue:
 
     def __iter__(self):
         return iter(self._storage)
+
+
+def _zoom_into_metrices(metrices: dict, zoom_in: list[str]) -> float:
+    zoomed_out = metrices
+    for key in zoom_in:
+        zoomed_out = zoomed_out[key]
+    return float(zoomed_out)
 
 
 class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
@@ -166,10 +193,7 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
                 value = 0.0
                 N = 0
                 for combination in itertools.product(*self._track_metrices):
-                    metrices_zoomedout = metrices
-                    for key in combination:
-                        metrices_zoomedout = metrices_zoomedout[key]
-                    value += float(metrices_zoomedout)
+                    value += _zoom_into_metrices(metrices, combination)
                     N += 1
                 value /= N
             else:
