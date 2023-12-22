@@ -578,7 +578,7 @@ class System(_Base):
     def findall_imus(self) -> list[str]:
         return [name for name in self.link_names if name[:3] == "imu"]
 
-    def finall_segments(self) -> list[str]:
+    def findall_segments(self) -> list[str]:
         imus = self.findall_imus()
         return [name for name in self.link_names if name not in imus]
 
