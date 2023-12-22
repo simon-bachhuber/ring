@@ -17,7 +17,6 @@ from ..kinematics import forward_kinematics_transforms
 from .batch import batch_generators_eager
 from .batch import batch_generators_eager_to_list
 from .batch import batch_generators_lazy
-from .transforms import GeneratorTrafoDropout
 from .transforms import GeneratorTrafoDynamicalSimulation
 from .transforms import GeneratorTrafoFinalizeFn
 from .transforms import GeneratorTrafoIMU
@@ -51,7 +50,6 @@ def build_generator(
     add_X_imus: bool = False,
     add_X_imus_kwargs: Optional[dict] = None,
     add_X_jointaxes: bool = False,
-    add_X_dropout: Optional[dict[str, tuple[float, float]]] = None,
     add_y_relpose: bool = False,
     add_y_rootincl: bool = False,
     sys_ml: Optional[base.System] = None,
@@ -224,7 +222,6 @@ def build_generator(
         GeneratorTrafoFinalizeFn(finalize_fn) if finalize_fn is not None else noop,
         GeneratorTrafoIMU(**add_X_imus_kwargs) if add_X_imus else noop,
         GeneratorTrafoJointAxisSensor(sys_noimu) if add_X_jointaxes else noop,
-        GeneratorTrafoDropout(add_X_dropout) if add_X_dropout is not None else noop,
         GeneratorTrafoRelPose(sys_noimu) if add_y_relpose else noop,
         GeneratorTrafoRootIncl(sys_noimu) if add_y_rootincl else noop,
         GeneratorTrafoRemoveInputExtras(sys),
