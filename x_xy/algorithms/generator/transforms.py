@@ -20,60 +20,6 @@ from .types import GeneratorWithOutputExtras
 from .types import SETUP_FN
 
 
-def _dropout_imu_jointaxes_factory(dropout_rates: dict[str, tuple[float, float]]):
-    """
-    Args:
-        dropout_rates: {'seg': (imu_rate, joint_axes_rate)}
-
-    Returns:
-        Function: (key, X) -> X
-
-    """
-
-    def _X_transform(key, X):
-        any_segment = X[list(X.keys())[0]]
-        assert any_segment["gyr"].ndim == 2, f"{any_segment['gyr'].shape}"
-
-        for segments, (imu_rate, jointaxes_rate) in dropout_rates.items():
-            key, c1, c2 = jax.random.split(key, 3)
-            factor_imu = jax.random.bernoulli(c1, p=(1 - imu_rate)).astype(int)
-            factor_jointaxes = jax.random.bernoulli(c2, p=(1 - jointaxes_rate)).astype(
-                int
-            )
-
-            for gyraccmag in ["gyr", "acc", "mag"]:
-                if gyraccmag in X[segments]:
-                    X[segments][gyraccmag] *= factor_imu
-
-            if "joint_axes" in X[segments]:
-                X[segments]["joint_axes"] *= factor_jointaxes
-        return X
-
-    return _X_transform
-
-
-class GeneratorTrafoDropout(GeneratorTrafo):
-    def __init__(self, dropout_rates: dict[str, tuple[float, float]]):
-        "dropout_rates: {'seg': (imu_rate, joint_axes_rate)}"
-        raise Exception(
-            "`dropout_rates` is broken and will be removed. "
-            "Use `output_transform` instead."
-        )
-        self.dropout_rates = dropout_rates
-
-    def __call__(self, gen):
-        _X_transform = _dropout_imu_jointaxes_factory(self.dropout_rates)
-
-        def _gen(*args):
-            # X: dict[str, dict[str, Array]]
-            (X, y), (key, *extras) = gen(*args)
-            key, consume = jax.random.split(key)
-            X = _X_transform(consume, X)
-            return (X, y), tuple([key] + extras)
-
-        return _gen
-
-
 class GeneratorTrafoLambda(GeneratorTrafo):
     def __init__(self, f, input: bool = False):
         self.f = f
