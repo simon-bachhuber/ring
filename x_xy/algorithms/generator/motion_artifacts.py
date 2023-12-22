@@ -54,7 +54,7 @@ def inject_subsystems(
         sys = sys.replace(link_spring_stiffness=stiffne, link_damping=damping)
 
         _imu = imu_reference_link_name(imu)
-        sys = sys.rename_link(imu, _imu)
+        sys = sys.change_link_name(imu, _imu)
         sys = sys_composer.inject_system(
             sys, _subsystem_factory(imu, pos_min_max), _imu
         )
@@ -192,7 +192,7 @@ class GeneratorTrafoHideInjectedBodies:
             _imu2imu_map = {imu_reference_link_name(imu): imu for imu in imus}
             sys = sys_composer.delete_subsystem(sys_x, imus)
             for _imu, imu in _imu2imu_map.items():
-                sys = sys.rename_link(_imu, imu).change_joint_type(imu, "frozen")
+                sys = sys.change_link_name(_imu, imu).change_joint_type(imu, "frozen")
 
             # match q and x to `sys`; second axis is link axis
             q, x = _match_q_x_between_sys(sys, q, x, sys_x, q_large_skip=imus)
