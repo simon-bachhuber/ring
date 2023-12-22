@@ -455,7 +455,7 @@ class System(_Base):
         name = prefix + new_name + suffix
         return self.replace(model_name=name)
 
-    def rename_link(self, old_name: str, new_name: str) -> "System":
+    def change_link_name(self, old_name: str, new_name: str) -> "System":
         old_idx = self.name_to_idx(old_name)
         new_link_names = self.link_names.copy()
         new_link_names[old_idx] = new_name
@@ -577,6 +577,10 @@ class System(_Base):
 
     def findall_imus(self) -> list[str]:
         return [name for name in self.link_names if name[:3] == "imu"]
+
+    def finall_segments(self) -> list[str]:
+        imus = self.findall_imus()
+        return [name for name in self.link_names if name not in imus]
 
 
 def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
