@@ -308,7 +308,8 @@ def build_experimental_validation_callback2(
         _mae_metrices,
         X,
         y,
-        metric_identifier=f"{sys_with_imus.model_name}_{exp_id}_{motion_phase}",
+        metric_identifier=f"{sys_with_imus.model_name}_{exp_id}_{motion_phase}_"
+        f"flex_{int(flex)}",
     )
 
 
