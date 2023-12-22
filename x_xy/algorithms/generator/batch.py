@@ -1,14 +1,12 @@
 from pathlib import Path
 import random
-from typing import Callable, Optional
+from typing import Optional
 import warnings
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 from tqdm import tqdm
 import tree_utils
-from tree_utils import PyTree
 from tree_utils import tree_batch
 
 from ... import utils
@@ -138,7 +136,6 @@ def _data_fn_from_paths(
 def _generator_from_data_fn(
     data_fn,
     include_samples: list[int],
-    output_transform,
     shuffle: bool,
     batchsize: int,
 ):
@@ -152,7 +149,6 @@ def _generator_from_data_fn(
 
         start, stop = i * batchsize, (i + 1) * batchsize
         batch = data_fn(include_samples[start:stop])
-        batch = batch if output_transform is None else output_transform(batch)
 
         i = (i + 1) % n_batches
         return batch
@@ -165,9 +161,6 @@ def batched_generator_from_paths(
     batchsize: int,
     include_samples: Optional[list[int]] = None,
     shuffle: bool = True,
-    output_transform: Optional[
-        Callable[[PyTree[np.ndarray]], PyTree[np.ndarray]]
-    ] = None,
     load_all_into_memory: bool = False,
 ):
     "Returns: gen, where gen(key) -> Pytree[numpy]"
@@ -180,9 +173,7 @@ def batched_generator_from_paths(
     N = len(include_samples)
     assert N >= batchsize
 
-    generator = _generator_from_data_fn(
-        data_fn, include_samples, output_transform, shuffle, batchsize
-    )
+    generator = _generator_from_data_fn(data_fn, include_samples, shuffle, batchsize)
 
     return generator, N
 
@@ -193,7 +184,6 @@ def batched_generator_from_list(
     shuffle: bool = True,
     drop_last: bool = True,
     seed: int = 1,
-    # output_transform: Optional[Callable[[jax.Array, PyTree], PyTree]] = None,
 ) -> BatchedGenerator:
     assert drop_last, "Not `drop_last` is currently not implemented."
     assert len(data) >= batchsize
@@ -209,7 +199,6 @@ def batched_generator_from_list(
 
         start, stop = i * batchsize, (i + 1) * batchsize
         batch = tree_batch(data[start:stop])
-        # batch = batch if output_transform is None else output_transform(key, batch)
 
         i = (i + 1) % N
         return batch
