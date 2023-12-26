@@ -37,6 +37,7 @@ def _make_rnno_cell_apply_fn(
     output_transform: Callable,
     message_layernorm: bool,
     keep_toRoot_output: bool,
+    debug: bool,
 ):
     parent_array = jnp.array(sys.link_parents, dtype=jnp.int32)
 
@@ -95,6 +96,11 @@ def _make_rnno_cell_apply_fn(
             for i in range(sys.num_links())
             if (keep_toRoot_output or sys.link_parents[i] != -1)
         }
+        if debug:
+            outputs = {
+                "outputs": outputs,
+                "debug": {"state": state, "msg": msg[:-1], "mailbox": mailbox},
+            }
         return outputs, state
 
     return _rnno_cell_apply_fn
@@ -116,6 +122,7 @@ def make_rnno(
     link_output_transform: Optional[Callable] = None,
     layernorm: bool = False,
     keep_toRoot_output: bool = False,
+    debug: bool = False,
 ) -> SimpleNamespace:
     "Expects batched inputs."
 
@@ -184,6 +191,7 @@ def make_rnno(
                 output_transform=link_output_transform,
                 message_layernorm=send_message_afterwards_layernorm,
                 keep_toRoot_output=keep_toRoot_output,
+                debug=debug,
             ),
             X,
             state,
