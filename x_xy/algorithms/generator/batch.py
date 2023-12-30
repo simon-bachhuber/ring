@@ -24,6 +24,7 @@ def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:
 def batch_generators_lazy(
     generators: Generator | list[Generator],
     batchsizes: int | list[int] = 1,
+    jit: bool = True,
 ) -> BatchedGenerator:
     """Create a large generator by stacking multiple generators lazily."""
     generators = utils.to_list(generators)
@@ -42,6 +43,8 @@ def batch_generators_lazy(
     # this allows e.g. better NAN debugging capabilities
     if pmap == 1:
         pmap_trafo = lambda f: jax.jit(jax.vmap(f))
+    if not jit:
+        pmap_trafo = lambda f: jax.vmap(f)
 
     @pmap_trafo
     @jax.vmap
@@ -63,6 +66,7 @@ def batch_generators_eager_to_list(
     generators: Generator | list[Generator],
     sizes: int | list[int],
     seed: int = 1,
+    jit: bool = True,
 ) -> list[tree_utils.PyTree]:
     "Returns list of unbatched sequences as numpy arrays."
     generators, sizes = _process_sizes_batchsizes_generators(generators, sizes)
@@ -71,7 +75,7 @@ def batch_generators_eager_to_list(
     data = []
     for gen, size in tqdm(zip(generators, sizes), desc="eager data generation"):
         key, consume = jax.random.split(key)
-        sample = batch_generators_lazy(gen, size)(consume)
+        sample = batch_generators_lazy(gen, size, jit=jit)(consume)
         # converts also to numpy
         sample = jax.device_get(sample)
         data.extend([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
@@ -213,11 +217,12 @@ def batch_generators_eager(
     shuffle: bool = True,
     drop_last: bool = True,
     seed: int = 1,
+    jit: bool = True,
 ) -> BatchedGenerator:
     """Eagerly create a large precomputed generator by calling multiple generators
     and stacking their output."""
 
-    data = batch_generators_eager_to_list(generators, sizes, seed=seed)
+    data = batch_generators_eager_to_list(generators, sizes, seed=seed, jit=jit)
     return batched_generator_from_list(data, batchsize, shuffle, drop_last, seed=seed)
 
 

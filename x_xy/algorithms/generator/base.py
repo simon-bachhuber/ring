@@ -68,6 +68,7 @@ def build_generator(
     seed: Optional[int] = None,
     sizes: Optional[int | list[int]] = None,
     batchsize: Optional[int] = None,
+    jit: bool = True,
     _compat: bool = False,
 ) -> Generator | GeneratorWithOutputExtras | None | list:
     """
@@ -127,16 +128,18 @@ def build_generator(
         if eager:
             if aslist:
                 # returns pytree of numpy arrays
-                data = batch_generators_eager_to_list(gens, sizes, seed=seed)
+                data = batch_generators_eager_to_list(gens, sizes, seed=seed, jit=jit)
                 if ashdf5 is None:
                     return data
                 else:
                     data = tree_utils.tree_batch(data)
                     hdf5_save(ashdf5, data, overwrite=True)
             else:
-                return batch_generators_eager(gens, sizes, batchsize, seed=seed)
+                return batch_generators_eager(
+                    gens, sizes, batchsize, seed=seed, jit=jit
+                )
         else:
-            return batch_generators_lazy(gens, sizes)
+            return batch_generators_lazy(gens, sizes, jit=jit)
 
         # if `batch` is True, then this function must always recursively call
         # itself, so we exit here; all work is done
