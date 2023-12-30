@@ -20,6 +20,7 @@ from .algorithms import GeneratorTrafo
 from .algorithms import GeneratorTrafoRandomizePositions
 from .algorithms import GeneratorTrafoRemoveInputExtras
 from .algorithms import GeneratorTrafoRemoveOutputExtras
+from .algorithms import get_joint_model
 from .algorithms import imu
 from .algorithms import inverse_kinematics_endeffector
 from .algorithms import joint_axes
@@ -42,9 +43,21 @@ from .rendering import render_prediction
 from .scan import scan_sys
 
 
-def setup():
-    # this defines `rr` and `rr_imp`
+def setup(
+    rr_joint_kwargs: None | dict = dict(),
+    rr_imp_joint_kwargs: None | dict = dict(),
+    suntay_joint_kwargs: None | dict = None,
+):
     from x_xy.algorithms import custom_joints
+
+    if rr_joint_kwargs is not None:
+        custom_joints.register_rr_joint(**rr_joint_kwargs)
+
+    if rr_imp_joint_kwargs is not None:
+        custom_joints.register_rr_imp_joint(**rr_imp_joint_kwargs)
+
+    if suntay_joint_kwargs is not None:
+        custom_joints.register_suntay(**suntay_joint_kwargs)
 
 
 setup()
