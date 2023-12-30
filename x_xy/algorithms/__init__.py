@@ -21,6 +21,7 @@ from .generator import make_normalizer_from_generator
 from .generator import Normalizer
 from .generator import SETUP_FN
 from .jcalc import concat_configs
+from .jcalc import get_joint_model
 from .jcalc import jcalc_motion
 from .jcalc import jcalc_tau
 from .jcalc import jcalc_transform
