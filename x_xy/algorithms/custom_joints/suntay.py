@@ -7,26 +7,31 @@ import x_xy
 from x_xy import maths
 from x_xy.algorithms._random import random_angle_over_time
 
-_DEFAULT_LENGTH_RAD = jnp.deg2rad(80.0)
+
+def deg2rad(deg: float):
+    return (deg / 180.0) * 3.1415926535
+
+
+_DEFAULT_LENGTH_RAD = deg2rad(80.0)
 
 
 @dataclass
 class SuntayConfig:
-    flexion_rot_min: float = -jnp.deg2rad(5.0)
-    flexion_rot_max: float = jnp.deg2rad(95.0)
+    flexion_rot_min: float = -deg2rad(5.0)
+    flexion_rot_max: float = deg2rad(95.0)
     flexion_pos_length_rad: float = _DEFAULT_LENGTH_RAD
     flexion_pos_min: float = -0.015
     flexion_pos_max: float = 0.015
     flexion_restrict_method: str = "minmax"
     abduction_rot_length_rad: float = _DEFAULT_LENGTH_RAD
-    abduction_rot_min: float = jnp.deg2rad(-4)
-    abduction_rot_max: float = jnp.deg2rad(4)
+    abduction_rot_min: float = deg2rad(-4)
+    abduction_rot_max: float = deg2rad(4)
     abduction_pos_length_rad: float = _DEFAULT_LENGTH_RAD
     abduction_pos_min: float = -0.015
     abduction_pos_max: float = 0.015
     external_rot_length_rad: float = _DEFAULT_LENGTH_RAD
-    external_rot_min: float = jnp.deg2rad(-10)
-    external_rot_max: float = jnp.deg2rad(10)
+    external_rot_min: float = deg2rad(-10)
+    external_rot_max: float = deg2rad(10)
     external_pos_length_rad: float = _DEFAULT_LENGTH_RAD
     external_pos_min: float = -0.06
     external_pos_max: float = 0.0
