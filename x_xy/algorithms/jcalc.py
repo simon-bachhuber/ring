@@ -2,7 +2,7 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
 from dataclasses import replace
-from typing import Callable, get_type_hints, Optional
+from typing import Any, Callable, get_type_hints, Optional
 
 import jax
 import jax.numpy as jnp
@@ -240,6 +240,8 @@ class JointModel:
     project_transform_to_feasible: Optional[PROJECT_TRANSFORM_TO_FEASIBLE] = None
 
     init_joint_params: Optional[INIT_JOINT_PARAMS] = None
+
+    utilities: Optional[dict[str, Any]] = field(default_factory=lambda: dict())
 
 
 def _free_transform(q, _):
@@ -660,6 +662,13 @@ _joint_types = {
         maths.wrap_to_pi,
     ),
 }
+
+
+def get_joint_model(joint_type: str) -> JointModel:
+    assert (
+        joint_type in _joint_types
+    ), f"{joint_type} not in {list(_joint_types.keys())}"
+    return _joint_types[joint_type]
 
 
 def register_new_joint_type(
