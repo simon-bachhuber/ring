@@ -12,6 +12,7 @@ from .utils import delete_download_cache
 from .utils import dict_to_nested
 from .utils import dict_union
 from .utils import download_from_repo
+from .utils import pytree_deepcopy
 from .utils import sys_compare
 from .utils import to_list
 from .utils import tree_equal

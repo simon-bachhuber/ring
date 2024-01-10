@@ -134,3 +134,19 @@ def save_figure_to_rgba(fig) -> np.ndarray:
     w, h = fig.canvas.get_width_height()
     im = data.reshape((int(h), int(w), -1))
     return im
+
+
+def pytree_deepcopy(tree):
+    "Recursivley copies a pytree with numpy/jax array leafs."
+    if isinstance(tree, jax.Array):
+        return tree
+    elif isinstance(tree, np.ndarray):
+        return tree.copy()
+    elif isinstance(tree, list):
+        return [pytree_deepcopy(ele) for ele in tree]
+    elif isinstance(tree, tuple):
+        return tuple(pytree_deepcopy(ele) for ele in tree)
+    elif isinstance(tree, dict):
+        return {key: pytree_deepcopy(value) for key, value in tree.items()}
+    else:
+        raise NotImplementedError(f"Not implemented for type={type(tree)}")
