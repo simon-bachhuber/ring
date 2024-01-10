@@ -13,17 +13,19 @@ from ..scan import scan_sys
 from .dynamics import step
 
 
-def accelerometer(xs: base.Transform, gravity: jax.Array, dt: float) -> jax.Array:
+def accelerometer(
+    xs: base.Transform, gravity: jax.Array, dt: float, n: int
+) -> jax.Array:
     """Compute measurements of an accelerometer that follows a frame which moves along
     a trajectory of Transforms. Let `xs` be the transforms from base to link.
     """
 
-    acc = (xs.pos[:-2] + xs.pos[2:] - 2 * xs.pos[1:-1]) / dt**2
+    acc = (xs.pos[: -2 * n] + xs.pos[2 * n :] - 2 * xs.pos[n:-n]) / (n * dt) ** 2
     acc = acc + gravity
 
-    # 2nd order derivative, (N,) -> (N-2,)
-    # prepend and append one element to keep shape size
-    acc = jnp.vstack((acc[0:1], acc, acc[-1][None]))
+    # 2nd order derivative, (N,) -> (N-2n,)
+    # prepend and append n elements to keep shape size
+    acc = jnp.vstack((jnp.atleast_2d(acc[:n]), acc, jnp.atleast_2d(acc[-n:])))
 
     return maths.rotate(acc, xs.rot)
 
@@ -194,6 +196,7 @@ def imu(
     magvec: Optional[jax.Array] = None,
     gyro_second_order: bool = False,
     natural_units: bool = False,
+    acc_xinyuyi_n: int = 1,
 ) -> dict:
     """Simulates a 6D IMU, `xs` should be Transforms from eps-to-imu.
     NOTE: `smoothen_degree` is used as window size for moving average.
@@ -230,7 +233,7 @@ def imu(
         )
 
     measurements = {
-        "acc": accelerometer(xs, gravity, dt),
+        "acc": accelerometer(xs, gravity, dt, acc_xinyuyi_n),
         "gyr": gyroscope(xs.rot, dt, gyro_second_order),
     }
 
@@ -356,8 +359,12 @@ def joint_axes(
     noisy: bool = False,
     from_sys: bool = False,
 ):
+    """
+    The joint-axes to world is always zeros.
+    """
+    N = xs.shape(axis=0)
+
     if from_sys:
-        N = xs.shape(axis=0)
         X = _joint_axes_from_sys(sys, N)
     else:
         X = _joint_axes_from_xs(sys, xs, sys_xs)
@@ -370,6 +377,11 @@ def joint_axes(
             noise = maths.quat_random(c2, (N,), maxval=jnp.deg2rad(2.0))
             dist = maths.quat_mul(noise, bias)
             X[name]["joint_axes"] = maths.rotate(X[name]["joint_axes"], dist)
+
+    # joint axes to world must be zeros
+    for name, p in zip(sys.link_names, sys.link_parents):
+        if p == -1:
+            X[name]["joint_axes"] = jnp.zeros((N, 3))
 
     return X
 
