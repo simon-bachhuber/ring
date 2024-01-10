@@ -235,6 +235,7 @@ def pipeline_load_data(
     )
 
     N = xs.shape()
+    zeros = jnp.zeros((N, 3))
 
     X = {}
     for segment in sys_noimu.link_names:
@@ -243,16 +244,17 @@ def pipeline_load_data(
                 sensor: exp_data[segment][imu_key][sensor] for sensor in sensors
             }
         else:
-            zeros = jnp.zeros((N, 3))
-            X[segment] = dict(acc=zeros, gyr=zeros)
+            X[segment] = {sensor: zeros for sensor in sensors}
 
     if jointaxes:
         X_joint_axes = x_xy.joint_axes(sys_noimu, xs, sys_noimu)
-        X = x_xy.utils.dict_union(X, X_joint_axes)
         # set all jointaxes to root to zero
         for name, parent in zip(sys_noimu.link_names, sys_noimu.link_parents):
             if parent == -1:
-                X[name]["joint_axes"] *= 0.0
+                X_joint_axes[name]["joint_axes"] = zeros
+    else:
+        X_joint_axes = {name: dict(joint_axes=zeros) for name in sys_noimu.link_names}
+    X = x_xy.utils.dict_union(X, X_joint_axes)
 
     y = x_xy.rel_pose(sys_noimu, xs)
     if rootincl:
@@ -310,7 +312,7 @@ def build_experimental_validation_callback2(
         X,
         y,
         metric_identifier=f"{sys_with_imus.model_name}_{exp_id}_{motion_phase}_"
-        f"flex_{int(flex)}",
+        f"flex_{int(flex)}_mag_{int(mag)}_ja_{int(jointaxes)}",
     )
 
 
