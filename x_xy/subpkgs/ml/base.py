@@ -63,12 +63,14 @@ class InitApplyFnFilter(AbstractFilter):
         params: Optional[str | tree_utils.PyTree] = None,
         key: jax.Array = jax.random.PRNGKey(1),
         lpf: Optional[float] = None,
+        X_transform=None,
     ):
         self._name = name
         self.key = key
         self.params = self._load_params(params)
         self.init_apply_fn_factory = init_apply_fn_factory
         self.lpf = lpf
+        self.X_transform = X_transform
 
     def _predict_3d(self, X: dict, sys: System | None) -> dict:
         init_apply_fn = self.init_apply_fn_factory(sys)
@@ -76,6 +78,10 @@ class InitApplyFnFilter(AbstractFilter):
         params = params if self.params is None else self.params
         bs = tree_utils.tree_shape(X)
         state = jax.tree_map(lambda arr: jnp.repeat(arr[None], bs, axis=0), state)
+
+        if self.X_transform is not None:
+            X = self.X_transform(X)
+
         yhat = init_apply_fn.apply(params, state, X)[0]
 
         if self.lpf is not None:
