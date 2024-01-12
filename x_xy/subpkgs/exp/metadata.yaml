@@ -35,11 +35,11 @@ S_06:
     imu: 40.0
 S_07:
   timings:
-    canonical: 37.5
+    canonical1: 37.5
     pause1: 140.5
     slow_fast_mix: 145.75
     pause2: 212.0
-    canonical: 218.0
+    canonical2: 218.0
     pause3: 308.5
     slow_fast_freeze_mix: 313.5
     pause4: 381.5
