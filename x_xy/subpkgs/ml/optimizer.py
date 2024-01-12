@@ -20,10 +20,22 @@ def make_optimizer(
     skip_large_update_max_normsq: float = 5.0,
     skip_large_update_warmup: int = 300,
     inner_opt=optax.lamb,
-    **inner_opt_kwargs
+    cos_decay_twice: bool = False,
+    **inner_opt_kwargs,
 ):
     steps = n_steps_per_episode * n_episodes
-    schedule = optax.cosine_decay_schedule(lr, steps, 1e-7)
+    if cos_decay_twice:
+        half_steps = int(steps / 2)
+        schedule = optax.join_schedules(
+            [
+                optax.cosine_decay_schedule(lr, half_steps, 1e-2),
+                optax.cosine_decay_schedule(lr * 1e-2, half_steps),
+            ],
+            [half_steps],
+        )
+    else:
+        schedule = optax.cosine_decay_schedule(lr, steps, 1e-7)
+
     optimizer = optax.chain(
         optax.adaptive_grad_clip(adap_clip)
         if adap_clip is not None
