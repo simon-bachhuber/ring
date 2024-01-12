@@ -59,10 +59,12 @@ class TwoSeg1D(ml.AbstractFilter2d):
         yhat[second] = x_xy.maths.quat_mul(
             quats[first], x_xy.maths.quat_inv(quats[second])
         )
+        # add it such that it gets low-pass-filtered for `lpf_rel` too
+        yhat[first] = quats[first]
         yhat = _maybe_lowpassfilter_quats(yhat, self.lpf_rel)
 
         # inclination angle; eps to femur
-        yhat[first] = x_xy.maths.quat_project(quats[first], np.array([0.0, 0, 1]))[1]
+        yhat[first] = x_xy.maths.quat_project(yhat[first], np.array([0.0, 0, 1]))[1]
 
         return yhat
 
@@ -110,10 +112,10 @@ class NSeg3D_9DVQF(ml.AbstractFilter2d):
                 quats[first], x_xy.maths.quat_inv(quats[second])
             )
 
-        yhat = _maybe_lowpassfilter_quats(yhat, self.lpf_rel)
-
         # global aspect
         yhat[self.chain[0]] = quats[self.chain[0]]
+
+        yhat = _maybe_lowpassfilter_quats(yhat, self.lpf_rel)
 
         return yhat
 
