@@ -7,17 +7,22 @@ import tree_utils
 
 import x_xy
 from x_xy import maths
+from x_xy import utils
 from x_xy.subpkgs import exp
+from x_xy.subpkgs import ml
 from x_xy.subpkgs import sim2real
 from x_xy.subpkgs import sys_composer
 
-from .base import Filter
+Filter = ml.AbstractFilter
 
 _dt = 0.01
 
 
 def double_hinge_joint(
     filter: Filter,
+    exp_id,
+    motion_start,
+    motion_stop,
     sparse_segments: list[str] = ["seg3"],
     rigid_imus: bool = True,
     joint_axes_from_sys: bool = False,
@@ -25,10 +30,14 @@ def double_hinge_joint(
     plot: bool = False,
     render: bool = False,
     render_kwargs: dict = dict(),
+    debug: bool = False,
 ):
     sys = exp.load_sys("S_06", morph_yaml_key="seg2", delete_after_morph="seg5")
-    return _S06_double_triple_hinge_joint(
+    return _double_triple_hinge_joint(
         sys,
+        exp_id,
+        motion_start,
+        motion_stop,
         sparse_segments,
         rigid_imus,
         joint_axes_from_sys,
@@ -37,11 +46,15 @@ def double_hinge_joint(
         plot,
         render,
         render_kwargs,
+        debug,
     )
 
 
 def triple_hinge_joint(
     filter: Filter,
+    exp_id,
+    motion_start,
+    motion_stop,
     sparse_segments: list[str] = ["seg2", "seg3"],
     rigid_imus: bool = True,
     joint_axes_from_sys: bool = False,
@@ -49,10 +62,14 @@ def triple_hinge_joint(
     plot: bool = False,
     render: bool = False,
     render_kwargs: dict = dict(),
+    debug: bool = False,
 ):
     sys = exp.load_sys("S_06", morph_yaml_key="seg5", delete_after_morph="seg1")
-    return _S06_double_triple_hinge_joint(
+    return _double_triple_hinge_joint(
         sys,
+        exp_id,
+        motion_start,
+        motion_stop,
         sparse_segments,
         rigid_imus,
         joint_axes_from_sys,
@@ -61,11 +78,15 @@ def triple_hinge_joint(
         plot,
         render,
         render_kwargs,
+        debug,
     )
 
 
-def _S06_double_triple_hinge_joint(
+def _double_triple_hinge_joint(
     sys,
+    exp_id,
+    motion_start,
+    motion_stop,
     sparse_segments: list[str],
     rigid: bool,
     from_sys: bool,
@@ -74,61 +95,56 @@ def _S06_double_triple_hinge_joint(
     plot: bool,
     render: bool,
     render_kwargs: dict,
+    debug: bool,
 ) -> dict:
+    debug_dict = dict()
+
     sys = sys_composer.make_sys_noimu(sys)[0]
 
     imu_key = "imu_rigid" if rigid else "imu_flex"
 
-    motion_start = ["slow1", "fast", "fast_slow_fast", "fast_slow_fast", "fast_slow"]
-    motion_stop = ["pause2", "pause3", "freeze2", "shaking", "shaking"]
+    data = exp.load_data(exp_id, motion_start, motion_stop)
 
+    xml_str = exp.load_xml_str(exp_id)
+    xs = sim2real.xs_from_raw(sys, exp.link_name_pos_rot_data(data, xml_str), qinv=True)
+    X = x_xy.joint_axes(sys, xs, sys, from_sys=from_sys)
+    # X["seg2"]["joint_axes"] = -X["seg2"]["joint_axes"]
+    # X["seg4"]["joint_axes"] = -X["seg4"]["joint_axes"]
+
+    if debug:
+        debug_dict["X_joint_axes"] = utils.pytree_deepcopy(X)
+
+    for seg in X:
+        imu_data = data[seg][imu_key]
+        imu_data.pop("mag")
+        if seg in sparse_segments:
+            imu_data = tree_utils.tree_zeros_like(imu_data)
+        X[seg].update(imu_data)
+
+    y = x_xy.rel_pose(sys, xs)
+
+    yhat = filter.predict(X, sys)
+
+    key = f"{motion_start}->{str(motion_stop)}"
     results = dict()
-    for sta, sto in zip(motion_start, motion_stop):
-        data = exp.load_data("S_06", sta, sto)
-
-        xml_str = exp.load_xml_str("S_06")
-        xs = sim2real.xs_from_raw(
-            sys, exp.link_name_pos_rot_data(data, xml_str), qinv=True
+    _results = {key: results}
+    for seg in y:
+        results[f"mae_deg_{seg}"] = jnp.mean(
+            jnp.rad2deg(maths.angle_error(y[seg], yhat[seg]))[warmup:]
         )
-        X = x_xy.joint_axes(sys, xs, sys, from_sys=from_sys)
-        if from_sys:
-            X_xs = x_xy.joint_axes(sys, xs, sys, from_sys=False)
-            for seg in X:
-                if sys.link_parents[sys.name_to_idx(seg)] == -1:
-                    X[seg].update(X_xs[seg])
 
-        for seg in X:
-            imu_data = data[seg][imu_key]
-            imu_data.pop("mag")
-            if seg in sparse_segments:
-                imu_data = tree_utils.tree_zeros_like(imu_data)
-            X[seg].update(imu_data)
+    if plot:
+        path = x_xy.utils.parse_path(f"~/xxy_benchmark/{filter.name}/{key}.png")
+        _plot_3x3(path, y, yhat, results=results, dt=_dt)
 
-        y = x_xy.rel_pose(sys, xs)
+    if render:
+        path = x_xy.utils.parse_path(f"~/xxy_benchmark/{filter.name}/{key}.mp4")
+        _render(path, sys, xs, yhat, **render_kwargs)
 
-        filter.init(sys, tree_utils.tree_slice(X, 0))
-        yhat = tree_utils.tree_slice(filter.predict(tree_utils.add_batch_dim(X)), 0)
-
-        key = f"{sta}->{sto}"
-        results[key] = dict()
-        for seg in y:
-            results[key][f"mae_deg_{seg}"] = jnp.mean(
-                jnp.rad2deg(maths.angle_error(y[seg], yhat[seg]))[warmup:]
-            )
-
-        if plot:
-            path = x_xy.utils.parse_path(
-                f"~/xxy_benchmark/{filter.identifier()}/{key}.png"
-            )
-            _plot_3x3(path, y, yhat, results=results[key], dt=_dt)
-
-        if render:
-            path = x_xy.utils.parse_path(
-                f"~/xxy_benchmark/{filter.identifier()}/{key}.mp4"
-            )
-            _render(path, sys, xs, yhat, **render_kwargs)
-
-    return results
+    if debug:
+        return _results, debug_dict
+    else:
+        return _results
 
 
 def _render(path, sys, xs, yhat, **kwargs):
