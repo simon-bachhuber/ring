@@ -297,6 +297,7 @@ def _draw_rxyz(
     key_value: jax.random.PRNGKey,
     dt: float,
     _: jax.Array,
+    # TODO, delete these args and pass a modifified `config` with `replace` instead
     enable_range_of_motion: bool = True,
     free_spherical: bool = False,
 ) -> jax.Array:
