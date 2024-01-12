@@ -12,6 +12,7 @@ import jax.numpy as jnp
 import tree_utils
 
 import wandb
+import x_xy
 from x_xy.utils import distribute_batchsize
 from x_xy.utils import expand_batchsize
 from x_xy.utils import merge_batchsize
@@ -347,7 +348,6 @@ class LogEpisodeTrainingLoopCallback(TrainingLoopCallback):
 class TimingKillRunCallback(TrainingLoopCallback):
     def __init__(self, max_run_time_seconds: float) -> None:
         self.max_run_time_seconds = max_run_time_seconds
-        self.t0 = time.time()
 
     def after_training_step(
         self,
@@ -358,7 +358,7 @@ class TimingKillRunCallback(TrainingLoopCallback):
         sample_eval: dict,
         loggers: list[Logger],
     ) -> None:
-        runtime = time.time() - self.t0
+        runtime = time.time() - x_xy._TRAIN_TIMING_START
         if runtime > self.max_run_time_seconds:
             runtime_h = runtime / 3600
             print(f"Run is killed due to timing. Current runtime is {runtime_h}h.")
