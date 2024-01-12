@@ -49,6 +49,7 @@ def render(
     camera: Optional[str] = None,
     show_pbar: bool = True,
     backend: str = "mujoco",
+    render_every_nth: int = 1,
     **scene_kwargs,
 ) -> list[np.ndarray]:
     """Render frames from system and trajectory of maximal coordinates `xs`.
@@ -93,6 +94,10 @@ def render(
 
     if xs is None:
         xs = forward_kinematics(sys, base.State.create(sys))[1].x
+
+    # convert time-axis of xs object into a list of unbatched elements
+    if xs.ndim() == 3:
+        xs = [xs[t] for t in range(0, xs.shape(), render_every_nth)]
 
     xs = to_list(xs)
 
