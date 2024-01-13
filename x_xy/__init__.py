@@ -43,6 +43,7 @@ from .rendering import render_prediction
 from .scan import scan_sys
 
 _TRAIN_TIMING_START = None
+_UNIQUE_ID = None
 
 
 def setup(
@@ -50,10 +51,14 @@ def setup(
     rr_imp_joint_kwargs: None | dict = dict(),
     suntay_joint_kwargs: None | dict = None,
     train_timing_start: None | float = None,
+    unique_id: None | str = None,
 ):
+    import time
+
     from x_xy.algorithms import custom_joints
 
     global _TRAIN_TIMING_START
+    global _UNIQUE_ID
 
     if rr_joint_kwargs is not None:
         custom_joints.register_rr_joint(**rr_joint_kwargs)
@@ -65,12 +70,16 @@ def setup(
         custom_joints.register_suntay(**suntay_joint_kwargs)
 
     if _TRAIN_TIMING_START is None:
-        import time
-
         _TRAIN_TIMING_START = time.time()
 
     if train_timing_start is not None:
         _TRAIN_TIMING_START = train_timing_start
+
+    if _UNIQUE_ID is None:
+        _UNIQUE_ID = hex(hash(time.time()))
+
+    if unique_id is not None:
+        _UNIQUE_ID = unique_id
 
 
 setup()
