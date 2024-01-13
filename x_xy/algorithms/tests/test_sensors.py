@@ -116,18 +116,14 @@ def test_natural_units():
         add_X_imus=True,
         add_X_imus_kwargs=dict(natural_units=False),
         seed=1,
-        aslist=True,
-        sizes=1,
-        eager=True,
+        mode="list",
     )[0]
     X_nat, y_nat = x_xy.build_generator(
         sys,
         add_X_imus=True,
         add_X_imus_kwargs=dict(natural_units=True),
         seed=1,
-        aslist=True,
-        sizes=1,
-        eager=True,
+        mode="list",
     )[0]
 
     imu_name = "seg1"

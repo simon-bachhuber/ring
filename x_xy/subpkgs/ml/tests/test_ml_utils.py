@@ -37,19 +37,16 @@ def test_save_load_generators():
     sys = x_xy.load_example("test_three_seg_seg2")
     data = x_xy.build_generator(
         sys,
-        eager=True,
-        aslist=True,
-        sizes=1,
         seed=1,
+        mode="list",
         add_X_imus=True,
         add_y_relpose=True,
     )[0]
     x_xy.build_generator(
         sys,
-        eager=True,
-        ashdf5=path,
-        sizes=1,
+        hdf5_filepath=path,
         seed=1,
+        mode="hdf5",
         add_X_imus=True,
         add_y_relpose=True,
     )
