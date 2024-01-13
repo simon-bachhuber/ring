@@ -21,6 +21,8 @@ from x_xy.utils import parse_path
 from .ml_utils import Logger
 from .ml_utils import MultimediaLogger
 from .ml_utils import save
+from .ml_utils import unique_id
+from .training_loop import recv_kill_run_signal
 from .training_loop import send_kill_run_signal
 from .training_loop import TrainingLoopCallback
 
@@ -91,6 +93,7 @@ class EvalXyTrainingLoopCallback(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ):
         if self.eval_every == -1:
             return
@@ -114,6 +117,7 @@ class AverageMetricesTLCB(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ) -> None:
         value = 0
         for zoom_in in self.zoom_ins:
@@ -185,6 +189,7 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ) -> None:
         if self._track_metrices is None:
             self._value -= 1.0
@@ -278,6 +283,7 @@ class LogGradsTrainingLoopCallBack(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ) -> None:
         gradient_log = {}
         for i, grads_tbp in enumerate(grads):
@@ -312,6 +318,7 @@ class NanKillRunCallback(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ) -> None:
         params_fast_flat = tree_utils.batch_concat(params, num_batch_dims=0)
         params_is_nan = jnp.any(jnp.isnan(params_fast_flat))
@@ -337,6 +344,7 @@ class LogEpisodeTrainingLoopCallback(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ) -> None:
         if self.kill_after_episode is not None and (
             i_episode >= self.kill_after_episode
@@ -357,12 +365,39 @@ class TimingKillRunCallback(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ) -> None:
         runtime = time.time() - x_xy._TRAIN_TIMING_START
         if runtime > self.max_run_time_seconds:
             runtime_h = runtime / 3600
             print(f"Run is killed due to timing. Current runtime is {runtime_h}h.")
             send_kill_run_signal()
+
+
+class CheckpointCallback(TrainingLoopCallback):
+    def after_training_step(
+        self,
+        i_episode: int,
+        metrices: dict,
+        params: dict,
+        grads: list[dict],
+        sample_eval: dict,
+        loggers: list[Logger],
+        opt_state: tree_utils.PyTree,
+    ) -> None:
+        self.params = params
+        self.opt_state = opt_state
+
+    def close(self):
+        # only checkpoint if run has been killed
+        if recv_kill_run_signal():
+            path = parse_path("~/.xxy_checkpoints", unique_id(), extension="pickle")
+            data = {"params": self.params, "opt_state": self.opt_state}
+            save(
+                data=jax.device_get(data),
+                path=path,
+                overwrite=True,
+            )
 
 
 class WandbKillRun(TrainingLoopCallback):
@@ -377,6 +412,7 @@ class WandbKillRun(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ) -> None:
         if wandb.run is not None:
             tags = (

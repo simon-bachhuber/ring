@@ -1,35 +1,21 @@
 import jax
 import jax.numpy as jnp
+import numpy as np
+import optax
 import tree_utils
 
 import x_xy
-from x_xy.algorithms.generator import transforms
 from x_xy.subpkgs import ml
 from x_xy.subpkgs import sys_composer
-
-
-def pipeline_make_generator(
-    config: x_xy.RCMG_Config,
-    bs: int,
-    sys: x_xy.System,
-):
-    sys_noimu, _ = sys_composer.make_sys_noimu(sys)
-
-    gen = x_xy.GeneratorPipe(
-        transforms.GeneratorTrafoIMU(),
-        transforms.GeneratorTrafoRelPose(sys_noimu),
-        x_xy.GeneratorTrafoRemoveOutputExtras(),
-        x_xy.GeneratorTrafoRemoveInputExtras(sys),
-    )(config)
-
-    return x_xy.batch_generators_lazy(gen, bs)
 
 
 def _test_train_rnno_lru(observer_fn):
     example = "test_three_seg_seg2"
     sys = x_xy.io.load_example(example)
     seed = jax.random.PRNGKey(1)
-    gen = pipeline_make_generator(x_xy.RCMG_Config(T=10.0), 1, sys)
+    gen = x_xy.build_generator(
+        sys, x_xy.RCMG_Config(T=10.0), sizes=1, add_X_imus=True, add_y_relpose=True
+    )
 
     X, y = gen(seed)
     sys_noimu, _ = sys_composer.make_sys_noimu(sys)
@@ -97,3 +83,44 @@ def test_train_rnno_lru_nonsocial():
 
         killed = ml.train(gen, 5, observer, callback_kill_if_nan=True)
         assert not killed
+
+
+def test_checkpointing():
+    optimizer = optax.adam(0.1)
+
+    x_xy.setup(unique_id="test_checkpointing_nopause")
+    example = "test_three_seg_seg2"
+    sys = x_xy.io.load_example(example)
+    sys_noimu, _ = sys_composer.make_sys_noimu(sys)
+    gen = x_xy.build_generator(
+        sys,
+        x_xy.RCMG_Config(T=10.0),
+        sizes=1,
+        add_X_imus=True,
+        add_y_relpose=True,
+        batchsize=1,
+        seed=1,
+        mode="eager",
+    )
+    rnno = ml.make_rnno(sys_noimu, hidden_state_dim=20, message_dim=10)
+
+    ml.train(gen, 10, rnno, callback_save_params=True, optimizer=optimizer)
+    trained_params_nopause_flat = tree_utils.batch_concat_acme(
+        ml.load("~/params/test_checkpointing_nopause.pickle"), 0
+    )
+
+    x_xy.setup(unique_id="test_checkpointing_pause")
+    ml.train(gen, 10, rnno, callback_kill_after_episode=5, optimizer=optimizer)
+    ml.train(
+        gen,
+        4,
+        rnno,
+        callback_save_params=True,
+        checkpoint="~/.xxy_checkpoints/test_checkpointing_pause",
+        optimizer=optimizer,
+    )
+    trained_params_pause_flat = tree_utils.batch_concat_acme(
+        ml.load("~/params/test_checkpointing_pause.pickle"), 0
+    )
+
+    np.testing.assert_allclose(trained_params_nopause_flat, trained_params_pause_flat)

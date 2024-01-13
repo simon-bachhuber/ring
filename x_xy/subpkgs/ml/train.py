@@ -1,4 +1,5 @@
 from functools import partial
+from pathlib import Path
 from typing import Callable, Optional, Tuple
 import warnings
 
@@ -9,13 +10,13 @@ import optax
 import tree_utils
 
 import wandb
-import x_xy
 from x_xy import maths
 from x_xy.utils import distribute_batchsize
 from x_xy.utils import expand_batchsize
 from x_xy.utils import parse_path
 
 from .callbacks import _repeat_state
+from .callbacks import CheckpointCallback
 from .callbacks import LogEpisodeTrainingLoopCallback
 from .callbacks import LogGradsTrainingLoopCallBack
 from .callbacks import NanKillRunCallback
@@ -129,6 +130,7 @@ def train(
     callbacks: list[TrainingLoopCallback] = [],
     initial_params: Optional[str] = None,
     initial_params_pretrained: Optional[tuple[str, int]] = None,
+    checkpoint: Optional[str] = None,
     key_network: jax.random.PRNGKey = key_network,
     key_generator: jax.random.PRNGKey = key_generator,
     callback_save_params: bool | str = False,
@@ -138,13 +140,14 @@ def train(
     callback_kill_after_episode: Optional[int] = None,
     callback_kill_after_seconds: Optional[float] = None,
     callback_kill_tag: Optional[str] = None,
+    callback_create_checkpoint: bool = True,
     loss_fn: LOSS_FN = _default_loss_fn,
     metrices: Optional[METRICES] = _default_metrices,
 ) -> bool:
     """Trains RNNO
 
     Args:
-        generator (Callable): output of the rcmg-module
+        generator (Callable): output `build_generator`
         n_episodes (int): number of episodes to train for
         network (hk.TransformedWithState): RNNO network
         optimizer (_type_, optional): optimizer, see optimizer.py module
@@ -162,16 +165,8 @@ def train(
         Wether or not the training run was killed by a callback.
     """
 
-    # test if generator is batched..
-    key = jax.random.PRNGKey(0)
-    X, _ = generator(key)
-
-    if tree_utils.tree_ndim(X) == 2:
-        # .. if not then batch it
-        generator = x_xy.algorithms.batch_generators_lazy(generator, 1)
-
-    # .. now it most certainly is; Queue it for data
-    X, _ = generator(key)
+    # queue it for some toy data
+    X, _ = generator(jax.random.PRNGKey(0))
 
     batchsize = tree_utils.tree_shape(X)
     pmap_size, vmap_size = distribute_batchsize(batchsize)
@@ -186,10 +181,17 @@ def train(
         initial_params is not None and initial_params_pretrained is not None
     ), "Either or, not both"
     if initial_params is not None:
+        assert checkpoint is not None
         params = load(initial_params)
     if initial_params_pretrained is not None:
+        assert checkpoint is not None
         pre_name, pre_version = initial_params_pretrained
         params = load(pretrained=pre_name, pretrained_version=pre_version)
+    if checkpoint is not None:
+        checkpoint = Path(checkpoint).with_suffix(".pickle")
+        recv_checkpoint: dict = load(checkpoint)
+        params = recv_checkpoint["params"]
+        opt_state = recv_checkpoint["opt_state"]
     del initial_params
 
     if optimizer is None:
@@ -198,7 +200,8 @@ def train(
             3e-3, n_episodes, n_steps_per_episode=6, skip_large_update_max_normsq=100.0
         )
 
-    opt_state = optimizer.init(params)
+    if checkpoint is None:
+        opt_state = optimizer.init(params)
 
     step_fn = _build_step_fn(
         loss_fn,
@@ -244,6 +247,9 @@ def train(
 
     if callback_kill_after_seconds is not None:
         default_callbacks.append(TimingKillRunCallback(callback_kill_after_seconds))
+
+    if callback_create_checkpoint:
+        default_callbacks.append(CheckpointCallback())
 
     callbacks_all = default_callbacks + callbacks
 
@@ -334,5 +340,6 @@ class _DefaultEvalFnCallback(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ):
         metrices.update(self.eval_fn(params, sample_eval[0], sample_eval[1]))

@@ -17,6 +17,7 @@ from tree_utils import PyTree
 from tree_utils import tree_batch
 
 import wandb
+import x_xy
 from x_xy.io import load_sys_from_str
 from x_xy.utils import download_from_repo
 
@@ -392,14 +393,8 @@ def on_cluster() -> bool:
     return False if env_var is None else True
 
 
-__unique_exp_id = None
-
-
-def unique_id(reset: bool = False) -> str:
-    global __unique_exp_id
-    if reset or (__unique_exp_id is None):
-        __unique_exp_id = hash(time.time())
-    return hex(__unique_exp_id)
+def unique_id() -> str:
+    return x_xy._UNIQUE_ID
 
 
 _DUMMY_BODY_NAME = "global"

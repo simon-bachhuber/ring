@@ -13,9 +13,14 @@ from .ml_utils import n_params
 _KILL_RUN = False
 
 
-def send_kill_run_signal():
+def send_kill_run_signal(value: bool = True) -> None:
     global _KILL_RUN
-    _KILL_RUN = True
+    _KILL_RUN = value
+
+
+def recv_kill_run_signal() -> bool:
+    global _KILL_RUN
+    return _KILL_RUN
 
 
 class TrainingLoopCallback:
@@ -27,6 +32,7 @@ class TrainingLoopCallback:
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state: tree_utils.PyTree,
     ) -> None:
         pass
 
@@ -77,16 +83,19 @@ class TrainingLoop:
             return consume
 
     def run(self, n_episodes: int = 1, close_afterwards: bool = True) -> bool:
+        # reset the kill_run flag from previous runs
+        send_kill_run_signal(value=False)
+
         for _ in tqdm.tqdm(range(n_episodes)):
             self.step()
 
-            if _KILL_RUN:
+            if recv_kill_run_signal():
                 break
 
         if close_afterwards:
             self.close()
 
-        return _KILL_RUN
+        return recv_kill_run_signal()
 
     def step(self):
         self.i_episode += 1
@@ -109,6 +118,7 @@ class TrainingLoop:
                 debug_grads,
                 self._sample_eval,
                 self._loggers,
+                self._opt_state,
             )
 
         for logger in self._loggers:
