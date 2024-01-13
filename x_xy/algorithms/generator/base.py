@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Callable, Optional, Sequence
 import warnings
 
@@ -38,10 +39,6 @@ from .types import SETUP_FN
 from .types import Xy
 
 
-def _copy_kwargs(kwargs: dict | None) -> dict:
-    return dict() if kwargs is None else kwargs.copy()
-
-
 def build_generator(
     sys: base.System | list[base.System],
     config: RCMG_Config | list[RCMG_Config] = RCMG_Config(),
@@ -62,11 +59,10 @@ def build_generator(
     dynamic_simulation_kwargs: Optional[dict] = None,
     output_transform: Optional[Callable] = None,
     keep_output_extras: bool = False,
-    eager: bool = False,
-    aslist: bool = False,
-    ashdf5: Optional[str] = None,
+    mode: str = "lazy",
+    hdf5_filepath: Optional[str] = None,
     seed: Optional[int] = None,
-    sizes: Optional[int | list[int]] = None,
+    sizes: int | list[int] = 1,
     batchsize: Optional[int] = None,
     jit: bool = True,
     _compat: bool = False,
@@ -74,77 +70,106 @@ def build_generator(
     """
     If `eager` then returns numpy, else jax.
     """
-    # capture all function args
-    kwargs = locals()
 
-    batch = False
-    if (
-        sizes is not None
-        or isinstance(sys, list)
-        or isinstance(config, list)
-        or eager
-        or aslist
-        or ashdf5 is not None
-    ):
-        batch = True
+    partial_build_gen = partial(
+        _build_generator_lazy,
+        setup_fn=setup_fn,
+        finalize_fn=finalize_fn,
+        add_X_imus=add_X_imus,
+        add_X_imus_kwargs=add_X_imus_kwargs,
+        add_X_jointaxes=add_X_jointaxes,
+        add_y_relpose=add_y_relpose,
+        add_y_rootincl=add_y_rootincl,
+        sys_ml=sys_ml,
+        randomize_positions=randomize_positions,
+        randomize_motion_artifacts=randomize_motion_artifacts,
+        randomize_joint_params=randomize_joint_params,
+        imu_motion_artifacts=imu_motion_artifacts,
+        imu_motion_artifacts_kwargs=imu_motion_artifacts_kwargs,
+        dynamic_simulation=dynamic_simulation,
+        dynamic_simulation_kwargs=dynamic_simulation_kwargs,
+        output_transform=output_transform,
+        keep_output_extras=keep_output_extras,
+        _compat=_compat,
+    )
 
-    if batch:
-        assert sizes is not None
+    if _compat:
+        return partial_build_gen(sys=sys, config=config, sys_ml=sys_ml)
 
-        if ashdf5 is not None:
-            assert not aslist
-            aslist = True
+    if mode == "lazy":
+        assert seed is None
+        assert hdf5_filepath is None
+        assert batchsize is None, "Use `sizes` instead to provide the sizes per batch."
+    elif mode == "eager":
+        assert seed is not None
+        assert hdf5_filepath is None
+        assert batchsize is not None
+    elif mode == "list":
+        assert seed is not None
+        assert hdf5_filepath is None
+        assert batchsize is None
+    elif mode == "hdf5":
+        assert seed is not None
+        assert hdf5_filepath is not None
+        assert batchsize is None
+    else:
+        raise NotImplementedError(
+            "`mode` must be one of `lazy`, `eager`, `list`, `hdf5`"
+        )
 
-        if aslist:
-            assert eager
-        if eager and not aslist:
-            assert batchsize is not None
+    sys, config = to_list(sys), to_list(config)
+
+    if sys_ml is None and len(sys) > 1:
+        warnings.warn(
+            "Batched simulation with multiple systems but no explicit `sys_ml`"
+        )
+        sys_ml = sys[0]
+
+    gens = []
+    for _sys in sys:
+        for _config in config:
+            gens.append(partial_build_gen(sys=_sys, config=_config, sys_ml=sys_ml))
+
+    if mode == "list" or mode == "hdf5":
+        data = batch_generators_eager_to_list(gens, sizes, seed=seed, jit=jit)
+        if mode == "hdf5":
+            data = tree_utils.tree_batch(data)
+            hdf5_save(hdf5_filepath, data, overwrite=True)
+            return
         else:
-            assert (
-                batchsize is None
-            ), "Use `sizes` instead to provide the sizes per batch."
-        if eager:
-            assert seed is not None
+            return data
+    elif mode == "eager":
+        return batch_generators_eager(gens, sizes, batchsize, seed=seed, jit=jit)
+    else:
+        return batch_generators_lazy(gens, sizes, jit=jit)
 
-        sys, config = to_list(sys), to_list(config)
 
-        if kwargs["sys_ml"] is None and len(sys) > 1:
-            warnings.warn(
-                "Batched simulation with multiple systems but no explicit `sys_ml`"
-            )
-            kwargs["sys_ml"] = sys[0]
+def _copy_kwargs(kwargs: dict | None) -> dict:
+    return dict() if kwargs is None else kwargs.copy()
 
-        gens = []
-        kwargs["eager"] = False
-        kwargs["aslist"] = False
-        kwargs["ashdf5"] = None
-        kwargs["sizes"] = None
-        for _sys in sys:
-            for _config in config:
-                kwargs["sys"] = _sys
-                kwargs["config"] = _config
-                gens.append(build_generator(**kwargs))
 
-        if eager:
-            if aslist:
-                # returns pytree of numpy arrays
-                data = batch_generators_eager_to_list(gens, sizes, seed=seed, jit=jit)
-                if ashdf5 is None:
-                    return data
-                else:
-                    data = tree_utils.tree_batch(data)
-                    hdf5_save(ashdf5, data, overwrite=True)
-            else:
-                return batch_generators_eager(
-                    gens, sizes, batchsize, seed=seed, jit=jit
-                )
-        else:
-            return batch_generators_lazy(gens, sizes, jit=jit)
-
-        # if `batch` is True, then this function must always recursively call
-        # itself, so we exit here; all work is done
-        return
-
+def _build_generator_lazy(
+    sys: base.System,
+    config: RCMG_Config,
+    setup_fn: SETUP_FN | None,
+    finalize_fn: FINALIZE_FN | None,
+    add_X_imus: bool,
+    add_X_imus_kwargs: dict | None,
+    add_X_jointaxes: bool,
+    add_y_relpose: bool,
+    add_y_rootincl: bool,
+    sys_ml: base.System | None,
+    randomize_positions: bool,
+    randomize_motion_artifacts: bool,
+    randomize_joint_params: bool,
+    imu_motion_artifacts: bool,
+    imu_motion_artifacts_kwargs: dict | None,
+    dynamic_simulation: bool,
+    dynamic_simulation_kwargs: dict | None,
+    output_transform: Callable | None,
+    keep_output_extras: bool,
+    _compat: bool,
+) -> Generator | GeneratorWithOutputExtras:
     # end of batch generator logic - non-batched build_generator logic starts
     assert config.is_feasible()
 
