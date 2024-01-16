@@ -233,7 +233,10 @@ def _build_generator_lazy(
         GeneratorTrafoRandomizePositions() if randomize_positions else noop,
         GeneratorTrafoSetupFn(
             motion_artifacts.setup_fn_randomize_damping_stiffness_factory(
-                imu_motion_artifacts_kwargs.get("prob_rigid", 0.0)
+                prob_rigid=imu_motion_artifacts_kwargs.get("prob_rigid", 0.0),
+                all_imus_either_rigid_or_flex=imu_motion_artifacts_kwargs.get(
+                    "all_imus_either_rigid_or_flex", False
+                ),
             )
         )
         if (imu_motion_artifacts and randomize_motion_artifacts)

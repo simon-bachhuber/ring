@@ -36,7 +36,9 @@ def _subsystem_factory(imu_name: str, pos_min_max: float) -> base.System:
 
 
 def inject_subsystems(
-    sys: base.System, pos_min_max: float = 0.0, **kwargs
+    sys: base.System,
+    pos_min_max: float = 0.0,
+    **kwargs,
 ) -> base.System:
     from x_xy.subpkgs import sys_composer
 
@@ -105,7 +107,10 @@ def _log_uniform(key, shape, minval, maxval):
     return jnp.exp(jax.random.uniform(key, shape, minval=minval, maxval=maxval))
 
 
-def setup_fn_randomize_damping_stiffness_factory(prob_rigid: float):
+def setup_fn_randomize_damping_stiffness_factory(
+    prob_rigid: float,
+    all_imus_either_rigid_or_flex: bool,
+):
     assert 0 <= prob_rigid <= 1
     assert prob_rigid != 1, "Use `imu_motion_artifacts`=False instead."
 
@@ -128,12 +133,15 @@ def setup_fn_randomize_damping_stiffness_factory(prob_rigid: float):
         link_spring_stiffness = sys.link_spring_stiffness
 
         idx_map = sys.idx_map("d")
-        for imu in sys.findall_imus():
+        imus = sys.findall_imus()
+        for imu in imus:
             # _imu has spherical joint and imu has p3d joint
             slice = jnp.r_[idx_map[imu_reference_link_name(imu)], idx_map[imu]]
             key, c1, c2 = jax.random.split(key, 3)
             if prob_rigid > 0:
-                is_rigid = jax.random.bernoulli(c1, prob_rigid)
+                first_imu = imu == imus[0]
+                if first_imu or not all_imus_either_rigid_or_flex:
+                    is_rigid = jax.random.bernoulli(c1, prob_rigid)
                 stif, damp = jax.lax.cond(
                     is_rigid, stif_damp_rigid, stif_damp_nonrigid, c2
                 )
