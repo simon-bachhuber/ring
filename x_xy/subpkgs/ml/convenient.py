@@ -14,7 +14,8 @@ from x_xy.subpkgs import sim2real
 from x_xy.subpkgs import sys_composer
 
 
-def load_2Seg3Seg4Seg_system(
+def load_1Seg2Seg3Seg4Seg_system(
+    anchor_1Seg=None,
     anchor_2Seg=None,
     anchor_3Seg=None,
     anchor_4Seg=None,
@@ -31,21 +32,39 @@ def load_2Seg3Seg4Seg_system(
         Two anchors  : ["seg2", "seg4"]
     2Seg:
         Two anchors: ["seg2", "seg3"]
+    1Seg:
+        Single anchor: Any of the five segments.
     """
     delete_4Seg = ["seg1"]
     delete_3Seg = ["seg5"]
     delete_2Seg = ["seg5", "seg4"]
+    delete_1Seg = list(
+        set(["seg1", "seg5", "seg2", "seg3", "seg4"]) - set([anchor_1Seg])
+    )
 
     if delete_inner_imus:
         delete_4Seg += ["imu2", "imu3"]
         delete_3Seg += ["imu3"]
 
-    assert not (anchor_3Seg is None and anchor_4Seg is None and anchor_2Seg is None)
+    assert not (
+        anchor_3Seg is None
+        and anchor_4Seg is None
+        and anchor_2Seg is None
+        and anchor_1Seg is None
+    )
     load = lambda *args: exp.load_sys(
         "S_06", None, *args, replace_rxyz="rr_imp" if use_rr_imp else None
     )
 
     sys = []
+
+    if anchor_1Seg is not None:
+        sys_1Seg = load(anchor_1Seg, []).change_model_name(suffix="_1Seg")
+        sys.append(
+            sys_composer.delete_subsystem(
+                sys_1Seg, delete_1Seg, strict=False
+            ).add_prefix_suffix(suffix="_1Seg" if add_suffix_to_linknames else None)
+        )
 
     if anchor_2Seg is not None:
         sys_2Seg = (
