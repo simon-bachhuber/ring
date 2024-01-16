@@ -66,25 +66,29 @@ def to_list(obj: object) -> list:
 
 
 def dict_union(
-    d1: dict[str, dict[str, jax.Array]],
-    d2: dict[str, dict[str, jax.Array]],
+    d1: dict[str, jax.Array] | dict[str, dict[str, jax.Array]],
+    d2: dict[str, jax.Array] | dict[str, dict[str, jax.Array]],
     overwrite: bool = False,
 ) -> dict:
     "Builds the union between two nested dictonaries."
     # safety copying; otherwise this function would mutate out of scope
-    d1 = {key: d1[key].copy() for key in d1}
+    d1 = pytree_deepcopy(d1)
+    d2 = pytree_deepcopy(d2)
 
     for key2 in d2:
         if key2 not in d1:
-            d1[key2] = d2[key2].copy()
+            d1[key2] = d2[key2]
         else:
+            if not isinstance(d2[key2], dict) or not isinstance(d1[key2], dict):
+                raise Exception(f"d1.keys()={d1.keys()}; d2.keys()={d2.keys()}")
+
             for key_nested in d2[key2]:
                 if not overwrite:
                     assert (
                         key_nested not in d1[key2]
                     ), f"d1.keys()={d1[key2].keys()}; d2.keys()={d2[key2].keys()}"
 
-            d1[key2].update(d2[key2].copy())
+            d1[key2].update(d2[key2])
     return d1
 
 
