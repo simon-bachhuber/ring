@@ -96,7 +96,7 @@ def render(
         xs = forward_kinematics(sys, base.State.create(sys))[1].x
 
     # convert time-axis of xs object into a list of unbatched elements
-    if xs.ndim() == 3:
+    if isinstance(xs, base.Transform) and xs.ndim() == 3:
         xs = [xs[t] for t in range(0, xs.shape(), render_every_nth)]
 
     xs = to_list(xs)
