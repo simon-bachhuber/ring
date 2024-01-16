@@ -317,3 +317,10 @@ def quat_inclinationAngle(q: jax.Array):
 def quat_headingAngle(q: jax.Array):
     head, incl = quat_project(q, jnp.array([0.0, 0, 1]))
     return quat_angle(head)
+
+
+def quat_transfer_heading(q_from, q_to):
+    heading = quat_project(q_from, jnp.array([0.0, 0, 1]))[0]
+    # set heading to zero in the `q_to` quaternions
+    q_to = quat_project(q_to, jnp.array([0.0, 0, 1]))[1]
+    return quat_mul(q_to, heading)

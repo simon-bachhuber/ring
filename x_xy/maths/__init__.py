@@ -23,6 +23,7 @@ from .quat import quat_rot_axis
 from .quat import quat_to_3x3
 from .quat import quat_to_euler
 from .quat import quat_to_rot_axis
+from .quat import quat_transfer_heading
 from .quat import rotate
 from .quat import rotate_matrix
 from .quat import rotate_quat
