@@ -351,6 +351,25 @@ def root_incl(
     return y
 
 
+def root_full(
+    sys: base.System, x: base.Transform, sys_x: base.System
+) -> dict[str, jax.Array]:
+    # (time, nlinks, 4) -> (nlinks, time, 4)
+    rots = x.rot.transpose((1, 0, 2))
+    l_map = sys_x.idx_map("l")
+
+    y = dict()
+
+    def f(_, __, name: str, parent: int):
+        if parent != -1:
+            return
+        y[name] = rots[l_map[name]]
+
+    scan_sys(sys, f, "ll", sys.link_names, sys.link_parents)
+
+    return y
+
+
 def joint_axes(
     sys: base.System,
     xs: base.Transform,
