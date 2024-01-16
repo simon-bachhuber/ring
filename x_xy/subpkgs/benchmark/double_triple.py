@@ -108,8 +108,6 @@ def _double_triple_hinge_joint(
     xml_str = exp.load_xml_str(exp_id)
     xs = sim2real.xs_from_raw(sys, exp.link_name_pos_rot_data(data, xml_str), qinv=True)
     X = x_xy.joint_axes(sys, xs, sys, from_sys=from_sys)
-    # X["seg2"]["joint_axes"] = -X["seg2"]["joint_axes"]
-    # X["seg4"]["joint_axes"] = -X["seg4"]["joint_axes"]
 
     if debug:
         debug_dict["X_joint_axes"] = utils.pytree_deepcopy(X)
