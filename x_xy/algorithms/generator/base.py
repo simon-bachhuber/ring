@@ -237,6 +237,9 @@ def _build_generator_lazy(
                 all_imus_either_rigid_or_flex=imu_motion_artifacts_kwargs.get(
                     "all_imus_either_rigid_or_flex", False
                 ),
+                imus_surely_rigid=imu_motion_artifacts_kwargs.get(
+                    "imus_surely_rigid", []
+                ),
             )
         )
         if (imu_motion_artifacts and randomize_motion_artifacts)

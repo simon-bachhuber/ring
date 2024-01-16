@@ -110,9 +110,12 @@ def _log_uniform(key, shape, minval, maxval):
 def setup_fn_randomize_damping_stiffness_factory(
     prob_rigid: float,
     all_imus_either_rigid_or_flex: bool,
+    imus_surely_rigid: list[str],
 ):
     assert 0 <= prob_rigid <= 1
     assert prob_rigid != 1, "Use `imu_motion_artifacts`=False instead."
+    if prob_rigid == 0.0:
+        assert len(imus_surely_rigid) == 0
 
     def stif_damp_rigid(key):
         stif_sph = 200.0 * jnp.ones((3,))
@@ -134,21 +137,39 @@ def setup_fn_randomize_damping_stiffness_factory(
 
         idx_map = sys.idx_map("d")
         imus = sys.findall_imus()
+
+        # initialize this RV because it might not get redrawn if
+        # `all_imus_either_rigid_or_flex` is set
+        key, consume = jax.random.split(key)
+        is_rigid = jax.random.bernoulli(consume, prob_rigid)
+
+        # this is only for the assertion used below
+        triggered_surely_rigid = []
+
         for imu in imus:
             # _imu has spherical joint and imu has p3d joint
             slice = jnp.r_[idx_map[imu_reference_link_name(imu)], idx_map[imu]]
             key, c1, c2 = jax.random.split(key, 3)
+
             if prob_rigid > 0:
-                first_imu = imu == imus[0]
-                if first_imu or not all_imus_either_rigid_or_flex:
-                    is_rigid = jax.random.bernoulli(c1, prob_rigid)
-                stif, damp = jax.lax.cond(
-                    is_rigid, stif_damp_rigid, stif_damp_nonrigid, c2
-                )
+                if imu in imus_surely_rigid:
+                    triggered_surely_rigid.append(imu)
+                    # logging.debug(f"IMU {imu} is surely rigid.")
+                    stif, damp = stif_damp_rigid(c2)
+                else:
+                    if not all_imus_either_rigid_or_flex:
+                        is_rigid = jax.random.bernoulli(c1, prob_rigid)
+                    stif, damp = jax.lax.cond(
+                        is_rigid, stif_damp_rigid, stif_damp_nonrigid, c2
+                    )
             else:
                 stif, damp = stif_damp_nonrigid(c2)
             link_spring_stiffness = link_spring_stiffness.at[slice].set(stif)
             link_damping = link_damping.at[slice].set(damp)
+
+        assert len(imus_surely_rigid) == len(triggered_surely_rigid)
+        for imu_surely_rigid in imus_surely_rigid:
+            assert imu_surely_rigid in triggered_surely_rigid
 
         return sys.replace(
             link_damping=link_damping, link_spring_stiffness=link_spring_stiffness
