@@ -258,26 +258,29 @@ def build_experimental_validation_callback1(
 def pipeline_load_data(
     sys: x_xy.System,
     exp_id: str,
-    motion_phase: str,
+    motion_start: str,
+    motion_stop: str | None,
     flex: bool,
     mag: bool,
     jointaxes: bool,
     rootincl: bool,
+    rootfull: bool,
 ):
     imu_key = "imu_flex" if flex else "imu_rigid"
     sensors = ["acc", "gyr"]
     if mag:
         sensors += ["mag"]
 
-    exp_data = exp.load_data(exp_id, motion_phase)
+    exp_data = exp.load_data(exp_id, motion_start, motion_stop)
     sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys)
-    del sys
 
     xs = sim2real.xs_from_raw(
-        sys_noimu,
+        sys,
         exp.link_name_pos_rot_data(exp_data, exp.load_xml_str(exp_id)),
         qinv=True,
     )
+    sys_xs = sys
+    del sys
 
     N = xs.shape()
     zeros = jnp.zeros((N, 3))
@@ -292,7 +295,7 @@ def pipeline_load_data(
             X[segment] = {sensor: zeros for sensor in sensors}
 
     if jointaxes:
-        X_joint_axes = x_xy.joint_axes(sys_noimu, xs, sys_noimu)
+        X_joint_axes = x_xy.joint_axes(sys_noimu, xs, sys_xs)
         # set all jointaxes to root to zero
         for name, parent in zip(sys_noimu.link_names, sys_noimu.link_parents):
             if parent == -1:
@@ -301,10 +304,14 @@ def pipeline_load_data(
         X_joint_axes = {name: dict(joint_axes=zeros) for name in sys_noimu.link_names}
     X = x_xy.utils.dict_union(X, X_joint_axes)
 
-    y = x_xy.rel_pose(sys_noimu, xs)
+    y = x_xy.rel_pose(sys_noimu, xs, sys_xs)
     if rootincl:
-        y_rootincl = x_xy.algorithms.sensors.root_incl(sys_noimu, xs, sys_noimu)
+        y_rootincl = x_xy.algorithms.sensors.root_incl(sys_noimu, xs, sys_xs)
         y = x_xy.utils.dict_union(y, y_rootincl)
+
+    if rootfull:
+        y_rootfull = x_xy.algorithms.sensors.root_full(sys_noimu, xs, sys_xs)
+        y = x_xy.utils.dict_union(y, y_rootfull)
 
     return X, y, xs
 
@@ -325,7 +332,7 @@ def build_experimental_validation_callback2(
     X_transform=None,
 ):
     X, y, _ = pipeline_load_data(
-        sys_with_imus, exp_id, motion_phase, flex, mag, jointaxes, rootincl
+        sys_with_imus, exp_id, motion_phase, None, flex, mag, jointaxes, rootincl, False
     )
 
     if natural_units:
