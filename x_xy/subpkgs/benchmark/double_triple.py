@@ -7,7 +7,6 @@ import tree_utils
 
 import x_xy
 from x_xy import maths
-from x_xy import utils
 from x_xy.subpkgs import exp
 from x_xy.subpkgs import ml
 from x_xy.subpkgs import sim2real
@@ -15,38 +14,39 @@ from x_xy.subpkgs import sys_composer
 
 Filter = ml.AbstractFilter
 
-_dt = 0.01
-
 
 def double_hinge_joint(
     filter: Filter,
     exp_id,
     motion_start,
     motion_stop,
-    sparse_segments: list[str] = ["seg3"],
+    delete_imus: list[str] = ["imu3"],
     rigid_imus: bool = True,
-    joint_axes_from_sys: bool = False,
     warmup: int = 500,
     plot: bool = False,
     render: bool = False,
     render_kwargs: dict = dict(),
     debug: bool = False,
+    ja: bool = True,
+    attitude: bool = False,
 ):
-    sys = exp.load_sys("S_06", morph_yaml_key="seg2", delete_after_morph="seg5")
+    sys = exp.load_sys(
+        exp_id, morph_yaml_key="seg2", delete_after_morph=["seg5"] + delete_imus
+    )
     return _double_triple_hinge_joint(
         sys,
         exp_id,
         motion_start,
         motion_stop,
-        sparse_segments,
         rigid_imus,
-        joint_axes_from_sys,
         filter,
         warmup,
         plot,
         render,
         render_kwargs,
         debug,
+        ja,
+        attitude,
     )
 
 
@@ -55,30 +55,33 @@ def triple_hinge_joint(
     exp_id,
     motion_start,
     motion_stop,
-    sparse_segments: list[str] = ["seg2", "seg3"],
+    delete_imus: list[str] = ["imu2", "imu3"],
     rigid_imus: bool = True,
-    joint_axes_from_sys: bool = False,
     warmup: int = 500,
     plot: bool = False,
     render: bool = False,
     render_kwargs: dict = dict(),
     debug: bool = False,
+    ja: bool = True,
+    attitude: bool = False,
 ):
-    sys = exp.load_sys("S_06", morph_yaml_key="seg5", delete_after_morph="seg1")
+    sys = exp.load_sys(
+        exp_id, morph_yaml_key="seg5", delete_after_morph=["seg1"] + delete_imus
+    )
     return _double_triple_hinge_joint(
         sys,
         exp_id,
         motion_start,
         motion_stop,
-        sparse_segments,
         rigid_imus,
-        joint_axes_from_sys,
         filter,
         warmup,
         plot,
         render,
         render_kwargs,
         debug,
+        ja,
+        attitude,
     )
 
 
@@ -87,43 +90,36 @@ def _double_triple_hinge_joint(
     exp_id,
     motion_start,
     motion_stop,
-    sparse_segments: list[str],
     rigid: bool,
-    from_sys: bool,
     filter: Filter,
     warmup: int,
     plot: bool,
     render: bool,
     render_kwargs: dict,
     debug: bool,
+    ja: bool,
+    attitude: bool,
 ) -> dict:
     debug_dict = dict()
 
-    sys = sys_composer.make_sys_noimu(sys)[0]
-
-    imu_key = "imu_rigid" if rigid else "imu_flex"
-
-    data = exp.load_data(exp_id, motion_start, motion_stop)
-
-    xml_str = exp.load_xml_str(exp_id)
-    xs = sim2real.xs_from_raw(sys, exp.link_name_pos_rot_data(data, xml_str), qinv=True)
-    X = x_xy.joint_axes(sys, xs, sys, from_sys=from_sys)
+    X, y, xs = ml.convenient.pipeline_load_data(
+        sys, exp_id, motion_start, motion_stop, not rigid, False, ja, attitude, False
+    )
+    yhat = filter.predict(X, sys_composer.make_sys_noimu(sys)[0])
 
     if debug:
-        debug_dict["X_joint_axes"] = utils.pytree_deepcopy(X)
+        print(f"_double_triple_hinge_joint: `y.keys()`={list(y.keys())}")
+        print(f"_double_triple_hinge_joint: `yhat.keys()`={list(yhat.keys())}")
 
-    for seg in X:
-        imu_data = data[seg][imu_key]
-        imu_data.pop("mag")
-        if seg in sparse_segments:
-            imu_data = tree_utils.tree_zeros_like(imu_data)
-        X[seg].update(imu_data)
+    if not attitude:
+        for name in yhat:
+            if name not in y:
+                yhat.pop(name)
 
-    y = x_xy.rel_pose(sys, xs)
-
-    yhat = filter.predict(X, sys)
-
-    key = f"{motion_start}->{str(motion_stop)}"
+    key = (
+        f"{motion_start}->{str(motion_stop)}_rigid_{int(rigid)}_ja_{int(ja)}_att_"
+        f"{int(attitude)}"
+    )
     results = dict()
     _results = {key: results}
     for seg in y:
@@ -133,11 +129,11 @@ def _double_triple_hinge_joint(
 
     if plot:
         path = x_xy.utils.parse_path(f"~/xxy_benchmark/{filter.name}/{key}.png")
-        _plot_3x3(path, y, yhat, results=results, dt=_dt)
+        _plot_3x3(path, y, yhat, results=results, dt=float(sys.dt))
 
     if render:
         path = x_xy.utils.parse_path(f"~/xxy_benchmark/{filter.name}/{key}.mp4")
-        _render(path, sys, xs, yhat, **render_kwargs)
+        _render(path, sys, xs, yhat, debug, **render_kwargs)
 
     if debug:
         return _results, debug_dict
@@ -145,49 +141,83 @@ def _double_triple_hinge_joint(
         return _results
 
 
-def _render(path, sys, xs, yhat, **kwargs):
-    # replace render color of geoms for render of predicted motion
-    prediction_color = (78 / 255, 163 / 255, 243 / 255, 1.0)
-    sys_newcolor = _geoms_replace_color(sys, prediction_color)
-    sys_render = sys_composer.inject_system(sys, sys_newcolor.add_prefix_suffix("hat_"))
+def _render(path, sys, xs, yhat, debug, **kwargs):
+    offset_truth = kwargs.pop("offset_truth", [0, 0, 0])
+    offset_pred = kwargs.pop("offset_pred", [0, 0, 0])
+    assert sys.dt == 0.01
+
+    sys_noimu = sys_composer.make_sys_noimu(sys)[0]
+    xs_noimu = sim2real.match_xs(sys_noimu, xs, sys)
+
+    seg_to_root = sys.link_names[sys.link_parents.index(-1)]
+    attitude = seg_to_root in yhat
+
+    if debug:
+        print(f"_render: `sys.link_parents`={sys.link_parents}")
+        print(f"_render: `sys.link_types`={sys.link_types}")
+        print(f"_render: `attitude`={attitude}")
+        print(f"_render: `seg_to_root`={seg_to_root}")
 
     # `yhat` are child-to-parent transforms, but we need parent-to-child
-    # this dictonary has now all links that don't connect to worldbody
     transform2hat_rot = jax.tree_map(lambda quat: maths.quat_inv(quat), yhat)
+    # well apart from the to_root connection that one was already parent-to-child
+    if attitude:
+        transform2hat_rot[seg_to_root] = maths.quat_inv(transform2hat_rot[seg_to_root])
 
-    transform1, transform2 = sim2real.unzip_xs(sys, xs)
+    transform1, transform2 = sim2real.unzip_xs(sys_noimu, xs_noimu)
 
-    # we add the missing links in transform2hat, links that connect to worldbody
+    # if not attitude:
+    #   we add the missing links in transform2hat, links that connect to worldbody
+    # if attitude:
+    #   we add the truth heading
     transform2hat = []
-    for i, name in enumerate(sys.link_names):
+    for i, name in enumerate(sys_noimu.link_names):
+        rot_truth = transform2.take(i, axis=1).rot
+
         if name in transform2hat_rot:
-            transform2_name = x_xy.Transform.create(rot=transform2hat_rot[name])
+            rot_hat = transform2hat_rot[name]
+            if name == seg_to_root:
+                rot_hat = maths.quat_transfer_heading(rot_truth, rot_hat)
+            rot_i = rot_hat
         else:
-            transform2_name = transform2.take(i, axis=1)
-        transform2hat.append(transform2_name)
+            rot_i = rot_truth
+        transform2hat.append(x_xy.Transform.create(rot=rot_i))
 
     # after transpose shape is (n_timesteps, n_links, ...)
     transform2hat = transform2hat[0].batch(*transform2hat[1:]).transpose((1, 0, 2))
 
-    xshat = sim2real.zip_xs(sys, transform1, transform2hat)
+    xshat_noimu = sim2real.zip_xs(sys_noimu, transform1, transform2hat)
+
+    add_offset = lambda x, offset: x_xy.transform_mul(
+        x, x_xy.Transform.create(pos=jnp.array(offset, dtype=jnp.float32))
+    )
 
     # swap time axis, and link axis
-    xs, xshat = xs.transpose((1, 0, 2)), xshat.transpose((1, 0, 2))
+    xs, xshat_noimu = xs.transpose((1, 0, 2)), xshat_noimu.transpose((1, 0, 2))
     # create mapping from `name` -> Transform
     xs_dict = dict(
         zip(
-            ["hat_" + name for name in sys.link_names],
-            [xshat[i] for i in range(sys.num_links())],
+            ["hat_" + name for name in sys_noimu.link_names],
+            [
+                add_offset(xshat_noimu[i], offset_pred)
+                for i in range(sys_noimu.num_links())
+            ],
         )
     )
+
     xs_dict.update(
         dict(
             zip(
                 sys.link_names,
-                [xs[i] for i in range(sys.num_links())],
+                [add_offset(xs[i], offset_truth) for i in range(sys.num_links())],
             )
         )
     )
+
+    # replace render color of geoms for render of predicted motion
+    prediction_color = (78 / 255, 163 / 255, 243 / 255, 1.0)
+    sys_newcolor = _geoms_replace_color(sys_noimu, prediction_color)
+    sys_render = sys_composer.inject_system(sys_newcolor.add_prefix_suffix("hat_"), sys)
 
     xs_render = []
     for name in sys_render.link_names:
@@ -197,10 +227,15 @@ def _render(path, sys, xs, yhat, **kwargs):
     xs_render = [xs_render[t] for t in range(xs_render.shape())]
 
     frames = x_xy.render(
-        sys_render, xs_render, camera="target", show_pbar=False, **kwargs
+        sys_render,
+        xs_render,
+        camera="target",
+        show_pbar=False,
+        render_every_nth=2,
+        **kwargs,
     )
 
-    mediapy.write_video(path, frames)
+    mediapy.write_video(path, frames, fps=50)
 
 
 def _geoms_replace_color(sys, color):

@@ -24,10 +24,13 @@ def _second_segment(chain: list[str], seg: str) -> str:
 
 
 @cache
-def _get_system(exp_id, seg):
+def _get_system(exp_id, seg, with_two_seg):
     sys_render = exp.load_sys(exp_id, morph_yaml_key=seg)
     chain = sys_render.findall_segments()
-    delete = list(set(chain) - set([seg, _second_segment(chain, seg)]))
+    remaining_segs = [seg]
+    if with_two_seg:
+        remaining_segs += [_second_segment(chain, seg)]
+    delete = list(set(chain) - set(remaining_segs))
     sys_render = sys_composer.delete_subsystem(sys_render, delete, strict=False)
     return sys_render
 
@@ -53,16 +56,18 @@ def attitude(
     flex=False,
     render: bool = False,
     warmup: int = 500,
+    with_two_seg: bool = False,
 ):
     mag = True
     if isinstance(filter, ml.InitApplyFnFilter):
         mag = False
 
-    sys = _get_system(exp_id, seg)
-    second_seg = sys.findall_segments()[1]
+    sys = _get_system(exp_id, seg, with_two_seg)
+    if with_two_seg:
+        second_seg = sys.findall_segments()[1]
+
     sys_noimu = sys_composer.make_sys_noimu(sys)[0]
-
-    X, y, _ = ml.convenient.pipeline_load_data(
+    X, y, xs_render = ml.convenient.pipeline_load_data(
         sys=sys,
         exp_id=exp_id,
         motion_start=motion_start,
@@ -73,28 +78,32 @@ def attitude(
         rootincl=False,
         rootfull=True,
     )
-    y.pop(second_seg)
+    sys_render = sys
 
-    sys_render = sys_composer.delete_subsystem(sys, second_seg)
-    *_, xs_render = ml.convenient.pipeline_load_data(
-        sys=sys,
-        exp_id=exp_id,
-        motion_start=motion_start,
-        motion_stop=motion_stop,
-        flex=flex,
-        mag=mag,
-        jointaxes=False,
-        rootincl=False,
-        rootfull=True,
-    )
-
-    X[second_seg] = tree_utils.tree_zeros_like(X[second_seg])
-    # let joint-axes just be a unit x-axis
-    X[second_seg]["joint_axes"] = X[second_seg]["joint_axes"].at[:, 0].set(1.0)
+    if with_two_seg:
+        y.pop(second_seg)
+        sys_render = sys_composer.delete_subsystem(sys, second_seg)
+        *_, xs_render = ml.convenient.pipeline_load_data(
+            sys=sys,
+            exp_id=exp_id,
+            motion_start=motion_start,
+            motion_stop=motion_stop,
+            flex=flex,
+            mag=mag,
+            jointaxes=False,
+            rootincl=False,
+            rootfull=True,
+        )
+        X[second_seg] = tree_utils.tree_zeros_like(X[second_seg])
+        # let joint-axes just be a unit x-axis
+        X[second_seg]["joint_axes"] = X[second_seg]["joint_axes"].at[:, 0].set(1.0)
 
     yhat = filter.predict(X, sys_noimu)
-    yhat.pop(second_seg)
 
+    if with_two_seg:
+        yhat.pop(second_seg)
+
+    # also projects away any incorrect heading
     yhat[seg] = x_xy.maths.quat_transfer_heading(y[seg], yhat[seg])
 
     errors = _error_fn(y, yhat, warmup)
