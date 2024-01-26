@@ -229,6 +229,7 @@ def _build_generator_lazy(
 
     noop = lambda gen: gen
     return GeneratorPipe(
+        GeneratorTrafoSetupFn(setup_fn) if setup_fn is not None else noop,
         GeneratorTrafoSetupFn(_init_joint_params) if randomize_joint_params else noop,
         GeneratorTrafoRandomizePositions() if randomize_positions else noop,
         GeneratorTrafoSetupFn(
@@ -244,7 +245,16 @@ def _build_generator_lazy(
         )
         if (imu_motion_artifacts and randomize_motion_artifacts)
         else noop,
-        GeneratorTrafoSetupFn(setup_fn) if setup_fn is not None else noop,
+        # all the generator trafors before this point execute in reverse order
+        # to see this, consider gen[0] and gen[1]
+        # the GeneratorPipe will unpack into the following:
+        # gen[1] will unfold into
+        # >>> sys = gen[1].setup_fn(sys)
+        # >>> return gen[0](sys)
+        # <-------------------- GENERATOR MIDDLE POINT ------------------------->
+        # all the generator trafos after this point execute in order
+        # >>> Xy, extras = gen[-2](*args)
+        # >>> return gen[-1].finalize_fn(extras)
         GeneratorTrafoDynamicalSimulation(**dynamic_simulation_kwargs)
         if dynamic_simulation
         else noop,
