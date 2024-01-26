@@ -95,11 +95,15 @@ def render(
     if xs is None:
         xs = forward_kinematics(sys, base.State.create(sys))[1].x
 
-    # convert time-axis of xs object into a list of unbatched elements
+    # convert time-axis of batched xs object into a list of unbatched x objects
     if isinstance(xs, base.Transform) and xs.ndim() == 3:
-        xs = [xs[t] for t in range(0, xs.shape(), render_every_nth)]
+        xs = [xs[t] for t in range(xs.shape())]
 
+    # ensure that a single unbatched x object is also a list
     xs = to_list(xs)
+
+    if render_every_nth != 1:
+        xs = [xs[t] for t in range(0, len(xs), render_every_nth)]
 
     n_links = sys.num_links()
 
