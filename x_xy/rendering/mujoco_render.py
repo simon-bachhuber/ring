@@ -89,7 +89,7 @@ def _build_model_of_geoms(
     <headlight ambient=".4 .4 .4" diffuse=".8 .8 .8" specular="0.1 0.1 0.1"/>
     <map znear=".01"/>
     <quality shadowsize="8192"/>
-    <global offwidth="1920" offheight="1080"/>
+    <global offwidth="3840" offheight="2160"/>
   </visual>
 
 <worldbody>
