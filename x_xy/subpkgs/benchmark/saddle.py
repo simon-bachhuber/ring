@@ -41,6 +41,7 @@ def saddle(
     ja_inner: list[float] = None,
     ja_outer: list[float] = None,
     model_as_1DOF: bool = False,
+    factory: bool = False,
 ):
     assert exp.load_arm_or_gait(exp_id) == "gait"
 
@@ -80,19 +81,31 @@ def saddle(
         X["aux"]["joint_axes"] = jnp.repeat(ja_inner[None], N, axis=0)
         X[outer]["joint_axes"] = jnp.repeat(ja_outer[None], N, axis=0)
 
-    yhat = filter.predict(X, sys_noimu)
+    filter.set_sys(sys_noimu)
 
-    if not model_as_1DOF:
-        q_outer_to_aux = yhat.pop(outer)
-        q_aux_to_seg5 = yhat.pop("aux")
-        yhat[outer] = x_xy.transform_mul(
-            x_xy.Transform.create(rot=q_aux_to_seg5),
-            x_xy.Transform.create(rot=q_outer_to_aux),
-        ).rot
+    def _params_to_errors_yhat(params):
+        yhat = filter.predict(X, sys=None, params=params)
 
-    yhat["seg5"] = x_xy.maths.quat_transfer_heading(y["seg5"], yhat["seg5"])
+        if not model_as_1DOF:
+            q_outer_to_aux = yhat.pop(outer)
+            q_aux_to_seg5 = yhat.pop("aux")
+            yhat[outer] = x_xy.transform_mul(
+                x_xy.Transform.create(rot=q_aux_to_seg5),
+                x_xy.Transform.create(rot=q_outer_to_aux),
+            ).rot
 
-    errors = _error_fn(y, yhat, warmup)
+        yhat["seg5"] = x_xy.maths.quat_transfer_heading(y["seg5"], yhat["seg5"])
+
+        errors = _error_fn(y, yhat, warmup)
+        if factory:
+            errors.pop("rmse_deg")
+            return errors
+        return errors, yhat
+
+    if factory:
+        return _params_to_errors_yhat
+
+    errors, yhat = _params_to_errors_yhat(filter.params)
 
     if render:
         yhat_render = x_xy.utils.pytree_deepcopy(yhat)
