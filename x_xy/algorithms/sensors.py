@@ -453,8 +453,8 @@ def _joint_axes_from_sys(sys: base.Transform, N: int) -> dict:
             joint_axes = id_to_axis[link_type[1]]
         elif link_type == "rr":
             joint_axes = joint_params["rr"]["joint_axes"]
-        elif link_type == "rr_imp":
-            joint_axes = joint_params["rr_imp"]["joint_axes"]
+        elif link_type[:6] == "rr_imp":
+            joint_axes = joint_params[link_type]["joint_axes"]
         else:
             joint_axes = xaxis
         X[name] = {"joint_axes": joint_axes}
