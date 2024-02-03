@@ -65,6 +65,7 @@ def build_generator(
     sizes: int | list[int] = 1,
     batchsize: Optional[int] = None,
     jit: bool = True,
+    zip_sys_config: bool = False,
     _compat: bool = False,
 ) -> Generator | GeneratorWithOutputExtras | None | list:
     """
@@ -126,9 +127,13 @@ def build_generator(
         sys_ml = sys[0]
 
     gens = []
-    for _sys in sys:
-        for _config in config:
+    if zip_sys_config:
+        for _sys, _config in zip(sys, config):
             gens.append(partial_build_gen(sys=_sys, config=_config, sys_ml=sys_ml))
+    else:
+        for _sys in sys:
+            for _config in config:
+                gens.append(partial_build_gen(sys=_sys, config=_config, sys_ml=sys_ml))
 
     if mode == "list" or mode == "hdf5":
         data = batch_generators_eager_to_list(gens, sizes, seed=seed, jit=jit)
