@@ -6,12 +6,21 @@ import qmt
 
 import x_xy
 from x_xy.subpkgs import ml
+from x_xy.subpkgs.ml.riann import RIANN
+
+
+def _riann_predict(gyr, acc, params: dict):
+    fs = 1 / params["Ts"]
+    riann = RIANN()
+    return riann.predict(acc, gyr, fs)
+
 
 _attitude_methods = {
     "vqf": ("VQFAttitude", qmt.oriEstVQF),
     "madgwick": ("MadgwickAttitude", qmt.oriEstMadgwick),
     "mahony": ("MahonyAttitude", qmt.oriEstMahony),
     "seel": ("SeelAttitude", qmt.oriEstIMU),
+    "riann": ("RIANN", _riann_predict),
 }
 
 
