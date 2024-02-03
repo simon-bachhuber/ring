@@ -284,6 +284,7 @@ def pipeline_load_data(
     jointaxes: bool,
     rootincl: bool,
     rootfull: bool,
+    dt: bool = False,
 ):
     imu_key = "imu_flex" if flex else "imu_rigid"
     sensors = ["acc", "gyr"]
@@ -323,6 +324,12 @@ def pipeline_load_data(
         X_joint_axes = {name: dict(joint_axes=zeros) for name in sys_noimu.link_names}
     X = x_xy.utils.dict_union(X, X_joint_axes)
 
+    if dt:
+        dt_float32 = jnp.array([[sys_noimu.dt]], dtype=jnp.float32)
+        repeated_dt = jnp.repeat(dt_float32, N, axis=0)
+        for segment in sys_noimu.link_names:
+            X[segment]["dt"] = repeated_dt
+
     y = x_xy.rel_pose(sys_noimu, xs, sys_xs)
     if rootincl:
         y_rootincl = x_xy.algorithms.sensors.root_incl(sys_noimu, xs, sys_xs)
@@ -344,6 +351,7 @@ def build_experimental_validation_callback2(
     flex: bool = False,
     mag: bool = False,
     rootincl: bool = False,
+    dt: bool = False,
     # (X,) -> X
     normalizer: Optional[Callable[[PyTree], PyTree]] = None,
     normalizer_names: Optional[list[str]] = None,
@@ -351,7 +359,16 @@ def build_experimental_validation_callback2(
     X_transform=None,
 ):
     X, y, _ = pipeline_load_data(
-        sys_with_imus, exp_id, motion_phase, None, flex, mag, jointaxes, rootincl, False
+        sys_with_imus,
+        exp_id,
+        motion_phase,
+        None,
+        flex,
+        mag,
+        jointaxes,
+        rootincl,
+        False,
+        dt=dt,
     )
 
     if natural_units:
@@ -388,12 +405,16 @@ def build_experimental_validation_callback2(
 
 
 def rescale_natural_units_X_transform(
-    X: dict[str, dict[str, jax.Array]], factor_gyr: float = 2.2, factor_ja: float = 0.57
+    X: dict[str, dict[str, jax.Array]],
+    factor_gyr: float = 2.2,
+    factor_ja: float = 0.57,
+    factor_dt: float = 10.0,
 ) -> dict:
     _rescale_natural_units_fns = defaultdict(lambda: (lambda arr: arr))
     _rescale_natural_units_fns["gyr"] = lambda gyr: gyr / factor_gyr
     _rescale_natural_units_fns["acc"] = lambda acc: acc / 9.81
     _rescale_natural_units_fns["joint_axes"] = lambda arr: arr / factor_ja
+    _rescale_natural_units_fns["dt"] = lambda arr: arr * factor_dt
 
     inner = lambda X: {
         key: _rescale_natural_units_fns[key](val) for key, val in X.items()
