@@ -552,6 +552,7 @@ class System(_Base):
         new_stif: Optional[jax.Array] = None,
         new_zero: Optional[jax.Array] = None,
     ):
+        "By default damping, stiffness are set to zero."
         q_size, qd_size = Q_WIDTHS[new_joint_type], QD_WIDTHS[new_joint_type]
 
         def logic_unfreeze_to_spherical(link_name, olt, ola, old, ols, olz):
@@ -581,6 +582,24 @@ class System(_Base):
     def findall_segments(self) -> list[str]:
         imus = self.findall_imus()
         return [name for name in self.link_names if name not in imus]
+
+    def _bodies_indices_to_bodies_name(self, bodies: list[int]) -> list[str]:
+        return [self.idx_to_name(i) for i in bodies]
+
+    def findall_bodies_to_world(self, names: bool = False) -> list[int] | list[str]:
+        bodies = [i for i, p in enumerate(self.link_parents) if p == -1]
+        return self._bodies_indices_to_bodies_name(bodies) if names else bodies
+
+    def find_body_to_world(self, name: bool = False) -> int | str:
+        bodies = self.findall_bodies_to_world(names=name)
+        assert len(bodies) == 1
+        return bodies[0]
+
+    def findall_bodies_with_jointtype(
+        self, typ: str, names: bool = False
+    ) -> list[int] | list[str]:
+        bodies = [i for i, _typ in enumerate(self.link_types) if _typ == typ]
+        return self._bodies_indices_to_bodies_name(bodies) if names else bodies
 
 
 def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
