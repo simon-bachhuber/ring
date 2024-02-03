@@ -9,7 +9,9 @@ from x_xy.algorithms.jcalc import _qd_from_q_cartesian
 
 
 def register_rr_imp_joint(
-    config_res=x_xy.RCMG_Config(dang_max=5.0, t_max=0.4), ang_max_deg: float = 7.5
+    config_res=x_xy.RCMG_Config(dang_max=5.0, t_max=0.4),
+    ang_max_deg: float = 7.5,
+    name: str = "rr_imp",
 ):
     def _rr_imp_transform(q, params):
         axis_pri, axis_res = params["joint_axes"], params["residual"]
@@ -45,7 +47,7 @@ def register_rr_imp_joint(
         init_joint_params=_draw_random_joint_axes,
     )
     x_xy.register_new_joint_type(
-        "rr_imp",
+        name,
         rr_imp_joint,
         2,
         2,
