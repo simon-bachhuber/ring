@@ -1,7 +1,7 @@
 from xml.etree import ElementTree
 
 import jax
-import jax.numpy as jnp
+import numpy as np
 
 from x_xy.utils import parse_path
 
@@ -84,7 +84,7 @@ def _convert_attrs_to_arrays(xml_tree):
                 array = [float(num) for num in v.split(" ")]
             except:  # noqa: E722
                 continue
-            subtree.attrib[k] = jnp.squeeze(jnp.array(array))
+            subtree.attrib[k] = np.squeeze(np.array(array))
 
 
 def _extract_geoms_from_body_xml(body, current_link_idx):
@@ -111,7 +111,7 @@ def _initial_setup(xml_tree):
     return worldbody
 
 
-DEFAULT_GRAVITY = jnp.array([0, 0, 9.81])
+DEFAULT_GRAVITY = np.array([0, 0, 9.81])
 DEFAULT_DT = 0.01
 
 
@@ -208,10 +208,10 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
 
     links = assert_order_then_to_list(links)
     links = links[0].batch(*links[1:])
-    dampings = jnp.concatenate(assert_order_then_to_list(dampings))
-    armatures = jnp.concatenate(assert_order_then_to_list(armatures))
-    spring_stiffnesses = jnp.concatenate(assert_order_then_to_list(spring_stiffnesses))
-    spring_zeropoints = jnp.concatenate(assert_order_then_to_list(spring_zeropoints))
+    dampings = np.concatenate(assert_order_then_to_list(dampings))
+    armatures = np.concatenate(assert_order_then_to_list(armatures))
+    spring_stiffnesses = np.concatenate(assert_order_then_to_list(spring_stiffnesses))
+    spring_zeropoints = np.concatenate(assert_order_then_to_list(spring_zeropoints))
 
     # add all geoms directly connected to worldbody
     flat_geoms = [geom for geoms in assert_order_then_to_list(geoms) for geom in geoms]
@@ -231,6 +231,10 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
         link_names=assert_order_then_to_list(link_names),
         model_name=model_name,
     )
+
+    # numpy -> jax
+    # we load using numpy in order to have float64 precision
+    sys = jax.tree_map(jax.numpy.asarray, sys)
 
     sys = _init_joint_params(jax.random.PRNGKey(seed), sys)
 

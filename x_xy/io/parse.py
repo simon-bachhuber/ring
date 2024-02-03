@@ -51,7 +51,7 @@ def parse_system(sys: base.System) -> base.System:
     sys = sys.replace(geoms=geoms)
 
     # round dt
-    sys = sys.replace(dt=round(sys.dt, 8))
+    # sys = sys.replace(dt=round(sys.dt, 8))
 
     # check sizes of damping / arma / stiff / zeropoint
     def check_dasz_unitq(_, __, name, typ, d, a, s, z):
