@@ -423,7 +423,11 @@ def rescale_natural_units_X_transform(
 
 
 def train_val_split(
-    tps: list[str], bs: int, n_batches_for_val: int = 1, transform_gen=None
+    tps: list[str],
+    bs: int,
+    n_batches_for_val: int = 1,
+    transform_gen=None,
+    tree_transform=None,
 ):
     "Uses `random` module for shuffeling."
     if transform_gen is None:
@@ -437,7 +441,9 @@ def train_val_split(
 
     train_data, val_data = include_samples[:-len_val], include_samples[-len_val:]
     X_val, y_val = transform_gen(
-        x_xy.batched_generator_from_paths(tps, len_val, val_data)[0]
+        x_xy.batched_generator_from_paths(
+            tps, len_val, val_data, tree_transform=tree_transform
+        )[0]
     )(jax.random.PRNGKey(420))
 
     generator = transform_gen(
@@ -446,6 +452,7 @@ def train_val_split(
             bs,
             train_data,
             load_all_into_memory=True,
+            tree_transform=tree_transform,
         )[0]
     )
 

@@ -83,7 +83,10 @@ def batch_generators_eager_to_list(
 
 
 def _data_fn_from_paths(
-    paths: list[str], include_samples: list[int] | None, load_all_into_memory: bool
+    paths: list[str],
+    include_samples: list[int] | None,
+    load_all_into_memory: bool,
+    tree_transform,
 ):
     "`data_fn` returns numpy arrays."
     # expanduser
@@ -96,7 +99,8 @@ def _data_fn_from_paths(
         N = sum([utils.hdf5_load_length(p) for p in paths])
 
         def data_fn(indices: list[int]):
-            return utils.hdf5_load_from_multiple(paths, indices)
+            tree = utils.hdf5_load_from_multiple(paths, indices)
+            return tree if tree_transform is None else tree_transform(tree)
 
     else:
         # TODO
@@ -106,6 +110,7 @@ def _data_fn_from_paths(
 
             def load_fn(path):
                 tree = utils.hdf5_load(path)
+                tree = tree if tree_transform is None else tree_transform(tree)
                 return [
                     jax.tree_map(lambda arr: arr[i], tree)
                     for i in range(tree_utils.tree_shape(tree))
@@ -166,12 +171,11 @@ def batched_generator_from_paths(
     include_samples: Optional[list[int]] = None,
     shuffle: bool = True,
     load_all_into_memory: bool = False,
+    tree_transform=None,
 ):
     "Returns: gen, where gen(key) -> Pytree[numpy]"
     data_fn, include_samples = _data_fn_from_paths(
-        paths,
-        include_samples,
-        load_all_into_memory,
+        paths, include_samples, load_all_into_memory, tree_transform
     )
 
     N = len(include_samples)
