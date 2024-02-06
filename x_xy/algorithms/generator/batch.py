@@ -5,6 +5,7 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from tqdm import tqdm
 import tree_utils
 from tree_utils import tree_batch
@@ -82,6 +83,17 @@ def batch_generators_eager_to_list(
     return data
 
 
+def _is_nan(ele: tree_utils.PyTree, i: int, verbose: bool = False):
+    isnan = np.any([np.any(np.isnan(arr)) for arr in jax.tree_util.tree_leaves(ele)])
+    if isnan:
+        X, y = ele
+        dt = X["dt"].flatten()[0]
+        if verbose:
+            print(f"Sample with idx={i} is nan. It will be replaced. (dt={dt})")
+        return True
+    return False
+
+
 def _data_fn_from_paths(
     paths: list[str],
     include_samples: list[int] | None,
@@ -89,14 +101,21 @@ def _data_fn_from_paths(
     tree_transform,
 ):
     "`data_fn` returns numpy arrays."
+
     # expanduser
     paths = [utils.parse_path(p, mkdir=False) for p in paths]
+
+    N = sum([utils.hdf5_load_length(p) for p in paths])
+    if include_samples is None:
+        include_samples = list(range(N))
+    else:
+        # safety copy; we shuffle it in the next function
+        include_samples = include_samples.copy()
 
     extensions = list(set([Path(p).suffix for p in paths]))
     assert len(extensions) == 1
 
     if extensions[0] == ".h5" and not load_all_into_memory:
-        N = sum([utils.hdf5_load_length(p) for p in paths])
 
         def data_fn(indices: list[int]):
             tree = utils.hdf5_load_from_multiple(paths, indices)
@@ -123,7 +142,14 @@ def _data_fn_from_paths(
         for p in paths:
             list_of_data += load_fn(p)
 
-        N = len(list_of_data)
+        for i, ele in enumerate(list_of_data):
+            if _is_nan(ele, i, verbose=True):
+                while True:
+                    j = random.choice(include_samples)
+                    if not _is_nan(list_of_data[j], j):
+                        break
+                list_of_data[i] = list_of_data[j]
+
         if include_samples is not None:
             list_of_data = [
                 ele if i in include_samples else None
@@ -132,12 +158,6 @@ def _data_fn_from_paths(
 
         def data_fn(indices: list[int]):
             return tree_batch([list_of_data[i] for i in indices], backend="numpy")
-
-    if include_samples is None:
-        include_samples = list(range(N))
-    else:
-        # safety copy; we shuffle it in the next function
-        include_samples = include_samples.copy()
 
     return data_fn, include_samples
 
