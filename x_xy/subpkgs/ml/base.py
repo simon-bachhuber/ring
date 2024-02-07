@@ -76,11 +76,10 @@ class InitApplyFnFilter(AbstractFilter):
     def _predict_3d(
         self, X: dict, sys: System | None, params: dict | None = None
     ) -> dict:
+
         if sys is not None:
-            assert self.init_apply_fn is None
-            init_apply_fn = self.init_apply_fn_factory(sys)
-        else:
-            init_apply_fn = self.init_apply_fn
+            self.set_sys(sys)
+        init_apply_fn = self.init_apply_fn
 
         if params is None:
             params, state = init_apply_fn.init(self.key, X)
