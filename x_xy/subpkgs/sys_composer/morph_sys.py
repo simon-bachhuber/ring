@@ -124,6 +124,9 @@ def morph_system(sys: base.System, new_parents: list[int | str]) -> base.System:
     return parse_system(morphed_system)
 
 
+jit_for_kin = jax.jit(x_xy.forward_kinematics)
+
+
 def _new_transform1(
     sys: base.System,
     permutation: list[int],
@@ -132,7 +135,7 @@ def _new_transform1(
     move_cs_one_up: bool = True,
     breakearly: Optional[int] = None,
 ):
-    x = jax.jit(x_xy.forward_kinematics)(sys, x_xy.State.create(sys))[1].x
+    x = jit_for_kin(sys, x_xy.State.create(sys))[1].x
 
     # move all coordinate system of links with new parents "one up"
     # such that they are on top of the parents CS
