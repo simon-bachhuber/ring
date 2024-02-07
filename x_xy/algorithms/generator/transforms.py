@@ -132,13 +132,15 @@ def _setup_fn_randomize_transform1_rot(
 
 
 class GeneratorTrafoJointAxisSensor(GeneratorTrafo):
-    def __init__(self, sys: base.System):
+    def __init__(self, sys: base.System, **kwargs):
         self.sys = sys
+        self.kwargs = kwargs
 
     def __call__(self, gen):
         def _gen(*args):
             (X, y), (key, q, x, sys_x) = gen(*args)
-            X_joint_axes = joint_axes(self.sys, x, sys_x)
+            key, consume = jax.random.split(key)
+            X_joint_axes = joint_axes(self.sys, x, sys_x, key=consume, **self.kwargs)
             X = dict_union(X, X_joint_axes)
             return (X, y), (key, q, x, sys_x)
 

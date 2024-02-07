@@ -47,6 +47,7 @@ def build_generator(
     add_X_imus: bool = False,
     add_X_imus_kwargs: Optional[dict] = None,
     add_X_jointaxes: bool = False,
+    add_X_jointaxes_kwargs: Optional[dict] = None,
     add_y_relpose: bool = False,
     add_y_rootincl: bool = False,
     sys_ml: Optional[base.System] = None,
@@ -79,6 +80,7 @@ def build_generator(
         add_X_imus=add_X_imus,
         add_X_imus_kwargs=add_X_imus_kwargs,
         add_X_jointaxes=add_X_jointaxes,
+        add_X_jointaxes_kwargs=add_X_jointaxes_kwargs,
         add_y_relpose=add_y_relpose,
         add_y_rootincl=add_y_rootincl,
         sys_ml=sys_ml,
@@ -161,6 +163,7 @@ def _build_generator_lazy(
     add_X_imus: bool,
     add_X_imus_kwargs: dict | None,
     add_X_jointaxes: bool,
+    add_X_jointaxes_kwargs: dict | None,
     add_y_relpose: bool,
     add_y_rootincl: bool,
     sys_ml: base.System | None,
@@ -187,6 +190,7 @@ def _build_generator_lazy(
     imu_motion_artifacts_kwargs = _copy_kwargs(imu_motion_artifacts_kwargs)
     dynamic_simulation_kwargs = _copy_kwargs(dynamic_simulation_kwargs)
     add_X_imus_kwargs = _copy_kwargs(add_X_imus_kwargs)
+    add_X_jointaxes_kwargs = _copy_kwargs(add_X_jointaxes_kwargs)
 
     # default kwargs values
     if "hide_injected_bodies" not in imu_motion_artifacts_kwargs:
@@ -237,19 +241,21 @@ def _build_generator_lazy(
         GeneratorTrafoSetupFn(setup_fn) if setup_fn is not None else noop,
         GeneratorTrafoSetupFn(_init_joint_params) if randomize_joint_params else noop,
         GeneratorTrafoRandomizePositions() if randomize_positions else noop,
-        GeneratorTrafoSetupFn(
-            motion_artifacts.setup_fn_randomize_damping_stiffness_factory(
-                prob_rigid=imu_motion_artifacts_kwargs.get("prob_rigid", 0.0),
-                all_imus_either_rigid_or_flex=imu_motion_artifacts_kwargs.get(
-                    "all_imus_either_rigid_or_flex", False
-                ),
-                imus_surely_rigid=imu_motion_artifacts_kwargs.get(
-                    "imus_surely_rigid", []
-                ),
+        (
+            GeneratorTrafoSetupFn(
+                motion_artifacts.setup_fn_randomize_damping_stiffness_factory(
+                    prob_rigid=imu_motion_artifacts_kwargs.get("prob_rigid", 0.0),
+                    all_imus_either_rigid_or_flex=imu_motion_artifacts_kwargs.get(
+                        "all_imus_either_rigid_or_flex", False
+                    ),
+                    imus_surely_rigid=imu_motion_artifacts_kwargs.get(
+                        "imus_surely_rigid", []
+                    ),
+                )
             )
-        )
-        if (imu_motion_artifacts and randomize_motion_artifacts)
-        else noop,
+            if (imu_motion_artifacts and randomize_motion_artifacts)
+            else noop
+        ),
         # all the generator trafors before this point execute in reverse order
         # to see this, consider gen[0] and gen[1]
         # the GeneratorPipe will unpack into the following:
@@ -260,24 +266,35 @@ def _build_generator_lazy(
         # all the generator trafos after this point execute in order
         # >>> Xy, extras = gen[-2](*args)
         # >>> return gen[-1].finalize_fn(extras)
-        GeneratorTrafoDynamicalSimulation(**dynamic_simulation_kwargs)
-        if dynamic_simulation
-        else noop,
-        motion_artifacts.GeneratorTrafoHideInjectedBodies()
-        if (
-            imu_motion_artifacts and imu_motion_artifacts_kwargs["hide_injected_bodies"]
-        )
-        else noop,
+        (
+            GeneratorTrafoDynamicalSimulation(**dynamic_simulation_kwargs)
+            if dynamic_simulation
+            else noop
+        ),
+        (
+            motion_artifacts.GeneratorTrafoHideInjectedBodies()
+            if (
+                imu_motion_artifacts
+                and imu_motion_artifacts_kwargs["hide_injected_bodies"]
+            )
+            else noop
+        ),
         GeneratorTrafoFinalizeFn(finalize_fn) if finalize_fn is not None else noop,
         GeneratorTrafoIMU(**add_X_imus_kwargs) if add_X_imus else noop,
-        GeneratorTrafoJointAxisSensor(sys_noimu) if add_X_jointaxes else noop,
+        (
+            GeneratorTrafoJointAxisSensor(sys_noimu, **add_X_jointaxes_kwargs)
+            if add_X_jointaxes
+            else noop
+        ),
         GeneratorTrafoRelPose(sys_noimu) if add_y_relpose else noop,
         GeneratorTrafoRootIncl(sys_noimu) if add_y_rootincl else noop,
         GeneratorTrafoRemoveInputExtras(sys),
         noop if keep_output_extras else GeneratorTrafoRemoveOutputExtras(),
-        GeneratorTrafoLambda(output_transform, input=False)
-        if output_transform is not None
-        else noop,
+        (
+            GeneratorTrafoLambda(output_transform, input=False)
+            if output_transform is not None
+            else noop
+        ),
     )(config)
 
 
