@@ -291,7 +291,9 @@ def pipeline_load_data(
     if mag:
         sensors += ["mag"]
 
-    exp_data = exp.load_data(exp_id, motion_start, motion_stop)
+    exp_data = exp.load_data(
+        exp_id, motion_start, motion_stop, resample_to_hz=1 / sys.dt
+    )
     sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys)
 
     xs = sim2real.xs_from_raw(

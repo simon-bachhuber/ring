@@ -42,6 +42,7 @@ def saddle(
     ja_outer: list[float] = None,
     model_as_1DOF: bool = False,
     factory: bool = False,
+    dt: bool = False,
 ):
     assert exp.load_arm_or_gait(exp_id) == "gait"
 
@@ -71,11 +72,16 @@ def saddle(
         jointaxes=False,
         rootincl=True,
         rootfull=False,
+        dt=dt,
     )
 
     if not model_as_1DOF:
         N = xs.shape()
         X["aux"] = tree_utils.tree_zeros_like(X[outer])
+
+        if dt:
+            X["aux"]["dt"] = X[outer]["dt"]
+
         ja_inner = jnp.zeros((3,)) if ja_inner is None else jnp.array(ja_inner)
         ja_outer = jnp.zeros((3,)) if ja_outer is None else jnp.array(ja_outer)
         X["aux"]["joint_axes"] = jnp.repeat(ja_inner[None], N, axis=0)

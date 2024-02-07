@@ -1,4 +1,5 @@
 from functools import cache
+from typing import Optional
 
 import jax
 import jax.numpy as jnp
@@ -57,12 +58,15 @@ def attitude(
     render: bool = False,
     warmup: int = 500,
     with_two_seg: bool = False,
+    resample_hz: Optional[float] = None,
 ):
     mag = True
     if isinstance(filter, ml.InitApplyFnFilter):
         mag = False
 
     sys = _get_system(exp_id, seg, with_two_seg)
+    if resample_hz is not None:
+        sys = sys.replace(dt=1 / resample_hz)
     if with_two_seg:
         second_seg = sys.findall_segments()[1]
 
@@ -77,6 +81,7 @@ def attitude(
         jointaxes=False,
         rootincl=False,
         rootfull=True,
+        dt=resample_hz is not None,
     )
     sys_render = sys
 
