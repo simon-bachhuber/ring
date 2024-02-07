@@ -417,7 +417,9 @@ class System(_Base):
     def name_to_idx(self, name: str) -> int:
         return self.link_names.index(name)
 
-    def idx_to_name(self, idx: int) -> str:
+    def idx_to_name(self, idx: int, allow_world: bool = False) -> str:
+        if allow_world and idx == -1:
+            return "world"
         assert idx >= 0, "Worldbody index has no name."
         return self.link_names[idx]
 
@@ -497,8 +499,9 @@ class System(_Base):
             link_type = self.link_types[i]
             if (p == -1 and link_type != "free") or (link_type == "free" and p != -1):
                 raise InvalidSystemError(
-                    f"link={self.idx_to_name(i)}, parent={self.idx_to_name(p)},"
-                    f" joint={link_type}"
+                    f"link={self.idx_to_name(i)}, parent="
+                    f"{self.idx_to_name(p, allow_world=True)},"
+                    f" joint={link_type}. Hint: Try setting `config.cor` to false."
                 )
 
         def logic_replace_free_with_cor(name, olt, ola, old, ols, olz):
