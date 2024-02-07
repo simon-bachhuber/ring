@@ -377,10 +377,15 @@ def joint_axes(
     key: Optional[jax.Array] = None,
     noisy: bool = False,
     from_sys: bool = False,
+    randomly_flip: bool = False,
 ):
     """
     The joint-axes to world is always zeros.
     """
+    if key is None:
+        assert not noisy
+        assert not randomly_flip
+
     N = xs.shape(axis=0)
 
     if from_sys:
@@ -389,7 +394,6 @@ def joint_axes(
         X = _joint_axes_from_xs(sys, xs, sys_xs)
 
     if noisy:
-        assert key is not None
         for name in X:
             key, c1, c2 = jax.random.split(key, 3)
             bias = maths.quat_random(c1, maxval=jnp.deg2rad(5.0))
@@ -401,6 +405,13 @@ def joint_axes(
     for name, p in zip(sys.link_names, sys.link_parents):
         if p == -1:
             X[name]["joint_axes"] = jnp.zeros((N, 3))
+        else:
+            if randomly_flip:
+                key, consume = jax.random.split(key)
+                X[name]["joint_axes"] = (
+                    jax.random.choice(consume, jnp.array([1.0, -1.0]))
+                    * X[name]["joint_axes"]
+                )
 
     return X
 
