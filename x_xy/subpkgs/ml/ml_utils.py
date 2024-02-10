@@ -1,6 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 from abc import abstractstaticmethod
+from functools import partial
 import logging
 import os
 from pathlib import Path
@@ -11,7 +12,6 @@ from typing import Optional, Union
 import webbrowser
 
 import jax
-import neptune
 import numpy as np
 from tree_utils import PyTree
 from tree_utils import tree_batch
@@ -20,6 +20,7 @@ import wandb
 import x_xy
 from x_xy.io import load_sys_from_str
 from x_xy.utils import download_from_repo
+from x_xy.utils import import_lib
 
 suffix = ".pickle"
 
@@ -246,6 +247,8 @@ class NeptuneLogger(MultimediaLogger):
         if name is None:
             name = os.environ.get("NEPTUNE_NAME", None)
 
+        neptune = import_lib("neptune")
+
         self.run = neptune.init_run(
             name=name,
             project=project,
@@ -420,3 +423,45 @@ def make_non_social_version(make_social_version, kwargs: dict):
         return yhat[_DUMMY_BODY_NAME], state
 
     return SimpleNamespace(init=non_social_init, apply=non_social_apply)
+
+
+def save_model_tf(jax_func, path: str, *input, validate: bool = True):
+    from jax.experimental import jax2tf
+
+    tf = import_lib("tensorflow", "the function `save_model_tf`")
+
+    def _create_module(jax_func, input):
+        signature = jax.tree_map(
+            lambda arr: tf.TensorSpec(list(arr.shape), tf.float32), input
+        )
+
+        class RingTFModule(tf.Module):
+            def __init__(self, jax_func):
+                super().__init__()
+                self.tf_func = jax2tf.convert(jax_func, with_gradient=False)
+
+            @partial(
+                tf.function,
+                autograph=False,
+                jit_compile=True,
+                input_signature=signature,
+            )
+            def __call__(self, *args):
+                return self.tf_func(*args)
+
+        return RingTFModule(jax_func)
+
+    model = _create_module(jax_func, input)
+    tf.saved_model.save(
+        model,
+        path,
+        options=tf.saved_model.SaveOptions(experimental_custom_gradients=False),
+    )
+    if validate:
+        output_jax = jax_func(*input)
+        output_tf = tf.saved_model.load(path)(*input)
+        jax.tree_map(
+            lambda a1, a2: np.allclose(a1, a2, atol=1e-5, rtol=1e-5),
+            output_jax,
+            output_tf,
+        )
