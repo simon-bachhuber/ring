@@ -10,6 +10,7 @@ from . import motion_artifacts
 from ... import base
 from ...scan import scan_sys
 from ...utils import hdf5_save
+from ...utils import pickle_save
 from ...utils import to_list
 from ..jcalc import _init_joint_params
 from ..jcalc import _joint_types
@@ -61,7 +62,7 @@ def build_generator(
     output_transform: Optional[Callable] = None,
     keep_output_extras: bool = False,
     mode: str = "lazy",
-    hdf5_filepath: Optional[str] = None,
+    filepath: Optional[str] = None,
     seed: Optional[int] = None,
     sizes: int | list[int] = 1,
     batchsize: Optional[int] = None,
@@ -101,23 +102,27 @@ def build_generator(
 
     if mode == "lazy":
         assert seed is None
-        assert hdf5_filepath is None
+        assert filepath is None
         assert batchsize is None, "Use `sizes` instead to provide the sizes per batch."
     elif mode == "eager":
         assert seed is not None
-        assert hdf5_filepath is None
+        assert filepath is None
         assert batchsize is not None
     elif mode == "list":
         assert seed is not None
-        assert hdf5_filepath is None
+        assert filepath is None
         assert batchsize is None
     elif mode == "hdf5":
         assert seed is not None
-        assert hdf5_filepath is not None
+        assert filepath is not None
+        assert batchsize is None
+    elif mode == "pickle":
+        assert seed is not None
+        assert filepath is not None
         assert batchsize is None
     else:
         raise NotImplementedError(
-            "`mode` must be one of `lazy`, `eager`, `list`, `hdf5`"
+            "`mode` must be one of `lazy`, `eager`, `list`, `hdf5`, `pickle`"
         )
 
     sys, config = to_list(sys), to_list(config)
@@ -137,14 +142,16 @@ def build_generator(
             for _config in config:
                 gens.append(partial_build_gen(sys=_sys, config=_config, sys_ml=sys_ml))
 
-    if mode == "list" or mode == "hdf5":
+    if mode in ["list", "hdf5", "pickle"]:
         data = batch_generators_eager_to_list(gens, sizes, seed=seed, jit=jit)
-        if mode == "hdf5":
-            data = tree_utils.tree_batch(data)
-            hdf5_save(hdf5_filepath, data, overwrite=True)
-            return
-        else:
+        if mode == "list":
             return data
+        data = tree_utils.tree_batch(data)
+        if mode == "hdf5":
+            hdf5_save(filepath, data, overwrite=True)
+        else:
+            pickle_save(data, filepath, overwrite=True)
+        return
     elif mode == "eager":
         return batch_generators_eager(gens, sizes, batchsize, seed=seed, jit=jit)
     else:

@@ -1,5 +1,7 @@
+from importlib import import_module as _import_module
 import io
 from pathlib import Path
+import pickle
 import shutil
 from typing import Optional
 
@@ -10,6 +12,8 @@ import wget
 
 from x_xy.base import _Base
 from x_xy.base import Geometry
+
+from .path import parse_path
 
 
 def tree_equal(a, b):
@@ -141,8 +145,8 @@ def save_figure_to_rgba(fig) -> np.ndarray:
 
 
 def pytree_deepcopy(tree):
-    "Recursivley copies a pytree with numpy/jax array leafs."
-    if isinstance(tree, jax.Array):
+    "Recursivley copies a pytree."
+    if isinstance(tree, (int, float, jax.Array)):
         return tree
     elif isinstance(tree, np.ndarray):
         return tree.copy()
@@ -154,3 +158,37 @@ def pytree_deepcopy(tree):
         return {key: pytree_deepcopy(value) for key, value in tree.items()}
     else:
         raise NotImplementedError(f"Not implemented for type={type(tree)}")
+
+
+def import_lib(
+    lib: str,
+    required_for: Optional[str] = None,
+    lib_pypi: Optional[str] = None,
+):
+    try:
+        return _import_module(lib)
+    except ImportError:
+        _required = ""
+        if required_for is not None:
+            _required = f" but it is required for {required_for}"
+        if lib_pypi is None:
+            lib_pypi = lib
+        print(
+            f"Could not import `{lib}`{_required}. "
+            f"Please install with `pip install {lib_pypi}`"
+        )
+
+
+def pickle_save(obj, path, overwrite: bool = False):
+    path = parse_path(path, extension="pickle", file_exists_ok=overwrite)
+    with open(path, "wb") as file:
+        pickle.dump(obj, file, protocol=5)
+
+
+def pickle_load(
+    path,
+):
+    path = parse_path(path, extension="pickle", require_is_file=True)
+    with open(path, "rb") as file:
+        obj = pickle.load(file)
+    return obj
