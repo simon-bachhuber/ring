@@ -1,3 +1,5 @@
+from typing import Optional
+
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -22,13 +24,14 @@ def double_hinge_joint(
     motion_stop,
     delete_imus: list[str] = ["imu3"],
     rigid_imus: bool = True,
-    warmup: int = 500,
+    warmup: float = 5.0,
     plot: bool = False,
     render: bool = False,
     render_kwargs: dict = dict(),
     debug: bool = False,
     ja: bool = True,
     attitude: bool = False,
+    resample_hz: Optional[float] = None,
 ):
     sys = exp.load_sys(
         exp_id, morph_yaml_key="seg2", delete_after_morph=["seg5"] + delete_imus
@@ -47,6 +50,7 @@ def double_hinge_joint(
         debug,
         ja,
         attitude,
+        resample_hz=resample_hz,
     )
 
 
@@ -57,13 +61,14 @@ def triple_hinge_joint(
     motion_stop,
     delete_imus: list[str] = ["imu2", "imu3"],
     rigid_imus: bool = True,
-    warmup: int = 500,
+    warmup: float = 5.0,
     plot: bool = False,
     render: bool = False,
     render_kwargs: dict = dict(),
     debug: bool = False,
     ja: bool = True,
     attitude: bool = False,
+    resample_hz: Optional[float] = None,
 ):
     sys = exp.load_sys(
         exp_id, morph_yaml_key="seg5", delete_after_morph=["seg1"] + delete_imus
@@ -82,6 +87,7 @@ def triple_hinge_joint(
         debug,
         ja,
         attitude,
+        resample_hz,
     )
 
 
@@ -92,18 +98,31 @@ def _double_triple_hinge_joint(
     motion_stop,
     rigid: bool,
     filter: Filter,
-    warmup: int,
+    warmup: float,
     plot: bool,
     render: bool,
     render_kwargs: dict,
     debug: bool,
     ja: bool,
     attitude: bool,
+    resample_hz: float | None,
 ) -> dict:
     debug_dict = dict()
 
+    if resample_hz is not None:
+        sys = sys.replace(dt=1 / resample_hz)
+
     X, y, xs = ml.convenient.pipeline_load_data(
-        sys, exp_id, motion_start, motion_stop, not rigid, False, ja, attitude, False
+        sys,
+        exp_id,
+        motion_start,
+        motion_stop,
+        not rigid,
+        False,
+        ja,
+        attitude,
+        False,
+        dt=resample_hz is not None,
     )
     yhat = filter.predict(X, sys_composer.make_sys_noimu(sys)[0])
 
@@ -112,7 +131,7 @@ def _double_triple_hinge_joint(
         print(f"_double_triple_hinge_joint: `yhat.keys()`={list(yhat.keys())}")
 
     if not attitude:
-        for name in yhat:
+        for name in list(yhat.keys()):
             if name not in y:
                 yhat.pop(name)
 
@@ -122,6 +141,8 @@ def _double_triple_hinge_joint(
     )
     results = dict()
     _results = {key: results}
+    # convert warmup time to number of timesteps
+    warmup = int(warmup / sys.dt)
     for seg in y:
         results[f"mae_deg_{seg}"] = jnp.mean(
             jnp.rad2deg(maths.angle_error(y[seg], yhat[seg]))[warmup:]
