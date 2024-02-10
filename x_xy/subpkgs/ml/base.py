@@ -74,26 +74,37 @@ class InitApplyFnFilter(AbstractFilter):
         self.X_transform = X_transform
 
     def _predict_3d(
-        self, X: dict, sys: System | None, params: dict | None = None
+        self,
+        X: dict,
+        sys: System | None,
+        params: dict | None = None,
+        state: dict | None = None,
     ) -> dict:
 
         if sys is not None:
             self.set_sys(sys)
-        init_apply_fn = self.init_apply_fn
 
-        if params is None:
-            params, state = init_apply_fn.init(self.key, X)
-            params = params if self.params is None else self.params
+        if (params is None and self.params is None) or (state is None):
+            _params, _state = self.init_apply_fn.init(self.key, X)
+
+        if params is not None:
+            pass
+        elif self.params is not None:
+            params = self.params
         else:
-            _, state = init_apply_fn.init(self.key, X)
+            params = _params
 
-        bs = tree_utils.tree_shape(X)
-        state = jax.tree_map(lambda arr: jnp.repeat(arr[None], bs, axis=0), state)
+        if state is not None:
+            pass
+        else:
+            state = _state
+            bs = tree_utils.tree_shape(X)
+            state = jax.tree_map(lambda arr: jnp.repeat(arr[None], bs, axis=0), state)
 
         if self.X_transform is not None:
             X = self.X_transform(X)
 
-        yhat = init_apply_fn.apply(params, state, X)[0]
+        yhat = self.init_apply_fn.apply(params, state, X)[0]
 
         if self.lpf is not None:
             yhat = jax.tree_map(
@@ -107,6 +118,11 @@ class InitApplyFnFilter(AbstractFilter):
 
     def set_sys(self, sys):
         self.init_apply_fn = self.init_apply_fn_factory(sys)
+
+    def get_state(self, X, bs: int):
+        _, state = self.init_apply_fn.init(self.key, X)
+        state = jax.tree_map(lambda arr: jnp.repeat(arr[None], bs, axis=0), state)
+        return state
 
     @staticmethod
     def _load_params(params: str | tree_utils.PyTree | None):
