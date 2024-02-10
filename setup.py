@@ -27,14 +27,6 @@ def find_data_files(package_dir, patterns, excludes=()):
     return list(paths)
 
 
-# TODO: replace joblib with pickle
-subpkg_ml_requires = ["wandb", "neptune", "optax", "dm-haiku", "joblib"]
-subpkg_omc_requires = ["qmt", "pandas", "scipy"]
-# TODO: qmt and scipy is due to exp.py importing omc/utils.py
-subpkg_exp_requires = ["pyyaml", "joblib"] + ["qmt", "scipy"]
-subpkg_bench_requires = subpkg_exp_requires + ["matplotlib", "mediapy"]
-mujoco_render_requires = ["mujoco"]
-vispy_render_requires = ["vispy", "pyqt6"]
 dev_requires = [
     "mkdocs",
     "mkdocs-material",
@@ -52,7 +44,7 @@ dev_requires = [
 setuptools.setup(
     name="x_xy",
     packages=setuptools.find_packages(),
-    version="0.11.23",
+    version="0.11.24",
     package_data={
         "x_xy": find_data_files(
             # parameters and datasets are now downloaded on-demand
@@ -73,26 +65,13 @@ setuptools.setup(
         "wget",
         "h5py",
         "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
+        "wandb",
+        "optax",
+        "dm-haiku",
+        "joblib",
     ],
     extras_require={
-        "ml": subpkg_ml_requires,
-        "omc": subpkg_omc_requires,
-        "exp": subpkg_exp_requires,
-        "bench": subpkg_bench_requires,
-        "muj": mujoco_render_requires,
-        "vis": vispy_render_requires,
         "dev": dev_requires,
-        "all_muj": subpkg_ml_requires
-        + subpkg_omc_requires
-        + subpkg_exp_requires
-        + subpkg_bench_requires
-        + mujoco_render_requires,
-        "all": subpkg_ml_requires
-        + subpkg_omc_requires
-        + subpkg_exp_requires
-        + subpkg_bench_requires
-        + mujoco_render_requires
-        + vispy_render_requires,
     },
     # leave this comment in incase we need to knwo the syntax again in the future
     # entry_points={"console_scripts": ["xxy-render = x_xy.cli.render:main"]},
