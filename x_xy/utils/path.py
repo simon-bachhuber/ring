@@ -10,6 +10,7 @@ def parse_path(
     extension: Optional[str] = None,
     file_exists_ok: bool = True,
     mkdir: bool = True,
+    require_is_file: bool = False,
 ) -> str:
     path = Path(os.path.expanduser(path))
 
@@ -36,5 +37,8 @@ def parse_path(
 
     if mkdir:
         path.parent.mkdir(parents=True, exist_ok=True)
+
+    if require_is_file:
+        assert path.is_file(), f"Not a file: {path}"
 
     return str(path)
