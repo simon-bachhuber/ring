@@ -112,6 +112,7 @@ class LogMetrices(TrainingLoopCallback):
         grads: list[dict],
         sample_eval: dict,
         loggers: list[Logger],
+        opt_state,
     ) -> None:
         metrices.update(
             {
