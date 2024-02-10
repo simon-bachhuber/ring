@@ -413,6 +413,16 @@ _dummy_sys_xml_str = f"""
 def make_non_social_version(make_social_version, kwargs: dict):
     kwargs["sys"] = load_sys_from_str(_dummy_sys_xml_str)
     kwargs["keep_toRoot_output"] = True
+
+    output_transform = kwargs["link_output_transform"]
+    if output_transform is not None:
+
+        def _wrapped_transform(y):
+            y_pytree = output_transform(y)
+            return {0: y_pytree}
+
+        kwargs["link_output_transform"] = _wrapped_transform
+
     dummy_rnno = make_social_version(**kwargs)
 
     def non_social_init(key, X):
