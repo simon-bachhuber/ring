@@ -9,6 +9,7 @@ from .. import algebra
 from .. import base
 from .. import maths
 from ..algorithms import forward_kinematics
+from ..utils import import_lib
 from ..utils import to_list
 
 _rgbas = {
@@ -65,16 +66,18 @@ def render(
         list[np.ndarray]: Stacked rendered frames. Length == len(xs).
     """
     if backend == "mujoco":
+        import_lib("mujoco")
         from x_xy.rendering.mujoco_render import MujocoScene
 
         scene = MujocoScene(**scene_kwargs)
     elif backend == "vispy":
-        import vispy
+        vispy = import_lib("vispy")
 
         if "vispy_backend" in scene_kwargs:
             vispy_backend = scene_kwargs.pop("vispy_backend")
         else:
             vispy_backend = "pyqt6"
+
         vispy.use(vispy_backend)
 
         from x_xy.rendering.vispy_render import VispyScene
