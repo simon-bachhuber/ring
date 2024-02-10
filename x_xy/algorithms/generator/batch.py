@@ -94,6 +94,22 @@ def _is_nan(ele: tree_utils.PyTree, i: int, verbose: bool = False):
     return False
 
 
+def _replace_elements_w_nans(list_of_data: list, include_samples: list[int]) -> list:
+    list_of_data_nonan = []
+    for i, ele in enumerate(list_of_data):
+        if _is_nan(ele, i, verbose=True):
+            while True:
+                j = random.choice(include_samples)
+                if not _is_nan(list_of_data[j], j):
+                    ele = list_of_data[j]
+                    break
+        list_of_data_nonan.append(ele)
+    return list_of_data_nonan
+
+
+_list_of_data = None
+
+
 def _data_fn_from_paths(
     paths: list[str],
     include_samples: list[int] | None,
@@ -101,19 +117,16 @@ def _data_fn_from_paths(
     tree_transform,
 ):
     "`data_fn` returns numpy arrays."
+    global _list_of_data
 
     # expanduser
     paths = [utils.parse_path(p, mkdir=False) for p in paths]
 
-    N = sum([utils.hdf5_load_length(p) for p in paths])
-    if include_samples is None:
-        include_samples = list(range(N))
-    else:
-        # safety copy; we shuffle it in the next function
-        include_samples = include_samples.copy()
-
     extensions = list(set([Path(p).suffix for p in paths]))
     assert len(extensions) == 1
+
+    if extensions[0] == ".h5":
+        N = sum([utils.hdf5_load_length(p) for p in paths])
 
     if extensions[0] == ".h5" and not load_all_into_memory:
 
@@ -122,33 +135,28 @@ def _data_fn_from_paths(
             return tree if tree_transform is None else tree_transform(tree)
 
     else:
-        # TODO
-        from x_xy.subpkgs import ml
 
         if extensions[0] == ".h5":
-
-            def load_fn(path):
-                tree = utils.hdf5_load(path)
-                tree = tree if tree_transform is None else tree_transform(tree)
-                return [
-                    jax.tree_map(lambda arr: arr[i], tree)
-                    for i in range(tree_utils.tree_shape(tree))
-                ]
-
+            load_from_path = utils.hdf5_load
         else:
-            load_fn = ml.load
+            load_from_path = utils.pickle_load
 
-        list_of_data = []
-        for p in paths:
-            list_of_data += load_fn(p)
+        def load_fn(path):
+            tree = load_from_path(path)
+            tree = tree if tree_transform is None else tree_transform(tree)
+            return [
+                jax.tree_map(lambda arr: arr[i], tree)
+                for i in range(tree_utils.tree_shape(tree))
+            ]
 
-        for i, ele in enumerate(list_of_data):
-            if _is_nan(ele, i, verbose=True):
-                while True:
-                    j = random.choice(include_samples)
-                    if not _is_nan(list_of_data[j], j):
-                        break
-                list_of_data[i] = list_of_data[j]
+        if _list_of_data is None:
+            _list_of_data = []
+            for p in paths:
+                _list_of_data += load_fn(p)
+
+        N = len(_list_of_data)
+
+        list_of_data = _replace_elements_w_nans(_list_of_data, include_samples)
 
         if include_samples is not None:
             list_of_data = [
@@ -159,7 +167,10 @@ def _data_fn_from_paths(
         def data_fn(indices: list[int]):
             return tree_batch([list_of_data[i] for i in indices], backend="numpy")
 
-    return data_fn, include_samples
+    if include_samples is None:
+        include_samples = list(range(N))
+
+    return data_fn, include_samples.copy()
 
 
 def _generator_from_data_fn(
@@ -168,6 +179,9 @@ def _generator_from_data_fn(
     shuffle: bool,
     batchsize: int,
 ):
+    # such that we don't mutate out of scope
+    include_samples = include_samples.copy()
+
     N = len(include_samples)
     n_batches, i = N // batchsize, 0
 
