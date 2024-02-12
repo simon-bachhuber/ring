@@ -22,7 +22,7 @@ def double_hinge_joint(
     exp_id,
     motion_start,
     motion_stop,
-    delete_imus: list[str] = ["imu3"],
+    delete_inner_imus: bool = True,
     rigid_imus: bool = True,
     warmup: float = 5.0,
     plot: bool = False,
@@ -32,10 +32,22 @@ def double_hinge_joint(
     ja: bool = True,
     attitude: bool = False,
     resample_hz: Optional[float] = None,
+    jointaxes: str = "yz",
 ):
-    sys = exp.load_sys(
-        exp_id, morph_yaml_key="seg2", delete_after_morph=["seg5"] + delete_imus
-    )
+    assert jointaxes in ["xy", "yz"]
+
+    if jointaxes == "yz":
+        delete = ["seg5"]
+        morph_yaml_key = "seg2"
+        if delete_inner_imus:
+            delete += ["imu3"]
+    else:
+        delete = ["seg1", "seg4"]
+        morph_yaml_key = "seg5"
+        if delete_inner_imus:
+            delete += ["imu2"]
+
+    sys = exp.load_sys(exp_id, morph_yaml_key=morph_yaml_key, delete_after_morph=delete)
     return _double_triple_hinge_joint(
         sys,
         exp_id,
