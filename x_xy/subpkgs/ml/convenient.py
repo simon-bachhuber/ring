@@ -285,6 +285,7 @@ def pipeline_load_data(
     rootincl: bool,
     rootfull: bool,
     dt: bool = False,
+    jointaxes_field: bool = True,
 ):
     imu_key = "imu_flex" if flex else "imu_rigid"
     sensors = ["acc", "gyr"]
@@ -316,15 +317,18 @@ def pipeline_load_data(
         else:
             X[segment] = {sensor: zeros for sensor in sensors}
 
-    if jointaxes:
-        X_joint_axes = x_xy.joint_axes(sys_noimu, xs, sys_xs)
-        # set all jointaxes to root to zero
-        for name, parent in zip(sys_noimu.link_names, sys_noimu.link_parents):
-            if parent == -1:
-                X_joint_axes[name]["joint_axes"] = zeros
-    else:
-        X_joint_axes = {name: dict(joint_axes=zeros) for name in sys_noimu.link_names}
-    X = x_xy.utils.dict_union(X, X_joint_axes)
+    if jointaxes_field:
+        if jointaxes:
+            X_joint_axes = x_xy.joint_axes(sys_noimu, xs, sys_xs)
+            # set all jointaxes to root to zero
+            for name, parent in zip(sys_noimu.link_names, sys_noimu.link_parents):
+                if parent == -1:
+                    X_joint_axes[name]["joint_axes"] = zeros
+        else:
+            X_joint_axes = {
+                name: dict(joint_axes=zeros) for name in sys_noimu.link_names
+            }
+        X = x_xy.utils.dict_union(X, X_joint_axes)
 
     if dt:
         dt_float32 = jnp.array([[sys_noimu.dt]], dtype=jnp.float32)
