@@ -1,13 +1,13 @@
 from abc import ABC
 from abc import abstractmethod
 from abc import abstractstaticmethod
+from collections import namedtuple
 from functools import partial
 import logging
 import os
 from pathlib import Path
 import pickle
 import time
-from types import SimpleNamespace
 from typing import Optional, Union
 import webbrowser
 
@@ -400,6 +400,9 @@ def unique_id() -> str:
     return x_xy._UNIQUE_ID
 
 
+InitApplyFnPair = namedtuple("InitApplyFnPair", ["init", "apply"])
+
+
 _DUMMY_BODY_NAME = "global"
 _dummy_sys_xml_str = f"""
 <x_xy model="free">
@@ -432,7 +435,7 @@ def make_non_social_version(make_social_version, kwargs: dict):
         yhat, state = dummy_rnno.apply(params, state, {_DUMMY_BODY_NAME: X})
         return yhat[_DUMMY_BODY_NAME], state
 
-    return SimpleNamespace(init=non_social_init, apply=non_social_apply)
+    return InitApplyFnPair(init=non_social_init, apply=non_social_apply)
 
 
 def save_model_tf(jax_func, path: str, *input, validate: bool = True):
@@ -475,3 +478,16 @@ def save_model_tf(jax_func, path: str, *input, validate: bool = True):
             output_jax,
             output_tf,
         )
+
+
+def model_wrapper_indices_to_names(
+    init_apply_pair: InitApplyFnPair, link_names: list[str]
+) -> InitApplyFnPair:
+    def apply(params, state, *args):
+        out, state = init_apply_pair.apply(params, state, *args)
+        out_names = dict()
+        for key, val in out.items():
+            out_names[link_names[key]] = val
+        return out_names, state
+
+    return InitApplyFnPair(init=init_apply_pair.init, apply=apply)

@@ -8,6 +8,7 @@ from .ml_utils import disable_syncing_to_cloud
 from .ml_utils import list_pretrained
 from .ml_utils import load
 from .ml_utils import MockMultimediaLogger
+from .ml_utils import model_wrapper_indices_to_names
 from .ml_utils import MultimediaLogger
 from .ml_utils import n_params
 from .ml_utils import NeptuneLogger
@@ -17,4 +18,6 @@ from .ml_utils import unique_id
 from .ml_utils import WandbLogger
 from .optimizer import make_optimizer
 from .rnno import make_rnno
+from .rnno_v1 import complexities as complexities_rnno_v1
+from .rnno_v1 import make_rnno_v1
 from .train import train
