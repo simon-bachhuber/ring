@@ -52,8 +52,12 @@ def load_1Seg2Seg3Seg4Seg_system(
         and anchor_2Seg is None
         and anchor_1Seg is None
     )
-    load = lambda *args: exp.load_sys(
-        "S_06", None, *args, replace_rxyz="rr_imp" if use_rr_imp else None
+    load = lambda anchor, delete: exp.load_sys(
+        "S_06",
+        None,
+        anchor,
+        tuple(delete),
+        replace_rxyz="rr_imp" if use_rr_imp else None,
     )
 
     sys = []
