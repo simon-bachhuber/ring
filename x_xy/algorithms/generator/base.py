@@ -98,6 +98,7 @@ def build_generator(
     )
 
     if _compat:
+        assert mode == "lazy"
         return partial_build_gen(sys=sys, config=config, sys_ml=sys_ml)
 
     if mode == "lazy":
@@ -190,6 +191,7 @@ def _build_generator_lazy(
 
     # re-enable old finalize_fn logic such that all tests can still work
     if _compat:
+        assert finalize_fn is None
 
         def finalize_fn(key, q, x, sys):
             return q, x
