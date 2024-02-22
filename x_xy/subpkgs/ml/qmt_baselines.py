@@ -5,7 +5,9 @@ import numpy as np
 import qmt
 
 import x_xy
+from x_xy.algorithms import sensors
 from x_xy.subpkgs import ml
+from x_xy.subpkgs import sim2real
 from x_xy.subpkgs.ml.riann import RIANN
 
 
@@ -128,11 +130,11 @@ class TwoSeg1D(ml.AbstractFilter2d):
         return yhat
 
 
-class NSeg3D_9DVQF(ml.AbstractFilter2d):
+class VQF_9D(ml.AbstractFilter2d):
     def __init__(
         self,
         name: str,
-        chain: list[str],
+        Ts: float = 0.01,
         lpf_glo: Optional[float] = None,
         lpf_rel: Optional[float] = None,
     ):
@@ -143,39 +145,32 @@ class NSeg3D_9DVQF(ml.AbstractFilter2d):
             chain (list[str]): Name of segments that make up chain.
         """
         self._name = name
-        self.chain = chain
+        self.Ts = Ts
         self.lpf_glo, self.lpf_rel = lpf_glo, lpf_rel
 
-    def _predict_2d(self, X, sys):
-        del sys
-
-        # VQF
+    def _predict_2d(self, X, sys, y: dict | None):
         quats = dict()
         for name, imu_data in X.items():
             quats[name] = qmt.oriEstVQF(
-                imu_data["gyr"], imu_data["acc"], imu_data["mag"], params=dict(Ts=0.01)
+                imu_data["gyr"],
+                imu_data["acc"],
+                imu_data["mag"],
+                params=dict(Ts=self.Ts),
             )
 
         # NOTE CONVENTION !!
         quats = {name: qmt.qinv(quats[name]) for name in quats}
 
         quats = _maybe_lowpassfilter_quats(quats, self.lpf_glo)
+        # self.transfer_ground_truth_heading(sys, y, quats)
+        quats = x_xy.utils.dict_to_nested(quats, "quat")
 
-        yhat = dict()
-
-        # relative pose
-        for i in range(1, len(self.chain)):
-            first, second = self.chain[i - 1], self.chain[i]
-            # tibia to femur
-            yhat[second] = x_xy.maths.quat_mul(
-                quats[first], x_xy.maths.quat_inv(quats[second])
-            )
-
-        # global aspect
-        yhat[self.chain[0]] = quats[self.chain[0]]
+        xs = sim2real.xs_from_raw(sys, quats, qinv=False)
+        yhat = sensors.rel_pose(sys, xs)
+        yhat = x_xy.utils.dict_union(yhat, sensors.root_full(sys, xs, sys))
 
         yhat = _maybe_lowpassfilter_quats(yhat, self.lpf_rel)
-
+        self.transfer_ground_truth_heading(sys, y, yhat)
         return yhat
 
 
