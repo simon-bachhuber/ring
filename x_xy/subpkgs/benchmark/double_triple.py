@@ -47,7 +47,9 @@ def double_hinge_joint(
         if delete_inner_imus:
             delete += ["imu2"]
 
-    sys = exp.load_sys(exp_id, morph_yaml_key=morph_yaml_key, delete_after_morph=delete)
+    sys = exp.load_sys(
+        exp_id, morph_yaml_key=morph_yaml_key, delete_after_morph=tuple(delete)
+    )
     return _double_triple_hinge_joint(
         sys,
         exp_id,
@@ -83,7 +85,7 @@ def triple_hinge_joint(
     resample_hz: Optional[float] = None,
 ):
     sys = exp.load_sys(
-        exp_id, morph_yaml_key="seg5", delete_after_morph=["seg1"] + delete_imus
+        exp_id, morph_yaml_key="seg5", delete_after_morph=tuple(["seg1"] + delete_imus)
     )
     return _double_triple_hinge_joint(
         sys,
@@ -130,13 +132,13 @@ def _double_triple_hinge_joint(
         motion_start,
         motion_stop,
         not rigid,
-        False,
-        ja,
-        attitude,
-        False,
+        mag=True,
+        jointaxes=ja,
+        rootincl=False,
+        rootfull=True,
         dt=resample_hz is not None,
     )
-    yhat = filter.predict(X, sys_composer.make_sys_noimu(sys)[0])
+    yhat = filter.predict(X, sys_composer.make_sys_noimu(sys)[0], y=y)
 
     if debug:
         print(f"_double_triple_hinge_joint: `y.keys()`={list(y.keys())}")
@@ -156,9 +158,9 @@ def _double_triple_hinge_joint(
     # convert warmup time to number of timesteps
     warmup = int(warmup / sys.dt)
     for seg in y:
-        results[f"mae_deg_{seg}"] = jnp.mean(
-            jnp.rad2deg(maths.angle_error(y[seg], yhat[seg]))[warmup:]
-        )
+        timeseries_of_ae = jnp.rad2deg(maths.angle_error(y[seg], yhat[seg]))[warmup:]
+        results[f"mae_deg_{seg}"] = jnp.mean(timeseries_of_ae)
+        results[f"std_deg_{seg}"] = jnp.std(timeseries_of_ae)
 
     if plot:
         path = x_xy.utils.parse_path(f"~/xxy_benchmark/{filter.name}/{key}.png")
@@ -171,7 +173,7 @@ def _double_triple_hinge_joint(
     if debug:
         return _results, debug_dict
     else:
-        return _results
+        return _results, (X, y, yhat)
 
 
 def _render(path, sys, xs, yhat, debug, **kwargs):
