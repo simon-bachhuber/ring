@@ -22,7 +22,7 @@ def make_rnno_v1(
     layernorm=True,
     act_fn_linear=jax.nn.relu,
     act_fn_rnn=jax.nn.elu,
-) -> dict[int, jax.Array]:
+) -> InitApplyFnPair:
     """RNN-neural net.
     (bs, time, features)
     """
