@@ -1,3 +1,4 @@
+from functools import cache
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -81,11 +82,12 @@ def load_xml_str(exp_id: str) -> str:
     return _load_xml(_relative_to_this_file(_id2xml[exp_id]))
 
 
+@cache
 def load_sys(
     exp_id: str,
     preprocess_sys: Optional[Callable] = None,
     morph_yaml_key: Optional[str] = None,
-    delete_after_morph: Optional[list[str]] = None,
+    delete_after_morph: Optional[tuple[str]] = None,
     replace_rxyz: Optional[str] = None,
 ) -> x_xy.base.System:
     xml_path = _relative_to_this_file(_id2xml[exp_id])
@@ -112,11 +114,12 @@ def load_sys(
             sys = sys_composer.morph_system(sys, new_parents)
 
     if delete_after_morph is not None:
-        sys = sys_composer.delete_subsystem(sys, delete_after_morph)
+        sys = sys_composer.delete_subsystem(sys, list(delete_after_morph))
 
     return sys
 
 
+@cache
 def load_data(
     exp_id: str,
     motion_start: Optional[str] = None,

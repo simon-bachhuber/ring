@@ -51,7 +51,9 @@ def saddle(
         "right": (["seg1", "seg3"], "seg2"),
     }[left_or_right]
 
-    sys_exp = exp.load_sys(exp_id, morph_yaml_key="seg5", delete_after_morph=delete)
+    sys_exp = exp.load_sys(
+        exp_id, morph_yaml_key="seg5", delete_after_morph=tuple(delete)
+    )
 
     if not model_as_1DOF:
         sys_noimu = x_xy.load_sys_from_str(_sys).change_link_name("outer", outer)
