@@ -39,6 +39,15 @@ class AbstractFilter(ABC):
             raise RuntimeError("No `name` was given.")
         return self._name
 
+    @staticmethod
+    def transfer_ground_truth_heading(sys: x_xy.System, y: dict, yhat: dict) -> None:
+        if y is None or sys is None:
+            return
+
+        for name, parent in zip(sys.link_names, sys.link_parents):
+            if parent == -1:
+                yhat[name] = x_xy.maths.quat_transfer_heading(y[name], yhat[name])
+
 
 class AbstractFilter2d(AbstractFilter):
     "Same as `AbstractFilter` but have to define `_predict_2d`"
@@ -64,6 +73,7 @@ class InitApplyFnFilter(AbstractFilter):
         key: jax.Array = jax.random.PRNGKey(1),
         lpf: Optional[float] = None,
         X_transform=None,
+        jit: bool = False,
     ):
         self._name = name
         self.key = key
@@ -73,12 +83,16 @@ class InitApplyFnFilter(AbstractFilter):
         self.lpf = lpf
         self.X_transform = X_transform
 
+        if jit:
+            self._predict_3d = jax.jit(self._predict_3d)
+
     def _predict_3d(
         self,
         X: dict,
         sys: System | None,
         params: dict | None = None,
         state: dict | None = None,
+        y: dict | None = None,
     ) -> dict:
 
         if sys is not None:
@@ -113,6 +127,8 @@ class InitApplyFnFilter(AbstractFilter):
                 ),
                 yhat,
             )
+
+        self.transfer_ground_truth_heading(sys, y, yhat)
 
         return yhat
 
