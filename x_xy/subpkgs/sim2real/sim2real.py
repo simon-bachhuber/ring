@@ -55,13 +55,11 @@ def xs_from_raw(
     xs = []
 
     def f(_, __, link_name: str):
-        q, pos = (
-            link_name_pos_rot[link_name]["quat"],
-            link_name_pos_rot[link_name]["pos"],
-        )
+        q = link_name_pos_rot[link_name]["quat"]
+        pos = link_name_pos_rot[link_name].get("pos", None)
         if qinv:
             q = x_xy.maths.quat_inv(q)
-        t = x_xy.base.Transform(pos, q)
+        t = x_xy.base.Transform.create(pos, q)
         t = x_xy.algebra.transform_mul(t, x_xy.algebra.transform_inv(t_eps))
         xs.append(t)
 
