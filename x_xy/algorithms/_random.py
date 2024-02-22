@@ -166,7 +166,7 @@ def random_position_over_time(
             & (x <= _to_float(pos_max, t_pre))
         )
         break_if_true2 = i > max_it
-        return ~(break_if_true1 | break_if_true2)
+        return jnp.logical_not(break_if_true1 | break_if_true2)
 
     def body_fn_outer(val):
         i, t, t_pre, x, x_pre, key, POS = val
@@ -306,7 +306,7 @@ def _resolve_range_of_motion(
         # delta is in bounds
         break_if_true1 = (delta_phi >= delta_ang_min) & (delta_phi <= delta_ang_max)
         break_if_true2 = i > max_iter
-        return (i == 0) | (~(break_if_true1 | break_if_true2))
+        return (i == 0) | (jnp.logical_not(break_if_true1 | break_if_true2))
 
     # the `prev_phi` here is unused
     return jax.lax.while_loop(cond_fn, body_fn, (key, prev_phi, 0))[1]
