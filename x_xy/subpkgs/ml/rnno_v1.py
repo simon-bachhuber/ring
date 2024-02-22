@@ -1,3 +1,5 @@
+from typing import Optional
+
 import haiku as hk
 import jax
 import jax.numpy as jnp
@@ -22,13 +24,16 @@ def make_rnno_v1(
     layernorm=True,
     act_fn_linear=jax.nn.relu,
     act_fn_rnn=jax.nn.elu,
+    out_dim: Optional[int] = None,
+    out_normalize: bool = True,
 ) -> InitApplyFnPair:
     """RNN-neural net.
     (bs, time, features)
     """
 
     bodies = [i for i, p in enumerate(lam) if p != -1 or keep_toRoot_output]
-    N = len(bodies)
+    if out_dim is None:
+        out_dim = len(bodies) * 4
 
     @hk.without_apply_rng
     @hk.transform_with_state
@@ -53,13 +58,17 @@ def make_rnno_v1(
 
             X = act_fn_linear(X)
 
-        out_dim = N * 4
         X = hk.Linear(out_dim)(X)
 
         X_dict = dict()
         start = 0
         for i in bodies:
-            X_dict[i] = jax.vmap(jax.vmap(safe_normalize))(X[:, :, start : (start + 4)])
+            if out_normalize:
+                X_dict[i] = jax.vmap(jax.vmap(safe_normalize))(
+                    X[:, :, start : (start + 4)]
+                )
+            else:
+                X_dict[i] = X[:, :, start : (start + 4)]
             start += 4
         return X_dict
 

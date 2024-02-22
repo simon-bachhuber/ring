@@ -417,7 +417,7 @@ def make_non_social_version(make_social_version, kwargs: dict):
     kwargs["sys"] = load_sys_from_str(_dummy_sys_xml_str)
     kwargs["keep_toRoot_output"] = True
 
-    output_transform = kwargs["link_output_transform"]
+    output_transform = kwargs.get("link_output_transform", None)
     if output_transform is not None:
 
         def _wrapped_transform(y):
