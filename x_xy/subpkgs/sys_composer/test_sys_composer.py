@@ -8,6 +8,7 @@ from x_xy.subpkgs.sys_composer import delete_subsystem
 from x_xy.subpkgs.sys_composer import identify_system
 from x_xy.subpkgs.sys_composer import inject_system
 from x_xy.subpkgs.sys_composer import morph_system
+from x_xy.subpkgs.sys_composer.morph_sys import _autodetermine_new_parents
 from x_xy.utils import sys_compare
 from x_xy.utils import tree_equal
 
@@ -173,3 +174,51 @@ def test_morph_four_seg():
         sys_seg1, ["seg2", "seg3", -1, "seg3", "seg4", "seg1"]
     ).change_model_name(sys_seg3.model_name)
     assert sys_compare(sys_seg3, sys_seg3_from_seg1)
+
+
+def test_autodetermine_new_parents():
+    # arm.xml
+    lam_arm = [-1, 0, 0, 2, 2, 4, 4, 6, 6, 8]
+    solutions_arm = {
+        0: lam_arm,
+        1: [1, -1, 0, 2, 2, 4, 4, 6, 6, 8],
+        2: [2, 0, -1, 2, 2, 4, 4, 6, 6, 8],
+        4: [2, 0, 4, 2, -1, 4, 4, 6, 6, 8],
+        6: [2, 0, 4, 2, 6, 4, -1, 6, 6, 8],
+        8: [2, 0, 4, 2, 6, 4, 8, 6, -1, 8],
+    }
+    # gait.xml
+    lam_gait = [-1, 0, 0, 2, 2, 4, 4, 6, 6, 8]
+    solutions_gait = {
+        0: lam_gait,
+        2: [2, 0, -1, 2, 2, 4, 4, 6, 6, 8],
+        4: [2, 0, 4, 2, -1, 4, 4, 6, 6, 8],
+        6: [2, 0, 4, 2, 6, 4, -1, 6, 6, 8],
+        8: [2, 0, 4, 2, 6, 4, 8, 6, -1, 8],
+    }
+
+    for lam, sol in zip([lam_arm, lam_gait], [solutions_arm, solutions_gait]):
+        for anchor in sol:
+            assert _autodetermine_new_parents(lam, anchor) == sol[anchor]
+
+
+def test_morph_new_anchor():
+    sys = exp.load_sys("S_06")
+    sys_compare(
+        morph_system(
+            sys,
+            new_parents=[
+                "seg5",
+                "seg1",
+                "seg2",
+                "seg5",
+                -1,
+                "seg2",
+                "seg2",
+                "seg3",
+                "seg3",
+                "seg4",
+            ],
+        ),
+        morph_system(sys, new_anchor="seg2"),
+    )

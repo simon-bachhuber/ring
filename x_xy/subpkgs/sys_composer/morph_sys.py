@@ -11,6 +11,25 @@ from x_xy import scan_sys
 from x_xy.io import parse_system
 
 
+def _autodetermine_new_parents(lam: list[int], new_anchor: int) -> list[int]:
+    "Automatically determines new parent array given a new anchor body."
+
+    new_lam = {new_anchor: -1}
+
+    def _connections(body: int, exclude: int | None) -> None:
+        for i in range(len(lam)):
+            if exclude is not None and i == exclude:
+                continue
+
+            if lam[i] == body or lam[body] == i:
+                assert i not in new_lam
+                new_lam[i] = body
+                _connections(i, exclude=body)
+
+    _connections(new_anchor, exclude=None)
+    return [new_lam[i] for i in range(len(lam))]
+
+
 def _new_to_old_indices(new_parents: list[int]) -> list[int]:
     # aka permutation
     # permutation maps from new index to the old index, so e.g. at index position 0
@@ -92,7 +111,11 @@ def identify_system(
     )
 
 
-def morph_system(sys: base.System, new_parents: list[int | str]) -> base.System:
+def morph_system(
+    sys: base.System,
+    new_parents: Optional[list[int | str]] = None,
+    new_anchor: Optional[int | str] = None,
+) -> base.System:
     """Re-orders the graph underlying the system. Returns a new system.
 
     Args:
@@ -105,6 +128,15 @@ def morph_system(sys: base.System, new_parents: list[int | str]) -> base.System:
     Returns:
         base.System: Modified system.
     """
+
+    assert not (new_parents is None and new_anchor is None)
+    assert not (new_parents is not None and new_anchor is not None)
+
+    if new_anchor is not None:
+        if isinstance(new_anchor, str):
+            new_anchor = sys.name_to_idx(new_anchor)
+        new_parents = _autodetermine_new_parents(sys.link_parents, new_anchor)
+
     assert len(new_parents) == sys.num_links()
 
     structure, permutation, new_parent_array = identify_system(sys, new_parents)
@@ -197,6 +229,7 @@ def morph_system(sys: base.System, new_parents: list[int | str]) -> base.System:
         mass_mat_iters=sys.mass_mat_iters,
         link_names=_permute(sys.link_names),
         model_name=sys.model_name,
+        omc=_permute(sys.omc),
     )
 
     return parse_system(morphed_system)
