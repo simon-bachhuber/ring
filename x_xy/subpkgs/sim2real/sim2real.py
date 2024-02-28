@@ -9,7 +9,6 @@ from x_xy import build_generator
 from x_xy import load_sys_from_str
 from x_xy import maths
 from x_xy import RCMG_Config
-from x_xy import scan_sys
 from x_xy import System
 from x_xy import Transform
 from x_xy.algorithms.jcalc import _joint_types
@@ -63,7 +62,7 @@ def xs_from_raw(
         t = x_xy.algebra.transform_mul(t, x_xy.algebra.transform_inv(t_eps))
         xs.append(t)
 
-    scan_sys(sys, f, "l", sys.link_names)
+    sys.scan(f, "l", sys.link_names)
 
     # stack and permute such that time-axis is 0-th axis
     xs = xs[0].batch(*xs[1:])
@@ -126,7 +125,7 @@ def unzip_xs(sys: System, xs: Transform) -> Tuple[Transform, Transform]:
             transform2_rot = Transform.create(rot=x_parent_to_link.rot)
             return (transform1_pos, transform2_rot)
 
-        return scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_parents)
+        return sys.scan(f, "ll", list(range(sys.num_links())), sys.link_parents)
 
     return _unzip_xs(xs)
 
@@ -158,7 +157,7 @@ def zip_xs(
             eps_to_l[i] = algebra.transform_mul(transform, eps_to_l[p])
             return eps_to_l[i]
 
-        return scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_parents)
+        return sys.scan(f, "ll", list(range(sys.num_links())), sys.link_parents)
 
     return _zip_xs(xs_transform1, xs_transform2)
 
@@ -269,7 +268,7 @@ def scale_xs(
                 x_link = _scale_transform_based_on_type(x_link, type, factor)
             return x_link
 
-        return scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_types)
+        return sys.scan(f, "ll", list(range(sys.num_links())), sys.link_types)
 
     return _scale_xs(xs)
 
@@ -301,8 +300,7 @@ def project_xs(sys: System, transform2: Transform) -> Transform:
                 )
             return project_transform_to_feasible(t, joint_params)
 
-        return scan_sys(
-            sys,
+        return sys.scan(
             f,
             "lll",
             list(range(sys.num_links())),

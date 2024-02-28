@@ -1,4 +1,89 @@
+from collections import defaultdict
+
+import jax
+import numpy as np
+
 import x_xy
+
+
+def load_ant():
+    return x_xy.System(
+        [-1, 0, 1, 0, 3, 0, 5, 0, 7],
+        [],
+        ["free"] + 8 * ["rx"],
+        None,
+        None,
+        None,
+        None,
+        0.01,
+        False,
+        [[]],
+    )
+
+
+def test_tree():
+    sys = load_ant()
+
+    @jax.jit
+    def forward(sys):
+        qs, qds = [], []
+
+        sum_of_link_idxs = defaultdict(lambda: 0.0)
+
+        def f(_, __, parent, link, q, qd):
+            sum_of_link_idxs[link] = sum_of_link_idxs[parent] + link
+            qs.append(q)
+            qds.append(qd)
+            return sum_of_link_idxs[link]
+
+        x = sys.scan(
+            f,
+            "llqd",
+            sys.link_parents,
+            np.arange(sys.num_links()),
+            np.arange(sys.q_size()),
+            np.arange(sys.qd_size()),
+            reverse=False,
+        )
+        return x, qs, qds
+
+    x, qs, qds = forward(sys)
+    np.testing.assert_array_equal(x, np.array([0, 1, 3, 3, 7, 5, 11, 7, 15]))
+    np.testing.assert_array_equal(qs[0], np.array(list(range(7))))
+    np.testing.assert_array_equal(qs[1], np.array(list(range(7, 8))))
+    np.testing.assert_array_equal(qds[0], np.array(list(range(6))))
+    np.testing.assert_array_equal(qds[1], np.array(list(range(6, 7))))
+
+    @jax.jit
+    def reverse(sys):
+        qs, qds = [], []
+
+        sum_of_link_idxs = defaultdict(lambda: 0.0)
+
+        def f(_, __, parent, link, q, qd):
+            sum_of_link_idxs[link] = sum_of_link_idxs[link] + link
+            sum_of_link_idxs[parent] = sum_of_link_idxs[parent] + sum_of_link_idxs[link]
+            qs.append(q)
+            qds.append(qd)
+            return sum_of_link_idxs[link]
+
+        x = sys.scan(
+            f,
+            "llqd",
+            sys.link_parents,
+            np.arange(sys.num_links()),
+            np.arange(sys.q_size()),
+            np.arange(sys.qd_size()),
+            reverse=True,
+        )
+        return x, qs, qds
+
+    x, qs, qds = reverse(sys)
+    np.testing.assert_array_equal(x, np.array([36, 3, 2, 7, 4, 11, 6, 15, 8]))
+    np.testing.assert_array_equal(qs[-1], np.array(list(range(7))))
+    np.testing.assert_array_equal(qs[-2], np.array(list(range(7, 8))))
+    np.testing.assert_array_equal(qds[-1], np.array(list(range(6))))
+    np.testing.assert_array_equal(qds[-2], np.array(list(range(6, 7))))
 
 
 def test_sys_idx_map():

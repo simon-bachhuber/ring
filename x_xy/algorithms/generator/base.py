@@ -8,7 +8,6 @@ import tree_utils
 
 from . import motion_artifacts
 from ... import base
-from ...scan import scan_sys
 from ...utils import hdf5_save
 from ...utils import pickle_save
 from ...utils import to_list
@@ -338,7 +337,7 @@ def _generator_with_extras(
             q_list.append(q_link)
             return key
 
-        keys = scan_sys(sys, draw_q, "ll", sys.link_types, sys.links)
+        keys = sys.scan(draw_q, "ll", sys.link_types, sys.links)
         # stack of keys; only the last key is unused
         key = keys[-1]
 

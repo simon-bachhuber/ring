@@ -5,7 +5,6 @@ import jax.numpy as jnp
 
 from ... import base
 from ... import maths
-from ...scan import scan_sys
 from ...utils import dict_union
 from ..sensors import imu as imu_fn
 from ..sensors import joint_axes
@@ -313,8 +312,8 @@ class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
                 f"`{name}` of type `{link_type}`."
                 p_gains_list.append(p_gain_this_link)
 
-            scan_sys(
-                sys_q_ref, build_q_ref, "ll", sys_q_ref.link_names, sys_q_ref.link_types
+            sys_q_ref.scan(
+                build_q_ref, "ll", sys_q_ref.link_names, sys_q_ref.link_types
             )
             q_ref, p_gains_array = jnp.concatenate(q_ref).T, jnp.concatenate(
                 p_gains_list

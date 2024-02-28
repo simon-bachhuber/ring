@@ -4,7 +4,6 @@ import jax.numpy as jnp
 import tree_utils
 
 import x_xy
-from x_xy import scan_sys
 from x_xy.io import parse_system
 
 from ... import base
@@ -57,8 +56,7 @@ def delete_subsystem(
             ss.append(stiff)
             sz.append(zero)
 
-    scan_sys(
-        sys,
+    sys.scan(
         filter_arrays,
         "dddql",
         sys.link_damping,

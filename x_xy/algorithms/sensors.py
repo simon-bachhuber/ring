@@ -9,7 +9,6 @@ from x_xy import maths
 
 from .. import base
 from ..io import load_sys_from_str
-from ..scan import scan_sys
 from .dynamics import step
 
 
@@ -282,7 +281,7 @@ def rescale_natural_units(X: dict[str, jax.Array]):
 
 
 def rel_pose(
-    sys_scan: base.System, xs: base.Transform, sys_xs: Optional[base.System] = None
+    sys: base.System, xs: base.Transform, sys_xs: Optional[base.System] = None
 ) -> dict:
     """Relative pose of the entire system. `sys_scan` defines the parent-child ordering,
     relative pose is from child to parent in local coordinates. Bodies that connect
@@ -297,7 +296,7 @@ def rel_pose(
         dict: Child-to-parent quaternions
     """
     if sys_xs is None:
-        sys_xs = sys_scan
+        sys_xs = sys
 
     if xs.pos.ndim == 3:
         # swap (n_timesteps, n_links) axes
@@ -314,7 +313,7 @@ def rel_pose(
         if p == -1:
             return
 
-        name_p = sys_scan.idx_to_name(p)
+        name_p = sys.idx_to_name(p)
 
         # find the transforms of those named bodies
         i = sys_xs.name_to_idx(name_i)
@@ -325,9 +324,7 @@ def rel_pose(
 
         y[name_i] = qrel(q1, q2)
 
-    scan_sys(
-        sys_scan, pose_child_to_parent, "ll", sys_scan.link_names, sys_scan.link_parents
-    )
+    sys.scan(pose_child_to_parent, "ll", sys.link_names, sys.link_parents)
 
     return y
 
@@ -346,7 +343,7 @@ def root_incl(
             return
         y[name] = maths.quat_project(rots[l_map[name]], jnp.array([0.0, 0, 1]))[1]
 
-    scan_sys(sys, f, "ll", sys.link_names, sys.link_parents)
+    sys.scan(f, "ll", sys.link_names, sys.link_parents)
 
     return y
 
@@ -365,7 +362,7 @@ def root_full(
             return
         y[name] = rots[l_map[name]]
 
-    scan_sys(sys, f, "ll", sys.link_names, sys.link_parents)
+    sys.scan(f, "ll", sys.link_names, sys.link_parents)
 
     return y
 
@@ -470,7 +467,7 @@ def _joint_axes_from_sys(sys: base.Transform, N: int) -> dict:
             joint_axes = xaxis
         X[name] = {"joint_axes": joint_axes}
 
-    scan_sys(sys, f, "lll", sys.link_names, sys.link_types, sys.links)
+    sys.scan(f, "lll", sys.link_names, sys.link_types, sys.links)
     X = jax.tree_map(lambda arr: jnp.repeat(arr[None], N, axis=0), X)
     return X
 

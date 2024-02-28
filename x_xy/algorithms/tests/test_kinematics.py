@@ -106,5 +106,5 @@ def _preprocess_q(sys, q: jax.Array) -> jax.Array:
             raise NotImplementedError
         q_preproc.append(new_q)
 
-    x_xy.scan_sys(sys, preprocess, "lq", sys.link_types, q)
+    sys.scan(preprocess, "lq", sys.link_types, q)
     return jnp.concatenate(q_preproc)

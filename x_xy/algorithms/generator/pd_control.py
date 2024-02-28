@@ -6,7 +6,6 @@ import jax
 import jax.numpy as jnp
 
 from ... import base
-from ...scan import scan_sys
 from ..dynamics import step as dynamics_step
 from ..jcalc import _joint_types
 
@@ -72,8 +71,7 @@ def _pd_control(P: jax.Array, D: Optional[jax.Array] = None):
                 qd_ref_as_dict[name] = qd_from_q(q_ref_link, sys.dt)
                 D_as_dict[name] = D_link
 
-        scan_sys(
-            sys,
+        sys.scan(
             f,
             "qlldd",
             q_ref.T,
@@ -115,8 +113,7 @@ def _pd_control(P: jax.Array, D: Optional[jax.Array] = None):
 
             taus = taus.at[idx_map["d"](idx)].set(tau)
 
-        scan_sys(
-            sys,
+        sys.scan(
             f,
             "lllqd",
             list(range(sys.num_links())),
@@ -181,6 +178,6 @@ def _initial_q_is_q_ref(sys: base.System, sys_q_ref: base.System, q_ref):
         nonlocal q
         q = q.at[sys_q_map[name]].set(q_ref_link)
 
-    scan_sys(sys_q_ref, f, "lq", sys_q_ref.link_names, q_ref)
+    sys_q_ref.scan(f, "lq", sys_q_ref.link_names, q_ref)
 
     return base.State.create(sys, q=q)

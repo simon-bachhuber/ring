@@ -8,7 +8,6 @@ from ... import base
 from ...io import load_sys_from_str
 from ...io import parse_system
 from ...io import save_sys_to_str
-from ...scan import scan_sys
 
 
 def imu_reference_link_name(imu_link_name: str) -> str:
@@ -202,7 +201,7 @@ def _match_q_x_between_sys(
             return
         q_small.append(q_large[:, q_idx_map[name]])
 
-    scan_sys(sys_small, f, "l", sys_small.link_names)
+    sys_small.scan(f, "l", sys_small.link_names)
 
     x_small = tree_utils.tree_indices(x_large, jnp.array(x_small_indices), axis=1)
     q_small = jnp.concatenate(q_small, axis=1)

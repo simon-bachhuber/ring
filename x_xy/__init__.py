@@ -40,7 +40,6 @@ from .io import save_sys_to_str
 from .io import save_sys_to_xml
 from .rendering import render
 from .rendering import render_prediction
-from .scan import scan_sys
 
 _TRAIN_TIMING_START = None
 _UNIQUE_ID = None

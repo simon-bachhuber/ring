@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Union
 
 from flax import struct
 import jax
@@ -434,14 +434,12 @@ class System(_Base):
 
     def idx_map(self, type: str) -> dict:
         "type: is either `l` or `q` or `d`"
-        from x_xy import scan_sys
-
         dict_int_slices = {}
 
         def f(_, idx_map, name: str, link_idx: int):
             dict_int_slices[name] = idx_map[type](link_idx)
 
-        scan_sys(self, f, "ll", self.link_names, list(range(self.num_links())))
+        self.scan(f, "ll", self.link_names, list(range(self.num_links())))
 
         return dict_int_slices
 
@@ -613,6 +611,23 @@ class System(_Base):
         bodies = [i for i, _typ in enumerate(self.link_types) if _typ == typ]
         return self._bodies_indices_to_bodies_name(bodies) if names else bodies
 
+    def scan(self, f: Callable, in_types: str, *args, reverse: bool = False):
+        """Scan `f` along each link in system whilst carrying along state.
+
+        Args:
+            f (Callable[..., Y]): f(y: Y, *args) -> y
+            in_types: string specifying the type of each input arg:
+                'l' is an input to be split according to link ranges
+                'q' is an input to be split according to q ranges
+                'd' is an input to be split according to qd ranges
+            args: Arguments passed to `f`, and split to match the link.
+            reverse (bool, optional): If `true` from leaves to root. Defaults to False.
+
+        Returns:
+            ys: Stacked output y of f.
+        """
+        return _scan_sys(self, f, in_types, *args, reverse=reverse)
+
 
 def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
     lt, la, ld, ls, lz = [], [], [], [], []
@@ -626,10 +641,7 @@ def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
         ls.append(nls)
         lz.append(nlz)
 
-    from x_xy import scan_sys
-
-    scan_sys(
-        sys,
+    sys.scan(
         f,
         "lldddq",
         sys.link_names,
@@ -660,6 +672,43 @@ def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
 
 class InvalidSystemError(Exception):
     pass
+
+
+def _scan_sys(sys: System, f: Callable, in_types: str, *args, reverse: bool = False):
+    assert len(args) == len(in_types)
+
+    order = range(sys.num_links())
+    q_idx, qd_idx = 0, 0
+    q_idxs, qd_idxs = {}, {}
+    for link_idx, link_type in zip(order, sys.link_types):
+        # build map from
+        # link-idx -> q_idx
+        # link-idx -> qd_idx
+        q_idxs[link_idx] = slice(q_idx, q_idx + Q_WIDTHS[link_type])
+        qd_idxs[link_idx] = slice(qd_idx, qd_idx + QD_WIDTHS[link_type])
+        q_idx += Q_WIDTHS[link_type]
+        qd_idx += QD_WIDTHS[link_type]
+
+    idx_map = {
+        "l": lambda link_idx: link_idx,
+        "q": lambda link_idx: q_idxs[link_idx],
+        "d": lambda link_idx: qd_idxs[link_idx],
+    }
+
+    if reverse:
+        order = range(sys.num_links() - 1, -1, -1)
+
+    y, ys = None, []
+    for link_idx in order:
+        args_link = [arg[idx_map[t](link_idx)] for arg, t in zip(args, in_types)]
+        y = f(y, idx_map, *args_link)
+        ys.append(y)
+
+    if reverse:
+        ys.reverse()
+
+    ys = tu.tree_batch(ys, backend="jax")
+    return ys
 
 
 @struct.dataclass
@@ -695,9 +744,6 @@ class State(_Base):
         Returns:
             (State): Create State object.
         """
-        # to avoid circular imports
-        from x_xy import scan_sys
-
         if q is None:
             q = jnp.zeros((sys.q_size(),))
 
@@ -709,8 +755,7 @@ class State(_Base):
                     q_idxs_link = idx_map["q"](link_idx)
                     q = q.at[q_idxs_link.start].set(1.0)
 
-            scan_sys(
-                sys,
+            sys.scan(
                 replace_by_unit_quat,
                 "ll",
                 sys.link_types,

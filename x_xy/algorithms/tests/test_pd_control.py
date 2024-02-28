@@ -87,7 +87,7 @@ def _sys_large_damping(sys: x_xy.System, exclude: list[str] = []) -> x_xy.System
         a, b = slice.start, slice.stop
         damping = damping.at[a:b].set(LARGE_DAMPING)
 
-    x_xy.scan_sys(sys, f, "ll", list(range(sys.num_links())), sys.link_names)
+    sys.scan(f, "ll", list(range(sys.num_links())), sys.link_names)
     return sys.replace(link_damping=damping)
 
 

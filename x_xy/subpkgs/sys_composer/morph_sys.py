@@ -7,7 +7,6 @@ from tree_utils import tree_batch
 import x_xy
 from x_xy import algebra
 from x_xy import base
-from x_xy import scan_sys
 from x_xy.io import parse_system
 
 
@@ -327,8 +326,7 @@ def _per_link_arrays(sys: base.System):
         ss.append(stiff)
         sz.append(zero)
 
-    scan_sys(
-        sys,
+    sys.scan(
         filter_arrays,
         "dddq",
         sys.link_damping,

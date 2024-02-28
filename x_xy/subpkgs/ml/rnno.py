@@ -9,15 +9,13 @@ from jax.random import uniform
 import tree_utils
 
 from x_xy import base
-from x_xy import scan_sys
 from x_xy.maths import safe_normalize
 
 from .ml_utils import make_non_social_version
 
 
 def _tree(sys, f):
-    return scan_sys(
-        sys,
+    return sys.scan(
         f,
         "lll",
         list(range(sys.num_links())),

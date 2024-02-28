@@ -9,8 +9,6 @@ from x_xy import algebra
 
 from .. import base
 from .. import maths
-from .. import scan
-from ..scan import scan_sys
 from .jcalc import _joint_types
 from .jcalc import jcalc_transform
 
@@ -34,8 +32,7 @@ def forward_kinematics_transforms(
         eps_to_l[link_idx] = algebra.transform_mul(transform, eps_to_l[parent_idx])
         return eps_to_l[link_idx], link
 
-    eps_to_l_trafos, updated_links = scan_sys(
-        sys,
+    eps_to_l_trafos, updated_links = sys.scan(
         update_eps_to_l,
         "qllll",
         q,
@@ -167,7 +164,7 @@ def inverse_kinematics_endeffector(
             new_q = inv_kin_preprocess(q)
             q_preproc.append(new_q)
 
-        scan.scan_sys(sys, preprocess, "lq", sys.link_types, q)
+        sys.scan(preprocess, "lq", sys.link_types, q)
         return jnp.concatenate(q_preproc)
 
     def objective(q: jax.Array) -> jax.Array:
