@@ -44,7 +44,7 @@ def test_save_load_generators():
     )[0]
     x_xy.build_generator(
         sys,
-        hdf5_filepath=path,
+        filepath=path,
         seed=1,
         mode="hdf5",
         add_X_imus=True,

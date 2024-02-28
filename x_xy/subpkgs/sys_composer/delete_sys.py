@@ -4,7 +4,6 @@ import jax.numpy as jnp
 import tree_utils
 
 import x_xy
-from x_xy.io import parse_system
 
 from ... import base
 
@@ -90,7 +89,7 @@ def delete_subsystem(
         omc=take(sys.omc),
     )
 
-    return parse_system(new_sys)
+    return new_sys.parse()
 
 
 def _find_subsystem_indices(parents: list[int], k: int) -> list[int]:

@@ -7,7 +7,6 @@ from tree_utils import tree_batch
 import x_xy
 from x_xy import algebra
 from x_xy import base
-from x_xy.io import parse_system
 
 
 def _autodetermine_new_parents(lam: list[int], new_anchor: int) -> list[int]:
@@ -231,7 +230,7 @@ def morph_system(
         omc=_permute(sys.omc),
     )
 
-    return parse_system(morphed_system)
+    return morphed_system.parse()
 
 
 jit_for_kin = jax.jit(x_xy.forward_kinematics)

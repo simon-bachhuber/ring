@@ -6,7 +6,6 @@ import tree_utils
 
 from ... import base
 from ...io import load_sys_from_str
-from ...io import parse_system
 from ...io import save_sys_to_str
 
 
@@ -72,8 +71,9 @@ def inject_subsystems(
 
     sys = sys.replace(geoms=new_geoms)
 
+    # TODO investigate whether this parse is needed; I don't think so
     # re-calculate the inertia matrices because the geoms have been re-attached
-    sys = parse_system(sys)
+    sys = sys.parse()
 
     # TODO set all joint_params to zeros; they can not be preserved anyways and
     # otherwise many warnings will be rose

@@ -8,7 +8,6 @@ from x_xy.utils import parse_path
 from . import abstract
 from ... import base
 from ...algorithms.jcalc import _init_joint_params
-from ..parse import parse_system
 
 
 def _find_assert_unique(tree: ElementTree, *keys):
@@ -254,7 +253,7 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
 
     sys = _init_joint_params(jax.random.PRNGKey(seed), sys)
 
-    return parse_system(sys)
+    return sys.parse()
 
 
 def load_sys_from_xml(xml_path: str, seed: int = 1):

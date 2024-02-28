@@ -51,7 +51,7 @@ def test_from_xml():
         model_name="model",
         omc=[None],
     )
-    sys1 = x_xy.io.parse_system(sys1)
+    sys1 = sys1.parse()
     sys2 = x_xy.load_sys_from_str(sys_str)
 
     assert x_xy.utils.sys_compare(sys1, sys2)

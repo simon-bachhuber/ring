@@ -4,8 +4,6 @@ import jax
 import jax.numpy as jnp
 from tree_utils import tree_batch
 
-from x_xy.io import parse_system
-
 from ... import base
 
 
@@ -110,4 +108,4 @@ def inject_system(
         omc=sys.omc + sub_sys.omc,
     )
 
-    return parse_system(combined_sys)
+    return combined_sys.parse()

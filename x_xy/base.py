@@ -2,6 +2,7 @@ from typing import Any, Callable, Optional, Sequence, Union
 
 from flax import struct
 import jax
+from jax.core import Tracer
 import jax.numpy as jnp
 from jax.tree_util import tree_map
 import numpy as np
@@ -349,7 +350,7 @@ class Link(_Base):
 
 
 @struct.dataclass
-class MaxCoordOMC:
+class MaxCoordOMC(_Base):
     coordinate_system_name: str
     pos_marker_number: int
     pos_marker_constant_offset: np.ndarray
@@ -628,6 +629,24 @@ class System(_Base):
         """
         return _scan_sys(self, f, in_types, *args, reverse=reverse)
 
+    def parse(self) -> "System":
+        """Initial setup of system. System object does not work unless it is parsed.
+        Currently it does:
+        - some consistency checks
+        - populate the spatial inertia tensors
+        - check that all names are unique
+        - check that names are strings
+        - check that all pos_min <= pos_max (unless traced)
+        - order geoms in ascending order based on their parent link idx
+        - check that all links have the correct size of
+            - damping
+            - armature
+            - stiffness
+            - zeropoint
+        - check that n_links == len(sys.omc)
+        """
+        return _parse_system(self)
+
 
 def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
     lt, la, ld, ls, lz = [], [], [], [], []
@@ -663,15 +682,99 @@ def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
         link_spring_zeropoint=lz,
     )
 
-    from x_xy.io import parse_system
-
     # parse system such that it checks if all joint types have the
     # correct dimensionality of damping / stiffness / zeropoint / armature
-    return parse_system(sys)
+    return sys.parse()
 
 
 class InvalidSystemError(Exception):
     pass
+
+
+def _parse_system(sys: System) -> System:
+    assert len(sys.link_parents) == len(sys.link_types) == sys.links.batch_dim()
+    assert len(sys.omc) == sys.num_links()
+
+    for i, name in enumerate(sys.link_names):
+        assert sys.link_names.count(name) == 1, f"Duplicated name=`{name}` in system"
+        assert isinstance(name, str)
+
+    pos_min, pos_max = sys.links.pos_min, sys.links.pos_max
+
+    try:
+        from jax.errors import TracerBoolConversionError
+
+        try:
+            assert jnp.all(pos_max >= pos_min), f"min={pos_min}, max={pos_max}"
+        except TracerBoolConversionError:
+            pass
+    # on older versions of jax this import is not possible
+    except ImportError:
+        pass
+
+    for geom in sys.geoms:
+        assert geom.link_idx in list(range(sys.num_links())) + [-1]
+
+    inertia = _parse_system_calculate_inertia(sys)
+    sys = sys.replace(links=sys.links.replace(inertia=inertia))
+
+    # sort geoms in ascending order
+    geoms = sys.geoms.copy()
+    geoms.sort(key=lambda geom: geom.link_idx)
+    sys = sys.replace(geoms=geoms)
+
+    # round dt
+    # sys = sys.replace(dt=round(sys.dt, 8))
+
+    # check sizes of damping / arma / stiff / zeropoint
+    def check_dasz_unitq(_, __, name, typ, d, a, s, z):
+        q_size, qd_size = Q_WIDTHS[typ], QD_WIDTHS[typ]
+
+        error_msg = (
+            f"wrong size for link `{name}` of typ `{typ}` in model {sys.model_name}"
+        )
+
+        assert d.size == a.size == s.size == qd_size, error_msg
+        assert z.size == q_size, error_msg
+
+        if typ in ["spherical", "free", "cor"] and not isinstance(z, Tracer):
+            assert jnp.allclose(
+                jnp.linalg.norm(z[:4]), 1.0
+            ), f"not unit quat for link `{name}` of typ `{typ}` in model"
+            f" {sys.model_name}"
+
+    sys.scan(
+        check_dasz_unitq,
+        "lldddq",
+        sys.link_names,
+        sys.link_types,
+        sys.link_damping,
+        sys.link_armature,
+        sys.link_spring_stiffness,
+        sys.link_spring_zeropoint,
+    )
+
+    return sys
+
+
+def _inertia_from_geometries(geometries: list[Geometry]) -> Inertia:
+    inertia = Inertia.zero()
+    for geom in geometries:
+        inertia += Inertia.create(geom.mass, geom.transform, geom.get_it_3x3())
+    return inertia
+
+
+def _parse_system_calculate_inertia(sys: System):
+    def compute_inertia_per_link(_, __, link_idx: int):
+        geoms_link = []
+        for geom in sys.geoms:
+            if geom.link_idx == link_idx:
+                geoms_link.append(geom)
+
+        it = _inertia_from_geometries(geoms_link)
+        return it
+
+    return sys.scan(compute_inertia_per_link, "l", list(range(sys.num_links())))
 
 
 def _scan_sys(sys: System, f: Callable, in_types: str, *args, reverse: bool = False):

@@ -24,7 +24,6 @@ def _build_model_of_geoms(
     debug: bool,
 ) -> mujoco.MjModel:
     # sort in ascending order, this shouldn't be required as it is already done by
-    # parse_system; do it for good measure anyways
     geoms = geoms.copy()
     geoms.sort(key=lambda ele: ele.link_idx)
 
