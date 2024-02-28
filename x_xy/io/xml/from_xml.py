@@ -59,6 +59,7 @@ def _assert_all_tags_attrs_valid(xml_tree):
             "spring_zero",
         ],
         "geom": ["type", "mass", "pos", "dim", "quat", "euler", "color", "edge_color"],
+        "omc": ["name", "pos_marker", "pos"],
     }
     for subtree in xml_tree.iter():
         assert subtree.tag in list([key for key in valid_attrs])
@@ -100,6 +101,18 @@ def _extract_geoms_from_body_xml(body, current_link_idx):
         link_geoms.append(geom)
 
     return link_geoms
+
+
+def _extract_omc_from_body_xml(body):
+    omc = body.findall("omc")
+    if len(omc) == 0:
+        return None
+    elif len(omc) == 1:
+        return abstract.AbsMaxCoordOMC.from_xml(omc[0].attrib)
+    else:
+        raise Exception(
+            f"Body `{body.attrib['name']}` has two or more `<omc ../>` fields."
+        )
 
 
 def _initial_setup(xml_tree):
@@ -152,6 +165,7 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
     dampings = {}
     spring_stiffnesses = {}
     spring_zeropoints = {}
+    omc = {}
     global_link_idx = -1
 
     def process_body(body: ElementTree, parent: int):
@@ -174,6 +188,7 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
         transform = abstract.AbsTrans.from_xml(body.attrib)
         pos_min, pos_max = abstract.AbsPosMinMax.from_xml(body.attrib, transform.pos)
         links[current_link_idx] = base.Link(transform, pos_min, pos_max)
+        omc[current_link_idx] = _extract_omc_from_body_xml(body)
 
         q_size = base.Q_WIDTHS[current_link_typ]
         qd_size = base.QD_WIDTHS[current_link_typ]
@@ -230,6 +245,7 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
         gravity=options["gravity"],
         link_names=assert_order_then_to_list(link_names),
         model_name=model_name,
+        omc=assert_order_then_to_list(omc),
     )
 
     # numpy -> jax
@@ -253,6 +269,16 @@ def _load_xml(xml_path: str) -> str:
 
 
 def load_comments_from_xml(xml_path: str, key: str) -> list[dict]:
+    """Example:
+    test.xml
+    <!--keyname1 key1=val1 key2=2-->
+    <!--keyname1 key1=val1 key2=3-->
+    <!--keyname2 key1=val1 key2=2-->
+
+    `load_comments_from_xml(test.xml, key=keyname1)`
+    Returns:
+    >>> [{key1: val1, key2: 2}, {key1: val1, key2: 3}]
+    """
     return load_comments_from_str(_load_xml(xml_path), key=key)
 
 

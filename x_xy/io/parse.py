@@ -19,8 +19,10 @@ def parse_system(sys: base.System) -> base.System:
         - armature
         - stiffness
         - zeropoint
+    - check that n_links == len(sys.omc)
     """
     assert len(sys.link_parents) == len(sys.link_types) == sys.links.batch_dim()
+    assert len(sys.omc) == sys.num_links()
 
     for i, name in enumerate(sys.link_names):
         assert sys.link_names.count(name) == 1, f"Duplicated name=`{name}` in system"

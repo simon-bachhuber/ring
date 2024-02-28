@@ -348,6 +348,13 @@ class Link(_Base):
     transform: Transform = Transform.zero()
 
 
+@struct.dataclass
+class MaxCoordOMC:
+    coordinate_system_name: str
+    pos_marker_number: int
+    pos_marker_constant_offset: np.ndarray
+
+
 Q_WIDTHS = {
     "free": 7,
     "frozen": 0,
@@ -404,6 +411,8 @@ class System(_Base):
     link_names: list[str] = struct.field(False, default_factory=lambda: [])
 
     model_name: Optional[str] = struct.field(False, default_factory=lambda: None)
+
+    omc: list[MaxCoordOMC | None] = struct.field(False, default_factory=lambda: [])
 
     def num_links(self) -> int:
         return len(self.link_parents)

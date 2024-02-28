@@ -107,6 +107,7 @@ def inject_system(
         mass_mat_iters=sys.mass_mat_iters,
         link_names=sys.link_names + sub_sys.link_names,
         model_name=sys.model_name,
+        omc=sys.omc + sub_sys.omc,
     )
 
     return parse_system(combined_sys)

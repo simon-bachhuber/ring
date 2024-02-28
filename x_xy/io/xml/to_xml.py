@@ -69,6 +69,12 @@ def save_sys_to_str(sys: base.System) -> str:
                 abstract_class = abstract.geometry_to_abstract[type(geom)]
                 abstract_class.to_xml(geom_elem, geom)
 
+        # Maybe add omc element
+        omc_link = sys.omc[link_idx]
+        if omc_link is not None:
+            omc_elem = SubElement(body, "omc")
+            abstract.AbsMaxCoordOMC.to_xml(omc_elem, omc_link)
+
         # Recursively process child links
         for child_idx, parent_idx in enumerate(sys.link_parents):
             if parent_idx == link_idx:

@@ -9,10 +9,6 @@ import tree_utils
 import yaml
 
 import x_xy
-from x_xy import maths
-from x_xy.io import load_comments_from_str
-from x_xy.io import load_comments_from_xml
-from x_xy.io.xml.from_xml import _load_xml
 from x_xy.subpkgs import sys_composer
 
 # TODO exp imports omc; pip install x_xy[exp] works still correctly because of setup.py
@@ -61,25 +57,12 @@ def _replace_rxyz_with(sys: x_xy.base.System, replace_with: str):
     return sys
 
 
-def _morph_new_parents_from_xml_file(file_path: str) -> dict[str, list]:
-    comments = load_comments_from_xml(file_path, key="morph")
-    seg_new_parents_map = {}
-    for comment in comments:
-        segi, new_parents = comment["key"], comment["parents"]
-        seg_new_parents_map[segi] = eval(new_parents)
-    return seg_new_parents_map
-
-
 def load_arm_or_gait(exp_id: str) -> str:
     "Returns either `arm` or `gait`"
     xml = _id2xml[exp_id]
     if xml == arm_xml:
         return "arm"
     return "gait"
-
-
-def load_xml_str(exp_id: str) -> str:
-    return _load_xml(_relative_to_this_file(_id2xml[exp_id]))
 
 
 @cache
@@ -110,8 +93,7 @@ def load_sys(
             skip_morph = True
 
         if not skip_morph:
-            new_parents = _morph_new_parents_from_xml_file(xml_path)[morph_yaml_key]
-            sys = sys_composer.morph_system(sys, new_parents)
+            sys = sys_composer.morph_system(sys, new_anchor=morph_yaml_key)
 
     if delete_after_morph is not None:
         sys = sys_composer.delete_subsystem(sys, list(delete_after_morph))
@@ -186,37 +168,6 @@ def load_hz_omc(exp_id: str) -> int:
 
 def load_hz_imu(exp_id: str) -> int:
     return int(_read_yaml("metadata.yaml")[exp_id]["hz"]["imu"])
-
-
-def link_name_pos_rot_data(data: dict, xml_str: str) -> dict:
-    comments = load_comments_from_str(xml_str, key="omc")
-
-    data_out = dict()
-    for comment in comments:
-        bodyname, omcname, marker = (
-            comment["bodyname"],
-            comment["omcname"],
-            int(comment["marker"]),
-        )
-
-        # imagine we want to use the `arm.xml` for the trial S_04
-        # it does not have data of 5 segments but only of 3
-        # but that's okay since `data_out` is then usually feed into the function
-        # `xs_from_raw` which then gets the actual system at hand
-        if omcname not in data:
-            continue
-
-        if "pos" not in comment:
-            pos_offset = jnp.zeros((3,))
-        else:
-            pos_x, pos_y, pos_z = map(float, comment["pos"].split(","))
-            pos_offset = jnp.array([pos_x, pos_y, pos_z])
-        pos = data[omcname][f"marker{marker}"]
-        quat = data[omcname]["quat"]
-        pos_with_offset = pos + maths.rotate(pos_offset, quat)
-        data_out[bodyname] = dict(pos=pos_with_offset, quat=quat)
-
-    return data_out
 
 
 def _crop_sequence(data: dict, dt: float, t1: float = 0.0, t2: Optional[float] = None):

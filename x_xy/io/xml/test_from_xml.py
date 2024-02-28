@@ -49,6 +49,7 @@ def test_from_xml():
         gravity=jnp.array([0.1, 2, 3.0]),
         link_names=["name"],
         model_name="model",
+        omc=[None],
     )
     sys1 = x_xy.io.parse_system(sys1)
     sys2 = x_xy.load_sys_from_str(sys_str)

@@ -278,6 +278,25 @@ def build_experimental_validation_callback1(
     )
 
 
+def apply_omc_pos_offset(sys: x_xy.System, data: dict) -> dict:
+
+    data_out = dict()
+    for link_name, max_cord in zip(sys.link_names, sys.omc):
+        if max_cord is None:
+            continue
+        cs_name, marker, pos_offset = (
+            max_cord.coordinate_system_name,
+            max_cord.pos_marker_number,
+            max_cord.pos_marker_constant_offset,
+        )
+        pos = data[cs_name][f"marker{marker}"]
+        quat = data[cs_name]["quat"]
+        pos_with_offset = pos + x_xy.maths.rotate(pos_offset, quat)
+        data_out[link_name] = dict(pos=pos_with_offset, quat=quat)
+
+    return data_out
+
+
 def pipeline_load_data(
     sys: x_xy.System,
     exp_id: str,
@@ -299,14 +318,14 @@ def pipeline_load_data(
     exp_data = exp.load_data(
         exp_id, motion_start, motion_stop, resample_to_hz=1 / sys.dt
     )
-    sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys)
 
     xs = sim2real.xs_from_raw(
         sys,
-        exp.link_name_pos_rot_data(exp_data, exp.load_xml_str(exp_id)),
+        apply_omc_pos_offset(sys, exp_data),
         qinv=True,
     )
     sys_xs = sys
+    sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys)
     del sys
 
     N = xs.shape()

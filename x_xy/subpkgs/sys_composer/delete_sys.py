@@ -89,6 +89,7 @@ def delete_subsystem(
         mass_mat_iters=sys.mass_mat_iters,
         link_names=take(sys.link_names),
         model_name=sys.model_name,
+        omc=take(sys.omc),
     )
 
     return parse_system(new_sys)
