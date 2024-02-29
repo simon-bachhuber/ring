@@ -1,7 +1,30 @@
 import jax.numpy as jnp
 
-from .. import base
-from .. import maths
+from x_xy import base
+from x_xy import maths
+from x_xy import spatial
+
+
+def inertia_mul_motion(it: base.Inertia, m: base.Motion) -> base.Force:
+    ang = it.it_3x3 @ m.ang + jnp.cross(it.h, m.vel)
+    vel = it.mass * m.vel - jnp.cross(it.h, m.ang)
+    return base.Force(ang, vel)
+
+
+def motion_dot(m: base.Motion, f: base.Force) -> base.Scalar:
+    return m.ang @ f.ang + m.vel @ f.vel
+
+
+def motion_cross(m1: base.Motion, m2: base.Motion) -> base.Motion:
+    ang = jnp.cross(m1.ang, m2.ang)
+    vel = jnp.cross(m1.ang, m2.vel) + jnp.cross(m1.vel, m2.ang)
+    return base.Motion(ang, vel)
+
+
+def motion_cross_star(m: base.Motion, f: base.Force) -> base.Force:
+    ang = jnp.cross(m.ang, f.ang) + jnp.cross(m.vel, f.vel)
+    vel = jnp.cross(m.ang, f.vel)
+    return base.Force(ang, vel)
 
 
 def transform_mul(t2: base.Transform, t1: base.Transform) -> base.Transform:
@@ -67,12 +90,12 @@ def transform_inertia(t: base.Transform, it: base.Inertia) -> base.Inertia:
     "Transforms inertia matrix `it`"
     r = t.pos
     I_ = it.it_3x3
-    rcross = maths.spatial.cross(r)
+    rcross = spatial.cross(r)
 
     hmr = it.h - it.mass * t.pos
     new_h = maths.rotate(hmr, t.rot)
     new_it_3x3 = maths.rotate_matrix(
-        I_ + rcross @ maths.spatial.cross(it.h) + maths.spatial.cross(hmr) @ rcross,
+        I_ + rcross @ spatial.cross(it.h) + spatial.cross(hmr) @ rcross,
         t.rot,
     )
     return base.Inertia(new_it_3x3, new_h, it.mass)
