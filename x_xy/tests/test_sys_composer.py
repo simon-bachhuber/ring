@@ -4,11 +4,11 @@ import pytest
 
 import x_xy
 from x_xy.subpkgs import exp
-from x_xy.subpkgs.sys_composer import delete_subsystem
-from x_xy.subpkgs.sys_composer import identify_system
-from x_xy.subpkgs.sys_composer import inject_system
-from x_xy.subpkgs.sys_composer import morph_system
-from x_xy.subpkgs.sys_composer.morph_sys import _autodetermine_new_parents
+from x_xy.sys_composer import delete_subsystem
+from x_xy.sys_composer import identify_system
+from x_xy.sys_composer import inject_system
+from x_xy.sys_composer import morph_system
+from x_xy.sys_composer.morph_sys import _autodetermine_new_parents
 from x_xy.utils import sys_compare
 from x_xy.utils import tree_equal
 

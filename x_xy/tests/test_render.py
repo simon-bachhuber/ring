@@ -5,13 +5,13 @@ import x_xy
 
 def test_vispy_render():
     for sys in x_xy.io.list_load_examples():
-        x_xy.render(sys, x_xy.State.create(sys).x, show_pbar=False, backend="vispy")
+        sys.render(x_xy.State.create(sys).x, show_pbar=False, backend="vispy")
 
 
 def test_mujoco_render():
     for sys in x_xy.io.list_load_examples():
         print(sys.model_name)
-        x_xy.render(sys, x_xy.State.create(sys).x, show_pbar=False, backend="mujoco")
+        sys.render(x_xy.State.create(sys).x, show_pbar=False, backend="mujoco")
 
 
 def test_shapes():
@@ -29,7 +29,7 @@ def test_shapes():
 </x_xy>
     """  # noqa: E501
 
-    sys = x_xy.load_sys_from_str(sys_str)
+    sys = x_xy.io.load_sys_from_str(sys_str)
     state = x_xy.State.create(sys)
     step_fn = jax.jit(x_xy.step)
     state = step_fn(sys, state)
@@ -37,5 +37,5 @@ def test_shapes():
     import mediapy
 
     for backend in ["mujoco", "vispy"]:
-        frame = x_xy.render(sys, state.x, show_pbar=False, backend=backend)[0]
+        frame = sys.render(state.x, show_pbar=False, backend=backend)[0]
         mediapy.write_image(f"docs/img/example_{backend}.png", frame)

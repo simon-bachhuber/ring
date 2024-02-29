@@ -4,7 +4,7 @@ import numpy as np
 
 import x_xy
 from x_xy import maths
-from x_xy.subpkgs import sim2real
+from x_xy import sim2real
 
 
 def test_forward_kinematics_omc():
