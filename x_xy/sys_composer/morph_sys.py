@@ -4,8 +4,8 @@ import jax
 import jax.numpy as jnp
 from tree_utils import tree_batch
 
-import x_xy
 from x_xy import algebra
+from x_xy import algorithms
 from x_xy import base
 
 
@@ -233,7 +233,7 @@ def morph_system(
     return morphed_system.parse()
 
 
-jit_for_kin = jax.jit(x_xy.forward_kinematics)
+jit_for_kin = jax.jit(algorithms.forward_kinematics)
 
 
 def _new_transform1(
@@ -244,7 +244,7 @@ def _new_transform1(
     move_cs_one_up: bool = True,
     breakearly: Optional[int] = None,
 ):
-    x = jit_for_kin(sys, x_xy.State.create(sys))[1].x
+    x = jit_for_kin(sys, base.State.create(sys))[1].x
 
     # move all coordinate system of links with new parents "one up"
     # such that they are on top of the parents CS
@@ -259,14 +259,14 @@ def _new_transform1(
 
                 if mod_geoms:
                     # compensate this transform for all geoms of this node
-                    x_parent_to_this_node = x_xy.transform_mul(
-                        x_this_node, x_xy.transform_inv(x_parent)
+                    x_parent_to_this_node = algebra.transform_mul(
+                        x_this_node, algebra.transform_inv(x_parent)
                     )
                     new_geoms = []
                     for geom in sys.geoms:
                         if geom.link_idx == node.link_idx_old_indices:
                             geom = geom.replace(
-                                transform=x_xy.transform_mul(
+                                transform=algebra.transform_mul(
                                     geom.transform, x_parent_to_this_node
                                 )
                             )
@@ -277,7 +277,7 @@ def _new_transform1(
     for link_idx_old_indices in permutation:
         new_parent = structure[link_idx_old_indices].new_parent_old_indices
         if new_parent == -1:
-            x_new_parent = x_xy.Transform.zero()
+            x_new_parent = base.Transform.zero()
         else:
             x_new_parent = x_mod[new_parent]
 

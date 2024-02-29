@@ -3,16 +3,14 @@ from typing import Optional
 import jax.numpy as jnp
 import tree_utils
 
-import x_xy
-
-from ... import base
+from x_xy import base
 
 
 def _autodetermine_imu_names(sys: base.System) -> list[str]:
     return sys.findall_imus()
 
 
-def make_sys_noimu(sys: x_xy.System, imu_link_names: Optional[list[str]] = None):
+def make_sys_noimu(sys: base.System, imu_link_names: Optional[list[str]] = None):
     "Returns, e.g., imu_attachment = {'imu1': 'seg1', 'imu2': 'seg3'}"
     if imu_link_names is None:
         imu_link_names = _autodetermine_imu_names(sys)
