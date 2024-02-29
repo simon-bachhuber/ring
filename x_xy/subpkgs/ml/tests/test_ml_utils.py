@@ -34,7 +34,7 @@ def test_save_load():
 def test_save_load_generators():
     path = "~/data1/gen.h5"
 
-    sys = x_xy.load_example("test_three_seg_seg2")
+    sys = x_xy.io.load_example("test_three_seg_seg2")
     data = x_xy.build_generator(
         sys,
         seed=1,
@@ -51,7 +51,7 @@ def test_save_load_generators():
         add_y_relpose=True,
     )
 
-    gen_reloaded, _ = x_xy.batched_generator_from_paths([path, path], 1)
+    gen_reloaded, _ = x_xy.algorithms.batched_generator_from_paths([path, path], 1)
     data_reloaded = jax.tree_map(
         lambda arr: arr[0], gen_reloaded(jax.random.PRNGKey(1))
     )

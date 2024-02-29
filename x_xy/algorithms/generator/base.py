@@ -6,44 +6,21 @@ import jax
 import jax.numpy as jnp
 import tree_utils
 
-from . import motion_artifacts
-from ... import base
-from ...utils import hdf5_save
-from ...utils import pickle_save
-from ...utils import to_list
-from ..jcalc import _init_joint_params
-from ..jcalc import _joint_types
-from ..jcalc import RCMG_Config
-from ..kinematics import forward_kinematics_transforms
-from .batch import batch_generators_eager
-from .batch import batch_generators_eager_to_list
-from .batch import batch_generators_lazy
-from .transforms import GeneratorTrafoDynamicalSimulation
-from .transforms import GeneratorTrafoFinalizeFn
-from .transforms import GeneratorTrafoIMU
-from .transforms import GeneratorTrafoJointAxisSensor
-from .transforms import GeneratorTrafoLambda
-from .transforms import GeneratorTrafoRandomizePositions
-from .transforms import GeneratorTrafoRelPose
-from .transforms import GeneratorTrafoRootIncl
-from .transforms import GeneratorTrafoSetupFn
-from .types import FINALIZE_FN
-from .types import Generator
-from .types import GeneratorTrafo
-from .types import GeneratorWithInputExtras
-from .types import GeneratorWithInputOutputExtras
-from .types import GeneratorWithOutputExtras
-from .types import OutputExtras
-from .types import PRNGKey
-from .types import SETUP_FN
-from .types import Xy
+from x_xy import base
+from x_xy import utils
+from x_xy.algorithms import jcalc
+from x_xy.algorithms import kinematics
+from x_xy.algorithms.generator import batch
+from x_xy.algorithms.generator import motion_artifacts
+from x_xy.algorithms.generator import transforms
+from x_xy.algorithms.generator import types
 
 
 def build_generator(
     sys: base.System | list[base.System],
-    config: RCMG_Config | list[RCMG_Config] = RCMG_Config(),
-    setup_fn: Optional[SETUP_FN] = None,
-    finalize_fn: Optional[FINALIZE_FN] = None,
+    config: jcalc.RCMG_Config | list[jcalc.RCMG_Config] = jcalc.RCMG_Config(),
+    setup_fn: Optional[types.SETUP_FN] = None,
+    finalize_fn: Optional[types.FINALIZE_FN] = None,
     add_X_imus: bool = False,
     add_X_imus_kwargs: Optional[dict] = None,
     add_X_jointaxes: bool = False,
@@ -68,7 +45,7 @@ def build_generator(
     jit: bool = True,
     zip_sys_config: bool = False,
     _compat: bool = False,
-) -> Generator | GeneratorWithOutputExtras | None | list:
+) -> types.Generator | types.GeneratorWithOutputExtras | None | list:
     """
     If `eager` then returns numpy, else jax.
     """
@@ -125,7 +102,7 @@ def build_generator(
             "`mode` must be one of `lazy`, `eager`, `list`, `hdf5`, `pickle`"
         )
 
-    sys, config = to_list(sys), to_list(config)
+    sys, config = utils.to_list(sys), utils.to_list(config)
 
     if sys_ml is None and len(sys) > 1:
         warnings.warn(
@@ -143,19 +120,19 @@ def build_generator(
                 gens.append(partial_build_gen(sys=_sys, config=_config, sys_ml=sys_ml))
 
     if mode in ["list", "hdf5", "pickle"]:
-        data = batch_generators_eager_to_list(gens, sizes, seed=seed, jit=jit)
+        data = batch.batch_generators_eager_to_list(gens, sizes, seed=seed, jit=jit)
         if mode == "list":
             return data
         data = tree_utils.tree_batch(data)
         if mode == "hdf5":
-            hdf5_save(filepath, data, overwrite=True)
+            utils.hdf5_save(filepath, data, overwrite=True)
         else:
-            pickle_save(data, filepath, overwrite=True)
+            utils.pickle_save(data, filepath, overwrite=True)
         return
     elif mode == "eager":
-        return batch_generators_eager(gens, sizes, batchsize, seed=seed, jit=jit)
+        return batch.batch_generators_eager(gens, sizes, batchsize, seed=seed, jit=jit)
     else:
-        return batch_generators_lazy(gens, sizes, jit=jit)
+        return batch.batch_generators_lazy(gens, sizes, jit=jit)
 
 
 def _copy_kwargs(kwargs: dict | None) -> dict:
@@ -164,9 +141,9 @@ def _copy_kwargs(kwargs: dict | None) -> dict:
 
 def _build_generator_lazy(
     sys: base.System,
-    config: RCMG_Config,
-    setup_fn: SETUP_FN | None,
-    finalize_fn: FINALIZE_FN | None,
+    config: jcalc.RCMG_Config,
+    setup_fn: types.SETUP_FN | None,
+    finalize_fn: types.FINALIZE_FN | None,
     add_X_imus: bool,
     add_X_imus_kwargs: dict | None,
     add_X_jointaxes: bool,
@@ -184,7 +161,7 @@ def _build_generator_lazy(
     output_transform: Callable | None,
     keep_output_extras: bool,
     _compat: bool,
-) -> Generator | GeneratorWithOutputExtras:
+) -> types.Generator | types.GeneratorWithOutputExtras:
     # end of batch generator logic - non-batched build_generator logic starts
     assert config.is_feasible()
 
@@ -210,10 +187,7 @@ def _build_generator_lazy(
     if add_X_jointaxes or add_y_relpose or add_y_rootincl:
         if len(sys_ml.findall_imus()) > 0:
             warnings.warn("Automatically removed the IMUs from `sys_ml`.")
-
-            from x_xy.subpkgs import sys_composer
-
-            sys_noimu, _ = sys_composer.make_sys_noimu(sys_ml)
+            sys_noimu, _ = sys_ml.make_sys_noimu()
         else:
             sys_noimu = sys_ml
 
@@ -246,11 +220,15 @@ def _build_generator_lazy(
 
     noop = lambda gen: gen
     return GeneratorPipe(
-        GeneratorTrafoSetupFn(setup_fn) if setup_fn is not None else noop,
-        GeneratorTrafoSetupFn(_init_joint_params) if randomize_joint_params else noop,
-        GeneratorTrafoRandomizePositions() if randomize_positions else noop,
+        transforms.GeneratorTrafoSetupFn(setup_fn) if setup_fn is not None else noop,
         (
-            GeneratorTrafoSetupFn(
+            transforms.GeneratorTrafoSetupFn(jcalc._init_joint_params)
+            if randomize_joint_params
+            else noop
+        ),
+        transforms.GeneratorTrafoRandomizePositions() if randomize_positions else noop,
+        (
+            transforms.GeneratorTrafoSetupFn(
                 motion_artifacts.setup_fn_randomize_damping_stiffness_factory(
                     prob_rigid=imu_motion_artifacts_kwargs.get("prob_rigid", 0.0),
                     all_imus_either_rigid_or_flex=imu_motion_artifacts_kwargs.get(
@@ -275,7 +253,7 @@ def _build_generator_lazy(
         # >>> Xy, extras = gen[-2](*args)
         # >>> return gen[-1].finalize_fn(extras)
         (
-            GeneratorTrafoDynamicalSimulation(**dynamic_simulation_kwargs)
+            transforms.GeneratorTrafoDynamicalSimulation(**dynamic_simulation_kwargs)
             if dynamic_simulation
             else noop
         ),
@@ -287,19 +265,25 @@ def _build_generator_lazy(
             )
             else noop
         ),
-        GeneratorTrafoFinalizeFn(finalize_fn) if finalize_fn is not None else noop,
-        GeneratorTrafoIMU(**add_X_imus_kwargs) if add_X_imus else noop,
         (
-            GeneratorTrafoJointAxisSensor(sys_noimu, **add_X_jointaxes_kwargs)
+            transforms.GeneratorTrafoFinalizeFn(finalize_fn)
+            if finalize_fn is not None
+            else noop
+        ),
+        transforms.GeneratorTrafoIMU(**add_X_imus_kwargs) if add_X_imus else noop,
+        (
+            transforms.GeneratorTrafoJointAxisSensor(
+                sys_noimu, **add_X_jointaxes_kwargs
+            )
             if add_X_jointaxes
             else noop
         ),
-        GeneratorTrafoRelPose(sys_noimu) if add_y_relpose else noop,
-        GeneratorTrafoRootIncl(sys_noimu) if add_y_rootincl else noop,
+        transforms.GeneratorTrafoRelPose(sys_noimu) if add_y_relpose else noop,
+        transforms.GeneratorTrafoRootIncl(sys_noimu) if add_y_rootincl else noop,
         GeneratorTrafoRemoveInputExtras(sys),
         noop if keep_output_extras else GeneratorTrafoRemoveOutputExtras(),
         (
-            GeneratorTrafoLambda(output_transform, input=False)
+            transforms.GeneratorTrafoLambda(output_transform, input=False)
             if output_transform is not None
             else noop
         ),
@@ -307,9 +291,11 @@ def _build_generator_lazy(
 
 
 def _generator_with_extras(
-    config: RCMG_Config,
-) -> GeneratorWithInputOutputExtras:
-    def generator(key: PRNGKey, sys: base.System) -> tuple[Xy, OutputExtras]:
+    config: jcalc.RCMG_Config,
+) -> types.GeneratorWithInputOutputExtras:
+    def generator(
+        key: types.PRNGKey, sys: base.System
+    ) -> tuple[types.Xy, types.OutputExtras]:
         if config.cor:
             sys = sys._replace_free_with_cor()
 
@@ -328,7 +314,7 @@ def _generator_with_extras(
             if key is None:
                 key = key_start
             key, key_t, key_value = jax.random.split(key, 3)
-            draw_fn = _joint_types[link_type].rcmg_draw_fn
+            draw_fn = jcalc.get_joint_model(link_type).rcmg_draw_fn
             if draw_fn is None:
                 raise Exception(f"The joint type {link_type} has no draw fn specified.")
             q_link = draw_fn(config, key_t, key_value, sys.dt, joint_params)
@@ -344,7 +330,7 @@ def _generator_with_extras(
         q = jnp.concatenate(q_list, axis=1)
 
         # do forward kinematics
-        x, _ = jax.vmap(forward_kinematics_transforms, (None, 0))(sys, q)
+        x, _ = jax.vmap(kinematics.forward_kinematics_transforms, (None, 0))(sys, q)
 
         Xy = ({}, {})
         return Xy, (key, q, x, sys)
@@ -353,16 +339,16 @@ def _generator_with_extras(
 
 
 class GeneratorPipe:
-    def __init__(self, *gen_trafos: Sequence[GeneratorTrafo]):
+    def __init__(self, *gen_trafos: Sequence[types.GeneratorTrafo]):
         self._gen_trafos = gen_trafos
 
     def __call__(
-        self, config: RCMG_Config
+        self, config: jcalc.RCMG_Config
     ) -> (
-        GeneratorWithInputOutputExtras
-        | GeneratorWithOutputExtras
-        | GeneratorWithInputExtras
-        | Generator
+        types.GeneratorWithInputOutputExtras
+        | types.GeneratorWithOutputExtras
+        | types.GeneratorWithInputExtras
+        | types.Generator
     ):
         gen = _generator_with_extras(config)
         for trafo in self._gen_trafos:
@@ -370,25 +356,25 @@ class GeneratorPipe:
         return gen
 
 
-class GeneratorTrafoRemoveInputExtras(GeneratorTrafo):
+class GeneratorTrafoRemoveInputExtras(types.GeneratorTrafo):
     def __init__(self, sys: base.System):
         self.sys = sys
 
     def __call__(
         self,
-        gen: GeneratorWithInputExtras | GeneratorWithInputOutputExtras,
-    ) -> Generator | GeneratorWithOutputExtras:
+        gen: types.GeneratorWithInputExtras | types.GeneratorWithInputOutputExtras,
+    ) -> types.Generator | types.GeneratorWithOutputExtras:
         def _gen(key):
             return gen(key, self.sys)
 
         return _gen
 
 
-class GeneratorTrafoRemoveOutputExtras(GeneratorTrafo):
+class GeneratorTrafoRemoveOutputExtras(types.GeneratorTrafo):
     def __call__(
         self,
-        gen: GeneratorWithOutputExtras | GeneratorWithInputOutputExtras,
-    ) -> Generator | GeneratorWithInputExtras:
+        gen: types.GeneratorWithOutputExtras | types.GeneratorWithInputOutputExtras,
+    ) -> types.Generator | types.GeneratorWithInputExtras:
         def _gen(*args):
             return gen(*args)[0]
 

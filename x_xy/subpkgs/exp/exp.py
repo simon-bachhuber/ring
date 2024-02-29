@@ -9,7 +9,6 @@ import tree_utils
 import yaml
 
 import x_xy
-from x_xy.subpkgs import sys_composer
 
 # TODO exp imports omc; pip install x_xy[exp] works still correctly because of setup.py
 from x_xy.subpkgs.omc import utils as omc_utils
@@ -83,7 +82,7 @@ def load_sys(
         sys = _replace_rxyz_with(sys, replace_rxyz)
 
     # save to xml_str and reload such that joint_params get populated
-    sys = x_xy.load_sys_from_str(x_xy.save_sys_to_str(sys))
+    sys = x_xy.io.load_sys_from_str(x_xy.io.save_sys_to_str(sys))
 
     if morph_yaml_key is not None:
         skip_morph = False
@@ -93,10 +92,10 @@ def load_sys(
             skip_morph = True
 
         if not skip_morph:
-            sys = sys_composer.morph_system(sys, new_anchor=morph_yaml_key)
+            sys = sys.morph_system(new_anchor=morph_yaml_key)
 
     if delete_after_morph is not None:
-        sys = sys_composer.delete_subsystem(sys, list(delete_after_morph))
+        sys = sys.delete_system(list(delete_after_morph))
 
     return sys
 

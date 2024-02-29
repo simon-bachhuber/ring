@@ -9,13 +9,11 @@ import jax.numpy as jnp
 import tree_utils
 
 from x_xy import algebra
+from x_xy import base
 from x_xy import maths
-
-from .. import base
-from ._random import _to_float
-from ._random import random_angle_over_time
-from ._random import random_position_over_time
-from ._random import TimeDependentFloat
+from x_xy.algorithms import _random
+from x_xy.algorithms._random import _to_float
+from x_xy.algorithms._random import TimeDependentFloat
 
 
 @dataclass
@@ -308,7 +306,7 @@ def _draw_rxyz(
     ANG_0 = maths.wrap_to_pi(ANG_0)
     # only used for `delta_ang_min_max` logic
     max_iter = 5
-    return random_angle_over_time(
+    return _random.random_angle_over_time(
         key_t,
         key_value,
         ANG_0,
@@ -341,7 +339,7 @@ def _draw_pxyz(
     key_value, consume = jax.random.split(key_value)
     POS_0 = jax.random.uniform(consume, minval=config.pos0_min, maxval=config.pos0_max)
     max_iter = 100
-    return random_position_over_time(
+    return _random.random_position_over_time(
         key_value,
         POS_0,
         config.cor_pos_min if cor else config.pos_min,

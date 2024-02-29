@@ -6,11 +6,9 @@ import jaxopt
 from jaxopt._src.base import Solver
 
 from x_xy import algebra
-
-from .. import base
-from .. import maths
-from .jcalc import _joint_types
-from .jcalc import jcalc_transform
+from x_xy import base
+from x_xy import maths
+from x_xy.algorithms import jcalc
 
 
 def forward_kinematics_transforms(
@@ -26,7 +24,7 @@ def forward_kinematics_transforms(
     eps_to_l = {-1: base.Transform.zero()}
 
     def update_eps_to_l(_, __, q, link, link_idx, parent_idx, joint_type: str):
-        transform2 = jcalc_transform(joint_type, q, link.joint_params)
+        transform2 = jcalc.jcalc_transform(joint_type, q, link.joint_params)
         transform = algebra.transform_mul(transform2, link.transform1)
         link = link.replace(transform=transform, transform2=transform2)
         eps_to_l[link_idx] = algebra.transform_mul(transform, eps_to_l[parent_idx])
@@ -151,7 +149,7 @@ def inverse_kinematics_endeffector(
         q_preproc = []
 
         def preprocess(_, __, link_type, q):
-            inv_kin_preprocess = _joint_types[link_type].inv_kin_preprocess
+            inv_kin_preprocess = jcalc.get_joint_model(link_type).inv_kin_preprocess
             # function in custom_joints has priority over JointModel
             if link_type in custom_joints:
                 inv_kin_preprocess = custom_joints[link_type]

@@ -5,9 +5,9 @@ import numpy as np
 import qmt
 
 import x_xy
+from x_xy import sim2real
 from x_xy.algorithms import sensors
 from x_xy.subpkgs import ml
-from x_xy.subpkgs import sim2real
 from x_xy.subpkgs.ml.riann import RIANN
 
 

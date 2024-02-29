@@ -6,7 +6,6 @@ import tree_utils
 
 import x_xy
 from x_xy.subpkgs import ml
-from x_xy.subpkgs import sys_composer
 
 
 def _test_train_rnno_lru(observer_fn):
@@ -18,7 +17,7 @@ def _test_train_rnno_lru(observer_fn):
     )
 
     X, y = gen(seed)
-    sys_noimu, _ = sys_composer.make_sys_noimu(sys)
+    sys_noimu, _ = sys.make_sys_noimu()
     observer = observer_fn(sys_noimu)
     params, state = observer.init(seed, X)
 
@@ -91,7 +90,7 @@ def test_checkpointing():
     x_xy.setup(unique_id="test_checkpointing_nopause")
     example = "test_three_seg_seg2"
     sys = x_xy.io.load_example(example)
-    sys_noimu, _ = sys_composer.make_sys_noimu(sys)
+    sys_noimu, _ = sys.make_sys_noimu()
     gen = x_xy.build_generator(
         sys,
         x_xy.RCMG_Config(T=10.0),

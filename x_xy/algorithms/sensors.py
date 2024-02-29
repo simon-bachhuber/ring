@@ -5,11 +5,11 @@ import jax
 import jax.numpy as jnp
 
 from x_xy import algebra
+from x_xy import algorithms
+from x_xy import base
+from x_xy import io
 from x_xy import maths
-
-from .. import base
-from ..io import load_sys_from_str
-from .dynamics import step
+from x_xy import sim2real
 
 
 def accelerometer(
@@ -414,13 +414,10 @@ def joint_axes(
 
 
 def _joint_axes_from_xs(sys, xs, sys_xs):
-    # TODO
-    from x_xy.subpkgs.sim2real import match_xs
-    from x_xy.subpkgs.sim2real import unzip_xs
 
-    xs = match_xs(sys, xs, sys_xs)
+    xs = sim2real.match_xs(sys, xs, sys_xs)
 
-    _, transform2_rot = unzip_xs(sys, xs)
+    _, transform2_rot = sim2real.unzip_xs(sys, xs)
     qs = transform2_rot.rot.transpose((1, 0, 2))
 
     l2norm = lambda x: jnp.sqrt(jnp.sum(x**2, axis=-1))
@@ -504,10 +501,10 @@ _quasi_physical_sys_str = r"""
 def _quasi_physical_simulation_beautiful(
     xs: base.Transform, dt: float
 ) -> base.Transform:
-    sys = load_sys_from_str(_quasi_physical_sys_str).replace(dt=dt)
+    sys = io.load_sys_from_str(_quasi_physical_sys_str).replace(dt=dt)
 
     def step_dynamics(state: base.State, x):
-        state = step(sys.replace(link_spring_zeropoint=x.pos), state)
+        state = algorithms.step(sys.replace(link_spring_zeropoint=x.pos), state)
         return state, state.q
 
     state = base.State.create(sys, q=xs.pos[0])

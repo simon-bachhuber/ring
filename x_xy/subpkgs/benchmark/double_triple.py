@@ -9,10 +9,9 @@ import tree_utils
 
 import x_xy
 from x_xy import maths
+from x_xy import sim2real
 from x_xy.subpkgs import exp
 from x_xy.subpkgs import ml
-from x_xy.subpkgs import sim2real
-from x_xy.subpkgs import sys_composer
 
 Filter = ml.AbstractFilter
 
@@ -138,7 +137,7 @@ def _double_triple_hinge_joint(
         rootfull=True,
         dt=resample_hz is not None,
     )
-    yhat = filter.predict(X, sys_composer.make_sys_noimu(sys)[0], y=y)
+    yhat = filter.predict(X, sys.make_sys_noimu()[0], y=y)
 
     if debug:
         print(f"_double_triple_hinge_joint: `y.keys()`={list(y.keys())}")
@@ -181,7 +180,7 @@ def _render(path, sys, xs, yhat, debug, **kwargs):
     offset_pred = kwargs.pop("offset_pred", [0, 0, 0])
     assert sys.dt == 0.01
 
-    sys_noimu = sys_composer.make_sys_noimu(sys)[0]
+    sys_noimu = sys.make_sys_noimu()[0]
     xs_noimu = sim2real.match_xs(sys_noimu, xs, sys)
 
     seg_to_root = sys.link_names[sys.link_parents.index(-1)]
@@ -252,7 +251,7 @@ def _render(path, sys, xs, yhat, debug, **kwargs):
     # replace render color of geoms for render of predicted motion
     prediction_color = (78 / 255, 163 / 255, 243 / 255, 1.0)
     sys_newcolor = _geoms_replace_color(sys_noimu, prediction_color)
-    sys_render = sys_composer.inject_system(sys_newcolor.add_prefix_suffix("hat_"), sys)
+    sys_render = sys_newcolor.add_prefix_suffix("hat_").inject_system(sys)
 
     xs_render = []
     for name in sys_render.link_names:
@@ -261,8 +260,7 @@ def _render(path, sys, xs, yhat, debug, **kwargs):
     xs_render = xs_render.transpose((1, 0, 2))
     xs_render = [xs_render[t] for t in range(xs_render.shape())]
 
-    frames = x_xy.render(
-        sys_render,
+    frames = sys_render.render(
         xs_render,
         camera="target",
         show_pbar=False,

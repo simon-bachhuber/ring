@@ -4,9 +4,8 @@ import jax
 import jax.numpy as jnp
 import tree_utils
 
-from ... import base
-from ...io import load_sys_from_str
-from ...io import save_sys_to_str
+from x_xy import base
+from x_xy import io
 
 
 def imu_reference_link_name(imu_link_name: str) -> str:
@@ -22,7 +21,7 @@ def _subsystem_factory(imu_name: str, pos_min_max: float) -> base.System:
     pos = f'pos_min="-{pos_min_max} -{pos_min_max} -{pos_min_max}" pos_max="{pos_min_max} {pos_min_max} {pos_min_max}"'  # noqa: E501
     stiff = 'spring_stiff="50 50 50"'
     damping = 'damping="5 5 5"'
-    return load_sys_from_str(
+    return io.load_sys_from_str(
         f"""
         <x_xy>
         <worldbody>
@@ -38,8 +37,6 @@ def inject_subsystems(
     pos_min_max: float = 0.0,
     **kwargs,
 ) -> base.System:
-    from x_xy.subpkgs import sys_composer
-
     imu_idx_to_name_map = {sys.name_to_idx(imu): imu for imu in sys.findall_imus()}
 
     default_spher_stif = jnp.ones((3,)) * 0.3
@@ -55,9 +52,7 @@ def inject_subsystems(
 
         _imu = imu_reference_link_name(imu)
         sys = sys.change_link_name(imu, _imu)
-        sys = sys_composer.inject_system(
-            sys, _subsystem_factory(imu, pos_min_max), _imu
-        )
+        sys = sys.inject_system(_subsystem_factory(imu, pos_min_max), _imu)
 
     # attach geoms to newly injected link
     new_geoms = []
@@ -86,7 +81,7 @@ def inject_subsystems(
     sys = sys.replace(links=sys.links.replace(joint_params=joint_params_zeros))
 
     # double load; this fixes the issue that injected links got appended at the end
-    sys = load_sys_from_str(save_sys_to_str(sys))
+    sys = io.load_sys_from_str(io.save_sys_to_str(sys))
 
     return sys
 
@@ -210,15 +205,13 @@ def _match_q_x_between_sys(
 
 class GeneratorTrafoHideInjectedBodies:
     def __call__(self, gen):
-        from x_xy.subpkgs import sys_composer
-
         def _gen(*args):
             (X, y), (key, q, x, sys_x) = gen(*args)
 
             # delete injected frames; then rename from `_imu` back to `imu`
             imus = sys_x.findall_imus()
             _imu2imu_map = {imu_reference_link_name(imu): imu for imu in imus}
-            sys = sys_composer.delete_subsystem(sys_x, imus)
+            sys = sys_x.delete_system(imus)
             for _imu, imu in _imu2imu_map.items():
                 sys = sys.change_link_name(_imu, imu).change_joint_type(imu, "frozen")
 

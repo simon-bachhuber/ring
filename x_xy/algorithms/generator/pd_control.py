@@ -5,9 +5,9 @@ from flax import struct
 import jax
 import jax.numpy as jnp
 
-from ... import base
-from ..dynamics import step as dynamics_step
-from ..jcalc import _joint_types
+from x_xy import base
+from x_xy.algorithms import dynamics
+from x_xy.algorithms import jcalc
 
 
 @struct.dataclass
@@ -63,7 +63,7 @@ def _pd_control(P: jax.Array, D: Optional[jax.Array] = None):
             q_ref_as_dict[name] = q_ref_link
 
             if D is not None:
-                qd_from_q = _joint_types[typ].qd_from_q
+                qd_from_q = jcalc.get_joint_model(typ).qd_from_q
                 if qd_from_q is None:
                     raise NotImplementedError(
                         f"Please specify `JointModel.qd_from_q` for joint type `{typ}`"
@@ -99,7 +99,7 @@ def _pd_control(P: jax.Array, D: Optional[jax.Array] = None):
             if name not in controller_state.q_ref_as_dict:
                 return
 
-            p_control_term = _joint_types[typ].p_control_term
+            p_control_term = jcalc.get_joint_model(typ).p_control_term
             if p_control_term is None:
                 raise NotImplementedError(
                     f"Please specify `JointModel.p_control_term` for joint type `{typ}`"
@@ -160,7 +160,7 @@ def _unroll_dynamics_pd_control(
         if clip_taus is not None:
             assert clip_taus > 0.0
             taus = jnp.clip(taus, -clip_taus, clip_taus)
-        state = dynamics_step(sys, state, taus)
+        state = dynamics.step(sys, state, taus)
         carry = (state, cs)
         return carry, state
 

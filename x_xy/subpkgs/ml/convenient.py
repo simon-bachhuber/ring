@@ -7,11 +7,10 @@ import jax.numpy as jnp
 from tree_utils import PyTree
 
 import x_xy
+from x_xy import sim2real
 from x_xy.algorithms.sensors import rescale_natural_units
 from x_xy.subpkgs import exp
 from x_xy.subpkgs import ml
-from x_xy.subpkgs import sim2real
-from x_xy.subpkgs import sys_composer
 
 
 def load_1Seg2Seg3Seg4Seg_system(
@@ -65,9 +64,9 @@ def load_1Seg2Seg3Seg4Seg_system(
     if anchor_1Seg is not None:
         sys_1Seg = load(anchor_1Seg, []).change_model_name(suffix="_1Seg")
         sys.append(
-            sys_composer.delete_subsystem(
-                sys_1Seg, delete_1Seg, strict=False
-            ).add_prefix_suffix(suffix="_1Seg" if add_suffix_to_linknames else None)
+            sys_1Seg.delete_system(delete_1Seg, strict=False).add_prefix_suffix(
+                suffix="_1Seg" if add_suffix_to_linknames else None
+            )
         )
 
     if anchor_2Seg is not None:
@@ -99,7 +98,7 @@ def load_1Seg2Seg3Seg4Seg_system(
 
     sys_combined = sys[0]
     for other_sys in sys[1:]:
-        sys_combined = sys_composer.inject_system(sys_combined, other_sys)
+        sys_combined = sys_combined.inject_system(other_sys)
 
     return sys_combined
 
@@ -325,7 +324,7 @@ def pipeline_load_data(
         qinv=True,
     )
     sys_xs = sys
-    sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys)
+    sys_noimu, imu_attachment = sys.make_sys_noimu()
     del sys
 
     N = xs.shape()
@@ -424,7 +423,7 @@ def build_experimental_validation_callback2(
         X = X_transform(X)
 
     return ml.EvalXyTrainingLoopCallback(
-        init_apply_factory(sys_composer.make_sys_noimu(sys_with_imus)[0]),
+        init_apply_factory(sys_with_imus.make_sys_noimu()[0]),
         _mae_metrices,
         X,
         y,

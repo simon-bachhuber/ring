@@ -10,9 +10,8 @@ from tqdm import tqdm
 import tree_utils
 from tree_utils import tree_batch
 
-from ... import utils
-from .types import BatchedGenerator
-from .types import Generator
+from x_xy import utils
+from x_xy.algorithms.generator import types
 
 
 def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:
@@ -23,10 +22,10 @@ def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:
 
 
 def batch_generators_lazy(
-    generators: Generator | list[Generator],
+    generators: types.Generator | list[types.Generator],
     batchsizes: int | list[int] = 1,
     jit: bool = True,
-) -> BatchedGenerator:
+) -> types.BatchedGenerator:
     """Create a large generator by stacking multiple generators lazily."""
     generators = utils.to_list(generators)
 
@@ -64,7 +63,7 @@ def batch_generators_lazy(
 
 
 def batch_generators_eager_to_list(
-    generators: Generator | list[Generator],
+    generators: types.Generator | list[types.Generator],
     sizes: int | list[int],
     seed: int = 1,
     jit: bool = True,
@@ -226,7 +225,7 @@ def batched_generator_from_list(
     shuffle: bool = True,
     drop_last: bool = True,
     seed: int = 1,
-) -> BatchedGenerator:
+) -> types.BatchedGenerator:
     assert drop_last, "Not `drop_last` is currently not implemented."
     assert len(data) >= batchsize
 
@@ -249,14 +248,14 @@ def batched_generator_from_list(
 
 
 def batch_generators_eager(
-    generators: Generator | list[Generator],
+    generators: types.Generator | list[types.Generator],
     sizes: int | list[int],
     batchsize: int,
     shuffle: bool = True,
     drop_last: bool = True,
     seed: int = 1,
     jit: bool = True,
-) -> BatchedGenerator:
+) -> types.BatchedGenerator:
     """Eagerly create a large precomputed generator by calling multiple generators
     and stacking their output."""
 
@@ -265,7 +264,7 @@ def batch_generators_eager(
 
 
 def _process_sizes_batchsizes_generators(
-    generators: Generator | list[Generator],
+    generators: types.Generator | list[types.Generator],
     batchsizes_or_sizes: int | list[int],
 ) -> tuple[list, list]:
     generators = utils.to_list(generators)

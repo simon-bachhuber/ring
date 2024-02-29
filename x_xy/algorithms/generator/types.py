@@ -3,7 +3,7 @@ from typing import Callable, Protocol
 import jax
 from tree_utils import PyTree
 
-from ... import base
+from x_xy import base
 
 PRNGKey = jax.Array
 InputExtras = base.System
@@ -22,15 +22,16 @@ FINALIZE_FN = Callable[[PRNGKey, jax.Array, base.Transform, base.System], Xy]
 
 
 class GeneratorTrafo(Protocol):
-    def __call__(
+    def __call__(  # noqa: E704
         self,
-        gen: GeneratorWithInputOutputExtras
-        | GeneratorWithOutputExtras
-        | GeneratorWithInputExtras,
+        gen: (
+            GeneratorWithInputOutputExtras
+            | GeneratorWithOutputExtras
+            | GeneratorWithInputExtras
+        ),
     ) -> (
         GeneratorWithInputOutputExtras
         | GeneratorWithOutputExtras
         | GeneratorWithInputExtras
         | Generator
-    ):
-        ...
+    ): ...

@@ -11,7 +11,6 @@ import tree_utils
 import x_xy
 from x_xy.subpkgs import exp
 from x_xy.subpkgs import ml
-from x_xy.subpkgs import sys_composer
 
 
 def _second_segment(chain: list[str], seg: str) -> str:
@@ -32,7 +31,7 @@ def _get_system(exp_id, seg, with_two_seg):
     if with_two_seg:
         remaining_segs += [_second_segment(chain, seg)]
     delete = list(set(chain) - set(remaining_segs))
-    sys_render = sys_composer.delete_subsystem(sys_render, delete, strict=False)
+    sys_render = sys_render.delete_system(delete, strict=False)
     return sys_render
 
 
@@ -70,7 +69,7 @@ def attitude(
     if with_two_seg:
         second_seg = sys.findall_segments()[1]
 
-    sys_noimu = sys_composer.make_sys_noimu(sys)[0]
+    sys_noimu = sys.make_sys_noimu()[0]
     X, y, xs_render = ml.convenient.pipeline_load_data(
         sys=sys,
         exp_id=exp_id,
@@ -87,7 +86,7 @@ def attitude(
 
     if with_two_seg:
         y.pop(second_seg)
-        sys_render = sys_composer.delete_subsystem(sys, second_seg)
+        sys_render = sys.delete_system(second_seg)
         *_, xs_render = ml.convenient.pipeline_load_data(
             sys=sys,
             exp_id=exp_id,
@@ -116,8 +115,7 @@ def attitude(
     if render:
         yhat_render = x_xy.utils.pytree_deepcopy(yhat)
         yhat_render[seg] = x_xy.maths.quat_inv(yhat_render[seg])
-        frames = x_xy.render_prediction(
-            sys_render,
+        frames = sys_render.render_prediction(
             xs_render,
             yhat_render,
             stepframe=4,

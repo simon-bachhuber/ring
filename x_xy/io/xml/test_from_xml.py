@@ -52,6 +52,6 @@ def test_from_xml():
         omc=[None],
     )
     sys1 = sys1.parse()
-    sys2 = x_xy.load_sys_from_str(sys_str)
+    sys2 = x_xy.io.load_sys_from_str(sys_str)
 
     assert x_xy.utils.sys_compare(sys1, sys2)

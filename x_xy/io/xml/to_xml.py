@@ -7,10 +7,10 @@ from xml.etree.ElementTree import tostring
 import jax.numpy as jnp
 from tree_utils import batch_concat
 
-from x_xy.io.xml import abstract
-from x_xy.io.xml.abstract import _to_str
+from x_xy import base
 
-from ... import base
+from . import abstract
+from .abstract import _to_str
 
 
 def save_sys_to_str(sys: base.System) -> str:

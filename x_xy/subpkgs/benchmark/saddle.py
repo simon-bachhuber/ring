@@ -8,7 +8,6 @@ import tree_utils
 import x_xy
 from x_xy.subpkgs import exp
 from x_xy.subpkgs import ml
-from x_xy.subpkgs import sys_composer
 
 from .single import _error_fn
 
@@ -56,9 +55,9 @@ def saddle(
     )
 
     if not model_as_1DOF:
-        sys_noimu = x_xy.load_sys_from_str(_sys).change_link_name("outer", outer)
+        sys_noimu = x_xy.io.load_sys_from_str(_sys).change_link_name("outer", outer)
     else:
-        sys_noimu = sys_composer.make_sys_noimu(sys_exp)[0]
+        sys_noimu = sys_exp.make_sys_noimu()[0]
 
     mag = True
     if isinstance(filter, ml.InitApplyFnFilter):
@@ -119,8 +118,7 @@ def saddle(
         yhat_render = x_xy.utils.pytree_deepcopy(yhat)
         yhat_render["seg5"] = x_xy.maths.quat_inv(yhat_render["seg5"])
 
-        frames = x_xy.render_prediction(
-            sys_exp,
+        frames = sys_exp.render_prediction(
             xs,
             yhat_render,
             stepframe=4,

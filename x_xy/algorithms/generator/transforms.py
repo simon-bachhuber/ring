@@ -3,23 +3,15 @@ from typing import Optional
 import jax
 import jax.numpy as jnp
 
-from ... import base
-from ... import maths
-from ...utils import dict_union
-from ..sensors import imu as imu_fn
-from ..sensors import joint_axes
-from ..sensors import rel_pose
-from ..sensors import root_incl
-from .pd_control import _unroll_dynamics_pd_control
-from .types import FINALIZE_FN
-from .types import GeneratorTrafo
-from .types import GeneratorWithInputExtras
-from .types import GeneratorWithInputOutputExtras
-from .types import GeneratorWithOutputExtras
-from .types import SETUP_FN
+from x_xy import base
+from x_xy import maths
+from x_xy import utils
+from x_xy.algorithms import sensors
+from x_xy.algorithms.generator import pd_control
+from x_xy.algorithms.generator import types
 
 
-class GeneratorTrafoLambda(GeneratorTrafo):
+class GeneratorTrafoLambda(types.GeneratorTrafo):
     def __init__(self, f, input: bool = False):
         self.f = f
         self.input = input
@@ -38,14 +30,14 @@ class GeneratorTrafoLambda(GeneratorTrafo):
         return _gen
 
 
-class GeneratorTrafoSetupFn(GeneratorTrafo):
-    def __init__(self, setup_fn: SETUP_FN):
+class GeneratorTrafoSetupFn(types.GeneratorTrafo):
+    def __init__(self, setup_fn: types.SETUP_FN):
         self.setup_fn = setup_fn
 
     def __call__(
         self,
-        gen: GeneratorWithInputExtras | GeneratorWithInputOutputExtras,
-    ) -> GeneratorWithInputExtras | GeneratorWithInputOutputExtras:
+        gen: types.GeneratorWithInputExtras | types.GeneratorWithInputOutputExtras,
+    ) -> types.GeneratorWithInputExtras | types.GeneratorWithInputOutputExtras:
         def _gen(key, sys):
             key, consume = jax.random.split(key)
             sys = self.setup_fn(consume, sys)
@@ -54,14 +46,14 @@ class GeneratorTrafoSetupFn(GeneratorTrafo):
         return _gen
 
 
-class GeneratorTrafoFinalizeFn(GeneratorTrafo):
-    def __init__(self, finalize_fn: FINALIZE_FN):
+class GeneratorTrafoFinalizeFn(types.GeneratorTrafo):
+    def __init__(self, finalize_fn: types.FINALIZE_FN):
         self.finalize_fn = finalize_fn
 
     def __call__(
         self,
-        gen: GeneratorWithOutputExtras | GeneratorWithInputOutputExtras,
-    ) -> GeneratorWithOutputExtras | GeneratorWithInputOutputExtras:
+        gen: types.GeneratorWithOutputExtras | types.GeneratorWithInputOutputExtras,
+    ) -> types.GeneratorWithOutputExtras | types.GeneratorWithInputOutputExtras:
         def _gen(*args):
             (X, y), (key, *extras) = gen(*args)
             # make sure we aren't overwriting anything
@@ -73,11 +65,11 @@ class GeneratorTrafoFinalizeFn(GeneratorTrafo):
         return _gen
 
 
-class GeneratorTrafoRandomizePositions(GeneratorTrafo):
+class GeneratorTrafoRandomizePositions(types.GeneratorTrafo):
     def __call__(
         self,
-        gen: GeneratorWithInputExtras | GeneratorWithInputOutputExtras,
-    ) -> GeneratorWithInputExtras | GeneratorWithInputOutputExtras:
+        gen: types.GeneratorWithInputExtras | types.GeneratorWithInputOutputExtras,
+    ) -> types.GeneratorWithInputExtras | types.GeneratorWithInputOutputExtras:
         return GeneratorTrafoSetupFn(_setup_fn_randomize_positions)(gen)
 
 
@@ -104,7 +96,7 @@ def _draw_pos_uniform(key, pos_min, pos_max):
     return key, pos
 
 
-class GeneratorTrafoRandomizeTransform1Rot(GeneratorTrafo):
+class GeneratorTrafoRandomizeTransform1Rot(types.GeneratorTrafo):
     def __init__(self, maxval_deg: float):
         self.maxval = jnp.deg2rad(maxval_deg)
 
@@ -130,7 +122,7 @@ def _setup_fn_randomize_transform1_rot(
     return sys.replace(links=sys.links.replace(transform1=new_transform1))
 
 
-class GeneratorTrafoJointAxisSensor(GeneratorTrafo):
+class GeneratorTrafoJointAxisSensor(types.GeneratorTrafo):
     def __init__(self, sys: base.System, **kwargs):
         self.sys = sys
         self.kwargs = kwargs
@@ -139,36 +131,38 @@ class GeneratorTrafoJointAxisSensor(GeneratorTrafo):
         def _gen(*args):
             (X, y), (key, q, x, sys_x) = gen(*args)
             key, consume = jax.random.split(key)
-            X_joint_axes = joint_axes(self.sys, x, sys_x, key=consume, **self.kwargs)
-            X = dict_union(X, X_joint_axes)
+            X_joint_axes = sensors.joint_axes(
+                self.sys, x, sys_x, key=consume, **self.kwargs
+            )
+            X = utils.dict_union(X, X_joint_axes)
             return (X, y), (key, q, x, sys_x)
 
         return _gen
 
 
-class GeneratorTrafoRelPose(GeneratorTrafo):
+class GeneratorTrafoRelPose(types.GeneratorTrafo):
     def __init__(self, sys: base.System):
         self.sys = sys
 
     def __call__(self, gen):
         def _gen(*args):
             (X, y), (key, q, x, sys_x) = gen(*args)
-            y_relpose = rel_pose(self.sys, x, sys_x)
-            y = dict_union(y, y_relpose)
+            y_relpose = sensors.rel_pose(self.sys, x, sys_x)
+            y = utils.dict_union(y, y_relpose)
             return (X, y), (key, q, x, sys_x)
 
         return _gen
 
 
-class GeneratorTrafoRootIncl(GeneratorTrafo):
+class GeneratorTrafoRootIncl(types.GeneratorTrafo):
     def __init__(self, sys: base.System):
         self.sys = sys
 
     def __call__(self, gen):
         def _gen(*args):
             (X, y), (key, q, x, sys_x) = gen(*args)
-            y_root_incl = root_incl(self.sys, x, sys_x)
-            y = dict_union(y, y_root_incl)
+            y_root_incl = sensors.root_incl(self.sys, x, sys_x)
+            y = utils.dict_union(y, y_root_incl)
             return (X, y), (key, q, x, sys_x)
 
         return _gen
@@ -181,27 +175,27 @@ _default_imu_kwargs = dict(
 )
 
 
-class GeneratorTrafoIMU(GeneratorTrafo):
+class GeneratorTrafoIMU(types.GeneratorTrafo):
     def __init__(self, **imu_kwargs):
         self.kwargs = _default_imu_kwargs.copy()
         self.kwargs.update(imu_kwargs)
 
-    def __call__(self, gen: GeneratorWithOutputExtras | GeneratorWithInputOutputExtras):
+    def __call__(
+        self,
+        gen: types.GeneratorWithOutputExtras | types.GeneratorWithInputOutputExtras,
+    ):
         def _gen(*args):
             (X, y), (key, q, x, sys) = gen(*args)
             key, consume = jax.random.split(key)
             X_imu = _imu_data(consume, x, sys, **self.kwargs)
-            X = dict_union(X, X_imu)
+            X = utils.dict_union(X, X_imu)
             return (X, y), (key, q, x, sys)
 
         return _gen
 
 
 def _imu_data(key, xs, sys_xs, **kwargs) -> dict:
-    # TODO
-    from x_xy.subpkgs import sys_composer
-
-    sys_noimu, imu_attachment = sys_composer.make_sys_noimu(sys_xs)
+    sys_noimu, imu_attachment = sys_xs.make_sys_noimu()
     inv_imu_attachment = {val: key for key, val in imu_attachment.items()}
     X = {}
     N = xs.shape()
@@ -209,7 +203,7 @@ def _imu_data(key, xs, sys_xs, **kwargs) -> dict:
         if segment in inv_imu_attachment:
             imu = inv_imu_attachment[segment]
             key, consume = jax.random.split(key)
-            imu_measurements = imu_fn(
+            imu_measurements = sensors.imu(
                 xs=xs.take(sys_xs.name_to_idx(imu), 1),
                 gravity=sys_xs.gravity,
                 dt=sys_xs.dt,
@@ -255,7 +249,7 @@ _P_gains = {
 }
 
 
-class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
+class GeneratorTrafoDynamicalSimulation(types.GeneratorTrafo):
     def __init__(
         self,
         custom_P_gains: dict[str, jax.Array] = dict(),
@@ -271,8 +265,6 @@ class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
         self.unroll_kwargs = unroll_kwargs
 
     def __call__(self, gen):
-        from x_xy.subpkgs import sys_composer
-
         def _gen(*args):
             (X, y), (key, q, _, sys_x) = gen(*args)
             idx_map_q = sys_x.idx_map("q")
@@ -285,7 +277,7 @@ class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
 
             sys_q_ref = sys_x
             if len(self.unactuated_links) > 0:
-                sys_q_ref = sys_composer.delete_subsystem(sys_x, self.unactuated_links)
+                sys_q_ref = sys_x.delete_system(self.unactuated_links)
 
             q_ref = []
             p_gains_list = []
@@ -320,12 +312,12 @@ class GeneratorTrafoDynamicalSimulation(GeneratorTrafo):
             )
 
             # perform dynamical simulation
-            states = _unroll_dynamics_pd_control(
+            states = pd_control._unroll_dynamics_pd_control(
                 sys_x, q_ref, p_gains_array, sys_q_ref=sys_q_ref, **self.unroll_kwargs
             )
 
             if self.return_q_ref:
-                X = dict_union(X, dict(q_ref=q_ref))
+                X = utils.dict_union(X, dict(q_ref=q_ref))
 
             return (X, y), (key, states.q, states.x, sys_x)
 

@@ -9,7 +9,6 @@ import qmt
 import x_xy
 from x_xy.subpkgs import exp
 from x_xy.subpkgs import ml
-from x_xy.subpkgs import sys_composer
 
 
 @cache
@@ -17,7 +16,7 @@ def _get_system(exp_id, seg_femur, seg_tibia):
     sys_render = exp.load_sys(exp_id, morph_yaml_key=seg_femur)
     chain = sys_render.findall_segments()
     delete = list(set(chain) - set([seg_femur, seg_tibia]))
-    sys_render = sys_composer.delete_subsystem(sys_render, delete, strict=False)
+    sys_render = sys_render.delete_system(delete, strict=False)
     return sys_render
 
 
@@ -50,7 +49,7 @@ def single_hinge_joint(
         mag = False
 
     sys = _get_system(exp_id, seg_femur, seg_tibia)
-    sys_noimu = sys_composer.make_sys_noimu(sys)[0]
+    sys_noimu = sys.make_sys_noimu()[0]
 
     X, y, xs = ml.convenient.pipeline_load_data(
         sys=sys,
@@ -72,8 +71,7 @@ def single_hinge_joint(
     if render:
         yhat_render = x_xy.utils.pytree_deepcopy(yhat)
         yhat_render[seg_femur] = x_xy.maths.quat_inv(yhat_render[seg_femur])
-        frames = x_xy.render_prediction(
-            sys,
+        frames = sys.render_prediction(
             xs,
             yhat_render,
             stepframe=4,

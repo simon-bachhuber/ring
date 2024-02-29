@@ -3,11 +3,11 @@ from xml.etree import ElementTree
 import jax
 import numpy as np
 
+from x_xy import base
+from x_xy.algorithms import jcalc
 from x_xy.utils import parse_path
 
 from . import abstract
-from ... import base
-from ...algorithms.jcalc import _init_joint_params
 
 
 def _find_assert_unique(tree: ElementTree, *keys):
@@ -251,7 +251,7 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
     # we load using numpy in order to have float64 precision
     sys = jax.tree_map(jax.numpy.asarray, sys)
 
-    sys = _init_joint_params(jax.random.PRNGKey(seed), sys)
+    sys = jcalc._init_joint_params(jax.random.PRNGKey(seed), sys)
 
     return sys.parse()
 
