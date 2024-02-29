@@ -217,7 +217,10 @@ def randomize_to_world_pos_rot(
 """
 
     free_sys = io.load_sys_from_str(free_sys_str)
-    _, xs_free = generator.build_generator(free_sys, config)(key)
+    _, xs_free = generator.RCMG(
+        free_sys, config, finalize_fn=lambda key, q, x, sys: (q, x)
+    ).to_lazy_gen()(key)
+    xs_free = xs_free.take(0, axis=0)
     xs_free = xs_free.take(free_sys.name_to_idx("free"), axis=1)
     link_idx_to_world = sys.link_parents.index(-1)
     return _overwrite_transform_of_link_then_update(sys, xs, xs_free, link_idx_to_world)

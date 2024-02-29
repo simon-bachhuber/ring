@@ -12,9 +12,9 @@ def _test_train_rnno_lru(observer_fn):
     example = "test_three_seg_seg2"
     sys = x_xy.io.load_example(example)
     seed = jax.random.PRNGKey(1)
-    gen = x_xy.build_generator(
-        sys, x_xy.MotionConfig(T=10.0), sizes=1, add_X_imus=True, add_y_relpose=True
-    )
+    gen = x_xy.RCMG(
+        sys, x_xy.MotionConfig(T=10.0), add_X_imus=True, add_y_relpose=True
+    ).to_lazy_gen()
 
     X, y = gen(seed)
     sys_noimu, _ = sys.make_sys_noimu()
@@ -91,16 +91,12 @@ def test_checkpointing():
     example = "test_three_seg_seg2"
     sys = x_xy.io.load_example(example)
     sys_noimu, _ = sys.make_sys_noimu()
-    gen = x_xy.build_generator(
+    gen = x_xy.RCMG(
         sys,
         x_xy.MotionConfig(T=10.0),
-        sizes=1,
         add_X_imus=True,
         add_y_relpose=True,
-        batchsize=1,
-        seed=1,
-        mode="eager",
-    )
+    ).to_eager_gen()
     rnno = ml.make_rnno(sys_noimu, hidden_state_dim=20, message_dim=10)
 
     ml.train(gen, 10, rnno, callback_save_params=True, optimizer=optimizer)

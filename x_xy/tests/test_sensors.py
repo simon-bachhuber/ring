@@ -117,20 +117,16 @@ def test_rel_pose():
 
 def test_natural_units():
     sys = x_xy.io.load_example("test_three_seg_seg2")
-    X, y = x_xy.build_generator(
+    X, y = x_xy.RCMG(
         sys,
         add_X_imus=True,
         add_X_imus_kwargs=dict(natural_units=False),
-        seed=1,
-        mode="list",
-    )[0]
-    X_nat, y_nat = x_xy.build_generator(
+    ).to_list()[0]
+    X_nat, y_nat = x_xy.RCMG(
         sys,
         add_X_imus=True,
         add_X_imus_kwargs=dict(natural_units=True),
-        seed=1,
-        mode="list",
-    )[0]
+    ).to_list()[0]
 
     imu_name = "seg1"
     imu, imu_nat = X[imu_name], X_nat[imu_name]

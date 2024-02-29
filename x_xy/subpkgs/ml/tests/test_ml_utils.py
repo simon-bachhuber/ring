@@ -35,21 +35,13 @@ def test_save_load_generators():
     path = "~/data1/gen.h5"
 
     sys = x_xy.io.load_example("test_three_seg_seg2")
-    data = x_xy.build_generator(
+    rcmg = x_xy.RCMG(
         sys,
-        seed=1,
-        mode="list",
-        add_X_imus=True,
-        add_y_relpose=True,
-    )[0]
-    x_xy.build_generator(
-        sys,
-        filepath=path,
-        seed=1,
-        mode="hdf5",
         add_X_imus=True,
         add_y_relpose=True,
     )
+    data = rcmg.to_list()[0]
+    rcmg.to_hdf5(path)
 
     gen_reloaded, _ = x_xy.algorithms.batched_generator_from_paths([path, path], 1)
     data_reloaded = jax.tree_map(

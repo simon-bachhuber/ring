@@ -1,3 +1,4 @@
+from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -13,8 +14,14 @@ def test_batch_generator(N: int, seed: int):
     sys = x_xy.io.load_example("test_free")
     config1 = x_xy.MotionConfig(ang0_min=0.0, ang0_max=0.0)
     config2 = x_xy.MotionConfig()
-    gen1 = x_xy.build_generator(sys, config1, _compat=True)
-    gen2 = x_xy.build_generator(sys, config2, _compat=True)
+    gen1 = x_xy.RCMG(
+        sys, config1, finalize_fn=lambda key, q, x, sys: (q, x)
+    ).to_lazy_gen()
+    gen1 = unbatch_gen(gen1)
+    gen2 = x_xy.RCMG(
+        sys, config2, finalize_fn=lambda key, q, x, sys: (q, x)
+    ).to_lazy_gen()
+    gen2 = unbatch_gen(gen2)
     gen = x_xy.algorithms.batch_generators_lazy([gen1, gen2, gen1], [N, N, N])
     q, _ = gen(jax.random.PRNGKey(seed))
 
@@ -35,18 +42,19 @@ def test_initial_ang_pos_values():
     sys = x_xy.io.load_example("test_ang0_pos0")
 
     def rcmg(ang0_min=0, ang0_max=0, pos0_min=0, pos0_max=0, bs=bs):
-        q, _ = x_xy.algorithms.batch_generators_lazy(
-            x_xy.build_generator(
-                sys,
-                x_xy.MotionConfig(
-                    ang0_min=ang0_min,
-                    ang0_max=ang0_max,
-                    pos0_min=pos0_min,
-                    pos0_max=pos0_max,
-                    T=T,
-                ),
-                _compat=True,
+        gen = x_xy.RCMG(
+            sys,
+            x_xy.MotionConfig(
+                ang0_min=ang0_min,
+                ang0_max=ang0_max,
+                pos0_min=pos0_min,
+                pos0_max=pos0_max,
+                T=T,
             ),
+            finalize_fn=lambda key, q, x, sys: (q, x),
+        ).to_lazy_gen()
+        q, _ = x_xy.algorithms.batch_generators_lazy(
+            unbatch_gen(gen),
             bs,
         )(jax.random.PRNGKey(1))
         return q
@@ -79,7 +87,11 @@ def test_rcmg():
                 # this tests `TimeDependentFloat`-logic
                 dang_max=_dang_max,
             )
-            generator = x_xy.build_generator(sys, config, _compat=True)
+            generator = unbatch_gen(
+                x_xy.RCMG(
+                    sys, config, finalize_fn=lambda key, q, x, sys: (q, x)
+                ).to_lazy_gen()
+            )
             bs = 8
             generator = x_xy.algorithms.batch_generators_lazy(generator, bs)
 

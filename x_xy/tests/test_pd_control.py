@@ -1,3 +1,4 @@
+from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -13,17 +14,19 @@ def test_pd_control():
         if nograv:
             sys = sys.replace(gravity=sys.gravity * 0.0)
 
-        q, xs = x_xy.algorithms.build_generator(
-            sys,
-            x_xy.algorithms.MotionConfig(
-                T=10.0,
-                dang_max=3.0,
-                t_max=0.5,
-                dang_max_free_spherical=jnp.deg2rad(60),
-                t_min=0.15,
-                dpos_max=0.1,
-            ),
-            _compat=True,
+        q, xs = unbatch_gen(
+            x_xy.algorithms.RCMG(
+                sys,
+                x_xy.algorithms.MotionConfig(
+                    T=10.0,
+                    dang_max=3.0,
+                    t_max=0.5,
+                    dang_max_free_spherical=jnp.deg2rad(60),
+                    t_min=0.15,
+                    dpos_max=0.1,
+                ),
+                finalize_fn=lambda key, q, x, sys: (q, x),
+            ).to_lazy_gen()
         )(jax.random.PRNGKey(2))
 
         jit_step_fn = jax.jit(lambda sys, state, tau: x_xy.step(sys, state, tau, 1))

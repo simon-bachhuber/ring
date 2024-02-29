@@ -1,3 +1,4 @@
+from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -14,12 +15,14 @@ def test_join_motionconfigs(T, seed):
 
     sys = x_xy.io.load_example("test_free")
     dt = sys.dt
-    q, x = x_xy.build_generator(
-        sys,
-        x_xy.join_motionconfigs(
-            [nomotion_config, motion_config, nomotion_config], [T, 2 * T]
-        ),
-        _compat=True,
+    q, x = unbatch_gen(
+        x_xy.RCMG(
+            sys,
+            x_xy.join_motionconfigs(
+                [nomotion_config, motion_config, nomotion_config], [T, 2 * T]
+            ),
+            finalize_fn=lambda key, q, x, sys: (q, x),
+        ).to_lazy_gen()
     )(jax.random.PRNGKey(seed))
 
     def array_eq(a: int, b: int):

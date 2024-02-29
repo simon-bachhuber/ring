@@ -1,3 +1,4 @@
+from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -125,7 +126,11 @@ def test_forward_kinematics_omc():
 def test_zip_unzip_scale():
     for sys in x_xy.io.list_load_examples():
         print(sys.model_name)
-        _, xs = x_xy.algorithms.build_generator(sys, _compat=True)(
+        _, xs = unbatch_gen(
+            x_xy.algorithms.RCMG(
+                sys, finalize_fn=lambda key, q, x, sys: (q, x)
+            ).to_lazy_gen()
+        )(
             jax.random.PRNGKey(
                 1,
             )

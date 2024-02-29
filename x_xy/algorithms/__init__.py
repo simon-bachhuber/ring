@@ -15,7 +15,6 @@ from .generator import batch_generators_eager_to_list
 from .generator import batch_generators_lazy
 from .generator import batched_generator_from_list
 from .generator import batched_generator_from_paths
-from .generator import build_generator
 from .generator import FINALIZE_FN
 from .generator import Generator
 from .generator import GeneratorPipe
@@ -23,6 +22,7 @@ from .generator import GeneratorTrafo
 from .generator import GeneratorTrafoRandomizePositions
 from .generator import GeneratorTrafoRemoveInputExtras
 from .generator import GeneratorTrafoRemoveOutputExtras
+from .generator import RCMG
 from .generator import SETUP_FN
 from .jcalc import get_joint_model
 from .jcalc import jcalc_motion

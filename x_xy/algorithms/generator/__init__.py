@@ -4,10 +4,10 @@ from . import motion_artifacts
 from . import pd_control
 from . import transforms
 from . import types
-from .base import build_generator
 from .base import GeneratorPipe
 from .base import GeneratorTrafoRemoveInputExtras
 from .base import GeneratorTrafoRemoveOutputExtras
+from .base import RCMG
 from .batch import batch_generators_eager
 from .batch import batch_generators_eager_to_list
 from .batch import batch_generators_lazy

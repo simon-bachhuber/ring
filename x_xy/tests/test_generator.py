@@ -1,3 +1,4 @@
+from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -20,7 +21,7 @@ def finalize_fn_full_imu_setup(key, q, x, sys):
 
 def test_normalize():
     sys = x_xy.io.load_example("test_three_seg_seg2")
-    gen = x_xy.build_generator(sys, finalize_fn=finalize_fn_full_imu_setup, sizes=50)
+    gen = x_xy.RCMG(sys, finalize_fn=finalize_fn_full_imu_setup).to_lazy_gen(sizes=50)
 
     normalizer = x_xy.utils.make_normalizer_from_generator(
         gen, approx_with_large_batchsize=50
@@ -87,9 +88,9 @@ def test_randomize_positions():
 def test_cor():
     sys = x_xy.io.load_example("test_three_seg_seg2")
     sys = sys.inject_system(sys.add_prefix_suffix("second_"))
-    x_xy.build_generator(sys, x_xy.MotionConfig(cor=True), _compat=True)(
-        jax.random.PRNGKey(1)
-    )
+    x_xy.RCMG(
+        sys, x_xy.MotionConfig(cor=True), finalize_fn=lambda key, q, x, sys: (q, x)
+    ).to_lazy_gen()(jax.random.PRNGKey(1))
 
 
 P_rot, P_pos = 50.0, 200.0
@@ -146,21 +147,24 @@ def test_knee_flexible_imus_sim():
         ]
     )
 
-    q, _ = x_xy.build_generator(
-        sys,
-        x_xy.MotionConfig(T=0.1),
-        imu_motion_artifacts=True,
-        dynamic_simulation=True,
-        dynamic_simulation_kwargs=dict(
-            # back then i used `initial_sim_state_is_zeros` = False in combination
-            # with `join_motionconfigs` to create two seconds of initial nomotion phase
-            # but the new logic is better (that is with initial_sim_state_... = False)
-            overwrite_q_ref=(qref, sys.idx_map("q")),
-            initial_sim_state_is_zeros=True,
-            custom_P_gains=_P_gains,
-        ),
-        imu_motion_artifacts_kwargs=dict(hide_injected_bodies=False),
-        _compat=True,
+    q, _ = unbatch_gen(
+        x_xy.RCMG(
+            sys,
+            x_xy.MotionConfig(T=0.1),
+            imu_motion_artifacts=True,
+            dynamic_simulation=True,
+            dynamic_simulation_kwargs=dict(
+                # back then i used `initial_sim_state_is_zeros` = False in combination
+                # with `join_motionconfigs` to create two seconds of initial nomotion
+                # phase but the new logic is better (that is with initial_sim_state_...
+                # = False)
+                overwrite_q_ref=(qref, sys.idx_map("q")),
+                initial_sim_state_is_zeros=True,
+                custom_P_gains=_P_gains,
+            ),
+            imu_motion_artifacts_kwargs=dict(hide_injected_bodies=False),
+            finalize_fn=lambda key, q, x, sys: (q, x),
+        ).to_lazy_gen()
     )(jax.random.PRNGKey(1))
 
     np.testing.assert_allclose(q[-1], q_target, atol=1.2e-7, rtol=1.3e-5)
