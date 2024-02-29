@@ -3,23 +3,20 @@ from typing import Optional, Tuple
 import jax
 import tree_utils
 
-import x_xy
 from x_xy import algebra
-from x_xy import build_generator
-from x_xy import load_sys_from_str
+from x_xy import base
+from x_xy import io
 from x_xy import maths
-from x_xy import RCMG_Config
-from x_xy import System
-from x_xy import Transform
-from x_xy.algorithms.jcalc import _joint_types
+from x_xy.algorithms import generator
+from x_xy.algorithms import jcalc
 
 
 def xs_from_raw(
-    sys: x_xy.base.System,
+    sys: base.System,
     link_name_pos_rot: dict,
     eps_frame: Optional[str] = None,
     qinv: bool = False,
-) -> x_xy.base.Transform:
+) -> base.Transform:
     """Build time-series of maximal coordinates `xs` from raw position and
     quaternion trajectory data. This function scans through each link (as
     defined by `sys`), looks for the raw data in `link_name_pos_rot` using
@@ -45,10 +42,10 @@ def xs_from_raw(
         eps = link_name_pos_rot[eps_frame]
         q_eps = eps["quat"][0]
         if qinv:
-            q_eps = x_xy.maths.quat_inv(q_eps)
-        t_eps = x_xy.base.Transform(eps["pos"][0], q_eps)
+            q_eps = maths.quat_inv(q_eps)
+        t_eps = base.Transform(eps["pos"][0], q_eps)
     else:
-        t_eps = x_xy.base.Transform.zero()
+        t_eps = base.Transform.zero()
 
     # build `xs` from optical motion capture data
     xs = []
@@ -57,9 +54,9 @@ def xs_from_raw(
         q = link_name_pos_rot[link_name]["quat"]
         pos = link_name_pos_rot[link_name].get("pos", None)
         if qinv:
-            q = x_xy.maths.quat_inv(q)
-        t = x_xy.base.Transform.create(pos, q)
-        t = x_xy.algebra.transform_mul(t, x_xy.algebra.transform_inv(t_eps))
+            q = maths.quat_inv(q)
+        t = base.Transform.create(pos, q)
+        t = algebra.transform_mul(t, algebra.transform_inv(t_eps))
         xs.append(t)
 
     sys.scan(f, "l", sys.link_names)
@@ -70,7 +67,9 @@ def xs_from_raw(
     return xs
 
 
-def match_xs(sys: System, xs: Transform, sys_xs: System) -> Transform:
+def match_xs(
+    sys: base.System, xs: base.Transform, sys_xs: base.System
+) -> base.Transform:
     """Match tranforms `xs` to subsystem `sys`.
 
     Args:
@@ -98,7 +97,9 @@ def match_xs(sys: System, xs: Transform, sys_xs: System) -> Transform:
     return xs_small
 
 
-def unzip_xs(sys: System, xs: Transform) -> Tuple[Transform, Transform]:
+def unzip_xs(
+    sys: base.System, xs: base.Transform
+) -> Tuple[base.Transform, base.Transform]:
     """Split eps-to-link transforms into parent-to-child pure
     translational `transform1` and pure rotational `transform2`.
 
@@ -121,8 +122,8 @@ def unzip_xs(sys: System, xs: Transform) -> Tuple[Transform, Transform]:
                     xs[i], algebra.transform_inv(xs[p])
                 )
 
-            transform1_pos = Transform.create(pos=x_parent_to_link.pos)
-            transform2_rot = Transform.create(rot=x_parent_to_link.rot)
+            transform1_pos = base.Transform.create(pos=x_parent_to_link.pos)
+            transform2_rot = base.Transform.create(rot=x_parent_to_link.rot)
             return (transform1_pos, transform2_rot)
 
         return sys.scan(f, "ll", list(range(sys.num_links())), sys.link_parents)
@@ -131,10 +132,10 @@ def unzip_xs(sys: System, xs: Transform) -> Tuple[Transform, Transform]:
 
 
 def zip_xs(
-    sys: System,
-    xs_transform1: Transform,
-    xs_transform2: Transform,
-) -> Transform:
+    sys: base.System,
+    xs_transform1: base.Transform,
+    xs_transform2: base.Transform,
+) -> base.Transform:
     """Performs forward kinematics using `transform1` and `transform2`.
 
     Args:
@@ -150,7 +151,7 @@ def zip_xs(
 
     @jax.vmap
     def _zip_xs(xs_transform1, xs_transform2):
-        eps_to_l = {-1: x_xy.base.Transform.zero()}
+        eps_to_l = {-1: base.Transform.zero()}
 
         def f(_, __, i: int, p: int):
             transform = algebra.transform_mul(xs_transform2[i], xs_transform1[i])
@@ -168,7 +169,7 @@ def _checks_time_series_of_xs(sys, xs):
     assert num_links_xs == num_links_sys, f"{num_links_xs} != {num_links_sys}"
 
 
-def delete_to_world_pos_rot(sys: System, xs: Transform) -> Transform:
+def delete_to_world_pos_rot(sys: base.System, xs: base.Transform) -> base.Transform:
     """Replace the transforms of all links that connect to the worldbody
     by unity transforms.
 
@@ -181,7 +182,7 @@ def delete_to_world_pos_rot(sys: System, xs: Transform) -> Transform:
     """
     _checks_time_series_of_xs(sys, xs)
 
-    zero_trafo = Transform.zero((xs.shape(),))
+    zero_trafo = base.Transform.zero((xs.shape(),))
     for i, p in enumerate(sys.link_parents):
         if p == -1:
             xs = _overwrite_transform_of_link_then_update(sys, xs, zero_trafo, i)
@@ -189,8 +190,8 @@ def delete_to_world_pos_rot(sys: System, xs: Transform) -> Transform:
 
 
 def randomize_to_world_pos_rot(
-    key: jax.Array, sys: System, xs: Transform, config: RCMG_Config
-) -> Transform:
+    key: jax.Array, sys: base.System, xs: base.Transform, config: jcalc.RCMG_Config
+) -> base.Transform:
     """Replace the transforms of all links that connect to the worldbody
     by randomize transforms.
 
@@ -215,35 +216,37 @@ def randomize_to_world_pos_rot(
 </x_xy>
 """
 
-    free_sys = load_sys_from_str(free_sys_str)
-    _, xs_free = build_generator(free_sys, config)(key)
+    free_sys = io.load_sys_from_str(free_sys_str)
+    _, xs_free = generator.build_generator(free_sys, config)(key)
     xs_free = xs_free.take(free_sys.name_to_idx("free"), axis=1)
     link_idx_to_world = sys.link_parents.index(-1)
     return _overwrite_transform_of_link_then_update(sys, xs, xs_free, link_idx_to_world)
 
 
 def _overwrite_transform_of_link_then_update(
-    sys: System, xs: Transform, xs_new_link: Transform, new_link_idx: int
+    sys: base.System, xs: base.Transform, xs_new_link: base.Transform, new_link_idx: int
 ):
     """Replace transform and then perform forward kinematics."""
     assert xs_new_link.ndim() == (xs.ndim() - 1) == 2
     transform1, transform2 = unzip_xs(sys, xs)
     transform1 = _replace_transform_of_link(transform1, xs_new_link, new_link_idx)
-    zero_trafo = Transform.zero((xs_new_link.shape(),))
+    zero_trafo = base.Transform.zero((xs_new_link.shape(),))
     transform2 = _replace_transform_of_link(transform2, zero_trafo, new_link_idx)
     return zip_xs(sys, transform1, transform2)
 
 
-def _replace_transform_of_link(xs: Transform, xs_new_link: Transform, link_idx):
+def _replace_transform_of_link(
+    xs: base.Transform, xs_new_link: base.Transform, link_idx
+):
     return xs.transpose((1, 0, 2)).index_set(link_idx, xs_new_link).transpose((1, 0, 2))
 
 
 def scale_xs(
-    sys: System,
-    xs: Transform,
+    sys: base.System,
+    xs: base.Transform,
     factor: float,
     exclude: list[str] = ["px", "py", "pz", "free"],
-) -> Transform:
+) -> base.Transform:
     """Increase / decrease transforms by scaling their positional / rotational
     components based on the systems link type, i.e. the `xs` should conceptionally
     be `transform2` objects.
@@ -273,7 +276,7 @@ def scale_xs(
     return _scale_xs(xs)
 
 
-def project_xs(sys: System, transform2: Transform) -> Transform:
+def project_xs(sys: base.System, transform2: base.Transform) -> base.Transform:
     """Project transforms into the physically feasible subspace as defined by the
     joints in the system."""
     _checks_time_series_of_xs(sys, transform2)
@@ -290,9 +293,9 @@ def project_xs(sys: System, transform2: Transform) -> Transform:
                 else joint_params["default"]
             )
 
-            project_transform_to_feasible = _joint_types[
+            project_transform_to_feasible = jcalc.get_joint_model(
                 link_type
-            ].project_transform_to_feasible
+            ).project_transform_to_feasible
             if project_transform_to_feasible is None:
                 raise NotImplementedError(
                     "Please specify JointModel.project_transform_to_feasible"
@@ -311,11 +314,11 @@ def project_xs(sys: System, transform2: Transform) -> Transform:
     return _project_xs(transform2)
 
 
-def _scale_transform_based_on_type(x: Transform, link_type: str, factor: float):
+def _scale_transform_based_on_type(x: base.Transform, link_type: str, factor: float):
     pos, rot = x.pos, x.rot
     if link_type in ["px", "py", "pz", "free"]:
         pos = pos * factor
     if link_type in ["rx", "ry", "rz", "spherical", "free"]:
         axis, angle = maths.quat_to_rot_axis(rot)
         rot = maths.quat_rot_axis(axis, angle * factor)
-    return Transform(pos, rot)
+    return base.Transform(pos, rot)
