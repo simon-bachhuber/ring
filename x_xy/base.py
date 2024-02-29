@@ -8,7 +8,9 @@ from jax.tree_util import tree_map
 import numpy as np
 import tree_utils as tu
 
+import x_xy
 from x_xy import maths
+from x_xy import spatial
 
 Scalar = jax.Array
 Vector = jax.Array
@@ -134,7 +136,7 @@ class Transform(_Base):
 
     def as_matrix(self) -> jax.Array:
         E = maths.quat_to_3x3(self.rot)
-        return maths.spatial.quadrants(aa=E, bb=E) @ maths.spatial.xlt(self.pos)
+        return spatial.quadrants(aa=E, bb=E) @ spatial.xlt(self.pos)
 
 
 @struct.dataclass
@@ -203,7 +205,7 @@ class Inertia(_Base):
         parent to local geometry coordinates.
         """
         it_3x3 = maths.rotate_matrix(it_3x3, maths.quat_inv(transform.rot))
-        it_3x3 = maths.spatial.mcI(mass, transform.pos, it_3x3)[:3, :3]
+        it_3x3 = spatial.mcI(mass, transform.pos, it_3x3)[:3, :3]
         h = mass * transform.pos
         return cls(it_3x3, h, mass)
 
@@ -215,10 +217,8 @@ class Inertia(_Base):
         return cls(it_shape_3x3, h, mass)
 
     def as_matrix(self):
-        hcross = maths.spatial.cross(self.h)
-        return maths.spatial.quadrants(
-            self.it_3x3, hcross, -hcross, self.mass * jnp.eye(3)
-        )
+        hcross = spatial.cross(self.h)
+        return spatial.quadrants(self.it_3x3, hcross, -hcross, self.mass * jnp.eye(3))
 
 
 @struct.dataclass
@@ -646,6 +646,87 @@ class System(_Base):
         - check that n_links == len(sys.omc)
         """
         return _parse_system(self)
+
+    def render(
+        self,
+        xs: Optional[Transform | list[Transform]] = None,
+        camera: Optional[str] = None,
+        show_pbar: bool = True,
+        backend: str = "mujoco",
+        render_every_nth: int = 1,
+        **scene_kwargs,
+    ) -> list[np.ndarray]:
+        """Render frames from system and trajectory of maximal coordinates `xs`.
+
+        Args:
+            sys (base.System): System to render.
+            xs (base.Transform | list[base.Transform]): Single or time-series
+            of maximal coordinates `xs`.
+            show_pbar (bool, optional): Whether or not to show a progress bar.
+            Defaults to True.
+
+        Returns:
+            list[np.ndarray]: Stacked rendered frames. Length == len(xs).
+        """
+        return x_xy.rendering.render(
+            self, xs, camera, show_pbar, backend, render_every_nth, **scene_kwargs
+        )
+
+    def render_prediction(
+        self,
+        xs: Transform | list[Transform],
+        yhat: dict,
+        stepframe: int = 1,
+        # by default we don't predict the global rotation
+        transparent_segment_to_root: bool = True,
+        **kwargs,
+    ):
+        "`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent."
+        return x_xy.rendering.render_prediction(
+            self, xs, yhat, stepframe, transparent_segment_to_root, **kwargs
+        )
+
+    def delete_system(self, link_name: str | list[str], strict: bool = True):
+        "Cut subsystem starting at `link_name` (inclusive) from tree."
+        return x_xy.sys_composer.delete_subsystem(self, link_name, strict)
+
+    def make_sys_noimu(self, imu_link_names: Optional[list[str]] = None):
+        "Returns, e.g., imu_attachment = {'imu1': 'seg1', 'imu2': 'seg3'}"
+        return x_xy.sys_composer.make_sys_noimu(self, imu_link_names)
+
+    def inject_system(self, other_system: "System", at_body: Optional[str] = None):
+        """Combine two systems into one.
+
+        Args:
+            sys (base.System): Large system.
+            sub_sys (base.System): Small system that will be included into the
+                large system `sys`.
+            at_body (Optional[str], optional): Into which body of the large system
+                small system will be included. Defaults to `worldbody`.
+
+        Returns:
+            base.System: _description_
+        """
+        return x_xy.sys_composer.inject_system(self, other_system, at_body)
+
+    def morph_system(
+        self,
+        new_parents: Optional[list[int | str]] = None,
+        new_anchor: Optional[int | str] = None,
+    ):
+        """Re-orders the graph underlying the system. Returns a new system.
+
+        Args:
+            sys (base.System): System to be modified.
+            new_parents (list[int]): Let the i-th entry have value j. Then, after
+                morphing the system the system will be such that the link corresponding
+                to the i-th link in the old system will have as parent the link
+                corresponding to the j-th link in the old system.
+
+        Returns:
+            base.System: Modified system.
+        """
+        return x_xy.sys_composer.morph_system(self, new_parents, new_anchor)
 
 
 def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
