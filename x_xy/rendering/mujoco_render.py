@@ -3,20 +3,15 @@ from typing import Optional, Sequence
 import mujoco
 import numpy as np
 
-from .. import maths
-from ..base import Box
-from ..base import Capsule
-from ..base import Cylinder
-from ..base import Geometry
-from ..base import Sphere
-from ..base import Transform
+from x_xy import base
+from x_xy import maths
 
 _skybox = """<texture name="skybox" type="skybox" builtin="gradient" rgb1=".4 .6 .8" rgb2="0 0 0" width="800" height="800" mark="random" markrgb="1 1 1"/>"""  # noqa: E501
 _floor = """<geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>"""  # noqa: E501
 
 
 def _build_model_of_geoms(
-    geoms: list[Geometry],
+    geoms: list[base.Geometry],
     cameras: dict[int, Sequence[str]],
     lights: dict[int, Sequence[str]],
     floor: bool,
@@ -111,7 +106,7 @@ def _build_model_of_geoms(
 
 
 def _xml_str_one_body(
-    body_number: int, geoms: list[Geometry], cameras: list[str], lights: list[str]
+    body_number: int, geoms: list[base.Geometry], cameras: list[str], lights: list[str]
 ) -> str:
     inside_body_geoms = ""
     for geom in geoms:
@@ -134,18 +129,18 @@ def _xml_str_one_body(
 """
 
 
-def _xml_str_one_geom(geom: Geometry) -> str:
+def _xml_str_one_geom(geom: base.Geometry) -> str:
     rgba = f'rgba="{_array_to_str(geom.color)}"'
 
-    if isinstance(geom, Box):
+    if isinstance(geom, base.Box):
         type_size = f'type="box" size="{_array_to_str([geom.dim_x / 2, geom.dim_y / 2, geom.dim_z / 2])}"'  # noqa: E501
-    elif isinstance(geom, Sphere):
+    elif isinstance(geom, base.Sphere):
         type_size = f'type="sphere" size="{_array_to_str([geom.radius])}"'
-    elif isinstance(geom, Capsule):
+    elif isinstance(geom, base.Capsule):
         type_size = (
             f'type="capsule" size="{_array_to_str([geom.radius, geom.length / 2])}"'
         )
-    elif isinstance(geom, Cylinder):
+    elif isinstance(geom, base.Cylinder):
         type_size = (
             f'type="cylinder" size="{_array_to_str([geom.radius, geom.length / 2])}"'
         )
@@ -186,7 +181,7 @@ class MujocoScene:
         self.show_stars = show_stars
         self.show_floor = show_floor
 
-    def init(self, geoms: list[Geometry]):
+    def init(self, geoms: list[base.Geometry]):
         self._parent_ids = list(set([geom.link_idx for geom in geoms]))
         self._model = _build_model_of_geoms(
             geoms,
@@ -199,7 +194,7 @@ class MujocoScene:
         self._data = mujoco.MjData(self._model)
         self._renderer = mujoco.Renderer(self._model, self.height, self.width)
 
-    def update(self, x: Transform):
+    def update(self, x: base.Transform):
         rot, pos = maths.quat_inv(x.rot), x.pos
         for parent_id in self._parent_ids:
             if parent_id == -1:

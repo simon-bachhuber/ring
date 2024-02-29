@@ -13,16 +13,10 @@ from vispy import scene
 from vispy.scene import MatrixTransform
 
 from x_xy import algebra
+from x_xy import base
 from x_xy import maths
 
 from . import vispy_visuals
-from .. import base
-from ..base import Box
-from ..base import Capsule
-from ..base import Cylinder
-from ..base import Geometry
-from ..base import Sphere
-from ..base import XYZ
 
 Camera = TypeVar("Camera")
 Visual = TypeVar("Visual")
@@ -90,16 +84,16 @@ class Scene(ABC):
             images.append(self._render())
         return images
 
-    def _add_box(self, box: Box) -> Visual:
+    def _add_box(self, box: base.Box) -> Visual:
         raise NotImplementedError
 
-    def _add_sphere(self, sphere: Sphere) -> Visual:
+    def _add_sphere(self, sphere: base.Sphere) -> Visual:
         raise NotImplementedError
 
-    def _add_cylinder(self, cyl: Cylinder) -> Visual:
+    def _add_cylinder(self, cyl: base.Cylinder) -> Visual:
         raise NotImplementedError
 
-    def _add_capsule(self, cap: Capsule) -> Visual:
+    def _add_capsule(self, cap: base.Capsule) -> Visual:
         raise NotImplementedError
 
     def _add_xyz(self) -> Visual:
@@ -113,7 +107,7 @@ class Scene(ABC):
         for visual in self.visuals:
             self._remove_visual(visual)
 
-    def init(self, geoms: list[Geometry]):
+    def init(self, geoms: list[base.Geometry]):
         self._remove_all_visuals()
 
         self.geoms = [geom for geom in geoms]
@@ -125,15 +119,15 @@ class Scene(ABC):
         for geom in geoms:
             geom_link_idx.append(geom.link_idx)
             geom_transform.append(geom.transform)
-            if isinstance(geom, Box):
+            if isinstance(geom, base.Box):
                 visual = self._add_box(geom)
-            elif isinstance(geom, Sphere):
+            elif isinstance(geom, base.Sphere):
                 visual = self._add_sphere(geom)
-            elif isinstance(geom, Cylinder):
+            elif isinstance(geom, base.Cylinder):
                 visual = self._add_cylinder(geom)
-            elif isinstance(geom, Capsule):
+            elif isinstance(geom, base.Capsule):
                 visual = self._add_capsule(geom)
-            elif isinstance(geom, XYZ):
+            elif isinstance(geom, base.XYZ):
                 visual = self._add_xyz()
                 if not self._xyz_transform1:
                     geom_transform.pop()
@@ -174,12 +168,12 @@ class Scene(ABC):
 
     @abstractmethod
     def _init_visual(
-        self, visual: Visual, transform: VisualPosOri2, geom: None | Geometry
+        self, visual: Visual, transform: VisualPosOri2, geom: None | base.Geometry
     ):
         pass
 
     def _update_visual(
-        self, visual: Visual, transform: VisualPosOri2, geom: None | Geometry
+        self, visual: Visual, transform: VisualPosOri2, geom: None | base.Geometry
     ):
         self._init_visual(visual, transform, geom)
 
@@ -265,7 +259,7 @@ class VispyScene(Scene):
     def _render(self) -> jax.Array:
         return self.canvas.render(alpha=True)
 
-    def _add_box(self, box: Box) -> Visual:
+    def _add_box(self, box: base.Box) -> Visual:
         return vispy_visuals.Box(
             box.dim_x,
             box.dim_z,
@@ -275,7 +269,7 @@ class VispyScene(Scene):
             parent=self.view.scene,
         )
 
-    def _add_sphere(self, sphere: Sphere) -> Visual:
+    def _add_sphere(self, sphere: base.Sphere) -> Visual:
         return vispy_visuals.Sphere(
             sphere.radius,
             color=sphere.color,
@@ -283,7 +277,7 @@ class VispyScene(Scene):
             parent=self.view.scene,
         )
 
-    def _add_cylinder(self, cyl: Cylinder) -> Visual:
+    def _add_cylinder(self, cyl: base.Cylinder) -> Visual:
         return vispy_visuals.Cylinder(
             cyl.radius,
             cyl.length,
@@ -292,7 +286,7 @@ class VispyScene(Scene):
             parent=self.view.scene,
         )
 
-    def _add_capsule(self, cap: Capsule) -> Visual:
+    def _add_capsule(self, cap: base.Capsule) -> Visual:
         return vispy_visuals.Capsule(
             cap.radius,
             cap.length,
@@ -331,11 +325,17 @@ class VispyScene(Scene):
         return np.asarray(transform)
 
     def _init_visual(
-        self, visual: scene.visuals.VisualNode, transform: np.ndarray, geom: Geometry
+        self,
+        visual: scene.visuals.VisualNode,
+        transform: np.ndarray,
+        geom: base.Geometry,
     ):
         visual.transform = MatrixTransform(transform)
 
     def _update_visual(
-        self, visual: scene.visuals.VisualNode, transform: np.ndarray, geom: Geometry
+        self,
+        visual: scene.visuals.VisualNode,
+        transform: np.ndarray,
+        geom: base.Geometry,
     ):
         visual.transform.matrix = transform

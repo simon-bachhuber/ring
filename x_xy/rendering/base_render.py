@@ -5,12 +5,12 @@ import jax.numpy as jnp
 import numpy as np
 import tqdm
 
-from .. import algebra
-from .. import base
-from .. import maths
-from ..algorithms import forward_kinematics
-from ..utils import import_lib
-from ..utils import to_list
+from x_xy import algebra
+from x_xy import base
+from x_xy import maths
+from x_xy import sim2real
+from x_xy import utils
+from x_xy.algorithms import kinematics
 
 _rgbas = {
     "self": (0.7, 0.5, 0.1, 1.0),
@@ -66,12 +66,12 @@ def render(
         list[np.ndarray]: Stacked rendered frames. Length == len(xs).
     """
     if backend == "mujoco":
-        import_lib("mujoco")
+        utils.import_lib("mujoco")
         from x_xy.rendering.mujoco_render import MujocoScene
 
         scene = MujocoScene(**scene_kwargs)
     elif backend == "vispy":
-        vispy = import_lib("vispy")
+        vispy = utils.import_lib("vispy")
 
         if "vispy_backend" in scene_kwargs:
             vispy_backend = scene_kwargs.pop("vispy_backend")
@@ -96,14 +96,14 @@ def render(
     geoms_rgba = [_color_to_rgba(geom) for geom in geoms]
 
     if xs is None:
-        xs = forward_kinematics(sys, base.State.create(sys))[1].x
+        xs = kinematics.forward_kinematics(sys, base.State.create(sys))[1].x
 
     # convert time-axis of batched xs object into a list of unbatched x objects
     if isinstance(xs, base.Transform) and xs.ndim() == 3:
         xs = [xs[t] for t in range(xs.shape())]
 
     # ensure that a single unbatched x object is also a list
-    xs = to_list(xs)
+    xs = utils.to_list(xs)
 
     if render_every_nth != 1:
         xs = [xs[t] for t in range(0, len(xs), render_every_nth)]
@@ -142,14 +142,11 @@ def render_prediction(
     **kwargs,
 ):
     "`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent."
-    from x_xy.subpkgs import sim2real
-    from x_xy.subpkgs import sys_composer
-
     if isinstance(xs, list):
         # list -> batched Transform
         xs = xs[0].batch(*xs[1:])
 
-    sys_noimu, _ = sys_composer.make_sys_noimu(sys)
+    sys_noimu, _ = sys.make_sys_noimu()
 
     xs_noimu = sim2real.match_xs(sys_noimu, xs, sys)
 
@@ -250,9 +247,7 @@ def _replace_xyz_geoms(geoms: list[base.Geometry]) -> list[base.Geometry]:
 def _sys_render(
     sys: base.Transform, transparent_segment_to_root: bool
 ) -> base.Transform:
-    from x_xy.subpkgs import sys_composer
-
-    sys_noimu, _ = sys_composer.make_sys_noimu(sys)
+    sys_noimu, _ = sys.make_sys_noimu()
 
     def _geoms_replace_color(sys: base.System, color):
         keep = lambda i: (not transparent_segment_to_root) or sys.link_parents[i] != -1
@@ -262,6 +257,6 @@ def _sys_render(
     # replace render color of geoms for render of predicted motion
     prediction_color = (78 / 255, 163 / 255, 243 / 255, 1.0)
     sys_newcolor = _geoms_replace_color(sys_noimu, prediction_color)
-    sys_render = sys_composer.inject_system(sys, sys_newcolor.add_prefix_suffix("hat_"))
+    sys_render = sys.inject_system(sys_newcolor.add_prefix_suffix("hat_"))
 
     return sys_render

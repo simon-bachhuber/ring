@@ -6,7 +6,7 @@ from vispy.visuals import CompoundVisual
 from vispy.visuals import SphereVisual as _SphereVisual
 from vispy.visuals import TubeVisual
 
-from ..base import Color
+from x_xy.base import Color
 
 # vertex density per unit length
 _vectices_per_unit_length = 10
