@@ -17,7 +17,7 @@ from x_xy.algorithms._random import TimeDependentFloat
 
 
 @dataclass
-class RCMG_Config:
+class MotionConfig:
     T: float = 60.0  # length of random motion
     t_min: float = 0.05  # min time between two generated angles
     t_max: float | TimeDependentFloat = 0.30  # max time ..
@@ -71,7 +71,7 @@ class RCMG_Config:
     def is_feasible(self) -> bool:
         return _is_feasible_config1(self)
 
-    def to_nomotion_config(self) -> "RCMG_Config":
+    def to_nomotion_config(self) -> "MotionConfig":
         kwargs = asdict(self)
         for key in [
             "dang_min",
@@ -84,12 +84,12 @@ class RCMG_Config:
             "dpos_max",
         ]:
             kwargs[key] = 0.0
-        nomotion_config = RCMG_Config(**kwargs)
+        nomotion_config = MotionConfig(**kwargs)
         assert nomotion_config.is_feasible()
         return nomotion_config
 
 
-def _is_feasible_config1(c: RCMG_Config) -> bool:
+def _is_feasible_config1(c: MotionConfig) -> bool:
     t_min, t_max = c.t_min, _to_float(c.t_max, 0.0)
 
     def dx_deltax_check(dx_min, dx_max, deltax_min, deltax_max) -> bool:
@@ -136,7 +136,9 @@ def _find_interval(t: jax.Array, boundaries: jax.Array):
     return jnp.sum(leq_than_boundary(boundaries))
 
 
-def concat_configs(configs: list[RCMG_Config], boundaries: list[float]) -> RCMG_Config:
+def join_motionconfigs(
+    configs: list[MotionConfig], boundaries: list[float]
+) -> MotionConfig:
     assert len(configs) == (
         len(boundaries) + 1
     ), "length of `boundaries` should be one less than length of `configs`"
@@ -152,8 +154,8 @@ def concat_configs(configs: list[RCMG_Config], boundaries: list[float]) -> RCMG_
 
         return scalar
 
-    hints = get_type_hints(RCMG_Config())
-    attrs = RCMG_Config().__dict__
+    hints = get_type_hints(MotionConfig())
+    attrs = MotionConfig().__dict__
     is_time_dependent_field = lambda key: hints[key] == (float | TimeDependentFloat)
     time_dependent_fields = [key for key in attrs if is_time_dependent_field(key)]
     time_independent_fields = [key for key in attrs if not is_time_dependent_field(key)]
@@ -162,7 +164,7 @@ def concat_configs(configs: list[RCMG_Config], boundaries: list[float]) -> RCMG_
         field_values = set([getattr(config, time_dep_field) for config in configs])
         assert (
             len(field_values) == 1
-        ), f"RCMG_Config.{time_dep_field}={field_values}. Should be one unique value.."
+        ), f"MotionConfig.{time_dep_field}={field_values}. Should be one unique value.."
 
     changes = {field: new_value(field) for field in time_dependent_fields}
     return replace(configs[0], **changes)
@@ -170,7 +172,7 @@ def concat_configs(configs: list[RCMG_Config], boundaries: list[float]) -> RCMG_
 
 DRAW_FN = Callable[
     # config, key_t, key_value, dt, params
-    [RCMG_Config, jax.random.PRNGKey, jax.random.PRNGKey, float, jax.Array],
+    [MotionConfig, jax.random.PRNGKey, jax.random.PRNGKey, float, jax.Array],
     jax.Array,
 ]
 P_CONTROL_TERM = Callable[
@@ -290,7 +292,7 @@ mpz = base.Motion.create(vel=jnp.array([0.0, 0, 1]))
 
 
 def _draw_rxyz(
-    config: RCMG_Config,
+    config: MotionConfig,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     dt: float,
@@ -329,7 +331,7 @@ def _draw_rxyz(
 
 
 def _draw_pxyz(
-    config: RCMG_Config,
+    config: MotionConfig,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     dt: float,
@@ -359,7 +361,7 @@ def _draw_pxyz(
 
 
 def _draw_spherical(
-    config: RCMG_Config,
+    config: MotionConfig,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     dt: float,
@@ -386,7 +388,7 @@ def _draw_spherical(
 
 
 def _draw_saddle(
-    config: RCMG_Config,
+    config: MotionConfig,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     dt: float,
@@ -410,7 +412,7 @@ def _draw_saddle(
 
 
 def _draw_p3d_and_cor(
-    config: RCMG_Config,
+    config: MotionConfig,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     dt: float,
@@ -424,7 +426,7 @@ def _draw_p3d_and_cor(
 
 
 def _draw_p3d(
-    config: RCMG_Config,
+    config: MotionConfig,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     dt: float,
@@ -434,7 +436,7 @@ def _draw_p3d(
 
 
 def _draw_cor(
-    config: RCMG_Config,
+    config: MotionConfig,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     dt: float,
@@ -447,7 +449,7 @@ def _draw_cor(
 
 
 def _draw_free(
-    config: RCMG_Config,
+    config: MotionConfig,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
     dt: float,
@@ -459,7 +461,7 @@ def _draw_free(
     return jnp.concatenate((q, pos), axis=1)
 
 
-def _draw_frozen(config: RCMG_Config, _, __, dt: float, ___) -> jax.Array:
+def _draw_frozen(config: MotionConfig, _, __, dt: float, ___) -> jax.Array:
     N = int(config.T / dt)
     return jnp.zeros((N, 0))
 

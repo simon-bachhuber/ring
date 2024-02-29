@@ -190,7 +190,7 @@ def delete_to_world_pos_rot(sys: base.System, xs: base.Transform) -> base.Transf
 
 
 def randomize_to_world_pos_rot(
-    key: jax.Array, sys: base.System, xs: base.Transform, config: jcalc.RCMG_Config
+    key: jax.Array, sys: base.System, xs: base.Transform, config: jcalc.MotionConfig
 ) -> base.Transform:
     """Replace the transforms of all links that connect to the worldbody
     by randomize transforms.
@@ -199,7 +199,7 @@ def randomize_to_world_pos_rot(
         key (jax.Array): PRNG Key.
         sys (System): System only used for structure (in scan_sys).
         xs (Transform): Time-series of transforms to be modified.
-        config (RCMG_Config): Defines the randomization.
+        config (MotionConfig): Defines the randomization.
 
     Returns:
         Transform: Time-series of modified transforms.

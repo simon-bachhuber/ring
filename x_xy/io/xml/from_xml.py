@@ -176,7 +176,7 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
         if current_link_typ == "cor":
             raise Exception(
                 "`cor` joint type is not meant to be used like this. Either use a "
-                "`free` joint instead of `cor` and set RCMG_Config.cor=True or, use"
+                "`free` joint instead of `cor` and set MotionConfig.cor=True or, use"
                 " a free joint and call sys._replace_free_with_cor."
             )
 

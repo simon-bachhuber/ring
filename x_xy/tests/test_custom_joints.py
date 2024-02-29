@@ -2,7 +2,7 @@ import jax
 import numpy as np
 
 import x_xy
-from x_xy import RCMG_Config
+from x_xy import MotionConfig
 from x_xy.algorithms import custom_joints
 from x_xy.algorithms.generator import transforms
 from x_xy.algorithms.jcalc import _init_joint_params
@@ -17,7 +17,7 @@ def pipeline_load_data_X(
         transforms.GeneratorTrafoJointAxisSensor(sys_noimu),
         x_xy.algorithms.GeneratorTrafoRemoveOutputExtras(),
         x_xy.algorithms.GeneratorTrafoRemoveInputExtras(sys),
-    )(RCMG_Config(T=10.0))
+    )(MotionConfig(T=10.0))
 
     return gen(jax.random.PRNGKey(1))[0]
 
@@ -65,7 +65,7 @@ def test_virtual_input_joint_axes_rr_joint():
 
 
 def test_virtual_input_joint_axes_rr_imp_joint():
-    custom_joints.register_rr_imp_joint(RCMG_Config(T=10.0))
+    custom_joints.register_rr_imp_joint(MotionConfig(T=10.0))
 
     sys = x_xy.io.load_example("test_three_seg_seg2")
     sys_rr_imp = sys.change_joint_type("seg1", "rr_imp").change_joint_type(

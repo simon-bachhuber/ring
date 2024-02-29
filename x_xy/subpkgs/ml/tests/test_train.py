@@ -13,7 +13,7 @@ def _test_train_rnno_lru(observer_fn):
     sys = x_xy.io.load_example(example)
     seed = jax.random.PRNGKey(1)
     gen = x_xy.build_generator(
-        sys, x_xy.RCMG_Config(T=10.0), sizes=1, add_X_imus=True, add_y_relpose=True
+        sys, x_xy.MotionConfig(T=10.0), sizes=1, add_X_imus=True, add_y_relpose=True
     )
 
     X, y = gen(seed)
@@ -93,7 +93,7 @@ def test_checkpointing():
     sys_noimu, _ = sys.make_sys_noimu()
     gen = x_xy.build_generator(
         sys,
-        x_xy.RCMG_Config(T=10.0),
+        x_xy.MotionConfig(T=10.0),
         sizes=1,
         add_X_imus=True,
         add_y_relpose=True,

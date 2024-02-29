@@ -104,7 +104,7 @@ def load_1Seg2Seg3Seg4Seg_system(
 
 
 _configs = {
-    "hinUndHer": x_xy.RCMG_Config(
+    "hinUndHer": x_xy.MotionConfig(
         t_min=0.3,
         t_max=1.5,
         dang_max=3.0,
@@ -114,7 +114,7 @@ _configs = {
         randomized_interpolation_angle=True,
         cor=True,
     ),
-    "langsam": x_xy.RCMG_Config(
+    "langsam": x_xy.MotionConfig(
         t_min=0.2,
         t_max=1.25,
         dang_max=2.0,
@@ -126,13 +126,13 @@ _configs = {
         pos_max=1.5,
         cor=True,
     ),
-    "standard": x_xy.RCMG_Config(
+    "standard": x_xy.MotionConfig(
         randomized_interpolation_angle=True,
         cdf_bins_min=1,
         cdf_bins_max=5,
         cor=True,
     ),
-    "expFast": x_xy.RCMG_Config(
+    "expFast": x_xy.MotionConfig(
         t_min=0.4,
         t_max=1.1,
         dang_max=jnp.deg2rad(180),
@@ -146,7 +146,7 @@ _configs = {
         cdf_bins_max=3,
         cor=True,
     ),
-    "expSlow": x_xy.RCMG_Config(
+    "expSlow": x_xy.MotionConfig(
         t_min=0.75,
         t_max=3.0,
         dang_min=0.1,
@@ -163,7 +163,7 @@ _configs = {
         cdf_bins_max=5,
         cor=True,
     ),
-    "expFastNoSig": x_xy.RCMG_Config(
+    "expFastNoSig": x_xy.MotionConfig(
         t_min=0.4,
         t_max=1.1,
         dang_max=jnp.deg2rad(180),
@@ -176,7 +176,7 @@ _configs = {
         cdf_bins_max=3,
         cor=True,
     ),
-    "expSlowNoSig": x_xy.RCMG_Config(
+    "expSlowNoSig": x_xy.MotionConfig(
         t_min=0.75,
         t_max=3.0,
         dang_min=0.1,
@@ -192,7 +192,7 @@ _configs = {
         cdf_bins_max=3,
         cor=True,
     ),
-    "verySlow": x_xy.RCMG_Config(
+    "verySlow": x_xy.MotionConfig(
         t_min=1.5,
         t_max=5.0,
         dang_min=jnp.deg2rad(1),
@@ -211,7 +211,7 @@ _configs = {
 }
 
 
-def load_config(config_name: str) -> x_xy.RCMG_Config:
+def load_config(config_name: str) -> x_xy.MotionConfig:
     return _configs[config_name]
 
 

@@ -8,15 +8,15 @@ from x_xy.algorithms.jcalc import _find_interval
 
 
 @pytest.mark.parametrize("T,seed", [(10.0, 0), (20.0, 0), (10.0, 1), (20.0, 1)])
-def test_concat_configs(T, seed):
-    motion_config = x_xy.RCMG_Config()
+def test_join_motionconfigs(T, seed):
+    motion_config = x_xy.MotionConfig()
     nomotion_config = motion_config.to_nomotion_config()
 
     sys = x_xy.io.load_example("test_free")
     dt = sys.dt
     q, x = x_xy.build_generator(
         sys,
-        x_xy.concat_configs(
+        x_xy.join_motionconfigs(
             [nomotion_config, motion_config, nomotion_config], [T, 2 * T]
         ),
         _compat=True,
@@ -48,9 +48,9 @@ def test_concat_configs(T, seed):
 
     # test that two configs that disagree with values that are not
     # time-dependent can not be concatenated
-    motion_config_disagree = x_xy.RCMG_Config(t_min=0.04)
+    motion_config_disagree = x_xy.MotionConfig(t_min=0.04)
     with pytest.raises(AssertionError):
-        x_xy.concat_configs([motion_config, motion_config_disagree], [T])
+        x_xy.join_motionconfigs([motion_config, motion_config_disagree], [T])
 
 
 def test_find_interval():

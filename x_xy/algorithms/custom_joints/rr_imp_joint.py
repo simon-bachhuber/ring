@@ -11,7 +11,7 @@ from x_xy.algorithms.jcalc import _qd_from_q_cartesian
 
 
 def register_rr_imp_joint(
-    config_res=x_xy.RCMG_Config(dang_max=5.0, t_max=0.4),
+    config_res=x_xy.MotionConfig(dang_max=5.0, t_max=0.4),
     ang_max_deg: float = 7.5,
     name: str = "rr_imp",
 ):

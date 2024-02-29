@@ -15,7 +15,7 @@ def test_pd_control():
 
         q, xs = x_xy.algorithms.build_generator(
             sys,
-            x_xy.algorithms.RCMG_Config(
+            x_xy.algorithms.MotionConfig(
                 T=10.0,
                 dang_max=3.0,
                 t_max=0.5,
@@ -107,7 +107,7 @@ def test_dynamical_simulation_trafo():
                 P_gains, return_q_ref=True
             ),
             x_xy.algorithms.GeneratorTrafoRemoveInputExtras(sys),
-        )(x_xy.RCMG_Config(T=20.0))
+        )(x_xy.MotionConfig(T=20.0))
         (X, _), (__, q_obs, ___, ____) = gen(jax.random.PRNGKey(1))
         error = jnp.sqrt(jnp.mean((X["q_ref"][500:, -2:] - q_obs[500:, -2:]) ** 2))
         assert error < 0.1

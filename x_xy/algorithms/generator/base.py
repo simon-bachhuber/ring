@@ -18,7 +18,7 @@ from x_xy.algorithms.generator import types
 
 def build_generator(
     sys: base.System | list[base.System],
-    config: jcalc.RCMG_Config | list[jcalc.RCMG_Config] = jcalc.RCMG_Config(),
+    config: jcalc.MotionConfig | list[jcalc.MotionConfig] = jcalc.MotionConfig(),
     setup_fn: Optional[types.SETUP_FN] = None,
     finalize_fn: Optional[types.FINALIZE_FN] = None,
     add_X_imus: bool = False,
@@ -141,7 +141,7 @@ def _copy_kwargs(kwargs: dict | None) -> dict:
 
 def _build_generator_lazy(
     sys: base.System,
-    config: jcalc.RCMG_Config,
+    config: jcalc.MotionConfig,
     setup_fn: types.SETUP_FN | None,
     finalize_fn: types.FINALIZE_FN | None,
     add_X_imus: bool,
@@ -291,7 +291,7 @@ def _build_generator_lazy(
 
 
 def _generator_with_extras(
-    config: jcalc.RCMG_Config,
+    config: jcalc.MotionConfig,
 ) -> types.GeneratorWithInputOutputExtras:
     def generator(
         key: types.PRNGKey, sys: base.System
@@ -343,7 +343,7 @@ class GeneratorPipe:
         self._gen_trafos = gen_trafos
 
     def __call__(
-        self, config: jcalc.RCMG_Config
+        self, config: jcalc.MotionConfig
     ) -> (
         types.GeneratorWithInputOutputExtras
         | types.GeneratorWithOutputExtras

@@ -87,7 +87,7 @@ def test_randomize_positions():
 def test_cor():
     sys = x_xy.io.load_example("test_three_seg_seg2")
     sys = sys.inject_system(sys.add_prefix_suffix("second_"))
-    x_xy.build_generator(sys, x_xy.RCMG_Config(cor=True), _compat=True)(
+    x_xy.build_generator(sys, x_xy.MotionConfig(cor=True), _compat=True)(
         jax.random.PRNGKey(1)
     )
 
@@ -148,12 +148,12 @@ def test_knee_flexible_imus_sim():
 
     q, _ = x_xy.build_generator(
         sys,
-        x_xy.RCMG_Config(T=0.1),
+        x_xy.MotionConfig(T=0.1),
         imu_motion_artifacts=True,
         dynamic_simulation=True,
         dynamic_simulation_kwargs=dict(
             # back then i used `initial_sim_state_is_zeros` = False in combination
-            # with `concat_configs` to create two seconds of initial nomotion phase
+            # with `join_motionconfigs` to create two seconds of initial nomotion phase
             # but the new logic is better (that is with initial_sim_state_... = False)
             overwrite_q_ref=(qref, sys.idx_map("q")),
             initial_sim_state_is_zeros=True,

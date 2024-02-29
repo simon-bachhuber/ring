@@ -180,7 +180,7 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
         return params
 
     def _draw_flexion_angle(
-        rcmg_config: x_xy.RCMG_Config,
+        config: x_xy.MotionConfig,
         key_t: jax.random.PRNGKey,
         key_value: jax.random.PRNGKey,
         dt: float,
@@ -188,7 +188,7 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
     ) -> jax.Array:
         key_value, consume = jax.random.split(key_value)
         ANG_0 = jax.random.uniform(
-            consume, minval=rcmg_config.ang0_min, maxval=rcmg_config.ang0_max
+            consume, minval=config.ang0_min, maxval=config.ang0_max
         )
         # `random_angle_over_time` always returns wrapped angles, thus it would be
         # inconsistent to allow an initial value that is not wrapped
@@ -197,21 +197,21 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
             key_t,
             key_value,
             ANG_0,
-            rcmg_config.dang_min,
-            rcmg_config.dang_max,
-            rcmg_config.delta_ang_min,
-            rcmg_config.delta_ang_max,
-            rcmg_config.t_min,
-            rcmg_config.t_max,
-            rcmg_config.T,
+            config.dang_min,
+            config.dang_max,
+            config.delta_ang_min,
+            config.delta_ang_max,
+            config.t_min,
+            config.t_max,
+            config.T,
             dt,
             5,
-            rcmg_config.randomized_interpolation_angle,
-            rcmg_config.range_of_motion_hinge,
-            rcmg_config.range_of_motion_hinge_method,
-            rcmg_config.cdf_bins_min,
-            rcmg_config.cdf_bins_max,
-            rcmg_config.interpolation_method,
+            config.randomized_interpolation_angle,
+            config.range_of_motion_hinge,
+            config.range_of_motion_hinge_method,
+            config.cdf_bins_min,
+            config.cdf_bins_max,
+            config.interpolation_method,
         )
         return restrict(
             qs_flexion,

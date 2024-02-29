@@ -24,13 +24,13 @@ from .generator import GeneratorTrafoRandomizePositions
 from .generator import GeneratorTrafoRemoveInputExtras
 from .generator import GeneratorTrafoRemoveOutputExtras
 from .generator import SETUP_FN
-from .jcalc import concat_configs
 from .jcalc import get_joint_model
 from .jcalc import jcalc_motion
 from .jcalc import jcalc_tau
 from .jcalc import jcalc_transform
+from .jcalc import join_motionconfigs
 from .jcalc import JointModel
-from .jcalc import RCMG_Config
+from .jcalc import MotionConfig
 from .jcalc import register_new_joint_type
 from .kinematics import forward_kinematics
 from .kinematics import forward_kinematics_transforms

@@ -28,9 +28,9 @@
 
 ::: x_xy.algorithms.generator.base.build_generator
 
-::: x_xy.algorithms.jcalc.RCMG_Config
+::: x_xy.algorithms.jcalc.MotionConfig
 
-::: x_xy.algorithms.jcalc.concat_configs
+::: x_xy.algorithms.jcalc.join_motionconfigs
 
 ::: x_xy.algorithms.generator.batch.batch_generators_lazy
 

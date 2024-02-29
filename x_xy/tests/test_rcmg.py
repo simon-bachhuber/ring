@@ -11,8 +11,8 @@ from x_xy.maths import wrap_to_pi
 @pytest.mark.parametrize("N,seed", [(1, 0), (1, 1), (5, 0), (5, 1)])
 def test_batch_generator(N: int, seed: int):
     sys = x_xy.io.load_example("test_free")
-    config1 = x_xy.RCMG_Config(ang0_min=0.0, ang0_max=0.0)
-    config2 = x_xy.RCMG_Config()
+    config1 = x_xy.MotionConfig(ang0_min=0.0, ang0_max=0.0)
+    config2 = x_xy.MotionConfig()
     gen1 = x_xy.build_generator(sys, config1, _compat=True)
     gen2 = x_xy.build_generator(sys, config2, _compat=True)
     gen = x_xy.algorithms.batch_generators_lazy([gen1, gen2, gen1], [N, N, N])
@@ -38,7 +38,7 @@ def test_initial_ang_pos_values():
         q, _ = x_xy.algorithms.batch_generators_lazy(
             x_xy.build_generator(
                 sys,
-                x_xy.RCMG_Config(
+                x_xy.MotionConfig(
                     ang0_min=ang0_min,
                     ang0_max=ang0_max,
                     pos0_min=pos0_min,
@@ -71,7 +71,7 @@ def test_rcmg():
     for example in ["test_all_1"]:
         sys = x_xy.io.load_example(example)
         for cdf_bins_min, cdf_bins_max in zip([1, 1, 3], [1, 3, 3]):
-            config = x_xy.RCMG_Config(
+            config = x_xy.MotionConfig(
                 T=1.0,
                 cdf_bins_min=cdf_bins_min,
                 cdf_bins_max=cdf_bins_max,
