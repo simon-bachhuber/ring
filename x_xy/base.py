@@ -351,9 +351,9 @@ class Link(_Base):
 
 @struct.dataclass
 class MaxCoordOMC(_Base):
-    coordinate_system_name: str
-    pos_marker_number: int
-    pos_marker_constant_offset: np.ndarray
+    coordinate_system_name: str = struct.field(False)
+    pos_marker_number: int = struct.field(False)
+    pos_marker_constant_offset: jax.Array
 
 
 Q_WIDTHS = {
@@ -413,7 +413,7 @@ class System(_Base):
 
     model_name: Optional[str] = struct.field(False, default_factory=lambda: None)
 
-    omc: list[MaxCoordOMC | None] = struct.field(False, default_factory=lambda: [])
+    omc: list[MaxCoordOMC | None] = struct.field(True, default_factory=lambda: [])
 
     def num_links(self) -> int:
         return len(self.link_parents)
@@ -727,6 +727,20 @@ class System(_Base):
             base.System: Modified system.
         """
         return x_xy.sys_composer.morph_system(self, new_parents, new_anchor)
+
+    @staticmethod
+    def from_xml(path: str, seed: int = 1):
+        return x_xy.io.load_sys_from_xml(path, seed)
+
+    @staticmethod
+    def from_str(xml: str, seed: int = 1):
+        return x_xy.io.load_sys_from_str(xml, seed)
+
+    def to_str(self) -> str:
+        return x_xy.io.save_sys_to_str(self)
+
+    def to_xml(self, path: str) -> None:
+        x_xy.io.save_sys_to_xml(self, path)
 
 
 def _update_sys_if_replace_joint_type(sys: System, logic) -> System:

@@ -11,7 +11,6 @@ ATTR = dict
 
 default_quat = jnp.array([1.0, 0, 0, 0])
 default_pos = jnp.zeros((3,))
-default_pos_np = np.zeros((3,))
 default_damping = lambda qd_size, **_: jnp.zeros((qd_size,))
 default_armature = lambda qd_size, **_: jnp.zeros((qd_size,))
 default_stiffness = lambda qd_size, **_: jnp.zeros((qd_size,))
@@ -70,14 +69,14 @@ class AbsDampArmaStiffZero:
 class AbsMaxCoordOMC:
     @staticmethod
     def from_xml(attr: ATTR) -> base.MaxCoordOMC:
-        pos = attr.get("pos", default_pos_np)
+        pos = attr.get("pos", default_pos)
         marker_number = int(attr.get("pos_marker"))
         cs_name = attr.get("name")
         return base.MaxCoordOMC(cs_name, marker_number, pos)
 
     @staticmethod
     def to_xml(element: T, max_coord_omc: base.MaxCoordOMC) -> None:
-        if not _arr_equal(max_coord_omc.pos_marker_constant_offset, default_pos_np):
+        if not _arr_equal(max_coord_omc.pos_marker_constant_offset, default_pos):
             element.set("pos", _to_str(max_coord_omc.pos_marker_constant_offset))
         element.set("name", max_coord_omc.coordinate_system_name)
         element.set("pos_marker", _to_str(max_coord_omc.pos_marker_number))
