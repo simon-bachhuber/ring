@@ -12,6 +12,7 @@ from x_xy.algorithms import jcalc
 from x_xy.algorithms import kinematics
 from x_xy.algorithms.generator import batch
 from x_xy.algorithms.generator import motion_artifacts
+from x_xy.algorithms.generator import randomize
 from x_xy.algorithms.generator import transforms
 from x_xy.algorithms.generator import types
 
@@ -33,14 +34,23 @@ class RCMG:
         randomize_positions: bool = False,
         randomize_motion_artifacts: bool = False,
         randomize_joint_params: bool = False,
+        randomize_anchors: bool = False,
+        randomize_anchors_kwargs: Optional[dict] = None,
+        randomize_hz: bool = False,
+        randomize_hz_kwargs: Optional[dict] = None,
         imu_motion_artifacts: bool = False,
         imu_motion_artifacts_kwargs: Optional[dict] = None,
         dynamic_simulation: bool = False,
         dynamic_simulation_kwargs: Optional[dict] = None,
         output_transform: Optional[Callable] = None,
         keep_output_extras: bool = False,
-        zip_sys_config: bool = False,
     ) -> None:
+
+        randomize_anchors_kwargs = _copy_kwargs(randomize_anchors_kwargs)
+        randomize_hz_kwargs = _copy_kwargs(randomize_hz_kwargs)
+
+        if randomize_hz:
+            finalize_fn = randomize.randomize_hz_finalize_fn_factory(finalize_fn)
 
         partial_build_gen = partial(
             _build_generator_lazy,
@@ -52,7 +62,6 @@ class RCMG:
             add_X_jointaxes_kwargs=add_X_jointaxes_kwargs,
             add_y_relpose=add_y_relpose,
             add_y_rootincl=add_y_rootincl,
-            sys_ml=sys_ml,
             randomize_positions=randomize_positions,
             randomize_motion_artifacts=randomize_motion_artifacts,
             randomize_joint_params=randomize_joint_params,
@@ -66,10 +75,23 @@ class RCMG:
 
         sys, config = utils.to_list(sys), utils.to_list(config)
 
-        if sys_ml is None and len(sys) > 1:
-            warnings.warn(
-                "Batched simulation with multiple systems but no explicit `sys_ml`"
-            )
+        if randomize_anchors:
+            assert (
+                len(sys) == 1
+            ), "If `randomize_anchors`, then only one system is expected"
+            sys = randomize.randomize_anchors(sys[0], **randomize_anchors_kwargs)
+
+        zip_sys_config = False
+        if randomize_hz:
+            zip_sys_config = True
+            sys, config = randomize.randomize_hz(sys, config, **randomize_hz_kwargs)
+
+        if sys_ml is None:
+            # TODO
+            if False and len(sys) > 1:
+                warnings.warn(
+                    "Batched simulation with multiple systems but no explicit `sys_ml`"
+                )
             sys_ml = sys[0]
 
         self.gens = []
@@ -147,7 +169,7 @@ def _build_generator_lazy(
     add_X_jointaxes_kwargs: dict | None,
     add_y_relpose: bool,
     add_y_rootincl: bool,
-    sys_ml: base.System | None,
+    sys_ml: base.System,
     randomize_positions: bool,
     randomize_motion_artifacts: bool,
     randomize_joint_params: bool,
@@ -168,9 +190,6 @@ def _build_generator_lazy(
     # default kwargs values
     if "hide_injected_bodies" not in imu_motion_artifacts_kwargs:
         imu_motion_artifacts_kwargs["hide_injected_bodies"] = True
-
-    if sys_ml is None:
-        sys_ml = sys
 
     if add_X_jointaxes or add_y_relpose or add_y_rootincl:
         if len(sys_ml.findall_imus()) > 0:

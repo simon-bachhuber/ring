@@ -4,8 +4,6 @@ from typing import Iterator
 from x_xy import base
 from x_xy.utils import parse_path
 
-from .xml import load_sys_from_xml
-
 EXAMPLES_DIR = Path(__file__).parent.joinpath("examples")
 FOLDERS = ["", "test_morph_system"]
 EXCLUDE_FOLDERS = ["exclude"]
@@ -15,7 +13,7 @@ def load_example(name: str):
     "Load example from examples dir."
 
     xml_path = parse_path(EXAMPLES_DIR, name, extension="xml")
-    return load_sys_from_xml(xml_path)
+    return base.System.from_xml(xml_path)
 
 
 def list_examples() -> list[str]:

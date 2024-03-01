@@ -209,7 +209,7 @@ PROJECT_TRANSFORM_TO_FEASIBLE = Callable[
     base.Transform,
 ]
 
-# used by load_sys_from_xml and by x_xy.RCMG
+# used by x_xy.System.from_xml and by x_xy.RCMG
 # (key) -> Pytree
 # if it is not given and None, then there will be no specific
 # joint_parameters for the custom joint and it will simply receive
