@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 import x_xy
-from x_xy.subpkgs import exp
+from x_xy import exp
 from x_xy.sys_composer import delete_subsystem
 from x_xy.sys_composer import identify_system
 from x_xy.sys_composer import inject_system
@@ -77,7 +77,7 @@ def test_delete_subsystem_cut_twice_versus_cut_once():
         delete_subsystem(sys, ["seg1", "seg2"]), delete_subsystem(sys, ["seg2"])
     )
 
-    sys = exp.load_sys("S_06", morph_yaml_key="seg3")
+    sys = exp.load_sys("S_06").morph_system(new_anchor="seg3")
     assert sys_compare(
         delete_subsystem(sys, ["seg5", "seg2"]), delete_subsystem(sys, ["seg2"])
     )
