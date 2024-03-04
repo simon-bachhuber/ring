@@ -3,12 +3,14 @@ from dataclasses import replace
 from functools import cache
 from typing import Optional
 
+import jax.numpy as jnp
 import numpy as np
 
 from x_xy import algorithms
 from x_xy import base
 from x_xy import exp
 from x_xy import maths
+from x_xy import ml
 from x_xy import sim2real
 from x_xy import utils
 
@@ -61,7 +63,9 @@ class IMTP:
 
     def sys(self, exp_id: str):
         include_links = self.segments + self.imus()
-        return _get_sys(exp_id, self.segments[0], tuple(include_links))
+        sys = _get_sys(exp_id, self.segments[0], tuple(include_links))
+        sys = sys.change_model_name(suffix=f"_{len(self.segments)}Seg")
+        return sys
 
     def sys_noimu(self, exp_id: str):
         sys_noimu, imu_attachment = self.sys(exp_id).make_sys_noimu()
@@ -87,6 +91,16 @@ class IMTP:
         if self.dt:
             F += 1
         return F
+
+    def name(self, exp_id: str, motion_start: str, motion_stop: Optional[str] = None):
+        if motion_stop is None:
+            motion_stop = ""
+        model_name = self.sys(exp_id).model_name
+        flex, mag, ja = int(self.flex), int(self.mag), int(self.joint_axes)
+        return (
+            f"{model_name}_{exp_id}_{motion_start}_{motion_stop}_flex_{flex}_"
+            + f"mag_{mag}_ja_{ja}"
+        )
 
 
 def _build_Xy_xs_xsnoimu(
@@ -132,7 +146,7 @@ def _build_Xy_xs_xsnoimu(
     if imtp.dt:
         repeated_dt = np.repeat(np.array([[1 / imtp.hz]]), T, axis=0)
         for i, seg in enumerate(imtp.segments):
-            X[:, i:-2:-1] = repeated_dt
+            X[:, i, (F - 1) : F] = repeated_dt
 
     y_dict = algorithms.rel_pose(sys_noimu, xs, sys)
     y_rootfull = algorithms.sensors.root_full(sys_noimu, xs, sys)
@@ -143,16 +157,34 @@ def _build_Xy_xs_xsnoimu(
     return X, y, xs, xs_noimu
 
 
+_mae_metrices = dict(
+    mae_deg=lambda q, qhat: jnp.rad2deg(jnp.mean(maths.angle_error(q, qhat)[:, 2500:]))
+)
+
+
 def benchmark(
-    filter,
+    filter: ml.AbstractFilter,
     imtp: IMTP,
     exp_id: str,
     motion_start: str,
     motion_stop: Optional[str] = None,
     warmup: float = 0.0,
+    return_cb: bool = False,
 ):
 
     X, y, xs, xs_noimu = _build_Xy_xs_xsnoimu(exp_id, motion_start, motion_stop, imtp)
+
+    if return_cb:
+        return ml.callbacks.EvalXyTrainingLoopCallback(
+            filter,
+            _mae_metrices,
+            X,
+            y,
+            imtp.lam,
+            imtp.name(exp_id, motion_start, motion_stop),
+            link_names=imtp.segments,
+        )
+
     yhat, _ = filter.apply(X=X, y=y, lam=tuple(imtp.lam))
 
     errors = dict()
