@@ -44,6 +44,7 @@ class RCMG:
         dynamic_simulation_kwargs: Optional[dict] = None,
         output_transform: Optional[Callable] = None,
         keep_output_extras: bool = False,
+        use_link_number_in_Xy: bool = False,
     ) -> None:
 
         randomize_anchors_kwargs = _copy_kwargs(randomize_anchors_kwargs)
@@ -71,6 +72,7 @@ class RCMG:
             dynamic_simulation_kwargs=dynamic_simulation_kwargs,
             output_transform=output_transform,
             keep_output_extras=keep_output_extras,
+            use_link_number_in_Xy=use_link_number_in_Xy,
         )
 
         sys, config = utils.to_list(sys), utils.to_list(config)
@@ -153,6 +155,25 @@ class RCMG:
     ) -> types.BatchedGenerator:
         return batch.batch_generators_lazy(self.gens, sizes, jit=jit)
 
+    @staticmethod
+    def eager_gen_from_paths(
+        paths: str | list[str],
+        batchsize: int,
+        include_samples: Optional[list[int]] = None,
+        shuffle: bool = True,
+        load_all_into_memory: bool = False,
+        tree_transform=None,
+    ) -> tuple[types.BatchedGenerator, int]:
+        paths = utils.to_list(paths)
+        return batch.batched_generator_from_paths(
+            paths,
+            batchsize,
+            include_samples,
+            shuffle,
+            load_all_into_memory=load_all_into_memory,
+            tree_transform=tree_transform,
+        )
+
 
 def _copy_kwargs(kwargs: dict | None) -> dict:
     return dict() if kwargs is None else kwargs.copy()
@@ -179,6 +200,7 @@ def _build_generator_lazy(
     dynamic_simulation_kwargs: dict | None,
     output_transform: Callable | None,
     keep_output_extras: bool,
+    use_link_number_in_Xy: bool,
 ) -> types.Generator | types.GeneratorWithOutputExtras:
     assert config.is_feasible()
 
@@ -287,6 +309,11 @@ def _build_generator_lazy(
         ),
         transforms.GeneratorTrafoRelPose(sys_noimu) if add_y_relpose else noop,
         transforms.GeneratorTrafoRootIncl(sys_noimu) if add_y_rootincl else noop,
+        (
+            transforms.GeneratorTrafoNames2Indices(sys_noimu)
+            if use_link_number_in_Xy
+            else noop
+        ),
         GeneratorTrafoRemoveInputExtras(sys),
         noop if keep_output_extras else GeneratorTrafoRemoveOutputExtras(),
         (
