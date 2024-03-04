@@ -74,6 +74,9 @@ class AbstractFilter(ABC):
         filter = pickle_load(path)
         return cls._post_load(filter, *args, **kwargs)
 
+    def search_attr(self, attr: str):
+        return getattr(self, attr)
+
 
 class AbstractFilterUnbatched(AbstractFilter):
     @abstractmethod
@@ -116,12 +119,8 @@ class AbstractFilterWrapper(AbstractFilter):
 
     def search_attr(self, attr: str):
         if hasattr(self, attr):
-            return getattr(self, attr)
-        else:
-            if isinstance(self.unwrapped, AbstractFilterWrapper):
-                return self.unwrapped.search_attr(attr)
-            else:
-                return getattr(self.unwrapped, attr)
+            return super().search_attr(attr)
+        return self.unwrapped.search_attr(attr)
 
     def _pre_save(self, *args, **kwargs):
         self.unwrapped._pre_save(*args, **kwargs)
