@@ -149,7 +149,7 @@ def _data_fn_from_paths(
                 for i in range(tree_utils.tree_shape(tree))
             ]
 
-        if paths != _paths:
+        if paths != _paths or len(_list_of_data) == 0:
             _paths = paths
 
             _list_of_data = []

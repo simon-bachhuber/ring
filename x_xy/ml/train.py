@@ -100,7 +100,7 @@ def train_fn(
     generator: types.BatchedGenerator,
     n_episodes: int,
     filter: ml_base.AbstractFilter | ml_base.AbstractFilterWrapper,
-    optimizer: Optional[optax.GradientTransformation],
+    optimizer: Optional[optax.GradientTransformation] = optax.adam(1e-3),
     tbp: int = 1000,
     loggers: list[ml_utils.Logger] = [],
     callbacks: list[training_loop.TrainingLoopCallback] = [],
@@ -143,7 +143,7 @@ def train_fn(
     if checkpoint is not None:
         checkpoint = Path(checkpoint).with_suffix(".pickle")
         recv_checkpoint: dict = pickle_load(checkpoint)
-        filter = recv_checkpoint["filter"]
+        filter.params = recv_checkpoint["params"]
         opt_state = recv_checkpoint["opt_state"]
 
     filter = filter.nojit()
