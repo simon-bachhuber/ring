@@ -69,6 +69,9 @@ setuptools.setup(
         "optax",
         "dm-haiku",
         "joblib",
+        "pyyaml",
+        "qmt",
+        "scipy",
     ],
     extras_require={
         "dev": dev_requires,
