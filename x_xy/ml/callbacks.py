@@ -1,10 +1,9 @@
 from collections import deque
 from functools import partial
-import itertools
 import os
 from pathlib import Path
 import time
-from typing import Callable, NamedTuple, Optional, Tuple
+from typing import Callable, NamedTuple, Optional
 import warnings
 
 import jax
@@ -13,75 +12,74 @@ import tree_utils
 
 import wandb
 import x_xy
+from x_xy.ml import base
+from x_xy.ml import ml_utils
+from x_xy.ml import training_loop
 from x_xy.utils import distribute_batchsize
 from x_xy.utils import expand_batchsize
 from x_xy.utils import merge_batchsize
 from x_xy.utils import parse_path
 from x_xy.utils import pickle_save
 
-from .ml_utils import Logger
-from .ml_utils import MultimediaLogger
-from .ml_utils import unique_id
-from .training_loop import recv_kill_run_signal
-from .training_loop import send_kill_run_signal
-from .training_loop import TrainingLoopCallback
-
 
 def _build_eval_fn2(
-    eval_metrices: dict[str, Tuple[Callable, Callable, Callable]],
-    apply_fn,
-    initial_state,
-    pmap_size,
-    vmap_size,
+    eval_metrices: dict[str, Callable],
+    filter: base.AbstractFilter,
+    X: jax.Array,
+    y: jax.Array,
+    lam: tuple[int],
+    link_names: list[str] | None,
 ):
-    @partial(jax.pmap, in_axes=(None, 0, 0))
-    def pmap_vmap_apply(params, initial_state, X):
-        return apply_fn(params, initial_state, X)[0]
+    filter = filter.nojit()
+    assert X.ndim == 5
+    assert y.ndim == 4
 
-    def eval_fn(params, X, y):
-        X = expand_batchsize(X, pmap_size, vmap_size)
-        yhat = pmap_vmap_apply(params, initial_state, X)
-        yhat = merge_batchsize(yhat, pmap_size, vmap_size)
+    if link_names is None:
+        link_names = [str(i) for i in range(y.shape[-2])]
 
-        values, post_reduce1 = {}, {}
-        for metric_name, (metric_fn, reduce_fn1, reduce_fn2) in eval_metrices.items():
+    @partial(jax.pmap, in_axes=(None, 0))
+    def pmap_vmap_apply(params, X):
+        return filter.apply(X=X, params=params, lam=lam)[0]
+
+    def eval_fn(params):
+        yhat = pmap_vmap_apply(params, X)
+        yhat = merge_batchsize(yhat, X.shape[0], X.shape[1])
+
+        values = {}
+        for metric_name, metric_fn in eval_metrices.items():
             assert (
                 metric_name not in values
             ), f"The metric identitifier {metric_name} is not unique"
-
-            reduce1_errors_fn = lambda q, qhat: reduce_fn1(
-                jax.vmap(jax.vmap(metric_fn))(q, qhat)
-            )
-            post_reduce1_errors = jax.tree_map(reduce1_errors_fn, y, yhat)
-            values.update({metric_name: jax.tree_map(reduce_fn2, post_reduce1_errors)})
-            post_reduce1.update({metric_name: post_reduce1_errors})
-
-        return values, post_reduce1
+            value = jax.vmap(metric_fn, in_axes=(2, 2))(y, yhat)
+            assert value.ndim == 1, f"{value.shape}"
+            value = {name: value[i] for i, name in enumerate(link_names)}
+            values[metric_name] = value
+        return values
 
     return eval_fn
 
 
-class EvalXyTrainingLoopCallback(TrainingLoopCallback):
+class EvalXyTrainingLoopCallback(training_loop.TrainingLoopCallback):
     def __init__(
         self,
-        init_apply,
-        eval_metrices: dict[str, Tuple[Callable, Callable, Callable]],
-        X: dict,
-        y: dict,
+        filter: base.AbstractFilter,
+        eval_metrices: dict[str, Callable],
+        X: jax.Array,
+        y: jax.Array,
+        lam: list[int],
         metric_identifier: str,
         eval_every: int = 5,
+        link_names: Optional[list[str]] = None,
     ):
         "X, y can be batched or unbatched."
-        self.X, self.y = tree_utils.to_3d_if_2d((X, y))
-        del X, y
-        _, initial_state = init_apply.init(jax.random.PRNGKey(1), self.X)
-        batchsize = tree_utils.tree_shape(self.X)
+        if X.ndim == 3:
+            X, y = X[None], y[None]
+        B = X.shape[0]
+        X = expand_batchsize(X, *distribute_batchsize(B))
         self.eval_fn = _build_eval_fn2(
-            eval_metrices,
-            init_apply.apply,
-            _repeat_state(initial_state, batchsize),
-            *distribute_batchsize(batchsize),
+            eval_metrices, filter, X, y, tuple(lam), link_names
         )
+        self.X, self.y = X, y
         self.eval_every = eval_every
         self.metric_identifier = metric_identifier
 
@@ -92,19 +90,19 @@ class EvalXyTrainingLoopCallback(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state,
     ):
         if self.eval_every == -1:
             return
 
         if (i_episode % self.eval_every) == 0:
-            point_estimates, _ = self.eval_fn(params, self.X, self.y)
+            point_estimates = self.eval_fn(params)
             self.last_metrices = {self.metric_identifier: point_estimates}
         metrices.update(self.last_metrices)
 
 
-class AverageMetricesTLCB(TrainingLoopCallback):
+class AverageMetricesTLCB(training_loop.TrainingLoopCallback):
     def __init__(self, metrices_names: list[list[str]], name: str):
         self.zoom_ins = metrices_names
         self.name = name
@@ -116,7 +114,7 @@ class AverageMetricesTLCB(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state,
     ) -> None:
         value = 0
@@ -162,7 +160,7 @@ def _zoom_into_metrices(metrices: dict, zoom_in: list[str]) -> float:
     return float(zoomed_out)
 
 
-class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
+class SaveParamsTrainingLoopCallback(training_loop.TrainingLoopCallback):
     def __init__(
         self,
         path_to_file: str,
@@ -188,7 +186,7 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger | ml_utils.MixinLogger],
         opt_state,
     ) -> None:
         if self._track_metrices is None:
@@ -198,7 +196,7 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
             if (i_episode % self._track_metrices_eval_every) == 0:
                 value = 0.0
                 N = 0
-                for combination in itertools.product(*self._track_metrices):
+                for combination in self._track_metrices:
                     value += _zoom_into_metrices(metrices, combination)
                     N += 1
                 value /= N
@@ -226,16 +224,18 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
 
             pickle_save(ele.params, filename, overwrite=True)
             if self.upload:
-                multimedia_logger = _find_multimedia_logger(
-                    self._loggers, raise_exception=False
-                )
-                if multimedia_logger is not None:
-                    multimedia_logger.log_params(filename)
-                else:
-                    warnings.warn(
-                        "Upload of parameters was requested but no `MultimediaLogger`"
-                        " was found."
-                    )
+                success = False
+                for logger in self._loggers:
+                    try:
+                        logger.log_params(filename)
+                        success = True
+                    except NotImplementedError:
+                        pass
+                    if not success:
+                        warnings.warn(
+                            "Upload of parameters was requested but no `ml_utils.Logger"
+                            "` that implements `logger.log_params` was found."
+                        )
 
             filenames.append(filename)
 
@@ -250,22 +250,7 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
             os.system(f"rmdir {str(Path(filename).parent)}")
 
 
-def _find_multimedia_logger(
-    loggers, raise_exception: bool = True
-) -> MultimediaLogger | None:
-    for logger in loggers:
-        if isinstance(logger, MultimediaLogger):
-            return logger
-
-    if raise_exception:
-        raise Exception(
-            f"Neither `NeptuneLogger` nor `WandbLogger` was found in {loggers}"
-        )
-    else:
-        return None
-
-
-class LogGradsTrainingLoopCallBack(TrainingLoopCallback):
+class LogGradsTrainingLoopCallBack(training_loop.TrainingLoopCallback):
     def __init__(
         self,
         kill_if_larger: Optional[float] = None,
@@ -282,7 +267,7 @@ class LogGradsTrainingLoopCallBack(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state,
     ) -> None:
         gradient_log = {}
@@ -296,14 +281,14 @@ class LogGradsTrainingLoopCallBack(TrainingLoopCallback):
                 else:
                     self.last_larger.append(False)
                 if all(self.last_larger):
-                    send_kill_run_signal()
+                    training_loop.send_kill_run_signal()
             gradient_log[f"grads_tbp_{i}_max"] = grads_max
             gradient_log[f"grads_tbp_{i}_l2norm"] = grads_norm
 
         metrices.update(gradient_log)
 
 
-class NanKillRunCallback(TrainingLoopCallback):
+class NanKillRunCallback(training_loop.TrainingLoopCallback):
     def __init__(
         self,
         print: bool = True,
@@ -317,14 +302,14 @@ class NanKillRunCallback(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state,
     ) -> None:
         params_fast_flat = tree_utils.batch_concat(params, num_batch_dims=0)
         params_is_nan = jnp.any(jnp.isnan(params_fast_flat))
 
         if params_is_nan:
-            send_kill_run_signal()
+            training_loop.send_kill_run_signal()
 
         if params_is_nan and self.print:
             print(
@@ -332,7 +317,7 @@ class NanKillRunCallback(TrainingLoopCallback):
             )
 
 
-class LogEpisodeTrainingLoopCallback(TrainingLoopCallback):
+class LogEpisodeTrainingLoopCallback(training_loop.TrainingLoopCallback):
     def __init__(self, kill_after_episode: Optional[int] = None) -> None:
         self.kill_after_episode = kill_after_episode
 
@@ -343,17 +328,17 @@ class LogEpisodeTrainingLoopCallback(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state,
     ) -> None:
         if self.kill_after_episode is not None and (
             i_episode >= self.kill_after_episode
         ):
-            send_kill_run_signal()
+            training_loop.send_kill_run_signal()
         metrices.update({"i_episode": i_episode})
 
 
-class TimingKillRunCallback(TrainingLoopCallback):
+class TimingKillRunCallback(training_loop.TrainingLoopCallback):
     def __init__(self, max_run_time_seconds: float) -> None:
         self.max_run_time_seconds = max_run_time_seconds
 
@@ -364,17 +349,17 @@ class TimingKillRunCallback(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state,
     ) -> None:
         runtime = time.time() - x_xy._TRAIN_TIMING_START
         if runtime > self.max_run_time_seconds:
             runtime_h = runtime / 3600
             print(f"Run is killed due to timing. Current runtime is {runtime_h}h.")
-            send_kill_run_signal()
+            training_loop.send_kill_run_signal()
 
 
-class CheckpointCallback(TrainingLoopCallback):
+class CheckpointCallback(training_loop.TrainingLoopCallback):
     def after_training_step(
         self,
         i_episode: int,
@@ -382,7 +367,7 @@ class CheckpointCallback(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state: tree_utils.PyTree,
     ) -> None:
         self.params = params
@@ -390,17 +375,19 @@ class CheckpointCallback(TrainingLoopCallback):
 
     def close(self):
         # only checkpoint if run has been killed
-        if recv_kill_run_signal():
-            path = parse_path("~/.xxy_checkpoints", unique_id(), extension="pickle")
+        if training_loop.recv_kill_run_signal():
+            path = parse_path(
+                "~/.xxy_checkpoints", ml_utils.unique_id(), extension="pickle"
+            )
             data = {"params": self.params, "opt_state": self.opt_state}
             pickle_save(
-                data=jax.device_get(data),
+                obj=jax.device_get(data),
                 path=path,
                 overwrite=True,
             )
 
 
-class WandbKillRun(TrainingLoopCallback):
+class WandbKillRun(training_loop.TrainingLoopCallback):
     def __init__(self, stop_tag: str = "stop"):
         self.stop_tag = stop_tag
 
@@ -411,7 +398,7 @@ class WandbKillRun(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state,
     ) -> None:
         if wandb.run is not None:
@@ -421,9 +408,4 @@ class WandbKillRun(TrainingLoopCallback):
                 .tags
             )
             if self.stop_tag in tags:
-                send_kill_run_signal()
-
-
-def _repeat_state(state, repeats: int):
-    pmap_size, vmap_size = distribute_batchsize(repeats)
-    return jax.vmap(jax.vmap(lambda _: state))(jnp.zeros((pmap_size, vmap_size)))
+                training_loop.send_kill_run_signal()
