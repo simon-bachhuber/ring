@@ -1,4 +1,5 @@
 from typing import Optional
+import warnings
 
 import jax
 import jax.numpy as jnp
@@ -26,6 +27,33 @@ class GeneratorTrafoLambda(types.GeneratorTrafo):
 
             def _gen(*args):
                 return self.f(gen(*args))
+
+        return _gen
+
+
+def _rename_links(d: dict[str, dict], names: list[str]) -> dict[int, dict]:
+    for key in list(d.keys()):
+        if key in names:
+            d[str(names.index(key))] = d.pop(key)
+        else:
+            warnings.warn(
+                f"The key `{key}` was not found in names `{names}`. "
+                "It will not be renamed."
+            )
+
+    return d
+
+
+class GeneratorTrafoNames2Indices(types.GeneratorTrafo):
+    def __init__(self, sys_noimu: base.System) -> None:
+        self.sys_noimu = sys_noimu
+
+    def __call__(self, gen: types.GeneratorWithInputOutputExtras):
+        def _gen(*args):
+            (X, y), extras = gen(*args)
+            X = _rename_links(X, self.sys_noimu.link_names)
+            y = _rename_links(y, self.sys_noimu.link_names)
+            return (X, y), extras
 
         return _gen
 
