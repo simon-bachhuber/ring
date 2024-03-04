@@ -9,9 +9,7 @@ import tree_utils
 import yaml
 
 import x_xy
-
-# TODO exp imports omc; pip install x_xy[exp] works still correctly because of setup.py
-from x_xy.subpkgs.omc import utils as omc_utils
+from x_xy.exp import utils as omc_utils
 
 arm_xml = "setups/arm.xml"
 gait_xml = "setups/gait.xml"

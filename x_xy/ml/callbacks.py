@@ -17,10 +17,10 @@ from x_xy.utils import distribute_batchsize
 from x_xy.utils import expand_batchsize
 from x_xy.utils import merge_batchsize
 from x_xy.utils import parse_path
+from x_xy.utils import pickle_save
 
 from .ml_utils import Logger
 from .ml_utils import MultimediaLogger
-from .ml_utils import save
 from .ml_utils import unique_id
 from .training_loop import recv_kill_run_signal
 from .training_loop import send_kill_run_signal
@@ -224,7 +224,7 @@ class SaveParamsTrainingLoopCallback(TrainingLoopCallback):
                     extension="pickle",
                 )
 
-            save(ele.params, filename, overwrite=True)
+            pickle_save(ele.params, filename, overwrite=True)
             if self.upload:
                 multimedia_logger = _find_multimedia_logger(
                     self._loggers, raise_exception=False
@@ -393,7 +393,7 @@ class CheckpointCallback(TrainingLoopCallback):
         if recv_kill_run_signal():
             path = parse_path("~/.xxy_checkpoints", unique_id(), extension="pickle")
             data = {"params": self.params, "opt_state": self.opt_state}
-            save(
+            pickle_save(
                 data=jax.device_get(data),
                 path=path,
                 overwrite=True,

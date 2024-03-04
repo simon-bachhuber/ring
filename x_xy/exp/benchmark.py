@@ -7,10 +7,10 @@ import numpy as np
 
 from x_xy import algorithms
 from x_xy import base
+from x_xy import exp
 from x_xy import maths
 from x_xy import sim2real
 from x_xy import utils
-from x_xy.subpkgs import exp
 
 
 @cache

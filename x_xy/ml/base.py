@@ -58,12 +58,6 @@ class AbstractFilter(ABC):
     def nojit(self) -> "AbstractFilter":
         return self
 
-    def train(self) -> "AbstractFilter":
-        return self
-
-    def eval(self) -> "AbstractFilter":
-        return self
-
     def _pre_save(self, *args, **kwargs) -> None:
         pass
 
@@ -120,12 +114,6 @@ class AbstractFilterWrapper(AbstractFilter):
         self._filter = self.unwrapped.nojit()
         return self
 
-    def train(self) -> "AbstractFilterWrapper":
-        return self
-
-    def eval(self) -> "AbstractFilterWrapper":
-        return self
-
     def search_attr(self, attr: str):
         if hasattr(self, attr):
             return getattr(self, attr)
@@ -147,18 +135,19 @@ class AbstractFilterWrapper(AbstractFilter):
 
     @property
     def name(self):
-        return self._filter.name + " ->\n" + super().name
+        return self.unwrapped.name + " ->\n" + super().name
 
 
-class LPF_AbstractFilterWrapper(AbstractFilterWrapper):
+class LPF_FilterWrapper(AbstractFilterWrapper):
     def __init__(
         self,
         filter: AbstractFilter,
         cutoff_freq: float,
         samp_freq: float,
         filtfilt: bool = True,
+        name="LPF_FilterWrapper",
     ) -> None:
-        super().__init__(filter)
+        super().__init__(filter, name)
         self._kwargs = dict(
             cutoff_freq=cutoff_freq, samp_freq=samp_freq, filtfilt=filtfilt
         )
@@ -182,7 +171,12 @@ class LPF_AbstractFilterWrapper(AbstractFilterWrapper):
         return yhat, state
 
 
-class GroundTruthHeading_AbstractFilterWrapper(AbstractFilterWrapper):
+class GroundTruthHeading_FilterWrapper(AbstractFilterWrapper):
+
+    def __init__(
+        self, filter: AbstractFilter, name="GroundTruthHeading_FilterWrapper"
+    ) -> None:
+        super().__init__(filter, name)
 
     def apply(self, X, params=None, state=None, y=None, lam=None):
         yhat, state = super().apply(X, params, state, y, lam)
@@ -208,12 +202,15 @@ class GroundTruthHeading_AbstractFilterWrapper(AbstractFilterWrapper):
 _default_factors = dict(gyr=1 / 2.2, acc=1 / 9.81, joint_axes=1 / 0.57, dt=10.0)
 
 
-class ScaleX_AbstractFilterWrapper(AbstractFilterWrapper):
+class ScaleX_FilterWrapper(AbstractFilterWrapper):
 
     def __init__(
-        self, filter: AbstractFilter, factors: dict[str, float] = _default_factors
+        self,
+        filter: AbstractFilter,
+        factors: dict[str, float] = _default_factors,
+        name="ScaleX_FilterWrapper",
     ) -> None:
-        super().__init__(filter)
+        super().__init__(filter, name)
         self._factors = factors
 
     def apply(self, X, params=None, state=None, y=None, lam=None):
@@ -233,64 +230,3 @@ class ScaleX_AbstractFilterWrapper(AbstractFilterWrapper):
         X = {key: val * self._factors[key] for key, val in X.items()}
         X = tree_utils.batch_concat_acme(X, num_batch_dims=num_batch_dims)
         return super().apply(X, params, state, y, lam)
-
-    def train(self) -> AbstractFilterWrapper:
-        return self
-        # return Train_AbstractFilterWrapper(self).train()
-
-
-class Train_AbstractFilterWrapper(AbstractFilterWrapper):
-    "Only required during training, afterwards can be unwrapped again"
-
-    def init(self, bs=None, X=None, lam=None, seed: int = 1):
-        return super().init(bs, self._transform(X), lam, seed)
-
-    def apply(self, X, params=None, state=None, y=None, lam=None):
-        return super().apply(self._transform(X), params, state, y, lam)
-
-    def _transform(self, X):
-        X = self._expand_dt(X)
-        X = self._flatten_if_dict(X)
-        return X
-
-    # TODO investigate if really jax.Array or np.ndarray
-    def _flatten_if_dict(self, X: jax.Array | dict[str, dict[str, jax.Array]]):
-        if not isinstance(X, dict):
-            return X
-        X = X.copy()
-
-        N = len(X)
-        for i in range(N):
-            assert str(i) in X
-
-        def dict_to_tuple(d: dict[str, jax.Array]):
-            tup = (d["acc"], d["gyr"])
-            if "joint_axes" in d:
-                tup = tup + (d["joint_axes"],)
-            if "dt" in d:
-                tup = tup + (d["dt"],)
-            return tup
-
-        X = [dict_to_tuple(X[str(i)]) for i in range(N)]
-        X = tree_utils.tree_batch(X, backend="jax")
-        X = tree_utils.batch_concat_acme(X, num_batch_dims=3).transpose((1, 2, 0, 3))
-        assert X.shape[2] == N
-        return X
-
-    def _expand_dt(self, X: jax.Array | dict[str, dict[str, jax.Array]]):
-        if not isinstance(X, dict) or "dt" not in X:
-            return X
-        X = X.copy()
-
-        gyr = X["0"]["gyr"]
-        assert gyr.ndim == 3
-        T = gyr.shape[1]
-
-        dt = X.pop("dt")
-        dt = jnp.repeat(dt[:, None, :], T, axis=1)
-        for seg in X:
-            X[seg]["dt"] = dt
-        return X
-
-    def eval(self) -> AbstractFilterWrapper:
-        return self._filter.eval()

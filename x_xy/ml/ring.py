@@ -11,7 +11,6 @@ from x_xy.maths import safe_normalize
 from x_xy.utils import pickle_load
 
 from .base import AbstractFilter
-from .base import ScaleX_AbstractFilterWrapper
 
 
 def _scan_sys(lam: list[int], f):
@@ -192,10 +191,11 @@ class LSTM(hk.RNNCore):
 
 
 class RING(AbstractFilter):
-    def __init__(self, params=None, lam=None, jit: bool = True, **kwargs):
+    def __init__(self, params=None, lam=None, jit: bool = True, name=None, **kwargs):
         self.forward_lam_factory = partial(make_ring, **kwargs)
         self.params = self._load_params(params)
         self.lam = lam
+        self._name = name
 
         if jit:
             self.apply = jax.jit(self.apply, static_argnames="lam")
@@ -276,9 +276,3 @@ class RING(AbstractFilter):
         if jit:
             ring.apply = jax.jit(ring.apply, static_argnames="lam")
         return ring
-
-    def train(self):
-        return ScaleX_AbstractFilterWrapper(self).train()
-
-    def eval(self):
-        return ScaleX_AbstractFilterWrapper(self).eval()

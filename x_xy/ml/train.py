@@ -13,6 +13,7 @@ from x_xy.algorithms.generator import types
 from x_xy.utils import distribute_batchsize
 from x_xy.utils import expand_batchsize
 from x_xy.utils import parse_path
+from x_xy.utils import pickle_load
 
 from .base import AbstractFilter
 from .base import AbstractFilterWrapper
@@ -23,7 +24,6 @@ from .callbacks import NanKillRunCallback
 from .callbacks import SaveParamsTrainingLoopCallback
 from .callbacks import TimingKillRunCallback
 from .callbacks import WandbKillRun
-from .ml_utils import load
 from .ml_utils import Logger
 from .ml_utils import unique_id
 from .ml_utils import WandbLogger
@@ -153,11 +153,11 @@ def train(
 
     if checkpoint is not None:
         checkpoint = Path(checkpoint).with_suffix(".pickle")
-        recv_checkpoint: dict = load(checkpoint)
+        recv_checkpoint: dict = pickle_load(checkpoint)
         filter = recv_checkpoint["filter"]
         opt_state = recv_checkpoint["opt_state"]
 
-    filter = filter.nojit().train()
+    filter = filter.nojit()
 
     filter_params = filter.search_attr("params")
     if filter_params is None:
