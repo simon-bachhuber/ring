@@ -107,6 +107,7 @@ def _replace_elements_w_nans(list_of_data: list, include_samples: list[int]) -> 
 
 
 _list_of_data = None
+_paths = None
 
 
 def _data_fn_from_paths(
@@ -116,7 +117,7 @@ def _data_fn_from_paths(
     tree_transform,
 ):
     "`data_fn` returns numpy arrays."
-    global _list_of_data
+    global _list_of_data, _paths
 
     # expanduser
     paths = [utils.parse_path(p, mkdir=False) for p in paths]
@@ -148,7 +149,9 @@ def _data_fn_from_paths(
                 for i in range(tree_utils.tree_shape(tree))
             ]
 
-        if _list_of_data is None:
+        if paths != _paths:
+            _paths = paths
+
             _list_of_data = []
             for p in paths:
                 _list_of_data += load_fn(p)
