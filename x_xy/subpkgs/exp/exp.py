@@ -1,6 +1,6 @@
 from functools import cache
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 import jax
 import jax.numpy as jnp
@@ -67,36 +67,9 @@ def load_arm_or_gait(exp_id: str) -> str:
 @cache
 def load_sys(
     exp_id: str,
-    preprocess_sys: Optional[Callable] = None,
-    morph_yaml_key: Optional[str] = None,
-    delete_after_morph: Optional[tuple[str]] = None,
-    replace_rxyz: Optional[str] = None,
 ) -> x_xy.base.System:
     xml_path = _relative_to_this_file(_id2xml[exp_id])
     sys = x_xy.io.load_sys_from_xml(xml_path)
-
-    if preprocess_sys is not None:
-        sys = preprocess_sys(sys)
-
-    if replace_rxyz is not None:
-        sys = _replace_rxyz_with(sys, replace_rxyz)
-
-    # save to xml_str and reload such that joint_params get populated
-    sys = x_xy.io.load_sys_from_str(x_xy.io.save_sys_to_str(sys))
-
-    if morph_yaml_key is not None:
-        skip_morph = False
-        if load_arm_or_gait(exp_id) == "arm" and morph_yaml_key == "seg1":
-            skip_morph = True
-        if load_arm_or_gait(exp_id) == "gait" and morph_yaml_key == "seg4":
-            skip_morph = True
-
-        if not skip_morph:
-            sys = sys.morph_system(new_anchor=morph_yaml_key)
-
-    if delete_after_morph is not None:
-        sys = sys.delete_system(list(delete_after_morph))
-
     return sys
 
 

@@ -1,5 +1,7 @@
 from x_xy.utils import import_lib
 
+from .benchmark import benchmark
+from .benchmark import IMTP
 from .exp import load_arm_or_gait
 from .exp import load_data
 from .exp import load_hz_imu
