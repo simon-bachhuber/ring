@@ -10,25 +10,14 @@ import tree_utils
 import wandb
 from x_xy import maths
 from x_xy.algorithms.generator import types
+from x_xy.ml import base as ml_base
+from x_xy.ml import callbacks as ml_callbacks
+from x_xy.ml import ml_utils
+from x_xy.ml import training_loop
 from x_xy.utils import distribute_batchsize
 from x_xy.utils import expand_batchsize
 from x_xy.utils import parse_path
 from x_xy.utils import pickle_load
-
-from .base import AbstractFilter
-from .base import AbstractFilterWrapper
-from .callbacks import CheckpointCallback
-from .callbacks import LogEpisodeTrainingLoopCallback
-from .callbacks import LogGradsTrainingLoopCallBack
-from .callbacks import NanKillRunCallback
-from .callbacks import SaveParamsTrainingLoopCallback
-from .callbacks import TimingKillRunCallback
-from .callbacks import WandbKillRun
-from .ml_utils import Logger
-from .ml_utils import unique_id
-from .ml_utils import WandbLogger
-from .training_loop import TrainingLoop
-from .training_loop import TrainingLoopCallback
 
 LOSS_FN = Callable[[jax.Array, jax.Array], float]
 _default_loss_fn = lambda q, qhat: maths.angle_error(q, qhat) ** 2
@@ -46,7 +35,7 @@ _default_metrices = {
 
 def _build_step_fn(
     metric_fn: LOSS_FN,
-    filter: AbstractFilter,
+    filter: ml_base.AbstractFilter,
     optimizer,
     tbp,
 ):
@@ -107,14 +96,14 @@ def _build_step_fn(
     return step_fn
 
 
-def train(
+def train_fn(
     generator: types.BatchedGenerator,
     n_episodes: int,
-    filter: AbstractFilter | AbstractFilterWrapper,
+    filter: ml_base.AbstractFilter | ml_base.AbstractFilterWrapper,
     optimizer: Optional[optax.GradientTransformation],
     tbp: int = 1000,
-    loggers: list[Logger] = [],
-    callbacks: list[TrainingLoopCallback] = [],
+    loggers: list[ml_utils.Logger] = [],
+    callbacks: list[training_loop.TrainingLoopCallback] = [],
     checkpoint: Optional[str] = None,
     seed_network: int = 1,
     seed_generator: int = 2,
@@ -181,33 +170,37 @@ def train(
         default_callbacks.append(_DefaultEvalFnCallback(eval_fn))
 
     if callback_kill_tag is not None:
-        default_callbacks.append(WandbKillRun(stop_tag=callback_kill_tag))
+        default_callbacks.append(ml_callbacks.WandbKillRun(stop_tag=callback_kill_tag))
 
     if not (callback_save_params is False):
         if callback_save_params is True:
-            callback_save_params = f"~/params/{unique_id()}.pickle"
-        default_callbacks.append(SaveParamsTrainingLoopCallback(callback_save_params))
+            callback_save_params = f"~/params/{ml_utils.unique_id()}.pickle"
+        default_callbacks.append(
+            ml_callbacks.SaveParamsTrainingLoopCallback(callback_save_params)
+        )
 
     if callback_kill_if_grads_larger is not None:
         default_callbacks.append(
-            LogGradsTrainingLoopCallBack(
+            ml_callbacks.LogGradsTrainingLoopCallBack(
                 callback_kill_if_grads_larger, consecutive_larger=18
             )
         )
 
     if callback_kill_if_nan:
-        default_callbacks.append(NanKillRunCallback())
+        default_callbacks.append(ml_callbacks.NanKillRunCallback())
 
     # always log, because we also want `i_epsiode` to be logged in wandb
     default_callbacks.append(
-        LogEpisodeTrainingLoopCallback(callback_kill_after_episode)
+        ml_callbacks.LogEpisodeTrainingLoopCallback(callback_kill_after_episode)
     )
 
     if callback_kill_after_seconds is not None:
-        default_callbacks.append(TimingKillRunCallback(callback_kill_after_seconds))
+        default_callbacks.append(
+            ml_callbacks.TimingKillRunCallback(callback_kill_after_seconds)
+        )
 
     if callback_create_checkpoint:
-        default_callbacks.append(CheckpointCallback())
+        default_callbacks.append(ml_callbacks.CheckpointCallback())
 
     callbacks_all = default_callbacks + callbacks
 
@@ -219,11 +212,11 @@ def train(
         ), "Required field if `callback_save_params_track_metrices` is set. Used below."
 
         callbacks_all.append(
-            SaveParamsTrainingLoopCallback(
+            ml_callbacks.SaveParamsTrainingLoopCallback(
                 path_to_file=parse_path(callback_save_params, extension=""),
                 last_n_params=3,
                 track_metrices=callback_save_params_track_metrices,
-                cleanup=True,
+                cleanup=False,
             )
         )
 
@@ -231,12 +224,12 @@ def train(
     if wandb.run is not None:
         wandb_logger_found = False
         for logger in loggers:
-            if isinstance(logger, WandbLogger):
+            if isinstance(logger, ml_utils.WandbLogger):
                 wandb_logger_found = True
         if not wandb_logger_found:
-            loggers.append(WandbLogger())
+            loggers.append(ml_utils.WandbLogger())
 
-    loop = TrainingLoop(
+    loop = training_loop.TrainingLoop(
         jax.random.PRNGKey(seed_generator),
         generator,
         filter_params,
@@ -261,7 +254,7 @@ def _arr_to_dict(y: jax.Array, link_names: list[str] | None):
 
 def _build_eval_fn(
     eval_metrices: dict[str, Tuple[Callable, Callable]],
-    filter: AbstractFilter,
+    filter: ml_base.AbstractFilter,
     link_names: Optional[list[str]] = None,
 ):
     """Build function that evaluates the filter performance."""
@@ -306,7 +299,7 @@ def _build_eval_fn(
     return expand_then_pmap_eval_fn
 
 
-class _DefaultEvalFnCallback(TrainingLoopCallback):
+class _DefaultEvalFnCallback(training_loop.TrainingLoopCallback):
     def __init__(self, eval_fn):
         self.eval_fn = eval_fn
 
@@ -317,7 +310,7 @@ class _DefaultEvalFnCallback(TrainingLoopCallback):
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state,
     ):
         metrices.update(self.eval_fn(params, sample_eval[0], sample_eval[1]))

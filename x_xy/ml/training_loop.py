@@ -6,9 +6,7 @@ import tqdm
 import tree_utils
 
 from x_xy.algorithms import Generator
-
-from .ml_utils import Logger
-from .ml_utils import n_params
+from x_xy.ml import ml_utils
 
 _KILL_RUN = False
 
@@ -31,7 +29,7 @@ class TrainingLoopCallback:
         params: dict,
         grads: list[dict],
         sample_eval: dict,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         opt_state: tree_utils.PyTree,
     ) -> None:
         pass
@@ -48,7 +46,7 @@ class TrainingLoop:
         params,
         opt_state,
         step_fn,
-        loggers: list[Logger],
+        loggers: list[ml_utils.Logger],
         callbacks: list[TrainingLoopCallback] = [],
         cycle_seed: Optional[int] = None,
     ):
@@ -69,7 +67,7 @@ class TrainingLoop:
         T = tree_utils.tree_shape(self._sample_eval, 1)
 
         for logger in loggers:
-            logger.log(dict(n_params=n_params(params), batchsize=batchsize, T=T))
+            logger.log(dict(n_params=logger.n_params(params), batchsize=batchsize, T=T))
 
     @property
     def key(self):

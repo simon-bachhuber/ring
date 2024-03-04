@@ -8,9 +8,8 @@ import jax.numpy as jnp
 import tree_utils
 
 from x_xy.maths import safe_normalize
+from x_xy.ml import base as ml_base
 from x_xy.utils import pickle_load
-
-from .base import AbstractFilter
 
 
 def _scan_sys(lam: list[int], f):
@@ -190,7 +189,7 @@ class LSTM(hk.RNNCore):
         raise NotImplementedError
 
 
-class RING(AbstractFilter):
+class RING(ml_base.AbstractFilter):
     def __init__(self, params=None, lam=None, jit: bool = True, name=None, **kwargs):
         self.forward_lam_factory = partial(make_ring, **kwargs)
         self.params = self._load_params(params)
