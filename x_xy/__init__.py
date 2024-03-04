@@ -19,6 +19,7 @@ from .algorithms import step
 from .base import State
 from .base import System
 from .base import Transform
+from .ml import RING
 
 _TRAIN_TIMING_START = None
 _UNIQUE_ID = None
