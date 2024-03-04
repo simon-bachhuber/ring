@@ -5,9 +5,9 @@ import numpy as np
 import qmt
 
 import x_xy
-from x_xy import ml
 from x_xy import sim2real
 from x_xy.algorithms import sensors
+from x_xy.ml import base as ml_base
 
 from .riann import RIANN
 
@@ -27,7 +27,7 @@ _attitude_methods = {
 }
 
 
-class AttitudeBaseline(ml.AbstractFilter2d):
+class AttitudeBaseline(ml_base.AbstractFilterUnbatched):
     def __init__(self, method: str) -> None:
         """ """
         self._name, self._method = _attitude_methods[method]
@@ -44,7 +44,7 @@ class AttitudeBaseline(ml.AbstractFilter2d):
         return quats
 
 
-class TwoSeg1D(ml.AbstractFilter2d):
+class TwoSeg1D(ml_base.AbstractFilterUnbatched):
     def __init__(
         self,
         method: str,
@@ -131,7 +131,7 @@ class TwoSeg1D(ml.AbstractFilter2d):
         return yhat
 
 
-class VQF_9D(ml.AbstractFilter2d):
+class VQF_9D(ml_base.AbstractFilterUnbatched):
     def __init__(
         self,
         name: str,

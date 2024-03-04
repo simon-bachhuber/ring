@@ -1,13 +1,14 @@
 from pathlib import Path
 
 import numpy as np
-import onnxruntime as rt
 
 _onnx_path = Path(__file__).parent.joinpath("riann.onnx")
 
 
 class RIANN:
     def __init__(self):
+        import onnxruntime as rt
+
         self.session = rt.InferenceSession(_onnx_path)
         self.h0 = np.zeros((2, 1, 1, 200), dtype=np.float32)
 
