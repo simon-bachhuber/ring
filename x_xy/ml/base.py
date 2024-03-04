@@ -99,8 +99,9 @@ class AbstractFilterUnbatched(AbstractFilter):
 
 
 class AbstractFilterWrapper(AbstractFilter):
-    def __init__(self, filter: AbstractFilter) -> None:
+    def __init__(self, filter: AbstractFilter, name=None) -> None:
         self._filter = filter
+        self._name = name
 
     def _apply_batched(self, X, params, state, y, lam):
         raise NotImplementedError
@@ -143,6 +144,10 @@ class AbstractFilterWrapper(AbstractFilter):
     ) -> "AbstractFilterWrapper":
         wrapper._filter = wrapper._filter._post_load(wrapper._filter, *args, **kwargs)
         return wrapper
+
+    @property
+    def name(self):
+        return self._filter.name + " ->\n" + super().name
 
 
 class LPF_AbstractFilterWrapper(AbstractFilterWrapper):
