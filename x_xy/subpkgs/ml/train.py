@@ -1,9 +1,7 @@
 from functools import partial
 from pathlib import Path
 from typing import Callable, Optional, Tuple
-import warnings
 
-import haiku as hk
 import jax
 import jax.numpy as jnp
 import optax
@@ -11,11 +9,13 @@ import tree_utils
 
 import wandb
 from x_xy import maths
+from x_xy.algorithms.generator import types
 from x_xy.utils import distribute_batchsize
 from x_xy.utils import expand_batchsize
 from x_xy.utils import parse_path
 
-from .callbacks import _repeat_state
+from .base import AbstractFilter
+from .base import AbstractFilterWrapper
 from .callbacks import CheckpointCallback
 from .callbacks import LogEpisodeTrainingLoopCallback
 from .callbacks import LogGradsTrainingLoopCallBack
@@ -27,7 +27,6 @@ from .ml_utils import load
 from .ml_utils import Logger
 from .ml_utils import unique_id
 from .ml_utils import WandbLogger
-from .optimizer import make_optimizer
 from .training_loop import TrainingLoop
 from .training_loop import TrainingLoopCallback
 
@@ -47,21 +46,16 @@ _default_metrices = {
 
 def _build_step_fn(
     metric_fn: LOSS_FN,
-    apply_fn,
-    initial_state,
-    pmap_size,
-    vmap_size,
+    filter: AbstractFilter,
     optimizer,
     tbp,
-    tbp_skip: int,
-    tbp_skip_keep_grads: bool,
 ):
     """Build step function that optimizes filter parameters based on `metric_fn`.
     `initial_state` has shape (pmap, vmap, state_dim)"""
 
     @partial(jax.value_and_grad, has_aux=True)
     def loss_fn(params, state, X, y):
-        yhat, state = apply_fn(params, state, X)
+        yhat, state = filter.apply(params=params, state=state, X=X)
         # this vmap maps along batch-axis, not time-axis
         # time-axis is handled by `metric_fn`
         pipe = lambda q, qhat: jnp.mean(jax.vmap(metric_fn)(q, qhat))
@@ -85,29 +79,27 @@ def _build_step_fn(
         params = optax.apply_updates(params, updates)
         return params, opt_state
 
-    def step_fn(params, opt_state, X, y):
-        N = tree_utils.tree_shape(X, axis=-2)
-        X, y = expand_batchsize((X, y), pmap_size, vmap_size)
-        nonlocal initial_state
+    initial_state = None
 
-        debug_grads = []
+    def step_fn(params, opt_state, X, y):
+        assert X.ndim == y.ndim == 4
+        B, T, N, F = X.shape
+        pmap_size, vmap_size = distribute_batchsize(B)
+
+        nonlocal initial_state
+        if initial_state is None:
+            initial_state = expand_batchsize(filter.init(B, X)[1], pmap_size, vmap_size)
+
+        X, y = expand_batchsize((X, y), pmap_size, vmap_size)
+
         state = initial_state
+        debug_grads = []
         for i, (X_tbp, y_tbp) in enumerate(
-            tree_utils.tree_split((X, y), int(N / tbp), axis=-2)
+            tree_utils.tree_split((X, y), int(T / tbp), axis=-3)
         ):
             (loss, state), grads = pmapped_loss_fn(params, state, X_tbp, y_tbp)
             debug_grads.append(grads)
-
-            if tbp_skip > i:
-                warnings.warn(f"Skipping the {i}th-tbp gradient step.")
-                if not tbp_skip_keep_grads:
-                    warnings.warn(
-                        f"Stopping the gradients of the {i}th-tbp gradient step."
-                    )
-                    state = jax.lax.stop_gradient(state)
-                continue
-            else:
-                state = jax.lax.stop_gradient(state)
+            state = jax.lax.stop_gradient(state)
             params, opt_state = apply_grads(grads, params, opt_state)
 
         return params, opt_state, {"loss": loss}, debug_grads
@@ -115,24 +107,17 @@ def _build_step_fn(
     return step_fn
 
 
-key_generator, key_network = jax.random.split(jax.random.PRNGKey(0))
-
-
 def train(
-    generator: Callable,
+    generator: types.BatchedGenerator,
     n_episodes: int,
-    network: hk.TransformedWithState,
-    optimizer: Optional[optax.GradientTransformation] = None,
+    filter: AbstractFilter | AbstractFilterWrapper,
+    optimizer: Optional[optax.GradientTransformation],
     tbp: int = 1000,
-    tbp_skip: int = 0,
-    tbp_skip_keep_grads: bool = False,
     loggers: list[Logger] = [],
     callbacks: list[TrainingLoopCallback] = [],
-    initial_params: Optional[str] = None,
-    initial_params_pretrained: Optional[tuple[str, int]] = None,
     checkpoint: Optional[str] = None,
-    key_network: jax.random.PRNGKey = key_network,
-    key_generator: jax.random.PRNGKey = key_generator,
+    seed_network: int = 1,
+    seed_generator: int = 2,
     callback_save_params: bool | str = False,
     callback_save_params_track_metrices: Optional[list[list[str]]] = None,
     callback_kill_if_grads_larger: Optional[float] = None,
@@ -143,6 +128,7 @@ def train(
     callback_create_checkpoint: bool = True,
     loss_fn: LOSS_FN = _default_loss_fn,
     metrices: Optional[METRICES] = _default_metrices,
+    link_names: Optional[list[str]] = None,
 ) -> bool:
     """Trains RNNO
 
@@ -165,61 +151,33 @@ def train(
         Wether or not the training run was killed by a callback.
     """
 
-    # queue it for some toy data
-    X, _ = generator(jax.random.PRNGKey(0))
-
-    batchsize = tree_utils.tree_shape(X)
-    pmap_size, vmap_size = distribute_batchsize(batchsize)
-
-    params, initial_state = network.init(
-        key_network,
-        X,
-    )
-    initial_state = _repeat_state(initial_state, batchsize)
-
-    assert not (
-        initial_params is not None and initial_params_pretrained is not None
-    ), "Either or, not both"
-    if initial_params is not None:
-        assert checkpoint is not None
-        params = load(initial_params)
-    if initial_params_pretrained is not None:
-        assert checkpoint is not None
-        pre_name, pre_version = initial_params_pretrained
-        params = load(pretrained=pre_name, pretrained_version=pre_version)
     if checkpoint is not None:
         checkpoint = Path(checkpoint).with_suffix(".pickle")
         recv_checkpoint: dict = load(checkpoint)
-        params = recv_checkpoint["params"]
+        filter = recv_checkpoint["filter"]
         opt_state = recv_checkpoint["opt_state"]
-    del initial_params
 
-    if optimizer is None:
-        # TODO; hardcoded `n_steps_per_episode`
-        optimizer = make_optimizer(
-            3e-3, n_episodes, n_steps_per_episode=6, skip_large_update_max_normsq=100.0
-        )
+    filter = filter.nojit().train()
+
+    filter_params = filter.search_attr("params")
+    if filter_params is None:
+        X, _ = generator(jax.random.PRNGKey(1))
+        filter_params, _ = filter.init(X=X, seed=seed_network)
+        del X
 
     if checkpoint is None:
-        opt_state = optimizer.init(params)
+        opt_state = optimizer.init(filter_params)
 
     step_fn = _build_step_fn(
         loss_fn,
-        network.apply,
-        initial_state,
-        pmap_size,
-        vmap_size,
+        filter,
         optimizer,
         tbp=tbp,
-        tbp_skip=tbp_skip,
-        tbp_skip_keep_grads=tbp_skip_keep_grads,
     )
 
     default_callbacks = []
     if metrices is not None:
-        eval_fn = _build_eval_fn(
-            metrices, network.apply, initial_state, pmap_size, vmap_size
-        )
+        eval_fn = _build_eval_fn(metrices, filter, link_names)
         default_callbacks.append(_DefaultEvalFnCallback(eval_fn))
 
     if callback_kill_tag is not None:
@@ -279,9 +237,9 @@ def train(
             loggers.append(WandbLogger())
 
     loop = TrainingLoop(
-        key_generator,
+        jax.random.PRNGKey(seed_generator),
         generator,
-        params,
+        filter_params,
         opt_state,
         step_fn,
         loggers=loggers,
@@ -291,18 +249,28 @@ def train(
     return loop.run(n_episodes)
 
 
+def _arr_to_dict(y: jax.Array, link_names: list[str] | None):
+    assert y.ndim == 4
+    B, T, N, F = y.shape
+
+    if link_names is None:
+        link_names = [f"q{i}" for i in range(N)]
+
+    return {name: y[..., i, :] for i, name in enumerate(link_names)}
+
+
 def _build_eval_fn(
     eval_metrices: dict[str, Tuple[Callable, Callable]],
-    apply_fn,
-    initial_state,
-    pmap_size,
-    vmap_size,
+    filter: AbstractFilter,
+    link_names: Optional[list[str]] = None,
 ):
-    """Build function that evaluates the filter performance.
-    `initial_state` has shape (pmap, vmap, state_dim)"""
+    """Build function that evaluates the filter performance."""
 
     def eval_fn(params, state, X, y):
-        yhat, _ = apply_fn(params, state, X)
+        yhat, _ = filter.apply(params=params, state=state, X=X)
+
+        y = _arr_to_dict(y, link_names)
+        yhat = _arr_to_dict(yhat, link_names)
 
         values = {}
         for metric_name, (metric_fn, reduce_fn) in eval_metrices.items():
@@ -321,7 +289,17 @@ def _build_eval_fn(
         values = eval_fn(params, state, X, y)
         return pmean(values)
 
+    initial_state = None
+
     def expand_then_pmap_eval_fn(params, X, y):
+        assert X.ndim == y.ndim == 4
+        B, T, N, F = X.shape
+        pmap_size, vmap_size = distribute_batchsize(B)
+
+        nonlocal initial_state
+        if initial_state is None:
+            initial_state = expand_batchsize(filter.init(B, X)[1], pmap_size, vmap_size)
+
         X, y = expand_batchsize((X, y), pmap_size, vmap_size)
         return pmapped_eval_fn(params, initial_state, X, y)
 
