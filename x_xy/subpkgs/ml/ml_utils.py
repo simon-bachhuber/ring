@@ -1,15 +1,14 @@
 from abc import ABC
 from abc import abstractmethod
 from abc import abstractstaticmethod
-from collections import namedtuple
 from functools import partial
 import logging
 import os
 from pathlib import Path
 import pickle
+import random
 import time
-from typing import Optional, Union
-import webbrowser
+from typing import Optional
 
 import jax
 import numpy as np
@@ -18,66 +17,7 @@ from tree_utils import tree_batch
 
 import wandb
 import x_xy
-from x_xy.io import load_sys_from_str
-from x_xy.utils import download_from_repo
 from x_xy.utils import import_lib
-
-suffix = ".pickle"
-
-
-def save(data: PyTree, path: Union[str, Path], overwrite: bool = False):
-    path = Path(path).expanduser()
-    if path.suffix != suffix:
-        path = path.with_suffix(suffix)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists():
-        if overwrite:
-            path.unlink()
-        else:
-            raise RuntimeError(f"File {path} already exists.")
-    with open(path, "wb") as file:
-        pickle.dump(data, file, protocol=5)
-
-
-def load(
-    path: Optional[Union[str, Path]] = None,
-    pretrained: Optional[str] = None,
-    pretrained_version: Optional[int] = None,
-) -> PyTree:
-    assert not (
-        path is None and pretrained is None
-    ), "Either `path` or `pretrained` must be given."
-    assert not (
-        path is not None and pretrained is not None
-    ), "Both `path` and `pretrained` cannot both be given."
-
-    if pretrained_version is not None:
-        assert pretrained is not None
-
-    if path is not None:
-        path = Path(path).expanduser()
-        if not path.is_file():
-            raise ValueError(f"Not a file: {path}")
-        if path.suffix != suffix:
-            raise ValueError(f"Not a {suffix} file: {path}")
-        with open(path, "rb") as file:
-            data = pickle.load(file)
-        return data
-    else:
-        version = ""
-        if pretrained_version is not None:
-            # v0, v1, v2, ...
-            version = f"_v{int(pretrained_version)}"
-        path_in_repo = f"params/{pretrained}/params_{pretrained}{version}{suffix}"
-        path_on_disk = download_from_repo(path_in_repo)
-        return load(path_on_disk)
-
-
-def list_pretrained() -> None:
-    "Open Github repo that hosts the pretrained parameters."
-    url = "https://github.com/SimiPixel/x_xy_v2_datahost/tree/main/params"
-    webbrowser.open(url)
-
 
 # An arbitrarily nested dictionary with jax.Array leaves; Or strings
 NestedDict = PyTree
@@ -131,7 +71,7 @@ class DictLogger(Logger):
         self.save(self._output_path)
 
     def save(self, path: str):
-        path = Path(path).with_suffix(suffix).expanduser()
+        path = Path(path).with_suffix(".pickle").expanduser()
         path.mkdir(parents=True, exist_ok=True)
         with open(path, "wb") as file:
             pickle.dump(self._logs, file, protocol=5)
@@ -400,44 +340,6 @@ def unique_id() -> str:
     return x_xy._UNIQUE_ID
 
 
-InitApplyFnPair = namedtuple("InitApplyFnPair", ["init", "apply"])
-
-
-_DUMMY_BODY_NAME = "global"
-_dummy_sys_xml_str = f"""
-<x_xy model="free">
-    <worldbody>
-        <body name="{_DUMMY_BODY_NAME}" joint="frozen"></body>
-    </worldbody>
-</x_xy>
-"""
-
-
-def make_non_social_version(make_social_version, kwargs: dict):
-    kwargs["sys"] = load_sys_from_str(_dummy_sys_xml_str)
-    kwargs["keep_toRoot_output"] = True
-
-    output_transform = kwargs.get("link_output_transform", None)
-    if output_transform is not None:
-
-        def _wrapped_transform(y):
-            y_pytree = output_transform(y)
-            return {0: y_pytree}
-
-        kwargs["link_output_transform"] = _wrapped_transform
-
-    dummy_rnno = make_social_version(**kwargs)
-
-    def non_social_init(key, X):
-        return dummy_rnno.init(key, {_DUMMY_BODY_NAME: X})
-
-    def non_social_apply(params, state, X):
-        yhat, state = dummy_rnno.apply(params, state, {_DUMMY_BODY_NAME: X})
-        return yhat[_DUMMY_BODY_NAME], state
-
-    return InitApplyFnPair(init=non_social_init, apply=non_social_apply)
-
-
 def save_model_tf(jax_func, path: str, *input, validate: bool = True):
     from jax.experimental import jax2tf
 
@@ -480,14 +382,38 @@ def save_model_tf(jax_func, path: str, *input, validate: bool = True):
         )
 
 
-def model_wrapper_indices_to_names(
-    init_apply_pair: InitApplyFnPair, link_names: list[str]
-) -> InitApplyFnPair:
-    def apply(params, state, *args):
-        out, state = init_apply_pair.apply(params, state, *args)
-        out_names = dict()
-        for key, val in out.items():
-            out_names[link_names[key]] = val
-        return out_names, state
+def train_val_split(
+    tps: list[str],
+    bs: int,
+    n_batches_for_val: int = 1,
+    transform_gen=None,
+    tree_transform=None,
+):
+    "Uses `random` module for shuffeling."
+    if transform_gen is None:
+        transform_gen = lambda gen: gen
 
-    return InitApplyFnPair(init=init_apply_pair.init, apply=apply)
+    len_val = n_batches_for_val * bs
+
+    _, N = x_xy.RCMG.eager_gen_from_paths(tps, 1)
+    include_samples = list(range(N))
+    random.shuffle(include_samples)
+
+    train_data, val_data = include_samples[:-len_val], include_samples[-len_val:]
+    X_val, y_val = transform_gen(
+        x_xy.RCMG.eager_gen_from_paths(
+            tps, len_val, val_data, tree_transform=tree_transform
+        )[0]
+    )(jax.random.PRNGKey(420))
+
+    generator = transform_gen(
+        x_xy.RCMG.eager_gen_from_paths(
+            tps,
+            bs,
+            train_data,
+            load_all_into_memory=True,
+            tree_transform=tree_transform,
+        )[0]
+    )
+
+    return generator, (X_val, y_val)
