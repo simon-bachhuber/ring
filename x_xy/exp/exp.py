@@ -9,7 +9,7 @@ import tree_utils
 import yaml
 
 import x_xy
-from x_xy.exp import utils as omc_utils
+from x_xy.exp import omc_utils
 
 arm_xml = "setups/arm.xml"
 gait_xml = "setups/gait.xml"
@@ -37,29 +37,6 @@ def _read_yaml(path: str):
     with open(_relative_to_this_file(path)) as file:
         yaml_str = yaml.safe_load(file)
     return yaml_str
-
-
-def _replace_rxyz_with(sys: x_xy.base.System, replace_with: str):
-    if replace_with == "rr":
-        new_damp = jnp.array([3.0])
-    elif replace_with == "rr_imp":
-        new_damp = jnp.array([3.0, 3.0])
-    else:
-        raise Exception()
-
-    for name, typ in zip(sys.link_names, sys.link_types):
-        if typ in ["rx", "ry", "rz"]:
-            sys = sys.change_joint_type(name, replace_with, new_damp=new_damp)
-
-    return sys
-
-
-def load_arm_or_gait(exp_id: str) -> str:
-    "Returns either `arm` or `gait`"
-    xml = _id2xml[exp_id]
-    if xml == arm_xml:
-        return "arm"
-    return "gait"
 
 
 @cache
@@ -130,14 +107,6 @@ def load_data(
 
 def load_timings(exp_id: str) -> dict[str, float]:
     return _read_yaml("metadata.yaml")[exp_id]["timings"]
-
-
-def load_hz_omc(exp_id: str) -> int:
-    return int(_read_yaml("metadata.yaml")[exp_id]["hz"]["omc"])
-
-
-def load_hz_imu(exp_id: str) -> int:
-    return int(_read_yaml("metadata.yaml")[exp_id]["hz"]["imu"])
 
 
 def _crop_sequence(data: dict, dt: float, t1: float = 0.0, t2: Optional[float] = None):
