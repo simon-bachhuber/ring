@@ -3,6 +3,7 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+import tree_utils
 
 from x_xy import base
 from x_xy import maths
@@ -350,3 +351,52 @@ class GeneratorTrafoDynamicalSimulation(types.GeneratorTrafo):
             return (X, y), (key, states.q, states.x, sys_x)
 
         return _gen
+
+
+def _flatten(seq: list):
+    seq = tree_utils.tree_batch(seq, backend="jax")
+    seq = tree_utils.batch_concat_acme(seq, num_batch_dims=3).transpose((1, 2, 0, 3))
+    return seq
+
+
+def _expand_dt(X: dict, T: int):
+    X = utils.pytree_deepcopy(X)
+    dt = X.pop("dt", None)
+    if dt is not None:
+        dt = jnp.repeat(dt[:, None, :], T, axis=1)
+        for seg in X:
+            X[seg]["dt"] = dt
+    return X
+
+
+def _expand_then_flatten(args):
+    X, y = args
+    gyr = X["0"]["gyr"]
+
+    batched = True
+    if gyr.ndim == 2:
+        batched = False
+        X, y = tree_utils.add_batch_dim((X, y))
+
+    X = _expand_dt(X, gyr.shape[-2])
+
+    N = len(X)
+
+    def dict_to_tuple(d: dict[str, jax.Array]):
+        tup = (d["acc"], d["gyr"])
+        if "joint_axes" in d:
+            tup = tup + (d["joint_axes"],)
+        if "dt" in d:
+            tup = tup + (d["dt"],)
+        return tup
+
+    X = [dict_to_tuple(X[str(i)]) for i in range(N)]
+    y = [y[str(i)] for i in range(N)]
+
+    X, y = _flatten(X), _flatten(y)
+    if not batched:
+        X, y = jax.tree_map(lambda arr: arr[0], (X, y))
+    return X, y
+
+
+GeneratorTrafoExpandFlatten = GeneratorTrafoLambda(jax.jit(_expand_then_flatten))

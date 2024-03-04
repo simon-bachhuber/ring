@@ -19,6 +19,7 @@ from .generator import FINALIZE_FN
 from .generator import Generator
 from .generator import GeneratorPipe
 from .generator import GeneratorTrafo
+from .generator import GeneratorTrafoExpandFlatten
 from .generator import GeneratorTrafoRandomizePositions
 from .generator import GeneratorTrafoRemoveInputExtras
 from .generator import GeneratorTrafoRemoveOutputExtras

@@ -17,6 +17,7 @@ from .batch import batched_generator_from_paths
 from .randomize import randomize_anchors
 from .randomize import randomize_hz
 from .randomize import randomize_hz_finalize_fn_factory
+from .transforms import GeneratorTrafoExpandFlatten
 from .transforms import GeneratorTrafoRandomizePositions
 from .types import FINALIZE_FN
 from .types import Generator
