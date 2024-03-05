@@ -76,7 +76,7 @@ class PRNGThread:
     def next(self, num: int = 1):
         keys = jrand.split(self.key, num + 1)
         self.key = keys[0]
-        return keys[1:]
+        return keys[1]
 
 
 def inertia_3x3_for_box(mass, dim_x, dim_y, dim_z):

@@ -201,7 +201,8 @@ class MujocoScene:
                 continue
 
             # body name is just the str(parent_id)
-            mocap_id = int(self._model.body(str(parent_id)).mocapid)
+            # squeeze reduces shape (1,) to () which removes a warning
+            mocap_id = int(np.squeeze(self._model.body(str(parent_id)).mocapid))
 
             if self.debug:
                 print(f"link_idx: {parent_id}, mocap_id: {mocap_id}")

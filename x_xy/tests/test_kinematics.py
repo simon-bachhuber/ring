@@ -1,6 +1,5 @@
 import jax
 import jax.numpy as jnp
-import jaxopt
 import tree_utils as tu
 
 import x_xy
@@ -77,9 +76,9 @@ def test_inv_kinematics_endeffector():
                 "endeffector",
                 endeffector_x,
                 q0=q0,
-                jaxopt_solver=jaxopt.GradientDescent,
-                maxiter=5000,
-                maxls=5,
+                # jaxopt_solver=jaxopt.GradientDescent,
+                # maxiter=5000,
+                # maxls=5,
             )
             return value
 
