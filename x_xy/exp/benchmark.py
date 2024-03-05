@@ -51,6 +51,7 @@ class IMTP:
     joint_axes_field: bool = True
     hz: float = 100.0
     dt: bool = True
+    model_name_suffix: Optional[str] = None
 
     def replace(self, **kwargs):
         return replace(self, **kwargs)
@@ -95,7 +96,9 @@ class IMTP:
     def name(self, exp_id: str, motion_start: str, motion_stop: Optional[str] = None):
         if motion_stop is None:
             motion_stop = ""
-        model_name = self.sys(exp_id).model_name
+        model_name = (
+            self.sys(exp_id).change_model_name(suffix=self.model_name_suffix).model_name
+        )
         flex, mag, ja = int(self.flex), int(self.mag), int(self.joint_axes)
         return (
             f"{model_name}_{exp_id}_{motion_start}_{motion_stop}_flex_{flex}_"
