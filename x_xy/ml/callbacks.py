@@ -27,22 +27,23 @@ def _build_eval_fn2(
     filter: base.AbstractFilter,
     X: jax.Array,
     y: jax.Array,
-    lam: tuple[int],
+    lam: tuple[int] | None,
     link_names: list[str] | None,
 ):
     filter = filter.nojit()
     assert X.ndim == 5
-    assert y.ndim == 4
+    assert y.ndim == 5
+    y_4d = merge_batchsize(y, X.shape[0], X.shape[1])
 
     if link_names is None:
         link_names = [str(i) for i in range(y.shape[-2])]
 
-    @partial(jax.pmap, in_axes=(None, 0))
-    def pmap_vmap_apply(params, X):
-        return filter.apply(X=X, params=params, lam=lam)[0]
+    @partial(jax.pmap, in_axes=(None, 0, 0))
+    def pmap_vmap_apply(params, X, y):
+        return filter.apply(X=X, params=params, lam=lam, y=y)[0]
 
     def eval_fn(params):
-        yhat = pmap_vmap_apply(params, X)
+        yhat = pmap_vmap_apply(params, X, y)
         yhat = merge_batchsize(yhat, X.shape[0], X.shape[1])
 
         values = {}
@@ -50,7 +51,7 @@ def _build_eval_fn2(
             assert (
                 metric_name not in values
             ), f"The metric identitifier {metric_name} is not unique"
-            value = jax.vmap(metric_fn, in_axes=(2, 2))(y, yhat)
+            value = jax.vmap(metric_fn, in_axes=(2, 2))(y_4d, yhat)
             assert value.ndim == 1, f"{value.shape}"
             value = {name: value[i] for i, name in enumerate(link_names)}
             values[metric_name] = value
@@ -66,7 +67,7 @@ class EvalXyTrainingLoopCallback(training_loop.TrainingLoopCallback):
         eval_metrices: dict[str, Callable],
         X: jax.Array,
         y: jax.Array,
-        lam: list[int],
+        lam: list[int] | None,
         metric_identifier: str,
         eval_every: int = 5,
         link_names: Optional[list[str]] = None,
@@ -75,11 +76,15 @@ class EvalXyTrainingLoopCallback(training_loop.TrainingLoopCallback):
         if X.ndim == 3:
             X, y = X[None], y[None]
         B = X.shape[0]
-        X = expand_batchsize(X, *distribute_batchsize(B))
+        X, y = expand_batchsize((X, y), *distribute_batchsize(B))
         self.eval_fn = _build_eval_fn2(
-            eval_metrices, filter, X, y, tuple(lam), link_names
+            eval_metrices,
+            filter,
+            X,
+            y,
+            tuple(lam) if lam is not None else None,
+            link_names,
         )
-        self.X, self.y = X, y
         self.eval_every = eval_every
         self.metric_identifier = metric_identifier
 
