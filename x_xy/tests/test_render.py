@@ -34,7 +34,7 @@ def test_shapes():
     step_fn = jax.jit(x_xy.step)
     state = step_fn(sys, state)
 
-    import mediapy
+    mediapy = x_xy.utils.import_lib("mediapy")
 
     for backend in ["mujoco", "vispy"]:
         frame = sys.render(state.x, show_pbar=False, backend=backend)[0]

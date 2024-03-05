@@ -197,6 +197,7 @@ def quat_random(
     key: jrand.PRNGKey, batch_shape: tuple = (), maxval: float = jnp.pi
 ) -> jax.Array:
     """Provides a random *unit* quaternion, sampled uniformly"""
+    assert key.shape == (2,), f"{key.shape}"
     shape = batch_shape + (4,)
     qs = safe_normalize(jrand.normal(key, shape))
 

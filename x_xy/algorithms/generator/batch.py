@@ -250,7 +250,7 @@ def batch_generators_eager(
     and stacking their output."""
 
     data = batch_generators_eager_to_list(generators, sizes, seed=seed, jit=jit)
-    return batched_generator_from_list(data, batchsize, shuffle, drop_last, seed=seed)
+    return batched_generator_from_list(data, batchsize, shuffle, drop_last)
 
 
 def _process_sizes_batchsizes_generators(

@@ -403,7 +403,7 @@ def _expand_then_flatten(args):
     return X, y
 
 
-def GeneratorTrafoExpandFlatten(jit: bool = False):
+def GeneratorTrafoExpandFlatten(gen, jit: bool = False):
     if jit:
-        return GeneratorTrafoLambda(jax.jit(_expand_then_flatten))
-    return GeneratorTrafoLambda(_expand_then_flatten)
+        return GeneratorTrafoLambda(jax.jit(_expand_then_flatten))(gen)
+    return GeneratorTrafoLambda(_expand_then_flatten)(gen)

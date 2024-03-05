@@ -173,10 +173,11 @@ def import_lib(
             _required = f" but it is required for {required_for}"
         if lib_pypi is None:
             lib_pypi = lib
-        print(
+        error_msg = (
             f"Could not import `{lib}`{_required}. "
             f"Please install with `pip install {lib_pypi}`"
         )
+        raise ImportError(error_msg)
 
 
 def pickle_save(obj, path, overwrite: bool = False):
