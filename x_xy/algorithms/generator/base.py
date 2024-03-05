@@ -215,7 +215,7 @@ def _build_generator_lazy(
 
     if add_X_jointaxes or add_y_relpose or add_y_rootincl:
         if len(sys_ml.findall_imus()) > 0:
-            warnings.warn("Automatically removed the IMUs from `sys_ml`.")
+            # warnings.warn("Automatically removed the IMUs from `sys_ml`.")
             sys_noimu, _ = sys_ml.make_sys_noimu()
         else:
             sys_noimu = sys_ml
@@ -234,7 +234,7 @@ def _build_generator_lazy(
             )
 
         if "hide_injected_bodies" in imu_motion_artifacts_kwargs:
-            if imu_motion_artifacts_kwargs["hide_injected_bodies"]:
+            if imu_motion_artifacts_kwargs["hide_injected_bodies"] and False:
                 warnings.warn(
                     "The flag `hide_injected_bodies` in `imu_motion_artifacts_kwargs` "
                     "is set. This will try to hide injected bodies. This feature is "
