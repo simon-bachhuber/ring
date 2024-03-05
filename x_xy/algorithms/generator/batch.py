@@ -180,7 +180,7 @@ def _generator_from_data_fn(
     include_samples: list[int],
     shuffle: bool,
     batchsize: int,
-):
+) -> types.BatchedGenerator:
     # such that we don't mutate out of scope
     include_samples = include_samples.copy()
 
@@ -196,7 +196,7 @@ def _generator_from_data_fn(
         batch = data_fn(include_samples[start:stop])
 
         i = (i + 1) % n_batches
-        return batch
+        return utils.pytree_deepcopy(batch)
 
     return generator
 
@@ -208,7 +208,7 @@ def batched_generator_from_paths(
     shuffle: bool = True,
     load_all_into_memory: bool = False,
     tree_transform=None,
-):
+) -> tuple[types.BatchedGenerator, int]:
     "Returns: gen, where gen(key) -> Pytree[numpy]"
     data_fn, include_samples = _data_fn_from_paths(
         paths, include_samples, load_all_into_memory, tree_transform
@@ -227,27 +227,14 @@ def batched_generator_from_list(
     batchsize: int,
     shuffle: bool = True,
     drop_last: bool = True,
-    seed: int = 1,
 ) -> types.BatchedGenerator:
     assert drop_last, "Not `drop_last` is currently not implemented."
     assert len(data) >= batchsize
 
-    N, i = len(data) // batchsize, 0
-    # TODO Remove this
-    random.seed(seed)
+    def data_fn(indices: list[int]):
+        return tree_batch([data[i] for i in indices])
 
-    def generator(key: jax.Array):
-        nonlocal i
-        if shuffle and i == 0:
-            random.shuffle(data)
-
-        start, stop = i * batchsize, (i + 1) * batchsize
-        batch = tree_batch(data[start:stop])
-
-        i = (i + 1) % N
-        return batch
-
-    return generator
+    return _generator_from_data_fn(data_fn, list(range(len(data))), shuffle, batchsize)
 
 
 def batch_generators_eager(
