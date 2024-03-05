@@ -3,6 +3,7 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import tree_utils
 
 from x_xy import base
@@ -354,16 +355,19 @@ class GeneratorTrafoDynamicalSimulation(types.GeneratorTrafo):
 
 
 def _flatten(seq: list):
-    seq = tree_utils.tree_batch(seq, backend="jax")
+    seq = tree_utils.tree_batch(seq, backend=None)
     seq = tree_utils.batch_concat_acme(seq, num_batch_dims=3).transpose((1, 2, 0, 3))
     return seq
 
 
 def _expand_dt(X: dict, T: int):
-    X = utils.pytree_deepcopy(X)
     dt = X.pop("dt", None)
     if dt is not None:
-        dt = jnp.repeat(dt[:, None, :], T, axis=1)
+        if isinstance(dt, np.ndarray):
+            numpy = np
+        else:
+            numpy = jnp
+        dt = numpy.repeat(dt[:, None, :], T, axis=1)
         for seg in X:
             X[seg]["dt"] = dt
     return X
@@ -399,4 +403,7 @@ def _expand_then_flatten(args):
     return X, y
 
 
-GeneratorTrafoExpandFlatten = GeneratorTrafoLambda(jax.jit(_expand_then_flatten))
+def GeneratorTrafoExpandFlatten(jit: bool = False):
+    if jit:
+        return GeneratorTrafoLambda(jax.jit(_expand_then_flatten))
+    return GeneratorTrafoLambda(_expand_then_flatten)
