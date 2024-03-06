@@ -142,31 +142,53 @@ class LPF_FilterWrapper(AbstractFilterWrapper):
         self,
         filter: AbstractFilter,
         cutoff_freq: float,
-        samp_freq: float,
+        samp_freq: float | None,
         filtfilt: bool = True,
         name="LPF_FilterWrapper",
     ) -> None:
         super().__init__(filter, name)
-        self._kwargs = dict(
-            cutoff_freq=cutoff_freq, samp_freq=samp_freq, filtfilt=filtfilt
-        )
+        self.samp_freq = samp_freq
+        self._kwargs = dict(cutoff_freq=cutoff_freq, filtfilt=filtfilt)
 
     def apply(self, X, params=None, state=None, y=None, lam=None):
+        if X.ndim == 4:
+            if self.samp_freq is not None:
+                samp_freq = jnp.repeat(jnp.array(self.samp_freq), X.shape[0])
+            else:
+                assert X.shape[-1] == 10
+                dt = X[:, 0, 0, -1]
+                samp_freq = 1 / dt
+        else:
+            if self.samp_freq is not None:
+                samp_freq = jnp.array(self.samp_freq)
+            else:
+                assert X.shape[-1] == 10
+                dt = X[0, 0, -1]
+                samp_freq = 1 / dt
+
+        if self.samp_freq is None:
+            print(f"Detected the following sampling rates from `X`: {samp_freq}")
+
         yhat, state = super().apply(X, params, state, y, lam)
+
         if yhat.ndim == 4:
             yhat = jax.vmap(
                 jax.vmap(
-                    lambda q: x_xy.maths.quat_lowpassfilter(q, **self._kwargs),
-                    in_axes=2,
+                    lambda q, samp_freq: x_xy.maths.quat_lowpassfilter(
+                        q, samp_freq=samp_freq, **self._kwargs
+                    ),
+                    in_axes=(2, None),
                     out_axes=2,
                 )
-            )(yhat)
+            )(yhat, samp_freq)
         else:
             yhat = jax.vmap(
-                lambda q: x_xy.maths.quat_lowpassfilter(q, **self._kwargs),
-                in_axes=1,
+                lambda q, samp_freq: x_xy.maths.quat_lowpassfilter(
+                    q, samp_freq=samp_freq, **self._kwargs
+                ),
+                in_axes=(1, None),
                 out_axes=1,
-            )(yhat)
+            )(yhat, samp_freq)
         return yhat, state
 
 
