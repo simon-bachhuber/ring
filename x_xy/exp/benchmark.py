@@ -174,6 +174,7 @@ def benchmark(
     warmup: float = 0.0,
     return_cb: bool = False,
 ):
+    "`warmup` is in seconds."
 
     X, y, xs, xs_noimu = _build_Xy_xs_xsnoimu(exp_id, motion_start, motion_stop, imtp)
 
@@ -190,6 +191,7 @@ def benchmark(
 
     yhat, _ = filter.apply(X=X, y=y, lam=tuple(imtp.lam))
 
+    warmup = int(warmup * imtp.hz)
     errors = dict()
     for i, seg in enumerate(imtp.segments):
         ae = np.rad2deg(maths.angle_error(y[:, i], yhat[:, i])[warmup:])
