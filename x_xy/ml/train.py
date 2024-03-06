@@ -19,11 +19,13 @@ from x_xy.utils import expand_batchsize
 from x_xy.utils import parse_path
 from x_xy.utils import pickle_load
 
+# (T, N, F) -> Scalar
 LOSS_FN = Callable[[jax.Array, jax.Array], float]
 _default_loss_fn = lambda q, qhat: maths.angle_error(q, qhat) ** 2
 
 # reduces (batch_axis, time_axis) -> Scalar
 ACCUMULATOR_FN = Callable[[jax.Array], float]
+# Loss_fn here is: (F,) -> Scalar
 METRICES = dict[str, Tuple[LOSS_FN, ACCUMULATOR_FN]]
 _default_metrices = {
     "mae_deg": (
@@ -247,7 +249,7 @@ def _arr_to_dict(y: jax.Array, link_names: list[str] | None):
     B, T, N, F = y.shape
 
     if link_names is None:
-        link_names = [f"q{i}" for i in range(N)]
+        link_names = ml_utils._unknown_link_names(N)
 
     return {name: y[..., i, :] for i, name in enumerate(link_names)}
 

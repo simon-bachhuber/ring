@@ -264,3 +264,7 @@ def train_val_split(
     )
 
     return generator, (X_val, y_val)
+
+
+def _unknown_link_names(N: int):
+    return [f"link{i}" for i in range(N)]

@@ -254,7 +254,8 @@ class RING(ml_base.AbstractFilter):
         return yhat, next_state
 
     @staticmethod
-    def _load_params(params: str | tree_utils.PyTree | None):
+    def _load_params(params: str | dict | None):
+        assert isinstance(params, (str, dict, type(None)))
         if isinstance(params, str):
             return pickle_load(params)
         return params

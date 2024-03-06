@@ -36,7 +36,7 @@ def _build_eval_fn2(
     y_4d = merge_batchsize(y, X.shape[0], X.shape[1])
 
     if link_names is None:
-        link_names = [str(i) for i in range(y.shape[-2])]
+        link_names = ml_utils._unknown_link_names(y.shape[-2])
 
     @partial(jax.pmap, in_axes=(None, 0, 0))
     def pmap_vmap_apply(params, X, y):
