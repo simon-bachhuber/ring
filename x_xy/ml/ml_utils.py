@@ -6,6 +6,7 @@ import pickle
 import random
 import time
 from typing import Optional, Protocol
+import warnings
 
 import jax
 import numpy as np
@@ -152,7 +153,7 @@ def _flatten_convert_filter_nested_dict(
     filtered_metrices = {}
     for key, value in metrices.items():
         if not isinstance(value, str) and (np.isnan(value) or np.isinf(value)):
-            print(f"Warning: Value of metric {key} is {value}. We skip it.")
+            warnings.warn(f"Warning: Value of metric {key} is {value}. We skip it.")
             continue
         filtered_metrices[key] = value
     return filtered_metrices

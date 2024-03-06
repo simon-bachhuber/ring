@@ -8,6 +8,7 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import tree_utils
 
 import wandb
@@ -123,9 +124,21 @@ class AverageMetricesTLCB(training_loop.TrainingLoopCallback):
         opt_state,
     ) -> None:
         value = 0
+        N = 0
         for zoom_in in self.zoom_ins:
-            value += _zoom_into_metrices(metrices, zoom_in)
-        metrices.update({self.name: value / len(self.zoom_ins)})
+            value_zoom_in = _zoom_into_metrices(metrices, zoom_in)
+
+            if value_zoom_in is np.nan or value_zoom_in is np.inf:
+                warnings.warn(
+                    f"Value of zoom_in={zoom_in} is {value_zoom_in}. "
+                    f"It is not added to the metric {self.name}"
+                )
+                continue
+
+            value += value_zoom_in
+            N += 1
+
+        metrices.update({self.name: value / N})
 
 
 class QueueElement(NamedTuple):
