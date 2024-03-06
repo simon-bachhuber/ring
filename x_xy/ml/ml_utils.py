@@ -153,7 +153,8 @@ def _flatten_convert_filter_nested_dict(
     filtered_metrices = {}
     for key, value in metrices.items():
         if not isinstance(value, str) and (np.isnan(value) or np.isinf(value)):
-            warnings.warn(f"Warning: Value of metric {key} is {value}. We skip it.")
+            warning = f"Warning: Value of metric {key} is {value}. We skip it."
+            warnings.warn(warning)
             continue
         filtered_metrices[key] = value
     return filtered_metrices

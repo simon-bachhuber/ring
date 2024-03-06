@@ -128,11 +128,12 @@ class AverageMetricesTLCB(training_loop.TrainingLoopCallback):
         for zoom_in in self.zoom_ins:
             value_zoom_in = _zoom_into_metrices(metrices, zoom_in)
 
-            if value_zoom_in is np.nan or value_zoom_in is np.inf:
-                warnings.warn(
+            if np.isnan(value_zoom_in) or np.isinf(value_zoom_in):
+                warning = (
                     f"Value of zoom_in={zoom_in} is {value_zoom_in}. "
-                    f"It is not added to the metric {self.name}"
+                    + f"It is not added to the metric {self.name}"
                 )
+                warnings.warn(warning)
                 continue
 
             value += value_zoom_in
