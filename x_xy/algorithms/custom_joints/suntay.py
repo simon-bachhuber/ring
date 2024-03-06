@@ -39,11 +39,11 @@ class SuntayConfig:
     large_abs_values_of_gps: float = 1 / 4
 
 
-def register_suntay(config: SuntayConfig, name: str = "suntay"):
+def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
     """Ref to 'E.S. Grood and W.J. Suntay' paper"""
 
     flexion_xs = jnp.linspace(
-        config.flexion_rot_min, config.flexion_rot_max, num=config.num_points_gps
+        sconfig.flexion_rot_min, sconfig.flexion_rot_max, num=sconfig.num_points_gps
     )
 
     def _q_nonflexion(q_flexion, params):
@@ -100,7 +100,7 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
         gamma = _q_nonflexion(q_flexion, params["ys_gamma"])
         return alpha, beta, gamma, S
 
-    def _find_suntay_joint(sys: x_xy.System) -> str:
+    def _utils_find_suntay_joint(sys: x_xy.System) -> str:
         suntay_link_name = None
         for link_name, link_type in zip(sys.link_names, sys.link_types):
             if link_type == name:
@@ -117,12 +117,12 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
             )
         return suntay_link_name
 
-    def _clinical_translations_Q(sys: x_xy.System, qs: jax.Array):
+    def _utils_Q_S_H_alpha_beta_gamma(sys: x_xy.System, qs: jax.Array):
         # qs.shape = (timesteps, q_size)
         assert qs.ndim == 2
         assert qs.shape[-1] == sys.q_size()
 
-        suntay_link_name = _find_suntay_joint(sys)
+        suntay_link_name = _utils_find_suntay_joint(sys)
 
         params = jax.tree_map(
             lambda arr: arr[sys.idx_map("l")[suntay_link_name]],
@@ -132,12 +132,15 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
         q_flexion = qs[:, sys.idx_map("q")[suntay_link_name]]
 
         @jax.vmap
-        def _Q_from_q_flexion(q_flexion):
-            _, beta, _, S = _alpha_beta_gamma_S(q_flexion, params)
+        def _Q_S_H_alpha_beta_gamma_from_q_flexion(q_flexion):
+            alpha, beta, gamma, S = _alpha_beta_gamma_S(q_flexion, params)
             cos_bet = jnp.cos(beta)
-            return jnp.array([S[0] + S[2] * cos_bet, S[1], -S[2] - S[0] * cos_bet])
+            Q = jnp.array([S[0] + S[2] * cos_bet, S[1], -S[2] - S[0] * cos_bet])
+            # translation from femur to tibia
+            H = _suntay_translation_vector_H_eq9(alpha, beta, S)
+            return Q, S, H, alpha, beta, gamma
 
-        return _Q_from_q_flexion(q_flexion)
+        return _Q_S_H_alpha_beta_gamma_from_q_flexion(q_flexion)
 
     def _transform_suntay(q_flexion, params):
         alpha, beta, gamma, S = _alpha_beta_gamma_S(q_flexion, params)
@@ -152,7 +155,7 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
 
     def _draw_and_rom(key, ys, length, mn, mx):
         randomized_ys = gp_draw(key, flexion_xs, ys, length)
-        amin, amax = -config.large_abs_values_of_gps, config.large_abs_values_of_gps
+        amin, amax = -sconfig.large_abs_values_of_gps, sconfig.large_abs_values_of_gps
         if ys is not None:
             amin += jnp.min(ys)
             amax += jnp.max(ys)
@@ -172,7 +175,7 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
         ):
             key, consume = jax.random.split(key)
             # TODO, ys=None!
-            get = lambda cnfkey: getattr(config, config_name + cnfkey)
+            get = lambda cnfkey: getattr(sconfig, config_name + cnfkey)
             params[params_name] = _draw_and_rom(
                 consume, None, get("_length_rad"), get("_min"), get("_max")
             )
@@ -180,7 +183,7 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
         return params
 
     def _draw_flexion_angle(
-        config: x_xy.MotionConfig,
+        mconfig: x_xy.MotionConfig,
         key_t: jax.random.PRNGKey,
         key_value: jax.random.PRNGKey,
         dt: float,
@@ -188,7 +191,7 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
     ) -> jax.Array:
         key_value, consume = jax.random.split(key_value)
         ANG_0 = jax.random.uniform(
-            consume, minval=config.ang0_min, maxval=config.ang0_max
+            consume, minval=mconfig.ang0_min, maxval=mconfig.ang0_max
         )
         # `random_angle_over_time` always returns wrapped angles, thus it would be
         # inconsistent to allow an initial value that is not wrapped
@@ -197,29 +200,29 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
             key_t,
             key_value,
             ANG_0,
-            config.dang_min,
-            config.dang_max,
-            config.delta_ang_min,
-            config.delta_ang_max,
-            config.t_min,
-            config.t_max,
-            config.T,
+            mconfig.dang_min,
+            mconfig.dang_max,
+            mconfig.delta_ang_min,
+            mconfig.delta_ang_max,
+            mconfig.t_min,
+            mconfig.t_max,
+            mconfig.T,
             dt,
             5,
-            config.randomized_interpolation_angle,
-            config.range_of_motion_hinge,
-            config.range_of_motion_hinge_method,
-            config.cdf_bins_min,
-            config.cdf_bins_max,
-            config.interpolation_method,
+            mconfig.randomized_interpolation_angle,
+            mconfig.range_of_motion_hinge,
+            mconfig.range_of_motion_hinge_method,
+            mconfig.cdf_bins_min,
+            mconfig.cdf_bins_max,
+            mconfig.interpolation_method,
         )
         return restrict(
             qs_flexion,
-            config.flexion_rot_min,
-            config.flexion_rot_max,
+            sconfig.flexion_rot_min,
+            sconfig.flexion_rot_max,
             -jnp.pi,
             jnp.pi,
-            method=config.flexion_restrict_method,
+            method=sconfig.flexion_restrict_method,
         )
 
     joint_model = x_xy.JointModel(
@@ -227,8 +230,8 @@ def register_suntay(config: SuntayConfig, name: str = "suntay"):
         rcmg_draw_fn=_draw_flexion_angle,
         init_joint_params=_init_joint_params_suntay,
         utilities=dict(
-            clinical_translations_Q=_clinical_translations_Q,
-            find_suntay_joint=_find_suntay_joint,
+            Q_S_H_alpha_beta_gamma=_utils_Q_S_H_alpha_beta_gamma,
+            find_suntay_joint=_utils_find_suntay_joint,
         ),
     )
     x_xy.register_new_joint_type(name, joint_model, 1, qd_width=0, overwrite=True)
