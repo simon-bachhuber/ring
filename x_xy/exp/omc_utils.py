@@ -20,8 +20,10 @@ def crop_tail(
     verbose: bool = True,
 ):
     "Crop all signals to length of shortest signal."
+    verbose_msg_index = False
     if hz is None:
         hz = 1.0
+        verbose_msg_index = True
 
     if isinstance(hz, (int, float)):
         hz = tree.map_structure(lambda _: hz, signal)
@@ -61,7 +63,15 @@ def crop_tail(
                 break
 
     if verbose:
-        print(f"`crop_tail`: Crop off at t={shortest_length}.")
+        if verbose_msg_index:
+            print(
+                f"`crop_tail`: Crop off at index i="
+                f"{shortest_length / hz_of_shortest_length}"
+            )
+        else:
+            print(
+                f"`crop_tail`: Crop off at t={shortest_length / hz_of_shortest_length}s"
+            )
 
     def crop(arr, hz):
         if strict:
