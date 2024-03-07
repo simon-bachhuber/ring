@@ -42,14 +42,15 @@ dev_requires = [
 
 
 setuptools.setup(
-    name="x_xy",
-    packages=setuptools.find_packages(),
-    version="0.11.27",
+    name="ring",
+    packages=setuptools.find_packages(where="src"),
+    package_dir={"": "src"},
+    version="1.0.0",
     package_data={
-        "x_xy": find_data_files(
+        "ring": find_data_files(
             # parameters and datasets are now downloaded on-demand
             # but could exclude with exludes = ["**/exp/*", "**/pretrained/*"]
-            package_dir="x_xy",
+            package_dir="src/ring",
             patterns=["*.xml", "*.yaml", "*.json"],
             excludes=[],
         ),
