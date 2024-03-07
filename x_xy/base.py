@@ -997,7 +997,7 @@ class State(_Base):
             assert q is None
             q = jax.random.normal(key, shape=(sys.q_size(),))
             q = sys.coordinate_vector_to_q(q, custom_joints)
-        else:
+        elif q is None:
             q = jnp.zeros((sys.q_size(),))
 
             # free, cor, spherical joints are not zeros but have unit quaternions
@@ -1014,6 +1014,8 @@ class State(_Base):
                 sys.link_types,
                 list(range(sys.num_links())),
             )
+        else:
+            pass
 
         if qd is None:
             qd = jnp.zeros((sys.qd_size(),))
