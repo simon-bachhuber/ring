@@ -993,15 +993,27 @@ class State(_Base):
         Returns:
             (State): Create State object.
         """
-        if q is not None:
-            assert key is None
-
         if key is not None:
+            assert q is None
             q = jax.random.normal(key, shape=(sys.q_size(),))
+            q = sys.coordinate_vector_to_q(q, custom_joints)
         else:
             q = jnp.zeros((sys.q_size(),))
 
-        q = sys.coordinate_vector_to_q(q, custom_joints)
+            # free, cor, spherical joints are not zeros but have unit quaternions
+            def replace_by_unit_quat(_, idx_map, link_typ, link_idx):
+                nonlocal q
+
+                if link_typ in ["free", "cor", "spherical"]:
+                    q_idxs_link = idx_map["q"](link_idx)
+                    q = q.at[q_idxs_link.start].set(1.0)
+
+            sys.scan(
+                replace_by_unit_quat,
+                "ll",
+                sys.link_types,
+                list(range(sys.num_links())),
+            )
 
         if qd is None:
             qd = jnp.zeros((sys.qd_size(),))
