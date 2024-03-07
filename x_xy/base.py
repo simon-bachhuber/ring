@@ -101,6 +101,12 @@ class _Base:
     def shape(self, axis=0) -> int:
         return tu.tree_shape(self, axis)
 
+    def __len__(self) -> int:
+        Bs = tree_map(lambda arr: arr.shape[0], self)
+        Bs = set(jax.tree_util.tree_flatten(Bs)[0])
+        assert len(Bs) == 1
+        return list(Bs)[0]
+
 
 @struct.dataclass
 class Transform(_Base):
@@ -742,6 +748,36 @@ class System(_Base):
     def to_xml(self, path: str) -> None:
         x_xy.io.save_sys_to_xml(self, path)
 
+    def coordinate_vector_to_q(
+        self,
+        q: jax.Array,
+        custom_joints: dict[str, Callable] = {},
+    ) -> jax.Array:
+        """Map a coordinate vector `q` to the minimal coordinates vector of the sys"""
+        # Does, e.g.
+        # - normalize quaternions
+        # - hinge joints in [-pi, pi]
+        q_preproc = []
+
+        def preprocess(_, __, link_type, q):
+            to_q = x_xy.algorithms.jcalc.get_joint_model(
+                link_type
+            ).coordinate_vector_to_q
+            # function in custom_joints has priority over JointModel
+            if link_type in custom_joints:
+                to_q = custom_joints[link_type]
+            if to_q is None:
+                raise NotImplementedError(
+                    f"Please specify the custom joint `{link_type}`"
+                    " either using the `custom_joints` arguments or using the"
+                    " JointModel.coordinate_vector_to_q field."
+                )
+            new_q = to_q(q)
+            q_preproc.append(new_q)
+
+        self.scan(preprocess, "lq", self.link_types, q)
+        return jnp.concatenate(q_preproc)
+
 
 def _update_sys_if_replace_joint_type(sys: System, logic) -> System:
     lt, la, ld, ls, lz = [], [], [], [], []
@@ -874,6 +910,16 @@ def _parse_system_calculate_inertia(sys: System):
 
 def _scan_sys(sys: System, f: Callable, in_types: str, *args, reverse: bool = False):
     assert len(args) == len(in_types)
+    for in_type, arg in zip(in_types, args):
+        B = len(arg)
+        if in_type == "l":
+            assert B == sys.num_links()
+        elif in_type == "q":
+            assert B == sys.q_size()
+        elif in_type == "d":
+            assert B == sys.qd_size()
+        else:
+            raise Exception("`in_types` must be one of `l` or `q` or `d`")
 
     order = range(sys.num_links())
     q_idx, qd_idx = 0, 0
@@ -928,7 +974,12 @@ class State(_Base):
 
     @classmethod
     def create(
-        cls, sys: System, q: Optional[jax.Array] = None, qd: Optional[jax.Array] = None
+        cls,
+        sys: System,
+        q: Optional[jax.Array] = None,
+        qd: Optional[jax.Array] = None,
+        key: Optional[jax.Array] = None,
+        custom_joints: dict[str, Callable] = {},
     ):
         """Create state of system.
 
@@ -942,25 +993,18 @@ class State(_Base):
         Returns:
             (State): Create State object.
         """
-        if q is None:
+        if q is not None:
+            assert key is None
+
+        if key is not None:
+            q = jax.random.normal(key, shape=(sys.q_size(),))
+        else:
             q = jnp.zeros((sys.q_size(),))
 
-            # free, cor, spherical joints are not zeros but have unit quaternions
-            def replace_by_unit_quat(_, idx_map, link_typ, link_idx):
-                nonlocal q
-
-                if link_typ in ["free", "cor", "spherical"]:
-                    q_idxs_link = idx_map["q"](link_idx)
-                    q = q.at[q_idxs_link.start].set(1.0)
-
-            sys.scan(
-                replace_by_unit_quat,
-                "ll",
-                sys.link_types,
-                list(range(sys.num_links())),
-            )
+        q = sys.coordinate_vector_to_q(q, custom_joints)
 
         if qd is None:
             qd = jnp.zeros((sys.qd_size(),))
+
         x = Transform.zero((sys.num_links(),))
         return cls(q, qd, x, jnp.diag(jnp.ones((sys.qd_size(),))))
