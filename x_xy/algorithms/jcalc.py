@@ -194,7 +194,7 @@ QD_FROM_Q = Callable[
 # [-inf, inf] -> feasible joint value range. Defaults to {}.
 # For example: By default, for a hinge joint it uses `maths.wrap_to_pi`.
 # For a spherical joint it would normalize to create a unit quaternion.
-INV_KIN_PREPROCESS = Callable[
+COORDINATE_VECTOR_TO_Q = Callable[
     # (q_size,) -> (q_size)
     [jax.Array],
     jax.Array,
@@ -202,7 +202,7 @@ INV_KIN_PREPROCESS = Callable[
 
 # used only by `sim2real.project_xs`, and it receives a transform object
 # and projects it into the feasible subspace as defined by the joint
-# and returns this new transform object
+# and returns the new transform object
 PROJECT_TRANSFORM_TO_FEASIBLE = Callable[
     # base.Transform, Pytree (joint_params)
     [base.Transform, tree_utils.PyTree],
@@ -215,6 +215,9 @@ PROJECT_TRANSFORM_TO_FEASIBLE = Callable[
 # joint_parameters for the custom joint and it will simply receive
 # the defaults parameters, that is joint_params['default']
 INIT_JOINT_PARAMS = Callable[[jax.Array], tree_utils.PyTree]
+
+# (transform2_p_to_i, joint_params) -> (q_size)
+INV_KIN = Callable[[base.Transform, tree_utils.PyTree], jax.Array]
 
 
 @dataclass
@@ -233,11 +236,13 @@ class JointModel:
     p_control_term: Optional[P_CONTROL_TERM] = None
     qd_from_q: Optional[QD_FROM_Q] = None
 
-    # only used by `inverse_kinematics_endeffector`
-    inv_kin_preprocess: Optional[INV_KIN_PREPROCESS] = None
+    # used by
+    # -`inverse_kinematics_endeffector`
+    # - System.coordinate_vector_to_q
+    coordinate_vector_to_q: Optional[COORDINATE_VECTOR_TO_Q] = None
 
-    # only used by `sim2real.project_xs`
-    project_transform_to_feasible: Optional[PROJECT_TRANSFORM_TO_FEASIBLE] = None
+    # only used by `inverse_kinematics`
+    inv_kin: Optional[INV_KIN] = None
 
     init_joint_params: Optional[INIT_JOINT_PARAMS] = None
 
@@ -531,27 +536,34 @@ def _inv_kin_preprocess_free_spherical_cor(q):
     return q.at[:4].set(maths.safe_normalize(q[:4]))
 
 
-_str2idx = {"x": 0, "y": 1, "z": 2}
+_str2idx = {"x": slice(0, 1), "y": slice(1, 2), "z": slice(2, 3)}
 
 
-def _project_transform_to_feasible_rxyz_factory(xyz: str):
-    def _project_transform_to_feasible_rxyz(x: base.Transform, _) -> base.Transform:
-        angles = maths.quat_to_euler(x.rot)
-        idx = _str2idx[xyz]
-        proj_angles = jnp.zeros((3,)).at[idx].set(angles[idx])
-        rot = maths.euler_to_quat(proj_angles)
-        return base.Transform.create(rot=rot)
+def _inv_kin_rxyz_factory(xyz: str):
+    k = maths.unit_vectors(xyz)
 
-    return _project_transform_to_feasible_rxyz
+    def _inv_kin_rxyz(x: base.Transform, _) -> jax.Array:
+        # TODO
+        # NOTE: CONVENTION
+        # the first return is the much faster version but it suffers from a convention
+        # issue the second version is equivalent and does not suffer from the
+        # convention issue but it is much slower
+        q = x.rot
+        angle = 2 * jnp.arctan2(q[1:] @ k, q[0])
+        return -angle[None]
+        axis, angle = maths.quat_to_rot_axis(maths.quat_project(q, k)[0])
+        return jnp.where((k @ axis) > 0, angle, -angle)[None]
+
+    return _inv_kin_rxyz
 
 
-def _project_transform_to_feasible_pxyz_factory(xyz: str):
-    def _project_transform_to_feasible_pxyz(x: base.Transform, _) -> base.Transform:
-        idx = _str2idx[xyz]
-        pos = jnp.zeros((3,)).at[idx].set(x.pos[idx])
-        return base.Transform.create(pos=pos)
+def _inv_kin_pxyz_factory(xyz: str):
+    idx = _str2idx[xyz]
 
-    return _project_transform_to_feasible_pxyz
+    def _inv_kin_pxyz(x: base.Transform, _) -> jax.Array:
+        return x.pos[idx]
+
+    return _inv_kin_pxyz
 
 
 _joint_types = {
@@ -562,7 +574,7 @@ _joint_types = {
         _p_control_term_free,
         _qd_from_q_free,
         _inv_kin_preprocess_free_spherical_cor,
-        lambda x, _: x,
+        lambda x, _: jnp.concatenate((x.rot, x.pos)),
     ),
     "frozen": JointModel(
         _frozen_transform,
@@ -571,7 +583,7 @@ _joint_types = {
         _p_control_term_frozen,
         _qd_from_q_cartesian,
         lambda q: q,
-        lambda x, _: base.Transform.zero(),
+        lambda x, _: jnp.array([]),
     ),
     "spherical": JointModel(
         _spherical_transform,
@@ -580,7 +592,7 @@ _joint_types = {
         _p_control_term_spherical,
         _qd_from_q_quaternion,
         _inv_kin_preprocess_free_spherical_cor,
-        lambda x, _: base.Transform.create(rot=x.rot),
+        lambda x, _: x.rot,
     ),
     "p3d": JointModel(
         _p3d_transform,
@@ -589,7 +601,7 @@ _joint_types = {
         _p_control_term_pxyz_p3d,
         _qd_from_q_cartesian,
         lambda q: q,
-        lambda x, _: base.Transform.create(pos=x.pos),
+        lambda x, _: x.pos,
     ),
     "cor": JointModel(
         _cor_transform,
@@ -598,7 +610,6 @@ _joint_types = {
         _p_control_term_cor,
         _qd_from_q_free,
         _inv_kin_preprocess_free_spherical_cor,
-        lambda x, _: x,
     ),
     "rx": JointModel(
         lambda q, _: _rxyz_transform(q, _, jnp.array([1.0, 0, 0])),
@@ -607,7 +618,7 @@ _joint_types = {
         _p_control_term_rxyz,
         _qd_from_q_cartesian,
         maths.wrap_to_pi,
-        _project_transform_to_feasible_rxyz_factory("x"),
+        _inv_kin_rxyz_factory("x"),
     ),
     "ry": JointModel(
         lambda q, _: _rxyz_transform(q, _, jnp.array([0.0, 1, 0])),
@@ -616,7 +627,7 @@ _joint_types = {
         _p_control_term_rxyz,
         _qd_from_q_cartesian,
         maths.wrap_to_pi,
-        _project_transform_to_feasible_rxyz_factory("y"),
+        _inv_kin_rxyz_factory("y"),
     ),
     "rz": JointModel(
         lambda q, _: _rxyz_transform(q, _, jnp.array([0.0, 0, 1])),
@@ -625,7 +636,7 @@ _joint_types = {
         _p_control_term_rxyz,
         _qd_from_q_cartesian,
         maths.wrap_to_pi,
-        _project_transform_to_feasible_rxyz_factory("z"),
+        _inv_kin_rxyz_factory("z"),
     ),
     "px": JointModel(
         lambda q, _: _pxyz_transform(q, _, jnp.array([1.0, 0, 0])),
@@ -634,7 +645,7 @@ _joint_types = {
         _p_control_term_pxyz_p3d,
         _qd_from_q_cartesian,
         lambda q: q,
-        _project_transform_to_feasible_pxyz_factory("x"),
+        _inv_kin_pxyz_factory("x"),
     ),
     "py": JointModel(
         lambda q, _: _pxyz_transform(q, _, jnp.array([0.0, 1, 0])),
@@ -643,7 +654,7 @@ _joint_types = {
         _p_control_term_pxyz_p3d,
         _qd_from_q_cartesian,
         lambda q: q,
-        _project_transform_to_feasible_pxyz_factory("y"),
+        _inv_kin_pxyz_factory("y"),
     ),
     "pz": JointModel(
         lambda q, _: _pxyz_transform(q, _, jnp.array([0.0, 0, 1])),
@@ -652,7 +663,7 @@ _joint_types = {
         _p_control_term_pxyz_p3d,
         _qd_from_q_cartesian,
         lambda q: q,
-        _project_transform_to_feasible_pxyz_factory("z"),
+        _inv_kin_pxyz_factory("z"),
     ),
     "saddle": JointModel(
         _saddle_transform,
