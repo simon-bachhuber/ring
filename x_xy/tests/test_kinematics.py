@@ -1,14 +1,9 @@
 import jax
 import jax.numpy as jnp
-import numpy as np
 import tree_utils as tu
 
 import x_xy
-from x_xy import base
 from x_xy import maths
-from x_xy.algorithms import jcalc
-from x_xy.algorithms import kinematics
-from x_xy.sim2real.sim2real import _checks_time_series_of_xs
 
 
 def test_forward_kinematics_transforms():
@@ -22,7 +17,7 @@ def test_forward_kinematics_transforms():
     ]
     q = list(map(jnp.atleast_1d, q))
     q = jnp.concatenate(q)
-    ts, sys = jax.jit(kinematics.forward_kinematics_transforms)(sys, q)
+    ts, sys = jax.jit(x_xy.algorithms.forward_kinematics_transforms)(sys, q)
 
     # position ok
     assert tu.tree_close(ts.take(4).pos, jnp.array([2.0, 2, 1]))
@@ -71,12 +66,12 @@ def test_inv_kinematics_endeffector():
         def solve(key):
             c1, c2 = jax.random.split(key)
             random_q = _preprocess_q(sys, jax.random.normal(c1, (sys.q_size(),)))
-            endeffector_x = jax.jit(kinematics.forward_kinematics)(
+            endeffector_x = jax.jit(x_xy.algorithms.forward_kinematics)(
                 sys, x_xy.State.create(sys, q=random_q)
             )[1].x[sys.name_to_idx("endeffector")]
 
             q0 = jax.random.normal(c2, (sys.q_size(),))
-            _, value, _ = kinematics.inverse_kinematics_endeffector(
+            _, value, _ = x_xy.algorithms.inverse_kinematics_endeffector(
                 sys,
                 "endeffector",
                 endeffector_x,
@@ -112,80 +107,3 @@ def _preprocess_q(sys, q: jax.Array) -> jax.Array:
 
     sys.scan(preprocess, "lq", sys.link_types, q)
     return jnp.concatenate(q_preproc)
-
-
-_str2idx = {"x": 0, "y": 1, "z": 2}
-
-
-def _inv_kin_rxyz_factory(xyz: str):
-    def _inv_kin_rxyz(x: base.Transform, _) -> jax.Array:
-        angles = maths.quat_to_euler(x.rot)
-        idx = _str2idx[xyz]
-        proj_angles = jnp.zeros((3,)).at[idx].set(angles[idx])
-        rot = maths.euler_to_quat(proj_angles)
-        return base.Transform.create(rot=rot)
-
-    return _inv_kin_rxyz
-
-
-def _project_transform_to_feasible_pxyz_factory(xyz: str):
-    def _project_transform_to_feasible_pxyz(x: base.Transform, _) -> base.Transform:
-        idx = _str2idx[xyz]
-        pos = jnp.zeros((3,)).at[idx].set(x.pos[idx])
-        return base.Transform.create(pos=pos)
-
-    return _project_transform_to_feasible_pxyz
-
-
-def project_xs(sys: base.System, transform2: base.Transform) -> base.Transform:
-    """Project transforms into the physically feasible subspace as defined by the
-    joints in the system."""
-    _checks_time_series_of_xs(sys, transform2)
-
-    @jax.vmap
-    def _project_xs(transform2):
-        def f(_, __, i: int, link_type: str, link):
-            t = transform2[i]
-            joint_params = link.joint_params
-            # limit scope
-            joint_params = (
-                joint_params[link_type]
-                if link_type in joint_params
-                else joint_params["default"]
-            )
-
-            project_transform_to_feasible = jcalc.get_joint_model(
-                link_type
-            ).project_transform_to_feasible
-            if project_transform_to_feasible is None:
-                raise NotImplementedError(
-                    "Please specify JointModel.project_transform_to_feasible"
-                    f" for joint type `{link_type}`."
-                )
-            return project_transform_to_feasible(t, joint_params)
-
-        return sys.scan(
-            f,
-            "lll",
-            list(range(sys.num_links())),
-            sys.link_types,
-            sys.links,
-        )
-
-    return _project_xs(transform2)
-
-
-def TODO_test_eq_inverse_kinematics_and_project_xs():
-    pass
-
-
-def test_inverse_kinematics_forward_kinematics():
-    sys = x_xy.io.load_example("test_three_seg_seg2")
-
-    for seed in range(5):
-        print(seed)
-        state = base.State.create(sys, key=jax.random.PRNGKey(seed))
-        _, state = kinematics.forward_kinematics(sys, state)
-        q = state.q
-        state = kinematics.inverse_kinematics(sys, state)
-        np.testing.assert_allclose(q, state.q, rtol=1e-6, atol=1e-8)

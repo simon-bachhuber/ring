@@ -55,49 +55,6 @@ def forward_kinematics(
     return sys, state
 
 
-def inverse_kinematics(
-    sys: base.System,
-    state: base.State,
-) -> base.State:
-    """Performs inverse kinematics in system. Updates `q` in `state`"""
-    x = state.x
-    q = []
-
-    def f(_, __, i: int, x_i: base.Transform, link_i: base.Link, p: int, typ: str):
-        if p == -1:
-            x_p = base.Transform.zero()
-        else:
-            x_p = x[p]
-        joint_params = jcalc._limit_scope_of_joint_params(typ, link_i.joint_params)
-        transform_p_to_i = algebra.transform_mul(x_i, algebra.transform_inv(x_p))
-        transform2 = algebra.transform_mul(
-            transform_p_to_i, algebra.transform_inv(link_i.transform1)
-        )
-        inv_kin_link = jcalc.get_joint_model(typ).inv_kin
-        if inv_kin_link is None:
-            raise NotImplementedError(
-                f"Please specify for the custom joint `{typ}`"
-                " the JointModel.inv_kin field."
-            )
-        q.append(inv_kin_link(transform2, joint_params))
-
-    sys.scan(
-        f,
-        "lllll",
-        list(range(sys.num_links())),
-        x,
-        sys.links,
-        sys.link_parents,
-        sys.link_types,
-    )
-
-    q = jnp.concatenate(q)
-    assert q.ndim == 1
-    assert q.size == sys.q_size()
-
-    return state.replace(q=q)
-
-
 def inverse_kinematics_endeffector(
     sys: base.System,
     endeffector_link_name: str,
@@ -185,8 +142,31 @@ def inverse_kinematics_endeffector(
     else:
         assert len(q0) == sys.q_size()
 
+    def preprocess_q(q: jax.Array) -> jax.Array:
+        # preprocess q
+        # - normalize quaternions
+        # - hinge joints in [-pi, pi]
+        q_preproc = []
+
+        def preprocess(_, __, link_type, q):
+            inv_kin_preprocess = jcalc.get_joint_model(link_type).inv_kin_preprocess
+            # function in custom_joints has priority over JointModel
+            if link_type in custom_joints:
+                inv_kin_preprocess = custom_joints[link_type]
+            if inv_kin_preprocess is None:
+                raise NotImplementedError(
+                    f"Please specify the custom joint `{link_type}`"
+                    " either using the `custom_joints` arguments or using the"
+                    " JointModel.inv_kin_preprocess field."
+                )
+            new_q = inv_kin_preprocess(q)
+            q_preproc.append(new_q)
+
+        sys.scan(preprocess, "lq", sys.link_types, q)
+        return jnp.concatenate(q_preproc)
+
     def objective(q: jax.Array) -> jax.Array:
-        q = sys.coordinate_vector_to_q(q, custom_joints)
+        q = preprocess_q(q)
         xhat = forward_kinematics_transforms(sys, q)[0][
             sys.name_to_idx(endeffector_link_name)
         ]
@@ -196,7 +176,7 @@ def inverse_kinematics_endeffector(
 
     solver = jaxopt_solver(objective, **jaxopt_solver_kwargs)
     results = solver.run(q0)
-    q_sol = sys.coordinate_vector_to_q(results.params, custom_joints)
+    q_sol = preprocess_q(results.params)
     # stop gradients such that this value can be used for optimizing e.g.
     # parameters in the system object, such as sys.links.joint_params
     q_sol_value = objective(jax.lax.stop_gradient(results.params))

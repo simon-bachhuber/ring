@@ -279,6 +279,44 @@ def scale_xs(
     return _scale_xs(xs)
 
 
+def project_xs(sys: base.System, transform2: base.Transform) -> base.Transform:
+    """Project transforms into the physically feasible subspace as defined by the
+    joints in the system."""
+    _checks_time_series_of_xs(sys, transform2)
+
+    @jax.vmap
+    def _project_xs(transform2):
+        def f(_, __, i: int, link_type: str, link):
+            t = transform2[i]
+            joint_params = link.joint_params
+            # limit scope
+            joint_params = (
+                joint_params[link_type]
+                if link_type in joint_params
+                else joint_params["default"]
+            )
+
+            project_transform_to_feasible = jcalc.get_joint_model(
+                link_type
+            ).project_transform_to_feasible
+            if project_transform_to_feasible is None:
+                raise NotImplementedError(
+                    "Please specify JointModel.project_transform_to_feasible"
+                    f" for joint type `{link_type}`."
+                )
+            return project_transform_to_feasible(t, joint_params)
+
+        return sys.scan(
+            f,
+            "lll",
+            list(range(sys.num_links())),
+            sys.link_types,
+            sys.links,
+        )
+
+    return _project_xs(transform2)
+
+
 def _scale_transform_based_on_type(x: base.Transform, link_type: str, factor: float):
     pos, rot = x.pos, x.rot
     if link_type in ["px", "py", "pz", "free"]:
