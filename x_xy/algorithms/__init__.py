@@ -35,6 +35,7 @@ from .jcalc import MotionConfig
 from .jcalc import register_new_joint_type
 from .kinematics import forward_kinematics
 from .kinematics import forward_kinematics_transforms
+from .kinematics import inverse_kinematics
 from .kinematics import inverse_kinematics_endeffector
 from .sensors import accelerometer
 from .sensors import add_noise_bias
