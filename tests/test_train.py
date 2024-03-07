@@ -45,19 +45,19 @@ def test_checkpointing():
     ).to_eager_gen()
     gen = x_xy.algorithms.GeneratorTrafoExpandFlatten(gen)
 
-    ring = ml.RING(hidden_state_dim=20, message_dim=10, lam=sys_noimu.link_parents)
+    ringnet = ml.RING(hidden_state_dim=20, message_dim=10, lam=sys_noimu.link_parents)
 
-    ml.train_fn(gen, 10, ring, callback_save_params=True, optimizer=optimizer)
+    ml.train_fn(gen, 10, ringnet, callback_save_params=True, optimizer=optimizer)
     trained_params_nopause_flat = tree_utils.batch_concat_acme(
         utils.pickle_load("~/params/test_checkpointing_nopause.pickle"), 0
     )
 
     x_xy.setup(unique_id="test_checkpointing_pause")
-    ml.train_fn(gen, 10, ring, callback_kill_after_episode=5, optimizer=optimizer)
+    ml.train_fn(gen, 10, ringnet, callback_kill_after_episode=5, optimizer=optimizer)
     ml.train_fn(
         gen,
         4,
-        ring,
+        ringnet,
         callback_save_params=True,
         checkpoint="~/.xxy_checkpoints/test_checkpointing_pause",
         optimizer=optimizer,

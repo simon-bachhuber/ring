@@ -207,7 +207,7 @@ class RING(ml_base.AbstractFilter):
         return super().apply(X, params, state, y, tuple(lam))
 
     def init(self, bs: Optional[int] = None, X=None, lam=None, seed: int = 1):
-        assert X is not None, "Providing `X` via in `ring.init(X=X)` is required"
+        assert X is not None, "Providing `X` via in `ringnet.init(X=X)` is required"
         if bs is not None:
             assert X.ndim == 4
 
@@ -261,9 +261,9 @@ class RING(ml_base.AbstractFilter):
         return params
 
     def nojit(self) -> "RING":
-        ring = RING(params=self.params, lam=self.lam, jit=False)
-        ring.forward_lam_factory = self.forward_lam_factory
-        return ring
+        ringnet = RING(params=self.params, lam=self.lam, jit=False)
+        ringnet.forward_lam_factory = self.forward_lam_factory
+        return ringnet
 
     def _pre_save(self, params=None, lam=None) -> None:
         if params is not None:
@@ -272,7 +272,7 @@ class RING(ml_base.AbstractFilter):
             self.lam = lam
 
     @staticmethod
-    def _post_load(ring: "RING", jit: bool = True) -> "RING":
+    def _post_load(ringnet: "RING", jit: bool = True) -> "RING":
         if jit:
-            ring.apply = jax.jit(ring.apply, static_argnames="lam")
-        return ring
+            ringnet.apply = jax.jit(ringnet.apply, static_argnames="lam")
+        return ringnet

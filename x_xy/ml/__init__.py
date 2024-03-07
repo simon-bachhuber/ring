@@ -2,12 +2,12 @@ from . import base
 from . import callbacks
 from . import ml_utils
 from . import optimizer
-from . import ring
+from . import ringnet
 from . import train
 from . import training_loop
 from .base import AbstractFilter
 from .ml_utils import on_cluster
 from .ml_utils import unique_id
 from .optimizer import make_optimizer
-from .ring import RING
+from .ringnet import RING
 from .train import train_fn
