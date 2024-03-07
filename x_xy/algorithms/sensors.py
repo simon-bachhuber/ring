@@ -3,13 +3,12 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
-
-from x_xy import algebra
-from x_xy import algorithms
-from x_xy import base
-from x_xy import io
-from x_xy import maths
-from x_xy import sim2real
+from ring import algebra
+from ring import algorithms
+from ring import base
+from ring import io
+from ring import maths
+from ring import sim2real
 
 
 def accelerometer(

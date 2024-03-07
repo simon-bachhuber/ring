@@ -2,22 +2,21 @@ from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
-
-import x_xy
-from x_xy.algorithms.generator.pd_control import _pd_control
+import ring
+from ring.algorithms.generator.pd_control import _pd_control
 
 
 def test_pd_control():
     def evaluate(controller, example, nograv: bool = False):
-        sys = x_xy.io.load_example(example)
+        sys = ring.io.load_example(example)
 
         if nograv:
             sys = sys.replace(gravity=sys.gravity * 0.0)
 
         q, xs = unbatch_gen(
-            x_xy.algorithms.RCMG(
+            ring.algorithms.RCMG(
                 sys,
-                x_xy.algorithms.MotionConfig(
+                ring.algorithms.MotionConfig(
                     T=10.0,
                     dang_max=3.0,
                     t_max=0.5,
@@ -29,11 +28,11 @@ def test_pd_control():
             ).to_lazy_gen()
         )(jax.random.PRNGKey(2))
 
-        jit_step_fn = jax.jit(lambda sys, state, tau: x_xy.step(sys, state, tau, 1))
+        jit_step_fn = jax.jit(lambda sys, state, tau: ring.step(sys, state, tau, 1))
 
         q_reconst = []
         N = len(q)
-        state = x_xy.base.State.create(sys)
+        state = ring.base.State.create(sys)
         controller_state = controller.init(sys, q)
 
         for _ in range(N):
@@ -50,7 +49,7 @@ def test_pd_control():
     controller = _pd_control(gains, gains * 0.1)
     q, q_reconst = evaluate(controller, "test_control")
     error = jnp.mean(
-        x_xy.maths.angle_error(q[:, :4], q_reconst[:, :4]) ** 2
+        ring.maths.angle_error(q[:, :4], q_reconst[:, :4]) ** 2
     ) + jnp.mean((q[:, 4:] - q_reconst[:, 4:]) ** 2)
     assert error <= 0.42
 
@@ -77,7 +76,7 @@ def test_pd_control():
 LARGE_DAMPING = 25.0
 
 
-def _sys_large_damping(sys: x_xy.System, exclude: list[str] = []) -> x_xy.System:
+def _sys_large_damping(sys: ring.System, exclude: list[str] = []) -> ring.System:
     damping = sys.link_damping
 
     def f(_, idx_map, idx, name):
@@ -103,14 +102,14 @@ def test_dynamical_simulation_trafo():
     P_gains["ry"] = P_gains["rz"]
 
     for example in ["test_three_seg_seg2"]:
-        sys = x_xy.io.load_example(example)
+        sys = ring.io.load_example(example)
         sys = _sys_large_damping(sys)
-        gen = x_xy.algorithms.GeneratorPipe(
-            x_xy.algorithms.generator.transforms.GeneratorTrafoDynamicalSimulation(
+        gen = ring.algorithms.GeneratorPipe(
+            ring.algorithms.generator.transforms.GeneratorTrafoDynamicalSimulation(
                 P_gains, return_q_ref=True
             ),
-            x_xy.algorithms.GeneratorTrafoRemoveInputExtras(sys),
-        )(x_xy.MotionConfig(T=20.0))
+            ring.algorithms.GeneratorTrafoRemoveInputExtras(sys),
+        )(ring.MotionConfig(T=20.0))
         (X, _), (__, q_obs, ___, ____) = gen(jax.random.PRNGKey(1))
         error = jnp.sqrt(jnp.mean((X["q_ref"][500:, -2:] - q_obs[500:, -2:]) ** 2))
         assert error < 0.1

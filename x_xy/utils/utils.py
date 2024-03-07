@@ -8,10 +8,9 @@ from typing import Optional
 import jax
 import jax.numpy as jnp
 import numpy as np
+from ring.base import _Base
+from ring.base import Geometry
 import wget
-
-from x_xy.base import _Base
-from x_xy.base import Geometry
 
 from .path import parse_path
 
@@ -119,7 +118,7 @@ def download_from_repo(path_in_repo: str, repo: str = "x_xy_v2_datahost") -> str
         print(
             f"Downloading finished. Saved to location {path_on_disk}. "
             "All downloaded files can be deleted with "
-            "`x_xy.utils.delete_download_cache`."
+            "`ring.utils.delete_download_cache`."
         )
     return str(path_on_disk)
 

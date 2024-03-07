@@ -1,12 +1,11 @@
 from pathlib import Path
 
 import pytest
-
-from x_xy.utils import delete_download_cache
-from x_xy.utils import dict_to_nested
-from x_xy.utils import dict_union
-from x_xy.utils import download_from_repo
-from x_xy.utils import tree_equal
+from ring.utils import delete_download_cache
+from ring.utils import dict_to_nested
+from ring.utils import dict_union
+from ring.utils import download_from_repo
+from ring.utils import tree_equal
 
 
 def test_dict_union():

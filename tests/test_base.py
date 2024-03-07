@@ -2,12 +2,11 @@ from collections import defaultdict
 
 import jax
 import numpy as np
-
-import x_xy
+import ring
 
 
 def load_ant():
-    return x_xy.System(
+    return ring.System(
         [-1, 0, 1, 0, 3, 0, 5, 0, 7],
         [],
         ["free"] + 8 * ["rx"],
@@ -87,7 +86,7 @@ def test_tree():
 
 
 def test_sys_idx_map():
-    sys = x_xy.io.load_example("test_three_seg_seg2")
+    sys = ring.io.load_example("test_three_seg_seg2")
 
     idx_map_l = sys.idx_map("l")
     idx_map_q = sys.idx_map("q")

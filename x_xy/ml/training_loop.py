@@ -2,11 +2,10 @@ import random
 from typing import Optional
 
 import jax
+from ring.algorithms import Generator
+from ring.ml import ml_utils
 import tqdm
 import tree_utils
-
-from x_xy.algorithms import Generator
-from x_xy.ml import ml_utils
 
 _KILL_RUN = False
 

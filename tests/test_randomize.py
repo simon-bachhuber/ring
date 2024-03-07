@@ -1,5 +1,5 @@
-import x_xy
-from x_xy import exp
+import ring
+from ring import exp
 
 
 def _load_1Seg2Seg3Seg4Seg_system(
@@ -85,7 +85,7 @@ def _load_1Seg2Seg3Seg4Seg_system(
 
 def _new_load_standard_system():
     "Generates the system `standard_sys.xml` and `standard_sys_rr_imp.xml"
-    sys_4Seg: x_xy.System = (
+    sys_4Seg: ring.System = (
         exp.load_sys(
             "S_06",
         )
@@ -111,7 +111,7 @@ def test_new_load_standard_system():
     "Test the new way of loading the 10 body standard system."
 
     sys = _new_load_standard_system()
-    assert x_xy.utils.sys_compare(
+    assert ring.utils.sys_compare(
         sys,
         _load_1Seg2Seg3Seg4Seg_system(
             "seg2",
@@ -121,7 +121,7 @@ def test_new_load_standard_system():
         ),
     )
 
-    assert x_xy.utils.sys_compare(sys, x_xy.io.load_example("exclude/standard_sys"))
+    assert ring.utils.sys_compare(sys, ring.io.load_example("exclude/standard_sys"))
 
 
 def SKIP_test_randomize_anchors_long():
@@ -144,12 +144,12 @@ def SKIP_test_randomize_anchors_long():
         "seg3_4Seg",
         "seg4_4Seg",
     ]
-    sys_data_new = x_xy.algorithms.generator.randomize_anchors(
-        x_xy.io.load_example("exclude/standard_sys"), anchors
+    sys_data_new = ring.algorithms.generator.randomize_anchors(
+        ring.io.load_example("exclude/standard_sys"), anchors
     )
 
     for sys_old, sys_new in zip(sys_data, sys_data_new):
-        assert x_xy.utils.sys_compare(sys_old, sys_new)
+        assert ring.utils.sys_compare(sys_old, sys_new)
 
 
 def test_randomize_anchors():
@@ -166,7 +166,7 @@ def test_randomize_anchors():
         "seg2_3Seg",
         "seg4_3Seg",
     ]
-    sys_data_new = x_xy.algorithms.generator.randomize_anchors(sys_data[0], anchors)
+    sys_data_new = ring.algorithms.generator.randomize_anchors(sys_data[0], anchors)
 
     for sys_old, sys_new in zip(sys_data, sys_data_new):
-        assert x_xy.utils.sys_compare(sys_old, sys_new)
+        assert ring.utils.sys_compare(sys_old, sys_new)

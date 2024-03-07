@@ -4,10 +4,9 @@ from typing import Optional
 from flax import struct
 import jax
 import jax.numpy as jnp
-
-from x_xy import base
-from x_xy.algorithms import dynamics
-from x_xy.algorithms import jcalc
+from ring import base
+from ring.algorithms import dynamics
+from ring.algorithms import jcalc
 
 
 @struct.dataclass

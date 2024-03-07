@@ -2,16 +2,15 @@ from dataclasses import replace
 
 import jax
 import jax.numpy as jnp
-
-import x_xy
-from x_xy import maths
-from x_xy.algorithms.jcalc import _draw_rxyz
-from x_xy.algorithms.jcalc import _p_control_term_rxyz
-from x_xy.algorithms.jcalc import _qd_from_q_cartesian
+import ring
+from ring import maths
+from ring.algorithms.jcalc import _draw_rxyz
+from ring.algorithms.jcalc import _p_control_term_rxyz
+from ring.algorithms.jcalc import _qd_from_q_cartesian
 
 
 def register_rr_imp_joint(
-    config_res=x_xy.MotionConfig(dang_max=5.0, t_max=0.4),
+    config_res=ring.MotionConfig(dang_max=5.0, t_max=0.4),
     ang_max_deg: float = 7.5,
     name: str = "rr_imp",
 ):
@@ -19,8 +18,8 @@ def register_rr_imp_joint(
         axis_pri, axis_res = params["joint_axes"], params["residual"]
         rot_pri = maths.quat_rot_axis(axis_pri, q[0])
         rot_res = maths.quat_rot_axis(axis_res, q[1])
-        rot = x_xy.maths.quat_mul(rot_res, rot_pri)
-        return x_xy.Transform.create(rot=rot)
+        rot = ring.maths.quat_mul(rot_res, rot_pri)
+        return ring.Transform.create(rot=rot)
 
     def _draw_rr_imp(config, key_t, key_value, dt, _):
         key_t1, key_t2 = jax.random.split(key_t)
@@ -38,11 +37,11 @@ def register_rr_imp_joint(
     def _motion_fn_factory(whichone: str):
         def _motion_fn(params):
             axis = params[whichone]
-            return x_xy.base.Motion.create(ang=axis)
+            return ring.base.Motion.create(ang=axis)
 
         return _motion_fn
 
-    rr_imp_joint = x_xy.JointModel(
+    rr_imp_joint = ring.JointModel(
         _rr_imp_transform,
         motion=[_motion_fn_factory("joint_axes"), _motion_fn_factory("residual")],
         rcmg_draw_fn=_draw_rr_imp,
@@ -50,7 +49,7 @@ def register_rr_imp_joint(
         qd_from_q=_qd_from_q_cartesian,
         init_joint_params=_draw_random_joint_axes,
     )
-    x_xy.register_new_joint_type(
+    ring.register_new_joint_type(
         name,
         rr_imp_joint,
         2,

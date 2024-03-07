@@ -5,11 +5,10 @@ from typing import Optional
 import jax
 import jax.numpy as jnp
 import joblib
+import ring
+from ring.exp import omc_utils
 import tree_utils
 import yaml
-
-import x_xy
-from x_xy.exp import omc_utils
 
 arm_xml = "setups/arm.xml"
 gait_xml = "setups/gait.xml"
@@ -42,9 +41,9 @@ def _read_yaml(path: str):
 @cache
 def load_sys(
     exp_id: str,
-) -> x_xy.base.System:
+) -> ring.base.System:
     xml_path = _relative_to_this_file(_id2xml[exp_id])
-    sys = x_xy.io.load_sys_from_xml(xml_path)
+    sys = ring.io.load_sys_from_xml(xml_path)
     return sys
 
 
@@ -57,7 +56,7 @@ def load_data(
     right_padd: float = 0.0,
     resample_to_hz: float = 100.0,
 ) -> dict:
-    trial_data = joblib.load(x_xy.utils.download_from_repo(f"data/{exp_id}.joblib"))
+    trial_data = joblib.load(ring.utils.download_from_repo(f"data/{exp_id}.joblib"))
 
     metadata = _read_yaml("metadata.yaml")[exp_id]
     timings = metadata["timings"]

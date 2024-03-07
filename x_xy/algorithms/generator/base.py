@@ -4,17 +4,16 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+from ring import base
+from ring import utils
+from ring.algorithms import jcalc
+from ring.algorithms import kinematics
+from ring.algorithms.generator import batch
+from ring.algorithms.generator import motion_artifacts
+from ring.algorithms.generator import randomize
+from ring.algorithms.generator import transforms
+from ring.algorithms.generator import types
 import tree_utils
-
-from x_xy import base
-from x_xy import utils
-from x_xy.algorithms import jcalc
-from x_xy.algorithms import kinematics
-from x_xy.algorithms.generator import batch
-from x_xy.algorithms.generator import motion_artifacts
-from x_xy.algorithms.generator import randomize
-from x_xy.algorithms.generator import transforms
-from x_xy.algorithms.generator import types
 
 
 class RCMG:

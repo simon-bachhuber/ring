@@ -3,9 +3,8 @@ from typing import Callable, TypeVar
 
 import jax
 import jax.numpy as jnp
+from ring.algorithms.generator import types
 import tree_utils
-
-from x_xy.algorithms.generator import types
 
 KEY = jax.random.PRNGKey(777)
 KEY_PERMUTATION = jax.random.PRNGKey(888)

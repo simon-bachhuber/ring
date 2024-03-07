@@ -1,9 +1,8 @@
 from typing import Optional
 
 import jax.numpy as jnp
+from ring import base
 import tree_utils
-
-from x_xy import base
 
 
 def _autodetermine_imu_names(sys: base.System) -> list[str]:

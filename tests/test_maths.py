@@ -1,9 +1,8 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
+from ring import maths
 import tree_utils
-
-from x_xy import maths
 
 
 def test_quat_rot_axis_are_inverse():

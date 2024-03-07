@@ -2,12 +2,11 @@ from typing import Optional, Tuple
 
 import jax
 import jax.numpy as jnp
-
-from x_xy import algebra
-from x_xy import base
-from x_xy import maths
-from x_xy.algorithms import jcalc
-from x_xy.algorithms import kinematics
+from ring import algebra
+from ring import base
+from ring import maths
+from ring.algorithms import jcalc
+from ring.algorithms import kinematics
 
 
 def inverse_dynamics(sys: base.System, qd: jax.Array, qdd: jax.Array) -> jax.Array:

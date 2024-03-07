@@ -1,7 +1,6 @@
 import numpy as np
 import qmt
-
-from x_xy.exp import omc_utils as omc
+from ring.exp import omc_utils as omc
 
 
 def quatfromangles(angles: np.ndarray):

@@ -5,14 +5,13 @@ from typing import Optional
 
 import jax.numpy as jnp
 import numpy as np
-
-from x_xy import algorithms
-from x_xy import base
-from x_xy import exp
-from x_xy import maths
-from x_xy import ml
-from x_xy import sim2real
-from x_xy import utils
+from ring import algorithms
+from ring import base
+from ring import exp
+from ring import maths
+from ring import ml
+from ring import sim2real
+from ring import utils
 
 
 @cache

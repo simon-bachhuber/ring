@@ -2,16 +2,15 @@ import jax
 import jax.numpy as jnp
 import jax.random as jrand
 import numpy as np
+from ring import algebra
+from ring import base
+from ring import maths
+from ring import spatial
+from ring.base import Force
+from ring.base import Inertia
+from ring.base import Motion
+from ring.base import Transform
 import tree_utils as tu
-
-from x_xy import algebra
-from x_xy import base
-from x_xy import maths
-from x_xy import spatial
-from x_xy.base import Force
-from x_xy.base import Inertia
-from x_xy.base import Motion
-from x_xy.base import Transform
 
 """Tests that compare directly to matrix implementations of the same operations."""
 

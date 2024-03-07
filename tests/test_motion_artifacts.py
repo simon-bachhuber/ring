@@ -1,5 +1,5 @@
-import x_xy
-from x_xy.algorithms.generator import motion_artifacts
+import ring
+from ring.algorithms.generator import motion_artifacts
 
 sys_start = """
 <x_xy model="knee_flexible_imus">
@@ -58,14 +58,14 @@ sys_target = """
 
 def test_inject_subsystems():
     sys_motion_artifacts = motion_artifacts.inject_subsystems(
-        x_xy.io.load_sys_from_str(sys_start), pos_min_max=0.03
+        ring.io.load_sys_from_str(sys_start), pos_min_max=0.03
     )
     # inject_subsystems appends all injected systems at the end; saving to xml str
     # fixes this
-    sys_motion_artifacts = x_xy.io.load_sys_from_str(
-        x_xy.io.save_sys_to_str(sys_motion_artifacts)
+    sys_motion_artifacts = ring.io.load_sys_from_str(
+        ring.io.save_sys_to_str(sys_motion_artifacts)
     )
-    assert x_xy.utils.sys_compare(
+    assert ring.utils.sys_compare(
         sys_motion_artifacts,
-        x_xy.io.load_sys_from_str(sys_target),
+        ring.io.load_sys_from_str(sys_target),
     )

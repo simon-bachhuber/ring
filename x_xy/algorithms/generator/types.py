@@ -1,9 +1,8 @@
 from typing import Callable, Protocol
 
 import jax
+from ring import base
 from tree_utils import PyTree
-
-from x_xy import base
 
 PRNGKey = jax.Array
 InputExtras = base.System

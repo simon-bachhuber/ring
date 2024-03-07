@@ -1,8 +1,7 @@
 import jax.numpy as jnp
-
-from x_xy import base
-from x_xy import maths
-from x_xy import spatial
+from ring import base
+from ring import maths
+from ring import spatial
 
 
 def inertia_mul_motion(it: base.Inertia, m: base.Motion) -> base.Force:

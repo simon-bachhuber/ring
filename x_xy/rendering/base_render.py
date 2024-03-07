@@ -3,14 +3,13 @@ from typing import Optional
 import jax
 import jax.numpy as jnp
 import numpy as np
+from ring import algebra
+from ring import base
+from ring import maths
+from ring import sim2real
+from ring import utils
+from ring.algorithms import kinematics
 import tqdm
-
-from x_xy import algebra
-from x_xy import base
-from x_xy import maths
-from x_xy import sim2real
-from x_xy import utils
-from x_xy.algorithms import kinematics
 
 _rgbas = {
     "self": (0.7, 0.5, 0.1, 1.0),
@@ -67,7 +66,7 @@ def render(
     """
     if backend == "mujoco":
         utils.import_lib("mujoco")
-        from x_xy.rendering.mujoco_render import MujocoScene
+        from ring.rendering.mujoco_render import MujocoScene
 
         scene = MujocoScene(**scene_kwargs)
     elif backend == "vispy":
@@ -80,7 +79,7 @@ def render(
 
         vispy.use(vispy_backend)
 
-        from x_xy.rendering.vispy_render import VispyScene
+        from ring.rendering.vispy_render import VispyScene
 
         scene = VispyScene(**scene_kwargs)
     else:

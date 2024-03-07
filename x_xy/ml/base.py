@@ -3,11 +3,10 @@ from abc import abstractmethod
 
 import jax
 import jax.numpy as jnp
+import ring
+from ring.utils import pickle_load
+from ring.utils import pickle_save
 import tree_utils
-
-import x_xy
-from x_xy.utils import pickle_load
-from x_xy.utils import pickle_save
 
 
 def _to_3d(tree):
@@ -174,7 +173,7 @@ class LPF_FilterWrapper(AbstractFilterWrapper):
         if yhat.ndim == 4:
             yhat = jax.vmap(
                 jax.vmap(
-                    lambda q, samp_freq: x_xy.maths.quat_lowpassfilter(
+                    lambda q, samp_freq: ring.maths.quat_lowpassfilter(
                         q, samp_freq=samp_freq, **self._kwargs
                     ),
                     in_axes=(2, None),
@@ -183,7 +182,7 @@ class LPF_FilterWrapper(AbstractFilterWrapper):
             )(yhat, samp_freq)
         else:
             yhat = jax.vmap(
-                lambda q, samp_freq: x_xy.maths.quat_lowpassfilter(
+                lambda q, samp_freq: ring.maths.quat_lowpassfilter(
                     q, samp_freq=samp_freq, **self._kwargs
                 ),
                 in_axes=(1, None),
@@ -215,7 +214,7 @@ class GroundTruthHeading_FilterWrapper(AbstractFilterWrapper):
         for i, p in enumerate(lam):
             if p == -1:
                 yhat = yhat.at[..., i, :].set(
-                    x_xy.maths.quat_transfer_heading(y[..., i, :], yhat[..., i, :])
+                    ring.maths.quat_transfer_heading(y[..., i, :], yhat[..., i, :])
                 )
         return yhat
 

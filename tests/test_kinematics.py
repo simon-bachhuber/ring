@@ -1,18 +1,17 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
+import ring
+from ring import base
+from ring import maths
+from ring.algorithms import jcalc
+from ring.algorithms import kinematics
+from ring.sim2real.sim2real import _checks_time_series_of_xs
 import tree_utils as tu
-
-import x_xy
-from x_xy import base
-from x_xy import maths
-from x_xy.algorithms import jcalc
-from x_xy.algorithms import kinematics
-from x_xy.sim2real.sim2real import _checks_time_series_of_xs
 
 
 def test_forward_kinematics_transforms():
-    sys = x_xy.io.load_example("test_kinematics")
+    sys = ring.io.load_example("test_kinematics")
     q = [
         jnp.array([1, 0, 0, 0, 1, 1, 1.0]),
         jnp.pi / 2,
@@ -65,14 +64,14 @@ def test_inv_kinematics_endeffector():
 """
     key = jax.random.PRNGKey(222)
     for xml in [xml1, xml2]:
-        sys = x_xy.io.load_sys_from_str(xml)
+        sys = ring.io.load_sys_from_str(xml)
 
         @jax.jit
         def solve(key):
             c1, c2 = jax.random.split(key)
             random_q = _preprocess_q(sys, jax.random.normal(c1, (sys.q_size(),)))
             endeffector_x = jax.jit(kinematics.forward_kinematics)(
-                sys, x_xy.State.create(sys, q=random_q)
+                sys, ring.State.create(sys, q=random_q)
             )[1].x[sys.name_to_idx("endeffector")]
 
             q0 = jax.random.normal(c2, (sys.q_size(),))
@@ -180,7 +179,7 @@ def TODO_test_eq_inverse_kinematics_and_project_xs():
 
 
 def test_inverse_kinematics_forward_kinematics():
-    sys = x_xy.io.load_example("test_three_seg_seg2")
+    sys = ring.io.load_example("test_three_seg_seg2")
 
     for seed in range(5):
         print(seed)

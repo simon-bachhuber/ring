@@ -4,8 +4,7 @@ import warnings
 import jax
 from jax import random
 import jax.numpy as jnp
-
-from x_xy import maths
+from ring import maths
 
 Float = jax.Array
 TimeDependentFloat = Callable[[Float], Float]

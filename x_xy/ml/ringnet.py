@@ -5,11 +5,10 @@ from typing import Callable, Optional
 import haiku as hk
 import jax
 import jax.numpy as jnp
+from ring.maths import safe_normalize
+from ring.ml import base as ml_base
+from ring.utils import pickle_load
 import tree_utils
-
-from x_xy.maths import safe_normalize
-from x_xy.ml import base as ml_base
-from x_xy.utils import pickle_load
 
 
 def _scan_sys(lam: list[int], f):

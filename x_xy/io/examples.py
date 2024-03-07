@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Iterator
 
-from x_xy import base
-from x_xy.utils import parse_path
+from ring import base
+from ring.utils import parse_path
 
 EXAMPLES_DIR = Path(__file__).parent.joinpath("examples")
 FOLDERS = ["", "test_morph_system"]

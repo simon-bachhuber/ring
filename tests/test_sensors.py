@@ -1,14 +1,13 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
-
-import x_xy
-from x_xy.algorithms.sensors import rescale_natural_units
+import ring
+from ring.algorithms.sensors import rescale_natural_units
 
 
 def _simulate_imus(qd: float, no_grav: bool = False):
     T = 1.0
-    sys = x_xy.io.load_example("test_sensors")
+    sys = ring.io.load_example("test_sensors")
     assert sys.model_name == "test_sensors"
 
     if no_grav:
@@ -20,18 +19,18 @@ def _simulate_imus(qd: float, no_grav: bool = False):
             qd,
         ]
     )
-    state = x_xy.base.State.create(sys, q, qd)
+    state = ring.base.State.create(sys, q, qd)
     xs = []
     tau = jnp.zeros_like(state.qd)
     for _ in range(int(T / sys.dt)):
-        state = jax.jit(x_xy.step)(sys, state, tau)
+        state = jax.jit(ring.step)(sys, state, tau)
         xs.append(state.x)
     xs = xs[0].batch(*xs[1:])
 
-    imu1 = x_xy.algorithms.imu(
+    imu1 = ring.algorithms.imu(
         xs.take(sys.name_to_idx("imu1"), axis=1), sys.gravity, sys.dt
     )
-    imu2 = x_xy.algorithms.imu(
+    imu2 = ring.algorithms.imu(
         xs.take(sys.name_to_idx("imu2"), axis=1), sys.gravity, sys.dt
     )
     return imu1, imu2
@@ -74,19 +73,19 @@ def test_imu():
 
 
 def test_rel_pose():
-    sys = x_xy.io.load_example("test_sensors")
-    qs = x_xy.maths.quat_random(
+    sys = ring.io.load_example("test_sensors")
+    qs = ring.maths.quat_random(
         jax.random.PRNGKey(
             1,
         ),
         (3,),
     )
-    xs = x_xy.base.Transform.create(rot=qs)
-    y = x_xy.algorithms.rel_pose(sys, xs)
+    xs = ring.base.Transform.create(rot=qs)
+    y = ring.algorithms.rel_pose(sys, xs)
 
     assert "hinge" not in y
 
-    qrel = lambda q1, q2: x_xy.maths.quat_mul(q1, x_xy.maths.quat_inv(q2))
+    qrel = lambda q1, q2: ring.maths.quat_mul(q1, ring.maths.quat_inv(q2))
     np.testing.assert_array_equal(y["imu1"], qrel(qs[0], qs[1]))
     np.testing.assert_array_equal(y["imu2"], qrel(qs[0], qs[2]))
 
@@ -107,8 +106,8 @@ def test_rel_pose():
     </x_xy>
     """
 
-    y = x_xy.algorithms.rel_pose(
-        x_xy.io.load_sys_from_str(sys_different_anchor), xs, sys
+    y = ring.algorithms.rel_pose(
+        ring.io.load_sys_from_str(sys_different_anchor), xs, sys
     )
     assert "hinge" not in y
     np.testing.assert_array_equal(y["imu2"], qrel(qs[0], qs[2]))
@@ -116,13 +115,13 @@ def test_rel_pose():
 
 
 def test_natural_units():
-    sys = x_xy.io.load_example("test_three_seg_seg2")
-    X, y = x_xy.RCMG(
+    sys = ring.io.load_example("test_three_seg_seg2")
+    X, y = ring.RCMG(
         sys,
         add_X_imus=True,
         add_X_imus_kwargs=dict(natural_units=False),
     ).to_list()[0]
-    X_nat, y_nat = x_xy.RCMG(
+    X_nat, y_nat = ring.RCMG(
         sys,
         add_X_imus=True,
         add_X_imus_kwargs=dict(natural_units=True),

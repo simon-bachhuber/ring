@@ -1,4 +1,4 @@
-from x_xy import exp
+from ring import exp
 
 
 def test_load_sys_data():

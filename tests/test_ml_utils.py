@@ -6,12 +6,12 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+import ring
+from ring import ml
+from ring import utils
+from ring.ml import ml_utils
 
 import wandb
-import x_xy
-from x_xy import ml
-from x_xy import utils
-from x_xy.ml import ml_utils
 
 
 def test_save_load():
@@ -31,8 +31,8 @@ def test_save_load():
 def test_save_load_generators():
     path = "~/data1/gen.h5"
 
-    sys = x_xy.io.load_example("test_three_seg_seg2")
-    rcmg = x_xy.RCMG(
+    sys = ring.io.load_example("test_three_seg_seg2")
+    rcmg = ring.RCMG(
         sys,
         add_X_imus=True,
         add_y_relpose=True,
@@ -40,12 +40,12 @@ def test_save_load_generators():
     data = rcmg.to_list()[0]
     rcmg.to_hdf5(path)
 
-    gen_reloaded, _ = x_xy.algorithms.batched_generator_from_paths([path, path], 1)
+    gen_reloaded, _ = ring.algorithms.batched_generator_from_paths([path, path], 1)
     data_reloaded = jax.tree_map(
         lambda arr: arr[0], gen_reloaded(jax.random.PRNGKey(1))
     )
 
-    assert x_xy.utils.tree_equal(data, data_reloaded)
+    assert ring.utils.tree_equal(data, data_reloaded)
 
     # clean up
     os.system(f"rm {path}")

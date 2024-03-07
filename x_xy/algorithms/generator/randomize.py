@@ -7,10 +7,9 @@ from typing import Optional
 import warnings
 
 import jax.numpy as jnp
-
-from x_xy import base
-from x_xy.algorithms import jcalc
-from x_xy.algorithms.generator import types
+from ring import base
+from ring.algorithms import jcalc
+from ring.algorithms.generator import types
 
 
 def _find_children(lam: list[int], body: int) -> list[int]:

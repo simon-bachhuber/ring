@@ -2,9 +2,8 @@ from typing import Optional, Sequence
 
 import mujoco
 import numpy as np
-
-from x_xy import base
-from x_xy import maths
+from ring import base
+from ring import maths
 
 _skybox = """<texture name="skybox" type="skybox" builtin="gradient" rgb1=".4 .6 .8" rgb2="0 0 0" width="800" height="800" mark="random" markrgb="1 1 1"/>"""  # noqa: E501
 _floor = """<geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>"""  # noqa: E501

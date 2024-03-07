@@ -1,17 +1,16 @@
 import jax
-
-import x_xy
+import ring
 
 
 def test_vispy_render():
-    for sys in x_xy.io.list_load_examples():
-        sys.render(x_xy.State.create(sys).x, show_pbar=False, backend="vispy")
+    for sys in ring.io.list_load_examples():
+        sys.render(ring.State.create(sys).x, show_pbar=False, backend="vispy")
 
 
 def test_mujoco_render():
-    for sys in x_xy.io.list_load_examples():
+    for sys in ring.io.list_load_examples():
         print(sys.model_name)
-        sys.render(x_xy.State.create(sys).x, show_pbar=False, backend="mujoco")
+        sys.render(ring.State.create(sys).x, show_pbar=False, backend="mujoco")
 
 
 def test_shapes():
@@ -29,12 +28,12 @@ def test_shapes():
 </x_xy>
     """  # noqa: E501
 
-    sys = x_xy.io.load_sys_from_str(sys_str)
-    state = x_xy.State.create(sys)
-    step_fn = jax.jit(x_xy.step)
+    sys = ring.io.load_sys_from_str(sys_str)
+    state = ring.State.create(sys)
+    step_fn = jax.jit(ring.step)
     state = step_fn(sys, state)
 
-    mediapy = x_xy.utils.import_lib("mediapy")
+    mediapy = ring.utils.import_lib("mediapy")
 
     for backend in ["mujoco", "vispy"]:
         frame = sys.render(state.x, show_pbar=False, backend=backend)[0]

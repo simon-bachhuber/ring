@@ -3,11 +3,10 @@ from typing import Optional
 import jax
 import numpy as np
 import qmt
-
-import x_xy
-from x_xy import sim2real
-from x_xy.algorithms import sensors
-from x_xy.ml import base as ml_base
+import ring
+from ring import sim2real
+from ring.algorithms import sensors
+from ring.ml import base as ml_base
 
 from .riann import RIANN
 
@@ -121,8 +120,8 @@ class TwoSeg1D(ml_base.AbstractFilterUnbatched):
         yhat = dict()
 
         # tibia to femur
-        yhat[second] = x_xy.maths.quat_mul(
-            quats[first], x_xy.maths.quat_inv(quats[second])
+        yhat[second] = ring.maths.quat_mul(
+            quats[first], ring.maths.quat_inv(quats[second])
         )
         # add it such that it gets low-pass-filtered for `lpf_rel` too
         yhat[first] = quats[first]
@@ -164,11 +163,11 @@ class VQF_9D(ml_base.AbstractFilterUnbatched):
 
         quats = _maybe_lowpassfilter_quats(quats, self.lpf_glo)
         # self.transfer_ground_truth_heading(sys, y, quats)
-        quats = x_xy.utils.dict_to_nested(quats, "quat")
+        quats = ring.utils.dict_to_nested(quats, "quat")
 
         xs = sim2real.xs_from_raw(sys, quats, qinv=False)
         yhat = sensors.rel_pose(sys, xs)
-        yhat = x_xy.utils.dict_union(yhat, sensors.root_full(sys, xs, sys))
+        yhat = ring.utils.dict_union(yhat, sensors.root_full(sys, xs, sys))
 
         yhat = _maybe_lowpassfilter_quats(yhat, self.lpf_rel)
         self.transfer_ground_truth_heading(sys, y, yhat)
@@ -179,6 +178,6 @@ def _maybe_lowpassfilter_quats(quats: dict, cutoff_freq: float | None):
     if cutoff_freq is None:
         return quats
     return {
-        name: x_xy.maths.quat_lowpassfilter(quats[name], cutoff_freq, filtfilt=True)
+        name: ring.maths.quat_lowpassfilter(quats[name], cutoff_freq, filtfilt=True)
         for name in quats
     }

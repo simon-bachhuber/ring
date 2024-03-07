@@ -2,9 +2,8 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
+from ring import base
 from tree_utils import tree_batch
-
-from x_xy import base
 
 
 def _tree_nan_like(tree, repeats: int):

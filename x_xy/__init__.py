@@ -34,7 +34,7 @@ def setup(
 ):
     import time
 
-    from x_xy.algorithms import custom_joints
+    from ring.algorithms import custom_joints
 
     global _TRAIN_TIMING_START
     global _UNIQUE_ID

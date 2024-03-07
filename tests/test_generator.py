@@ -2,16 +2,15 @@ from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
+import ring
+from ring.algorithms.generator.transforms import _draw_pos_uniform
+from ring.algorithms.generator.transforms import _setup_fn_randomize_positions
 import tree_utils
-
-import x_xy
-from x_xy.algorithms.generator.transforms import _draw_pos_uniform
-from x_xy.algorithms.generator.transforms import _setup_fn_randomize_positions
 
 
 def finalize_fn_full_imu_setup(key, q, x, sys):
     X = {
-        name: x_xy.algorithms.sensors.imu(
+        name: ring.algorithms.sensors.imu(
             x.take(sys.name_to_idx(name), 1), sys.gravity, sys.dt
         )
         for name in sys.link_names
@@ -20,10 +19,10 @@ def finalize_fn_full_imu_setup(key, q, x, sys):
 
 
 def test_normalize():
-    sys = x_xy.io.load_example("test_three_seg_seg2")
-    gen = x_xy.RCMG(sys, finalize_fn=finalize_fn_full_imu_setup).to_lazy_gen(sizes=50)
+    sys = ring.io.load_example("test_three_seg_seg2")
+    gen = ring.RCMG(sys, finalize_fn=finalize_fn_full_imu_setup).to_lazy_gen(sizes=50)
 
-    normalizer = x_xy.utils.make_normalizer_from_generator(
+    normalizer = ring.utils.make_normalizer_from_generator(
         gen, approx_with_large_batchsize=50
     )
     X, _ = gen(jax.random.split(jax.random.PRNGKey(777))[1])
@@ -37,7 +36,7 @@ def test_normalize():
     assert jnp.all(jnp.logical_and(X_std > (1 - delta), X_std < (1 + delta)))
 
 
-def setup_fn_old(key, sys: x_xy.System) -> x_xy.System:
+def setup_fn_old(key, sys: ring.System) -> ring.System:
     def replace_pos(transforms, new_pos, name: str):
         i = sys.name_to_idx(name)
         return transforms.index_set(i, transforms[i].replace(pos=new_pos))
@@ -69,7 +68,7 @@ def setup_fn_old(key, sys: x_xy.System) -> x_xy.System:
 
 def test_randomize_positions():
     key = jax.random.PRNGKey(1)
-    sys = x_xy.io.load_example("test_randomize_position")
+    sys = ring.io.load_example("test_randomize_position")
 
     # split key once more because the new logic `setup_fn_randomize_positions`
     # randomizes the position for each body even if the body has
@@ -86,10 +85,10 @@ def test_randomize_positions():
 
 
 def test_cor():
-    sys = x_xy.io.load_example("test_three_seg_seg2")
+    sys = ring.io.load_example("test_three_seg_seg2")
     sys = sys.inject_system(sys.add_prefix_suffix("second_"))
-    x_xy.RCMG(
-        sys, x_xy.MotionConfig(cor=True), finalize_fn=lambda key, q, x, sys: (q, x)
+    ring.RCMG(
+        sys, ring.MotionConfig(cor=True), finalize_fn=lambda key, q, x, sys: (q, x)
     ).to_lazy_gen()(jax.random.PRNGKey(1))
 
 
@@ -114,7 +113,7 @@ _P_gains = {
 
 
 def test_knee_flexible_imus_sim():
-    sys = x_xy.io.load_example("knee_flexible_imus")
+    sys = ring.io.load_example("knee_flexible_imus")
     qref = np.ones((101, 8))
     qref[:, :4] /= np.linalg.norm(qref[:, :4], axis=-1, keepdims=True)
     # qref[:, 7:11] /= np.linalg.norm(qref[:, 7:11], axis=-1, keepdims=True)
@@ -148,9 +147,9 @@ def test_knee_flexible_imus_sim():
     )
 
     q, _ = unbatch_gen(
-        x_xy.RCMG(
+        ring.RCMG(
             sys,
-            x_xy.MotionConfig(T=0.1),
+            ring.MotionConfig(T=0.1),
             imu_motion_artifacts=True,
             dynamic_simulation=True,
             dynamic_simulation_kwargs=dict(

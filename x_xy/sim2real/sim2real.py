@@ -1,14 +1,13 @@
 from typing import Optional, Tuple
 
 import jax
+from ring import algebra
+from ring import base
+from ring import io
+from ring import maths
+from ring.algorithms import generator
+from ring.algorithms import jcalc
 import tree_utils
-
-from x_xy import algebra
-from x_xy import base
-from x_xy import io
-from x_xy import maths
-from x_xy.algorithms import generator
-from x_xy.algorithms import jcalc
 
 
 def xs_from_raw(
@@ -27,7 +26,7 @@ def xs_from_raw(
     axis is time axis.
 
     Args:
-        sys (x_xy.base.System): System which defines ordering of returned `xs`
+        sys (ring.base.System): System which defines ordering of returned `xs`
         link_name_pos_rot (dict): Dictonary of `link_name` ->
             {'pos': ..., 'quat': ...}. Obtained, e.g., using `process_omc`.
         eps_frame (str, optional): Move into this segment's frame at time zero as
@@ -35,7 +34,7 @@ def xs_from_raw(
             If `None`: Don't move into a specific eps-frame.
 
     Returns:
-        x_xy.base.Transform: Time-series of eps-to-link transformations
+        ring.base.Transform: Time-series of eps-to-link transformations
     """
     # determine `eps_frame` transform
     if eps_frame is not None:
@@ -139,12 +138,12 @@ def zip_xs(
     """Performs forward kinematics using `transform1` and `transform2`.
 
     Args:
-        sys (x_xy.base.System): Defines scan_sys
-        xs_transform1 (x_xy.base.Transform): Applied before `transform1`
-        xs_transform2 (x_xy.base.Transform): Applied after `transform2`
+        sys (ring.base.System): Defines scan_sys
+        xs_transform1 (ring.base.Transform): Applied before `transform1`
+        xs_transform2 (ring.base.Transform): Applied after `transform2`
 
     Returns:
-        x_xy.base.Transform: Time-series of eps-to-link transformations
+        ring.base.Transform: Time-series of eps-to-link transformations
     """
     _checks_time_series_of_xs(sys, xs_transform1)
     _checks_time_series_of_xs(sys, xs_transform2)

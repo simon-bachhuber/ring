@@ -1,9 +1,8 @@
 from jax import random as jrand
 import numpy as np
 import pytest
-
-import x_xy
-from x_xy.algorithms._random import _resolve_range_of_motion
+import ring
+from ring.algorithms._random import _resolve_range_of_motion
 
 
 @pytest.mark.parametrize(
@@ -52,7 +51,7 @@ def test_angle(randomized_interpolation, range_of_motion, range_of_motion_method
     for Ts in [0.1, 0.01]:
         for ANG_0 in [0.0, -0.5, 0.5]:
             T = 30
-            angle = x_xy.algorithms.random_angle_over_time(
+            angle = ring.algorithms.random_angle_over_time(
                 jrand.PRNGKey(1),
                 jrand.PRNGKey(2),
                 ANG_0,
@@ -77,7 +76,7 @@ def test_position():
     for Ts in [0.1, 0.01]:
         T = 30
         POS_0 = 0.0
-        pos = x_xy.algorithms.random_position_over_time(
+        pos = ring.algorithms.random_position_over_time(
             jrand.PRNGKey(1), POS_0, -0.2, 0.2, 0.1, 0.5, 0.1, 0.5, T, Ts, 10
         )
         assert pos.shape == (int(T / Ts),)

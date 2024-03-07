@@ -1,8 +1,7 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
-
-import x_xy
+import ring
 
 xml_str_2_link_w_inertia = r"""
 <x_xy>
@@ -23,15 +22,15 @@ xml_str_2_link_w_inertia = r"""
 
 
 def test_inverse_dynamics_and_mass_matrix():
-    sys = x_xy.io.load_sys_from_str(xml_str_2_link_w_inertia)
+    sys = ring.io.load_sys_from_str(xml_str_2_link_w_inertia)
     q = jnp.array([-jnp.pi / 2, 0])
     qd = jnp.array([0.0, 0])
     qdd = qd
-    state = x_xy.State.create(sys, q, qd)
-    sys, state = x_xy.algorithms.forward_kinematics(sys, state)
+    state = ring.State.create(sys, q, qd)
+    sys, state = ring.algorithms.forward_kinematics(sys, state)
 
-    C = jax.jit(x_xy.algorithms.inverse_dynamics)(sys, state.qd, qdd)
-    H = jax.jit(x_xy.algorithms.compute_mass_matrix)(sys)
+    C = jax.jit(ring.algorithms.inverse_dynamics)(sys, state.qd, qdd)
+    H = jax.jit(ring.algorithms.compute_mass_matrix)(sys)
 
     np.testing.assert_allclose(
         C, np.array([196.20001, -98.100006], dtype=np.float32), atol=1e-4, rtol=1e-6
@@ -45,5 +44,5 @@ def test_inverse_dynamics_and_mass_matrix():
 
 
 def test_cor_step_fn():
-    sys = x_xy.io.load_example("test_free")._replace_free_with_cor()
-    jax.jit(x_xy.step)(sys, x_xy.State.create(sys))
+    sys = ring.io.load_example("test_free")._replace_free_with_cor()
+    jax.jit(ring.step)(sys, ring.State.create(sys))

@@ -1,28 +1,27 @@
 import jax
 import numpy as np
 import pytest
-
-import x_xy
-from x_xy import exp
-from x_xy.sys_composer import delete_subsystem
-from x_xy.sys_composer import identify_system
-from x_xy.sys_composer import inject_system
-from x_xy.sys_composer import morph_system
-from x_xy.sys_composer.morph_sys import _autodetermine_new_parents
-from x_xy.utils import sys_compare
-from x_xy.utils import tree_equal
+import ring
+from ring import exp
+from ring.sys_composer import delete_subsystem
+from ring.sys_composer import identify_system
+from ring.sys_composer import inject_system
+from ring.sys_composer import morph_system
+from ring.sys_composer.morph_sys import _autodetermine_new_parents
+from ring.utils import sys_compare
+from ring.utils import tree_equal
 
 
 def sim(sys):
-    state = x_xy.base.State.create(sys)
+    state = ring.base.State.create(sys)
     for _ in range(100):
-        state = jax.jit(x_xy.algorithms.step)(sys, state)
+        state = jax.jit(ring.algorithms.step)(sys, state)
     return state.q
 
 
 def test_inject_system():
-    sys1 = x_xy.io.load_example("test_three_seg_seg2")
-    sys2 = x_xy.io.load_example("test_double_pendulum")
+    sys1 = ring.io.load_example("test_three_seg_seg2")
+    sys2 = ring.io.load_example("test_double_pendulum")
 
     # these two systems are completely independent from another
     csys = inject_system(sys1, sys2)
@@ -44,8 +43,8 @@ def test_inject_system():
 
 
 def test_delete_subsystem():
-    sys1 = x_xy.io.load_example("test_three_seg_seg2")
-    sys2 = x_xy.io.load_example("test_double_pendulum")
+    sys1 = ring.io.load_example("test_three_seg_seg2")
+    sys2 = ring.io.load_example("test_double_pendulum")
 
     assert tree_equal(delete_subsystem(inject_system(sys1, sys2), "upper"), sys1)
     assert tree_equal(delete_subsystem(inject_system(sys2, sys1), "seg2"), sys2)
@@ -69,7 +68,7 @@ def test_delete_subsystem():
 def test_delete_subsystem_cut_twice_versus_cut_once():
     # seg3 connects to -1
     sys = morph_system(
-        x_xy.io.load_example("test_three_seg_seg2"),
+        ring.io.load_example("test_three_seg_seg2"),
         ["seg3", "seg2", "seg1", -1, "seg3"],
     )
 
@@ -84,7 +83,7 @@ def test_delete_subsystem_cut_twice_versus_cut_once():
 
 
 def test_tree_equal():
-    sys = x_xy.io.load_example("test_three_seg_seg2")
+    sys = ring.io.load_example("test_three_seg_seg2")
     sys_mod_nofield = sys.replace(link_parents=[i + 1 for i in sys.link_parents])
     sys_mod_field = sys.replace(link_damping=sys.link_damping + 1.0)
 
@@ -98,7 +97,7 @@ def test_tree_equal():
 
 
 def _load_sys(parent_arr: list[int]):
-    return x_xy.base.System(
+    return ring.base.System(
         parent_arr,
         None,
         None,
@@ -150,26 +149,26 @@ def test_identify_system():
 
 
 def SKIP_test_morph_all_examples():
-    for example in x_xy.io.list_examples():
+    for example in ring.io.list_examples():
         print("Example: ", example)
-        sys = x_xy.io.load_example(example)
+        sys = ring.io.load_example(example)
         sys_re = morph_system(sys, sys.link_parents)
         # this should be a zero operation
         assert sys_compare(sys, sys_re)
 
 
 def test_morph_one_example():
-    for example in x_xy.io.list_examples()[:1]:
+    for example in ring.io.list_examples()[:1]:
         print("Example: ", example)
-        sys = x_xy.io.load_example(example)
+        sys = ring.io.load_example(example)
         sys_re = morph_system(sys, sys.link_parents)
         # this should be a zero operation
         assert sys_compare(sys, sys_re)
 
 
 def test_morph_four_seg():
-    sys_seg1 = x_xy.io.load_example("test_morph_system/four_seg_seg1")
-    sys_seg3 = x_xy.io.load_example("test_morph_system/four_seg_seg3")
+    sys_seg1 = ring.io.load_example("test_morph_system/four_seg_seg1")
+    sys_seg3 = ring.io.load_example("test_morph_system/four_seg_seg3")
     sys_seg3_from_seg1 = morph_system(
         sys_seg1, ["seg2", "seg3", -1, "seg3", "seg4", "seg1"]
     ).change_model_name(sys_seg3.model_name)

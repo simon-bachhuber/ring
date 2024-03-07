@@ -3,26 +3,25 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-
-import x_xy
-from x_xy.maths import unit_quats_like
-from x_xy.maths import wrap_to_pi
+import ring
+from ring.maths import unit_quats_like
+from ring.maths import wrap_to_pi
 
 
 @pytest.mark.parametrize("N,seed", [(1, 0), (1, 1), (5, 0), (5, 1)])
 def test_batch_generator(N: int, seed: int):
-    sys = x_xy.io.load_example("test_free")
-    config1 = x_xy.MotionConfig(ang0_min=0.0, ang0_max=0.0)
-    config2 = x_xy.MotionConfig()
-    gen1 = x_xy.RCMG(
+    sys = ring.io.load_example("test_free")
+    config1 = ring.MotionConfig(ang0_min=0.0, ang0_max=0.0)
+    config2 = ring.MotionConfig()
+    gen1 = ring.RCMG(
         sys, config1, finalize_fn=lambda key, q, x, sys: (q, x)
     ).to_lazy_gen()
     gen1 = unbatch_gen(gen1)
-    gen2 = x_xy.RCMG(
+    gen2 = ring.RCMG(
         sys, config2, finalize_fn=lambda key, q, x, sys: (q, x)
     ).to_lazy_gen()
     gen2 = unbatch_gen(gen2)
-    gen = x_xy.algorithms.batch_generators_lazy([gen1, gen2, gen1], [N, N, N])
+    gen = ring.algorithms.batch_generators_lazy([gen1, gen2, gen1], [N, N, N])
     q, _ = gen(jax.random.PRNGKey(seed))
 
     arr_eq = lambda a, b: np.testing.assert_allclose(
@@ -39,12 +38,12 @@ def test_initial_ang_pos_values():
     T = 1.0
     bs = 8
     # system consists only of prismatic, and then revolute joint
-    sys = x_xy.io.load_example("test_ang0_pos0")
+    sys = ring.io.load_example("test_ang0_pos0")
 
     def rcmg(ang0_min=0, ang0_max=0, pos0_min=0, pos0_max=0, bs=bs):
-        gen = x_xy.RCMG(
+        gen = ring.RCMG(
             sys,
-            x_xy.MotionConfig(
+            ring.MotionConfig(
                 ang0_min=ang0_min,
                 ang0_max=ang0_max,
                 pos0_min=pos0_min,
@@ -53,7 +52,7 @@ def test_initial_ang_pos_values():
             ),
             finalize_fn=lambda key, q, x, sys: (q, x),
         ).to_lazy_gen()
-        q, _ = x_xy.algorithms.batch_generators_lazy(
+        q, _ = ring.algorithms.batch_generators_lazy(
             unbatch_gen(gen),
             bs,
         )(jax.random.PRNGKey(1))
@@ -77,9 +76,9 @@ def _dang_max(t: jax.Array) -> jax.Array:
 
 def test_rcmg():
     for example in ["test_all_1"]:
-        sys = x_xy.io.load_example(example)
+        sys = ring.io.load_example(example)
         for cdf_bins_min, cdf_bins_max in zip([1, 1, 3], [1, 3, 3]):
-            config = x_xy.MotionConfig(
+            config = ring.MotionConfig(
                 T=1.0,
                 cdf_bins_min=cdf_bins_min,
                 cdf_bins_max=cdf_bins_max,
@@ -88,12 +87,12 @@ def test_rcmg():
                 dang_max=_dang_max,
             )
             generator = unbatch_gen(
-                x_xy.RCMG(
+                ring.RCMG(
                     sys, config, finalize_fn=lambda key, q, x, sys: (q, x)
                 ).to_lazy_gen()
             )
             bs = 8
-            generator = x_xy.algorithms.batch_generators_lazy(generator, bs)
+            generator = ring.algorithms.batch_generators_lazy(generator, bs)
 
             seed = jax.random.PRNGKey(
                 1,

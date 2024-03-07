@@ -1,29 +1,28 @@
 import jax
 import numpy as np
-
-import x_xy
-from x_xy import MotionConfig
-from x_xy.algorithms import custom_joints
-from x_xy.algorithms.generator import transforms
-from x_xy.algorithms.jcalc import _init_joint_params
+import ring
+from ring import MotionConfig
+from ring.algorithms import custom_joints
+from ring.algorithms.generator import transforms
+from ring.algorithms.jcalc import _init_joint_params
 
 
 def pipeline_load_data_X(
-    sys: x_xy.System,
+    sys: ring.System,
 ):
     sys_noimu, _ = sys.make_sys_noimu()
 
-    gen = x_xy.algorithms.GeneratorPipe(
+    gen = ring.algorithms.GeneratorPipe(
         transforms.GeneratorTrafoJointAxisSensor(sys_noimu),
-        x_xy.algorithms.GeneratorTrafoRemoveOutputExtras(),
-        x_xy.algorithms.GeneratorTrafoRemoveInputExtras(sys),
+        ring.algorithms.GeneratorTrafoRemoveOutputExtras(),
+        ring.algorithms.GeneratorTrafoRemoveInputExtras(sys),
     )(MotionConfig(T=10.0))
 
     return gen(jax.random.PRNGKey(1))[0]
 
 
 def test_virtual_input_joint_axes_rr_joint():
-    sys = x_xy.io.load_example("test_three_seg_seg2")
+    sys = ring.io.load_example("test_three_seg_seg2")
     sys_rr = sys.replace(
         link_types=[
             "rr" if link_type in ["ry", "rz"] else link_type
@@ -67,7 +66,7 @@ def test_virtual_input_joint_axes_rr_joint():
 def test_virtual_input_joint_axes_rr_imp_joint():
     custom_joints.register_rr_imp_joint(MotionConfig(T=10.0))
 
-    sys = x_xy.io.load_example("test_three_seg_seg2")
+    sys = ring.io.load_example("test_three_seg_seg2")
     sys_rr_imp = sys.change_joint_type("seg1", "rr_imp").change_joint_type(
         "seg3", "rr_imp"
     )

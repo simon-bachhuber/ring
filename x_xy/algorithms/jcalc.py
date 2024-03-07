@@ -6,14 +6,13 @@ from typing import Any, Callable, get_type_hints, Optional
 
 import jax
 import jax.numpy as jnp
+from ring import algebra
+from ring import base
+from ring import maths
+from ring.algorithms import _random
+from ring.algorithms._random import _to_float
+from ring.algorithms._random import TimeDependentFloat
 import tree_utils
-
-from x_xy import algebra
-from x_xy import base
-from x_xy import maths
-from x_xy.algorithms import _random
-from x_xy.algorithms._random import _to_float
-from x_xy.algorithms._random import TimeDependentFloat
 
 
 @dataclass
@@ -190,7 +189,7 @@ QD_FROM_Q = Callable[
     [jax.Array, jax.Array],
     jax.Array,
 ]
-# used by x_xy.algorithms.inverse_kinematics_endeffector to  maps from
+# used by ring.algorithms.inverse_kinematics_endeffector to  maps from
 # [-inf, inf] -> feasible joint value range. Defaults to {}.
 # For example: By default, for a hinge joint it uses `maths.wrap_to_pi`.
 # For a spherical joint it would normalize to create a unit quaternion.
@@ -209,7 +208,7 @@ PROJECT_TRANSFORM_TO_FEASIBLE = Callable[
     base.Transform,
 ]
 
-# used by x_xy.System.from_xml and by x_xy.RCMG
+# used by ring.System.from_xml and by ring.RCMG
 # (key) -> Pytree
 # if it is not given and None, then there will be no specific
 # joint_parameters for the custom joint and it will simply receive

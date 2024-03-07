@@ -1,6 +1,5 @@
 import jax.numpy as jnp
-
-import x_xy
+import ring
 
 sys_str = """
 <x_xy model="model">
@@ -16,12 +15,12 @@ sys_str = """
 
 def test_from_xml():
     pos = jnp.array([1.0, 2, 3])
-    sys1 = x_xy.System(
+    sys1 = ring.System(
         [-1],
-        x_xy.base.Link(
-            x_xy.base.Transform(
+        ring.base.Link(
+            ring.base.Transform(
                 pos=pos,
-                rot=x_xy.maths.quat_euler(
+                rot=ring.maths.quat_euler(
                     jnp.array([jnp.deg2rad(30), jnp.deg2rad(30), jnp.deg2rad(30)])
                 ),
             ),
@@ -35,9 +34,9 @@ def test_from_xml():
         link_spring_stiffness=jnp.array([1.0]),
         dt=0.03,
         geoms=[
-            x_xy.base.Box(
+            ring.base.Box(
                 jnp.array(2.7),
-                x_xy.Transform.zero(),
+                ring.Transform.zero(),
                 0,
                 "black",
                 "pink",
@@ -52,6 +51,6 @@ def test_from_xml():
         omc=[None],
     )
     sys1 = sys1.parse()
-    sys2 = x_xy.io.load_sys_from_str(sys_str)
+    sys2 = ring.io.load_sys_from_str(sys_str)
 
-    assert x_xy.utils.sys_compare(sys1, sys2)
+    assert ring.utils.sys_compare(sys1, sys2)

@@ -6,11 +6,10 @@ from jax.core import Tracer
 import jax.numpy as jnp
 from jax.tree_util import tree_map
 import numpy as np
+import ring
+from ring import maths
+from ring import spatial
 import tree_utils as tu
-
-import x_xy
-from x_xy import maths
-from x_xy import spatial
 
 Scalar = jax.Array
 Vector = jax.Array
@@ -674,7 +673,7 @@ class System(_Base):
         Returns:
             list[np.ndarray]: Stacked rendered frames. Length == len(xs).
         """
-        return x_xy.rendering.render(
+        return ring.rendering.render(
             self, xs, camera, show_pbar, backend, render_every_nth, **scene_kwargs
         )
 
@@ -688,17 +687,17 @@ class System(_Base):
         **kwargs,
     ):
         "`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent."
-        return x_xy.rendering.render_prediction(
+        return ring.rendering.render_prediction(
             self, xs, yhat, stepframe, transparent_segment_to_root, **kwargs
         )
 
     def delete_system(self, link_name: str | list[str], strict: bool = True):
         "Cut subsystem starting at `link_name` (inclusive) from tree."
-        return x_xy.sys_composer.delete_subsystem(self, link_name, strict)
+        return ring.sys_composer.delete_subsystem(self, link_name, strict)
 
     def make_sys_noimu(self, imu_link_names: Optional[list[str]] = None):
         "Returns, e.g., imu_attachment = {'imu1': 'seg1', 'imu2': 'seg3'}"
-        return x_xy.sys_composer.make_sys_noimu(self, imu_link_names)
+        return ring.sys_composer.make_sys_noimu(self, imu_link_names)
 
     def inject_system(self, other_system: "System", at_body: Optional[str] = None):
         """Combine two systems into one.
@@ -713,7 +712,7 @@ class System(_Base):
         Returns:
             base.System: _description_
         """
-        return x_xy.sys_composer.inject_system(self, other_system, at_body)
+        return ring.sys_composer.inject_system(self, other_system, at_body)
 
     def morph_system(
         self,
@@ -732,21 +731,21 @@ class System(_Base):
         Returns:
             base.System: Modified system.
         """
-        return x_xy.sys_composer.morph_system(self, new_parents, new_anchor)
+        return ring.sys_composer.morph_system(self, new_parents, new_anchor)
 
     @staticmethod
     def from_xml(path: str, seed: int = 1):
-        return x_xy.io.load_sys_from_xml(path, seed)
+        return ring.io.load_sys_from_xml(path, seed)
 
     @staticmethod
     def from_str(xml: str, seed: int = 1):
-        return x_xy.io.load_sys_from_str(xml, seed)
+        return ring.io.load_sys_from_str(xml, seed)
 
     def to_str(self) -> str:
-        return x_xy.io.save_sys_to_str(self)
+        return ring.io.save_sys_to_str(self)
 
     def to_xml(self, path: str) -> None:
-        x_xy.io.save_sys_to_xml(self, path)
+        ring.io.save_sys_to_xml(self, path)
 
     def coordinate_vector_to_q(
         self,
@@ -760,7 +759,7 @@ class System(_Base):
         q_preproc = []
 
         def preprocess(_, __, link_type, q):
-            to_q = x_xy.algorithms.jcalc.get_joint_model(
+            to_q = ring.algorithms.jcalc.get_joint_model(
                 link_type
             ).coordinate_vector_to_q
             # function in custom_joints has priority over JointModel

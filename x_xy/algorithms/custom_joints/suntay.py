@@ -2,10 +2,9 @@ from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
-
-import x_xy
-from x_xy import maths
-from x_xy.algorithms._random import random_angle_over_time
+import ring
+from ring import maths
+from ring.algorithms._random import random_angle_over_time
 
 
 def deg2rad(deg: float):
@@ -100,7 +99,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
         gamma = _q_nonflexion(q_flexion, params["ys_gamma"])
         return alpha, beta, gamma, S
 
-    def _utils_find_suntay_joint(sys: x_xy.System) -> str:
+    def _utils_find_suntay_joint(sys: ring.System) -> str:
         suntay_link_name = None
         for link_name, link_type in zip(sys.link_names, sys.link_types):
             if link_type == name:
@@ -117,7 +116,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
             )
         return suntay_link_name
 
-    def _utils_Q_S_H_alpha_beta_gamma(sys: x_xy.System, qs: jax.Array):
+    def _utils_Q_S_H_alpha_beta_gamma(sys: ring.System, qs: jax.Array):
         # qs.shape = (timesteps, q_size)
         assert qs.ndim == 2
         assert qs.shape[-1] == sys.q_size()
@@ -151,7 +150,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
         # translation from femur to tibia
         H = _suntay_translation_vector_H_eq9(alpha, beta, S)
 
-        return x_xy.Transform.create(pos=H, rot=q_fem_tib)
+        return ring.Transform.create(pos=H, rot=q_fem_tib)
 
     def _draw_and_rom(key, ys, length, mn, mx):
         randomized_ys = gp_draw(key, flexion_xs, ys, length)
@@ -183,7 +182,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
         return params
 
     def _draw_flexion_angle(
-        mconfig: x_xy.MotionConfig,
+        mconfig: ring.MotionConfig,
         key_t: jax.random.PRNGKey,
         key_value: jax.random.PRNGKey,
         dt: float,
@@ -225,7 +224,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
             method=sconfig.flexion_restrict_method,
         )
 
-    joint_model = x_xy.JointModel(
+    joint_model = ring.JointModel(
         transform=_transform_suntay,
         rcmg_draw_fn=_draw_flexion_angle,
         init_joint_params=_init_joint_params_suntay,
@@ -234,7 +233,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
             find_suntay_joint=_utils_find_suntay_joint,
         ),
     )
-    x_xy.register_new_joint_type(name, joint_model, 1, qd_width=0, overwrite=True)
+    ring.register_new_joint_type(name, joint_model, 1, qd_width=0, overwrite=True)
 
 
 def gp_draw(key, xs, ys=None, length: float = 1.0, noise=0.0, method="svd", **kwargs):

@@ -2,11 +2,10 @@ from typing import NamedTuple, Optional
 
 import jax
 import jax.numpy as jnp
+from ring import algebra
+from ring import algorithms
+from ring import base
 from tree_utils import tree_batch
-
-from x_xy import algebra
-from x_xy import algorithms
-from x_xy import base
 
 
 def _autodetermine_new_parents(lam: list[int], new_anchor: int) -> list[int]:

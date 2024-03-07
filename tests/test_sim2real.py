@@ -2,10 +2,9 @@ from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
-
-import x_xy
-from x_xy import maths
-from x_xy import sim2real
+import ring
+from ring import maths
+from ring import sim2real
 
 
 def test_forward_kinematics_omc():
@@ -42,7 +41,7 @@ def test_forward_kinematics_omc():
             if qinv:
                 qrand, qrand_inv = qrand_inv, qrand
 
-            sys = x_xy.io.load_sys_from_str(sys_str)
+            sys = ring.io.load_sys_from_str(sys_str)
             xs_omc = sim2real.xs_from_raw(sys, omc_data, qinv=qinv, eps_frame=eps_frame)
             t1_omc, t2_omc = sim2real.unzip_xs(sys, xs_omc)
             t1_sys = sys.links.transform1
@@ -124,10 +123,10 @@ def test_forward_kinematics_omc():
 
 
 def test_zip_unzip_scale():
-    for sys in x_xy.io.list_load_examples():
+    for sys in ring.io.list_load_examples():
         print(sys.model_name)
         _, xs = unbatch_gen(
-            x_xy.algorithms.RCMG(
+            ring.algorithms.RCMG(
                 sys, finalize_fn=lambda key, q, x, sys: (q, x)
             ).to_lazy_gen()
         )(

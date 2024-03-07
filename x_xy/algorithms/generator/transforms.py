@@ -4,14 +4,13 @@ import warnings
 import jax
 import jax.numpy as jnp
 import numpy as np
+from ring import base
+from ring import maths
+from ring import utils
+from ring.algorithms import sensors
+from ring.algorithms.generator import pd_control
+from ring.algorithms.generator import types
 import tree_utils
-
-from x_xy import base
-from x_xy import maths
-from x_xy import utils
-from x_xy.algorithms import sensors
-from x_xy.algorithms.generator import pd_control
-from x_xy.algorithms.generator import types
 
 
 class GeneratorTrafoLambda(types.GeneratorTrafo):

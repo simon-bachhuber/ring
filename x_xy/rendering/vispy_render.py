@@ -7,14 +7,13 @@ from typing import Optional, TypeVar
 import jax
 import jax.numpy as jnp
 import numpy as np
+from ring import algebra
+from ring import base
+from ring import maths
 from tree_utils import PyTree
 from tree_utils import tree_batch
 from vispy import scene
 from vispy.scene import MatrixTransform
-
-from x_xy import algebra
-from x_xy import base
-from x_xy import maths
 
 from . import vispy_visuals
 

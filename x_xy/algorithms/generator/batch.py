@@ -6,12 +6,11 @@ import warnings
 import jax
 import jax.numpy as jnp
 import numpy as np
+from ring import utils
+from ring.algorithms.generator import types
 from tqdm import tqdm
 import tree_utils
 from tree_utils import tree_batch
-
-from x_xy import utils
-from x_xy.algorithms.generator import types
 
 
 def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:

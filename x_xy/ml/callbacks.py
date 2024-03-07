@@ -9,18 +9,18 @@ import warnings
 import jax
 import jax.numpy as jnp
 import numpy as np
+import ring
+from ring.ml import base
+from ring.ml import ml_utils
+from ring.ml import training_loop
+from ring.utils import distribute_batchsize
+from ring.utils import expand_batchsize
+from ring.utils import merge_batchsize
+from ring.utils import parse_path
+from ring.utils import pickle_save
 import tree_utils
 
 import wandb
-import x_xy
-from x_xy.ml import base
-from x_xy.ml import ml_utils
-from x_xy.ml import training_loop
-from x_xy.utils import distribute_batchsize
-from x_xy.utils import expand_batchsize
-from x_xy.utils import merge_batchsize
-from x_xy.utils import parse_path
-from x_xy.utils import pickle_save
 
 
 def _build_eval_fn2(
@@ -371,7 +371,7 @@ class TimingKillRunCallback(training_loop.TrainingLoopCallback):
         loggers: list[ml_utils.Logger],
         opt_state,
     ) -> None:
-        runtime = time.time() - x_xy._TRAIN_TIMING_START
+        runtime = time.time() - ring._TRAIN_TIMING_START
         if runtime > self.max_run_time_seconds:
             runtime_h = runtime / 3600
             print(f"Run is killed due to timing. Current runtime is {runtime_h}h.")

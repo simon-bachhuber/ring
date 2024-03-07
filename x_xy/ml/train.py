@@ -5,19 +5,19 @@ from typing import Callable, Optional, Tuple
 import jax
 import jax.numpy as jnp
 import optax
+from ring import maths
+from ring.algorithms.generator import types
+from ring.ml import base as ml_base
+from ring.ml import callbacks as ml_callbacks
+from ring.ml import ml_utils
+from ring.ml import training_loop
+from ring.utils import distribute_batchsize
+from ring.utils import expand_batchsize
+from ring.utils import parse_path
+from ring.utils import pickle_load
 import tree_utils
 
 import wandb
-from x_xy import maths
-from x_xy.algorithms.generator import types
-from x_xy.ml import base as ml_base
-from x_xy.ml import callbacks as ml_callbacks
-from x_xy.ml import ml_utils
-from x_xy.ml import training_loop
-from x_xy.utils import distribute_batchsize
-from x_xy.utils import expand_batchsize
-from x_xy.utils import parse_path
-from x_xy.utils import pickle_load
 
 # (T, N, F) -> Scalar
 LOSS_FN = Callable[[jax.Array, jax.Array], float]

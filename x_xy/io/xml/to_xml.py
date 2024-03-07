@@ -5,9 +5,8 @@ from xml.etree.ElementTree import SubElement
 from xml.etree.ElementTree import tostring
 
 import jax.numpy as jnp
+from ring import base
 from tree_utils import batch_concat
-
-from x_xy import base
 
 from . import abstract
 from .abstract import _to_str

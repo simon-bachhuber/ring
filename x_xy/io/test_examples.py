@@ -1,6 +1,6 @@
-import x_xy
+import ring
 
 
 def test_examples():
-    for example in x_xy.io.list_examples():
-        x_xy.io.load_example(example)
+    for example in ring.io.list_examples():
+        ring.io.load_example(example)

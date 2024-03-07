@@ -4,11 +4,10 @@ import jax
 import jax.numpy as jnp
 import jaxopt
 from jaxopt._src.base import Solver
-
-from x_xy import algebra
-from x_xy import base
-from x_xy import maths
-from x_xy.algorithms import jcalc
+from ring import algebra
+from ring import base
+from ring import maths
+from ring.algorithms import jcalc
 
 
 def forward_kinematics_transforms(

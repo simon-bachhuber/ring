@@ -2,10 +2,9 @@ from xml.etree import ElementTree
 
 import jax
 import numpy as np
-
-from x_xy import base
-from x_xy.algorithms import jcalc
-from x_xy.utils import parse_path
+from ring import base
+from ring.algorithms import jcalc
+from ring.utils import parse_path
 
 from . import abstract
 

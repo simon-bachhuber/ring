@@ -2,10 +2,9 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+from ring import base
+from ring import io
 import tree_utils
-
-from x_xy import base
-from x_xy import io
 
 
 def imu_reference_link_name(imu_link_name: str) -> str:
