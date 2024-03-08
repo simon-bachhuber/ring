@@ -1,14 +1,16 @@
 from functools import partial
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable, Optional
 
 import haiku as hk
 import jax
 import jax.numpy as jnp
+import tree_utils
+
 from ring.maths import safe_normalize
 from ring.ml import base as ml_base
 from ring.utils import pickle_load
-import tree_utils
 
 
 def _scan_sys(lam: list[int], f):
@@ -253,9 +255,9 @@ class RING(ml_base.AbstractFilter):
         return yhat, next_state
 
     @staticmethod
-    def _load_params(params: str | dict | None):
-        assert isinstance(params, (str, dict, type(None)))
-        if isinstance(params, str):
+    def _load_params(params: str | dict | None | Path):
+        assert isinstance(params, (str, dict, type(None), Path))
+        if isinstance(params, (Path, str)):
             return pickle_load(params)
         return params
 

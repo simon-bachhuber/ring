@@ -5,6 +5,7 @@ from typing import Optional
 
 import jax.numpy as jnp
 import numpy as np
+
 from ring import algorithms
 from ring import base
 from ring import exp
@@ -165,10 +166,10 @@ _mae_metrices = dict(
 
 
 def benchmark(
-    filter: ml.AbstractFilter,
     imtp: IMTP,
     exp_id: str,
     motion_start: str,
+    filter: Optional[ml.AbstractFilter] = None,
     motion_stop: Optional[str] = None,
     warmup: float = 0.0,
     return_cb: bool = False,
@@ -176,6 +177,9 @@ def benchmark(
     "`warmup` is in seconds."
 
     X, y, xs, xs_noimu = _build_Xy_xs_xsnoimu(exp_id, motion_start, motion_stop, imtp)
+
+    if filter is None:
+        return X, y, xs, xs_noimu
 
     if return_cb:
         return ml.callbacks.EvalXyTrainingLoopCallback(

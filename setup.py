@@ -51,7 +51,7 @@ setuptools.setup(
             # parameters and datasets are now downloaded on-demand
             # but could exclude with exludes = ["**/exp/*", "**/pretrained/*"]
             package_dir="src/ring",
-            patterns=["*.xml", "*.yaml", "*.json"],
+            patterns=["*.xml", "*.yaml", "*.json", "*.pickle"],
             excludes=[],
         ),
     },
@@ -73,6 +73,7 @@ setuptools.setup(
         "pyyaml",
         "qmt",
         "scipy",
+        "mediapy",
     ],
     extras_require={
         "dev": dev_requires,

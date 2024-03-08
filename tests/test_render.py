@@ -1,4 +1,5 @@
 import jax
+
 import ring
 
 
@@ -11,6 +12,9 @@ def test_mujoco_render():
     for sys in ring.io.list_load_examples():
         print(sys.model_name)
         sys.render(ring.State.create(sys).x, show_pbar=False, backend="mujoco")
+
+
+WRITE_IMAGE = False
 
 
 def test_shapes():
@@ -37,4 +41,5 @@ def test_shapes():
 
     for backend in ["mujoco", "vispy"]:
         frame = sys.render(state.x, show_pbar=False, backend=backend)[0]
-        mediapy.write_image(f"docs/img/example_{backend}.png", frame)
+        if WRITE_IMAGE:
+            mediapy.write_image(f"docs/img/example_{backend}.png", frame)

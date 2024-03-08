@@ -1,6 +1,6 @@
-site_name: x_xy
-site_url: https://x_xy.com/
-site_description: The documentation for the x_xy software library.
+site_name: ring
+site_url: https://ring.com/
+site_description: The documentation for the ring software library.
 
 nav:
   - 'index.md'
@@ -9,21 +9,10 @@ nav:
     - 'notebooks/batched_simulation.ipynb'
     - 'notebooks/control.ipynb'
     - 'notebooks/custom_joint_type.ipynb'
-    - 'notebooks/morph_system.ipynb'
     - 'notebooks/experimental_data.ipynb'
     - 'notebooks/error_quaternion.ipynb'
-    - 'notebooks/imu_modeling.ipynb'
     - 'notebooks/machine_learning.ipynb'
-    - 'notebooks/knee_joint_translational_dof.ipynb'
-  - API (x_xy): 
-    - x_xy: api/x_xy.md
-    - x_xy.maths: api/maths.md
-  - API (from x_xy.subpkgs import ...):
-    - sys_composer: api/subpkgs/sys_composer.md
-    - sim2real: api/subpkgs/sim2real.md
-    - exp: api/subpkgs/exp.md
-    - omc: api/subpkgs/omc.md
-    - ml: api/subpkgs/ml.md
+  - api.md
 
 theme:
     name: material

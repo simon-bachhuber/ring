@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Callable, Optional, Sequence, Union
 
 from flax import struct
@@ -6,10 +7,11 @@ from jax.core import Tracer
 import jax.numpy as jnp
 from jax.tree_util import tree_map
 import numpy as np
+import tree_utils as tu
+
 import ring
 from ring import maths
 from ring import spatial
-import tree_utils as tu
 
 Scalar = jax.Array
 Vector = jax.Array
@@ -747,6 +749,14 @@ class System(_Base):
     def to_xml(self, path: str) -> None:
         ring.io.save_sys_to_xml(self, path)
 
+    @classmethod
+    def create(cls, path_or_str: str, seed: int = 1) -> "System":
+        path = Path(path_or_str).with_suffix(".xml")
+        if path.exists():
+            return cls.from_xml(path, seed=seed)
+        else:
+            return cls.from_str(path_or_str)
+
     def coordinate_vector_to_q(
         self,
         q: jax.Array,
@@ -977,6 +987,7 @@ class State(_Base):
         sys: System,
         q: Optional[jax.Array] = None,
         qd: Optional[jax.Array] = None,
+        x: Optional[Transform] = None,
         key: Optional[jax.Array] = None,
         custom_joints: dict[str, Callable] = {},
     ):
@@ -1019,5 +1030,7 @@ class State(_Base):
         if qd is None:
             qd = jnp.zeros((sys.qd_size(),))
 
-        x = Transform.zero((sys.num_links(),))
+        if x is None:
+            x = Transform.zero((sys.num_links(),))
+
         return cls(q, qd, x, jnp.diag(jnp.ones((sys.qd_size(),))))

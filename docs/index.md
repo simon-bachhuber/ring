@@ -2,34 +2,25 @@
 <img src="https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/docs/img/icon.svg" height="200" />
 </p>
 
-# `x_xy_v2`
+# Recurrent Inertial Graph-based Estimator (RING)
 <img src="https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/docs/img/coverage_badge.svg" height="20" />
 
 ## Installation
 
-Supports `Python=3.10/3.11` (tested).
+Supports `Python=3.10/3.11/3.12` (tested).
 
 Install with `pip` using
 
-`pip install 'x_xy[all] @ git+https://github.com/SimiPixel/x_xy_v2'`
+`pip install 'ring @ git+https://github.com/SimiPixel/ring'`
 
 Typically, this will install `jax` as cpu-only version. Afterwards, gpu-enabled version can be installed with
 ```bash
 pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
 
-or with (if NVIDIA driver is a little older)
-```bash
-pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-```
-
-### Dev Install
-
-`pip install 'x_xy[dev] @ git+https://github.com/SimiPixel/x_xy_v2'`
-
 ## Documentation
 
-Available [here](https://simipixel.github.io/x_xy_v2/).
+Available [here](https://simipixel.github.io/ring/).
 
 ### Known fixes
 
