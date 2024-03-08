@@ -9,6 +9,8 @@ import warnings
 import jax
 import jax.numpy as jnp
 import numpy as np
+import tree_utils
+
 import ring
 from ring.ml import base
 from ring.ml import ml_utils
@@ -18,8 +20,6 @@ from ring.utils import expand_batchsize
 from ring.utils import merge_batchsize
 from ring.utils import parse_path
 from ring.utils import pickle_save
-import tree_utils
-
 import wandb
 
 
@@ -68,7 +68,7 @@ class EvalXyTrainingLoopCallback(training_loop.TrainingLoopCallback):
         eval_metrices: dict[str, Callable],
         X: jax.Array,
         y: jax.Array,
-        lam: list[int] | None,
+        lam: tuple[int] | None,
         metric_identifier: str,
         eval_every: int = 5,
         link_names: Optional[list[str]] = None,
@@ -83,7 +83,7 @@ class EvalXyTrainingLoopCallback(training_loop.TrainingLoopCallback):
             filter,
             X,
             y,
-            tuple(lam) if lam is not None else None,
+            lam,
             link_names,
         )
         self.eval_every = eval_every

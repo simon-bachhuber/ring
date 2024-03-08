@@ -70,13 +70,13 @@ class IMTP:
 
     def sys_noimu(self, exp_id: str):
         sys_noimu, imu_attachment = self.sys(exp_id).make_sys_noimu()
-        assert sys_noimu.link_parents == self.lam
+        assert tuple(sys_noimu.link_parents) == self.lam
         assert sys_noimu.link_names == self.segments
         return sys_noimu, imu_attachment
 
     @property
-    def lam(self):
-        return list(range(-1, len(self.segments) - 1))
+    def lam(self) -> tuple:
+        return tuple(range(-1, len(self.segments) - 1))
 
     @property
     def N(self):
@@ -192,7 +192,7 @@ def benchmark(
             link_names=imtp.segments,
         )
 
-    yhat, _ = filter.apply(X=X, y=y, lam=tuple(imtp.lam))
+    yhat, _ = filter.apply(X=X, y=y, lam=imtp.lam)
 
     warmup = int(warmup * imtp.hz)
     errors = dict()
