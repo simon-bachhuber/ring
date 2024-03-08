@@ -3,10 +3,11 @@ from abc import abstractmethod
 
 import jax
 import jax.numpy as jnp
+import tree_utils
+
 import ring
 from ring.utils import pickle_load
 from ring.utils import pickle_save
-import tree_utils
 
 
 def _to_3d(tree):
@@ -207,9 +208,10 @@ class GroundTruthHeading_FilterWrapper(AbstractFilterWrapper):
 
     @staticmethod
     def transfer_ground_truth_heading(lam, y, yhat) -> None:
-        if y is None or lam is None:
+        if y is None:
             return yhat
 
+        assert lam is not None
         yhat = jnp.array(yhat)
         for i, p in enumerate(lam):
             if p == -1:
