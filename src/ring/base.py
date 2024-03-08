@@ -752,7 +752,15 @@ class System(_Base):
     @classmethod
     def create(cls, path_or_str: str, seed: int = 1) -> "System":
         path = Path(path_or_str).with_suffix(".xml")
-        if path.exists():
+
+        exists = False
+        try:
+            exists = path.exists()
+        except OSError:
+            # file length too length
+            pass
+
+        if exists:
             return cls.from_xml(path, seed=seed)
         else:
             return cls.from_str(path_or_str)
