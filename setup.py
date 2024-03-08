@@ -73,7 +73,6 @@ setuptools.setup(
         "pyyaml",
         "qmt",
         "scipy",
-        "mediapy",
     ],
     extras_require={
         "dev": dev_requires,
