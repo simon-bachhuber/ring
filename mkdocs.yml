@@ -12,6 +12,7 @@ nav:
     - 'notebooks/experimental_data.ipynb'
     - 'notebooks/error_quaternion.ipynb'
     - 'notebooks/machine_learning.ipynb'
+    - 'notebooks/visualisation.ipynb'
   - api.md
 
 theme:
