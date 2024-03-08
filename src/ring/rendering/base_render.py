@@ -3,13 +3,14 @@ from typing import Optional
 import jax
 import jax.numpy as jnp
 import numpy as np
+import tqdm
+
 from ring import algebra
 from ring import base
 from ring import maths
 from ring import sim2real
 from ring import utils
 from ring.algorithms import kinematics
-import tqdm
 
 _rgbas = {
     "self": (0.7, 0.5, 0.1, 1.0),
@@ -134,7 +135,7 @@ def render(
 def render_prediction(
     sys: base.System,
     xs: base.Transform | list[base.Transform],
-    yhat: dict,
+    yhat: dict | jax.Array | np.ndarray,
     stepframe: int = 1,
     # by default we don't predict the global rotation
     transparent_segment_to_root: bool = True,
@@ -147,10 +148,19 @@ def render_prediction(
 
     sys_noimu, _ = sys.make_sys_noimu()
 
+    if isinstance(yhat, (np.ndarray, jax.Array)):
+        yhat = {name: yhat[..., i, :] for i, name in enumerate(sys_noimu.link_names)}
+
     xs_noimu = sim2real.match_xs(sys_noimu, xs, sys)
 
     # `yhat` are child-to-parent transforms, but we need parent-to-child
-    transform2hat_rot = jax.tree_map(lambda quat: maths.quat_inv(quat), yhat)
+    # but not for those that connect to root, those are already parent-to-child
+    transform2hat_rot = {}
+    for name, p in zip(sys_noimu.link_names, sys_noimu.link_parents):
+        if p == -1:
+            transform2hat_rot[name] = yhat[name]
+        else:
+            transform2hat_rot[name] = maths.quat_inv(yhat[name])
 
     transform1, transform2 = sim2real.unzip_xs(sys_noimu, xs_noimu)
 

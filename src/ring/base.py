@@ -682,7 +682,7 @@ class System(_Base):
     def render_prediction(
         self,
         xs: Transform | list[Transform],
-        yhat: dict,
+        yhat: dict | jax.Array | np.ndarray,
         stepframe: int = 1,
         # by default we don't predict the global rotation
         transparent_segment_to_root: bool = True,
