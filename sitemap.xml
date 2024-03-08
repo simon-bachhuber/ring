@@ -1,118 +1,88 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://x_xy.com/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/api/maths/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/api/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/api/x_xy/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/batched_simulation/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/api/subpkgs/exp/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/control/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/api/subpkgs/ml/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/custom_joint_type/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/api/subpkgs/omc/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/error_quaternion/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/api/subpkgs/sim2real/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/experimental_data/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/api/subpkgs/sys_composer/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/getting_started/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/notebooks/batched_simulation/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/imu_modeling/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/notebooks/control/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/knee_joint_translational_dof/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/notebooks/custom_joint_type/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/machine_learning/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/notebooks/custom_joint_type_dynamics/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/magnetometer_modeling/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/notebooks/error_quaternion/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/morph_system/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/notebooks/experimental_data/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/motion_artifact_rejection/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/notebooks/getting_started/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/notebooks/visualisation/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/notebooks/imu_modeling/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/prism/ss_23_marcel_thomas/notebook/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://x_xy.com/notebooks/knee_joint_translational_dof/</loc>
-         <lastmod>2023-11-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://x_xy.com/notebooks/machine_learning/</loc>
-         <lastmod>2023-11-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://x_xy.com/notebooks/magnetometer_modeling/</loc>
-         <lastmod>2023-11-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://x_xy.com/notebooks/morph_system/</loc>
-         <lastmod>2023-11-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://x_xy.com/notebooks/motion_artifact_rejection/</loc>
-         <lastmod>2023-11-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://x_xy.com/prism/ss_23_marcel_thomas/notebook/</loc>
-         <lastmod>2023-11-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://x_xy.com/prism/ss_23_moritz/notebook/</loc>
-         <lastmod>2023-11-24</lastmod>
+         <loc>https://ring.com/prism/ss_23_moritz/notebook/</loc>
+         <lastmod>2024-03-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

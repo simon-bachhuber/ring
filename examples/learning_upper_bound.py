@@ -75,7 +75,7 @@ def _make_rnno_fn(args):
 
 
 def pipeline_make_generator(
-    configs: x_xy.RCMG_Config | list[x_xy.RCMG_Config],
+    configs: x_xy.MotionConfig | list[x_xy.MotionConfig],
     bs: int,
     size: int,
     sys_data: x_xy.System | list[x_xy.System],
@@ -294,13 +294,13 @@ def main():
     register_rr_imp_joint()
 
     configs = {
-        "standard": x_xy.RCMG_Config(
+        "standard": x_xy.MotionConfig(
             randomized_interpolation_angle=True,
             cdf_bins_min=1,
             cdf_bins_max=5,
             cor=True,
         ),
-        "exp-fast": x_xy.RCMG_Config(
+        "exp-fast": x_xy.MotionConfig(
             t_min=0.4,
             t_max=1.1,
             dang_max=jnp.deg2rad(180),
@@ -314,7 +314,7 @@ def main():
             cdf_bins_max=3,
             cor=True,
         ),
-        "exp-slow": x_xy.RCMG_Config(
+        "exp-slow": x_xy.MotionConfig(
             t_min=0.75,
             t_max=3.0,
             dang_min=0.1,
