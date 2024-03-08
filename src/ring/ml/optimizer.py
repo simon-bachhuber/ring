@@ -21,6 +21,7 @@ def make_optimizer(
     skip_large_update_warmup: int = 300,
     inner_opt=optax.lamb,
     cos_decay_twice: bool = False,
+    scale_grads: Optional[float] = None,
     **inner_opt_kwargs,
 ):
     steps = n_steps_per_episode * n_episodes
@@ -37,9 +38,16 @@ def make_optimizer(
         schedule = optax.cosine_decay_schedule(lr, steps, 1e-7)
 
     optimizer = optax.chain(
-        optax.adaptive_grad_clip(adap_clip)
-        if adap_clip is not None
-        else optax.identity(),
+        (
+            optax.scale_by_learning_rate(scale_grads, flip_sign=False)
+            if scale_grads is not None
+            else optax.identity()
+        ),
+        (
+            optax.adaptive_grad_clip(adap_clip)
+            if adap_clip is not None
+            else optax.identity()
+        ),
         optax.clip_by_global_norm(0.2) if glob_clip is not None else optax.identity(),
         inner_opt(schedule, **inner_opt_kwargs),
     )
