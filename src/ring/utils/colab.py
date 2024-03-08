@@ -2,12 +2,14 @@ import os
 import subprocess
 
 
-def setup_colab_env():
-    "Copied and modified from the getting-started-notebook of mujoco."
+def setup_colab_env() -> bool:
+    """Copied and modified from the getting-started-notebook of mujoco.
+    Returns true if there is a colab context, else false.
+    """
     try:
         from google.colab import files  # noqa: F401
     except ImportError:
-        return
+        return False
 
     if subprocess.run("nvidia-smi", shell=True).returncode:
         raise RuntimeError(
@@ -39,3 +41,8 @@ def setup_colab_env():
     # install mediapy
     os.system("command -v ffmpeg >/dev/null || (apt update && apt install -y ffmpeg)")
     os.system("pip install -q mediapy")
+
+    # install mujoco
+    os.system("pip install -q mujoco")
+
+    return True
