@@ -1,9 +1,9 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/docs/img/icon.svg" height="200" />
+<img src="https://raw.githubusercontent.com/SimiPixel/ring/main/docs/img/icon.svg" height="200" />
 </p>
 
 # Recurrent Inertial Graph-based Estimator (RING)
-<img src="https://raw.githubusercontent.com/SimiPixel/x_xy_v2/main/docs/img/coverage_badge.svg" height="20" />
+<img src="https://raw.githubusercontent.com/SimiPixel/ring/main/docs/img/coverage_badge.svg" height="20" />
 
 ## Installation
 
@@ -37,7 +37,7 @@ os.environ["MUJOCO_GL"] = "egl"
 
 ## Publications
 
-The following publications utilize this software library, and refer to it as the *Random Chain Motion Generator (RCMG)* (more specifically the function `x_xy.build_generator`):
+The following publications utilize this software library, and refer to it as the *Random Chain Motion Generator (RCMG)* (more specifically the function `ring.RCMG`):
 
 - [*RNN-based Observability Analysis for Magnetometer-Free Sparse Inertial Motion Tracking*](https://ieeexplore.ieee.org/document/9841375)
 - [*Plug-and-Play Sparse Inertial Motion Tracking With Sim-to-Real Transfer*](https://ieeexplore.ieee.org/document/10225275)
