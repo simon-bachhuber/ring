@@ -1581,7 +1581,7 @@
     <span class="k">def</span> <span class="nf">render_prediction</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Transform</span><span class="p">],</span>
-        <span class="n">yhat</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">yhat</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">stepframe</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="c1"># by default we don&#39;t predict the global rotation</span>
         <span class="n">transparent_segment_to_root</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -2232,7 +2232,7 @@ Currently it does:
 <span class="normal">694</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">render_prediction</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Transform</span><span class="p">],</span>
-    <span class="n">yhat</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">yhat</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">stepframe</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="c1"># by default we don&#39;t predict the global rotation</span>
     <span class="n">transparent_segment_to_root</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
