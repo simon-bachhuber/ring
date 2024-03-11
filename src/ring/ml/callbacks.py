@@ -139,7 +139,8 @@ class AverageMetricesTLCB(training_loop.TrainingLoopCallback):
             value += value_zoom_in
             N += 1
 
-        metrices.update({self.name: value / N})
+        if N > 0:
+            metrices.update({self.name: value / N})
 
 
 class QueueElement(NamedTuple):
