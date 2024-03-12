@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import jax
 import jax.numpy as jnp
+
 import ring
 from ring import maths
 from ring.algorithms._random import random_angle_over_time
@@ -36,6 +38,7 @@ class SuntayConfig:
     external_pos_max: float = 0.0
     num_points_gps: int = 50
     large_abs_values_of_gps: float = 1 / 4
+    mconfig: Optional[ring.MotionConfig] = None
 
 
 def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
@@ -189,6 +192,10 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
         _: jax.Array,
     ) -> jax.Array:
         key_value, consume = jax.random.split(key_value)
+
+        if sconfig.mconfig is not None:
+            mconfig = sconfig.mconfig
+
         ANG_0 = jax.random.uniform(
             consume, minval=mconfig.ang0_min, maxval=mconfig.ang0_max
         )
