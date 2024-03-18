@@ -365,6 +365,7 @@ class MaxCoordOMC(_Base):
 
 Q_WIDTHS = {
     "free": 7,
+    "free_2d": 3,
     "frozen": 0,
     "spherical": 4,
     "p3d": 3,
@@ -381,6 +382,7 @@ Q_WIDTHS = {
 }
 QD_WIDTHS = {
     "free": 6,
+    "free_2d": 3,
     "frozen": 0,
     "spherical": 3,
     "p3d": 3,

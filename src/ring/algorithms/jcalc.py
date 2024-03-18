@@ -6,13 +6,14 @@ from typing import Any, Callable, get_type_hints, Optional
 
 import jax
 import jax.numpy as jnp
+import tree_utils
+
 from ring import algebra
 from ring import base
 from ring import maths
 from ring.algorithms import _random
 from ring.algorithms._random import _to_float
 from ring.algorithms._random import TimeDependentFloat
-import tree_utils
 
 
 @dataclass
@@ -253,6 +254,13 @@ def _free_transform(q, _):
     return base.Transform(pos, rot)
 
 
+def _free_2d_transform(q, _):
+    angle_x, pos_yz = q[0], q[1:]
+    rot = maths.quat_rot_axis(maths.x_unit_vector, angle_x)
+    pos = jnp.concatenate((jnp.array([0.0]), pos_yz))
+    return base.Transform(pos, rot)
+
+
 def _rxyz_transform(q, _, axis):
     q = jnp.squeeze(q)
     rot = maths.quat_rot_axis(axis, q)
@@ -465,6 +473,27 @@ def _draw_free(
     return jnp.concatenate((q, pos), axis=1)
 
 
+def _draw_free_2d(
+    config: MotionConfig,
+    key_t: jax.random.PRNGKey,
+    key_value: jax.random.PRNGKey,
+    dt: float,
+    __: jax.Array,
+) -> jax.Array:
+    key_value1, key_value2 = jax.random.split(key_value)
+    angle_x = _draw_rxyz(
+        config,
+        key_t,
+        key_value1,
+        dt,
+        None,
+        enable_range_of_motion=False,
+        free_spherical=True,
+    )[:, None]
+    pos_yz = _draw_p3d(config, None, key_value2, dt, None)[:, :2]
+    return jnp.concatenate((angle_x, pos_yz), axis=1)
+
+
 def _draw_frozen(config: MotionConfig, _, __, dt: float, ___) -> jax.Array:
     N = int(config.T / dt)
     return jnp.zeros((N, 0))
@@ -521,6 +550,15 @@ def _p_control_term_free(q, q_ref):
     )
 
 
+def _p_control_term_free_2d(q, q_ref):
+    return jnp.concatenate(
+        (
+            _p_control_term_rxyz(q[:1], q_ref[:1]),
+            (q_ref[1:] - q[1:]),
+        )
+    )
+
+
 def _p_control_term_cor(q, q_ref):
     return _p_control_term_free(q, q_ref)
 
@@ -531,8 +569,12 @@ def _qd_from_q_free(qs, dt):
     return jnp.hstack((qd_quat, qd_pos))
 
 
-def _inv_kin_preprocess_free_spherical_cor(q):
+def _coordinate_vector_to_q_free_spherical_cor(q):
     return q.at[:4].set(maths.safe_normalize(q[:4]))
+
+
+def _coordinate_vector_to_q_free_2d(q):
+    return q.at[0].set(maths.wrap_to_pi(q[0]))
 
 
 _str2idx = {"x": slice(0, 1), "y": slice(1, 2), "z": slice(2, 3)}
@@ -565,6 +607,11 @@ def _inv_kin_pxyz_factory(xyz: str):
     return _inv_kin_pxyz
 
 
+def _inv_kin_free_2d(x: base.Transform, _) -> jax.Array:
+    angle_x = _inv_kin_rxyz_factory("x")
+    return jnp.concatenate((angle_x(x), x.pos[1:]))
+
+
 _joint_types = {
     "free": JointModel(
         _free_transform,
@@ -572,8 +619,17 @@ _joint_types = {
         _draw_free,
         _p_control_term_free,
         _qd_from_q_free,
-        _inv_kin_preprocess_free_spherical_cor,
-        lambda x, _: jnp.concatenate((x.rot, x.pos)),
+        coordinate_vector_to_q=_coordinate_vector_to_q_free_spherical_cor,
+        inv_kin=lambda x, _: jnp.concatenate((x.rot, x.pos)),
+    ),
+    "free_2d": JointModel(
+        _free_2d_transform,
+        [mrx, mpy, mpz],
+        _draw_free_2d,
+        _p_control_term_free_2d,
+        _qd_from_q_cartesian,
+        coordinate_vector_to_q=_coordinate_vector_to_q_free_2d,
+        inv_kin=_inv_kin_free_2d,
     ),
     "frozen": JointModel(
         _frozen_transform,
@@ -590,7 +646,7 @@ _joint_types = {
         _draw_spherical,
         _p_control_term_spherical,
         _qd_from_q_quaternion,
-        _inv_kin_preprocess_free_spherical_cor,
+        _coordinate_vector_to_q_free_spherical_cor,
         lambda x, _: x.rot,
     ),
     "p3d": JointModel(
@@ -608,7 +664,7 @@ _joint_types = {
         _draw_cor,
         _p_control_term_cor,
         _qd_from_q_free,
-        _inv_kin_preprocess_free_spherical_cor,
+        _coordinate_vector_to_q_free_spherical_cor,
     ),
     "rx": JointModel(
         lambda q, _: _rxyz_transform(q, _, jnp.array([1.0, 0, 0])),

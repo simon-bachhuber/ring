@@ -4,13 +4,14 @@ import warnings
 import jax
 import jax.numpy as jnp
 import numpy as np
+import tree_utils
+
 from ring import base
 from ring import maths
 from ring import utils
 from ring.algorithms import sensors
 from ring.algorithms.generator import pd_control
 from ring.algorithms.generator import types
-import tree_utils
 
 
 class GeneratorTrafoLambda(types.GeneratorTrafo):
@@ -261,6 +262,7 @@ def _imu_data(key, xs, sys_xs, **kwargs) -> dict:
 P_rot, P_pos = 100.0, 250.0
 _P_gains = {
     "free": jnp.array(3 * [P_rot] + 3 * [P_pos]),
+    "free_2d": jnp.array(1 * [P_rot] + 2 * [P_pos]),
     "px": jnp.array([P_pos]),
     "py": jnp.array([P_pos]),
     "pz": jnp.array([P_pos]),
