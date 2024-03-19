@@ -73,7 +73,10 @@ class EvalXyTrainingLoopCallback(training_loop.TrainingLoopCallback):
         eval_every: int = 5,
         link_names: Optional[list[str]] = None,
     ):
-        "X, y can be batched or unbatched."
+        """X, y can be batched or unbatched.
+        Args:
+            eval_metrices: "(B, T, 1) -> () and links N are vmapped."
+        """
         if X.ndim == 3:
             X, y = X[None], y[None]
         B = X.shape[0]
