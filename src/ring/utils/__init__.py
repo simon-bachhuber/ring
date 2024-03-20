@@ -10,10 +10,8 @@ from .hdf5 import save as hdf5_save
 from .normalizer import make_normalizer_from_generator
 from .normalizer import Normalizer
 from .path import parse_path
-from .utils import delete_download_cache
 from .utils import dict_to_nested
 from .utils import dict_union
-from .utils import download_from_repo
 from .utils import import_lib
 from .utils import pickle_load
 from .utils import pickle_save
