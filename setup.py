@@ -45,7 +45,7 @@ setuptools.setup(
     name="ring",
     packages=setuptools.find_packages(where="src"),
     package_dir={"": "src"},
-    version="1.0.2",
+    version="1.1.0",
     package_data={
         "ring": find_data_files(
             # parameters and datasets are now downloaded on-demand
