@@ -1,7 +1,6 @@
 from . import algebra
 from . import algorithms
 from . import base
-from . import exp
 from . import io
 from . import maths
 from . import ml

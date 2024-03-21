@@ -1,5 +1,6 @@
+from _compat import _load_sys
+
 import ring
-from ring import exp
 
 
 def _load_1Seg2Seg3Seg4Seg_system(
@@ -36,7 +37,7 @@ def _load_1Seg2Seg3Seg4Seg_system(
 
     def load(anchor, delete):
         sys = (
-            exp.load_sys("S_06")
+            _load_sys(1)
             .morph_system(new_anchor=anchor)
             .delete_system(delete, strict=False)
         )
@@ -86,8 +87,8 @@ def _load_1Seg2Seg3Seg4Seg_system(
 def _new_load_standard_system():
     "Generates the system `standard_sys.xml` and `standard_sys_rr_imp.xml"
     sys_4Seg: ring.System = (
-        exp.load_sys(
-            "S_06",
+        _load_sys(
+            1,
         )
         .morph_system(new_anchor="seg5")
         .delete_system("seg1")
