@@ -177,8 +177,8 @@ class LPF_FilterWrapper(AbstractFilterWrapper):
                     lambda q, samp_freq: ring.maths.quat_lowpassfilter(
                         q, samp_freq=samp_freq, **self._kwargs
                     ),
-                    in_axes=(2, None),
-                    out_axes=2,
+                    in_axes=(1, None),
+                    out_axes=1,
                 )
             )(yhat, samp_freq)
         else:
