@@ -1,43 +1,88 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, NamedTuple, Optional
 
+import haiku as hk
 import jax
 import jax.numpy as jnp
+from tree_utils import PyTree
 
 import ring
 from ring import maths
 from ring.algorithms._random import random_angle_over_time
+
+Params = PyTree
+
+
+class DrawnFnPair(NamedTuple):
+    # (key) -> tree
+    init: Callable[[jax.Array], Params]
+    # (params, q) -> (1,)
+    apply: Callable[[Params, jax.Array], jax.Array]
+
+
+# (flexions, min, max) -> DrawnFnPair
+DrawnFnPairFactory = Callable[[jax.Array, float, float], DrawnFnPair]
 
 
 def deg2rad(deg: float):
     return (deg / 180.0) * 3.1415926535
 
 
-_DEFAULT_LENGTH_RAD = deg2rad(80.0)
+def GP_DrawFnPair(
+    length_scale: float = 1.4, large_abs_values_of_gps: float = 0.25
+) -> DrawnFnPairFactory:
+
+    def factory(xs, mn, mx):
+        def init(key):
+            return {
+                "xs": xs,
+                "ys": _gp_draw_and_rom(
+                    key=key,
+                    xs=xs,
+                    ys=None,
+                    length_scale=length_scale,
+                    mn=mn,
+                    mx=mx,
+                    amin=-large_abs_values_of_gps,
+                    amax=large_abs_values_of_gps,
+                ),
+            }
+
+        def apply(params, q):
+            return jnp.interp(q, params["xs"], params["ys"])
+
+        return DrawnFnPair(init, apply)
+
+    return factory
 
 
 @dataclass
 class SuntayConfig:
     flexion_rot_min: float = -deg2rad(5.0)
     flexion_rot_max: float = deg2rad(95.0)
-    flexion_pos_length_rad: float = _DEFAULT_LENGTH_RAD
+    flexion_rot_restrict_method: str = "minmax"
+    ###
     flexion_pos_min: float = -0.015
     flexion_pos_max: float = 0.015
-    flexion_restrict_method: str = "minmax"
-    abduction_rot_length_rad: float = _DEFAULT_LENGTH_RAD
+    flexion_pos_factory: DrawnFnPairFactory = GP_DrawFnPair()
+    ###
     abduction_rot_min: float = deg2rad(-4)
     abduction_rot_max: float = deg2rad(4)
-    abduction_pos_length_rad: float = _DEFAULT_LENGTH_RAD
+    abduction_rot_factory: DrawnFnPairFactory = GP_DrawFnPair()
+    ###
     abduction_pos_min: float = -0.015
     abduction_pos_max: float = 0.015
-    external_rot_length_rad: float = _DEFAULT_LENGTH_RAD
+    abduction_pos_factory: DrawnFnPairFactory = GP_DrawFnPair()
+    ###
     external_rot_min: float = deg2rad(-10)
     external_rot_max: float = deg2rad(10)
-    external_pos_length_rad: float = _DEFAULT_LENGTH_RAD
+    external_rot_factory: DrawnFnPairFactory = GP_DrawFnPair()
+    ###
     external_pos_min: float = -0.06
     external_pos_max: float = 0.0
-    num_points_gps: int = 50
-    large_abs_values_of_gps: float = 1 / 4
+    external_pos_factory: DrawnFnPairFactory = GP_DrawFnPair()
+    ###
+    num_points: int = 50
     mconfig: Optional[ring.MotionConfig] = None
 
 
@@ -45,13 +90,23 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
     """Ref to 'E.S. Grood and W.J. Suntay' paper"""
 
     flexion_xs = jnp.linspace(
-        sconfig.flexion_rot_min, sconfig.flexion_rot_max, num=sconfig.num_points_gps
+        sconfig.flexion_rot_min, sconfig.flexion_rot_max, num=sconfig.num_points
     )
 
-    def _q_nonflexion(q_flexion, params):
-        nonflexion_ys = params
-        nonflexion_q = jnp.interp(q_flexion, flexion_xs, nonflexion_ys)
-        return nonflexion_q
+    draw_fn_pairs = {}
+    for config_name, params_name in zip(
+        [
+            "flexion_pos",
+            "abduction_rot",
+            "abduction_pos",
+            "external_rot",
+            "external_pos",
+        ],
+        ["ys_S1", "ys_beta", "ys_S2", "ys_gamma", "ys_S3"],
+    ):
+        get = lambda key: getattr(sconfig, config_name + "_" + key)
+        factory = get("factory")
+        draw_fn_pairs[params_name] = factory(flexion_xs, get("min"), get("max"))
 
     def _suntay_rotation_matrix_R_transpose_eq26(alpha, beta, gamma):
         sin_alp, sin_bet, sin_gam = jnp.sin(alpha), jnp.sin(beta), jnp.sin(gamma)
@@ -91,15 +146,17 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
         # (1,) -> (,)
         q_flexion = q_flexion[0]
 
-        S = jnp.stack(
-            [_q_nonflexion(q_flexion, params[f"ys_S{i}"]) for i in range(1, 4)]
-        )
+        S_123 = []
+        for i in range(1, 4):
+            key = f"ys_S{i}"
+            S_123.append(draw_fn_pairs[key].apply(params[key], q_flexion))
+        S = jnp.stack(S_123)
         # table 2 of suntay paper
         alpha = q_flexion
         # note the minus sign, because in config we specify `abduction` not `adduction`
-        adduction = -_q_nonflexion(q_flexion, params["ys_beta"])
+        adduction = -draw_fn_pairs["ys_beta"].apply(params["ys_beta"], q_flexion)
         beta = jnp.pi / 2 + adduction
-        gamma = _q_nonflexion(q_flexion, params["ys_gamma"])
+        gamma = draw_fn_pairs["ys_gamma"].apply(params["ys_gamma"], q_flexion)
         return alpha, beta, gamma, S
 
     def _utils_find_suntay_joint(sys: ring.System) -> str:
@@ -155,32 +212,11 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
 
         return ring.Transform.create(pos=H, rot=q_fem_tib)
 
-    def _draw_and_rom(key, ys, length, mn, mx):
-        randomized_ys = gp_draw(key, flexion_xs, ys, length)
-        amin, amax = -sconfig.large_abs_values_of_gps, sconfig.large_abs_values_of_gps
-        if ys is not None:
-            amin += jnp.min(ys)
-            amax += jnp.max(ys)
-        return restrict(randomized_ys, mn, mx, amin, amax)
-
     def _init_joint_params_suntay(key):
         params = dict()
-        for config_name, params_name in zip(
-            [
-                "flexion_pos",
-                "abduction_rot",
-                "abduction_pos",
-                "external_rot",
-                "external_pos",
-            ],
-            ["ys_S1", "ys_beta", "ys_S2", "ys_gamma", "ys_S3"],
-        ):
+        for params_name, draw_fn_pair in draw_fn_pairs.items():
             key, consume = jax.random.split(key)
-            # TODO, ys=None!
-            get = lambda cnfkey: getattr(sconfig, config_name + cnfkey)
-            params[params_name] = _draw_and_rom(
-                consume, None, get("_length_rad"), get("_min"), get("_max")
-            )
+            params[params_name] = draw_fn_pair.init(consume)
 
         return params
 
@@ -228,7 +264,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
             sconfig.flexion_rot_max,
             -jnp.pi,
             jnp.pi,
-            method=sconfig.flexion_restrict_method,
+            method=sconfig.flexion_rot_restrict_method,
         )
 
     joint_model = ring.JointModel(
@@ -243,7 +279,58 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
     ring.register_new_joint_type(name, joint_model, 1, qd_width=0, overwrite=True)
 
 
-def gp_draw(key, xs, ys=None, length: float = 1.0, noise=0.0, method="svd", **kwargs):
+def MLP_DrawnFnPair(center: bool = False) -> DrawnFnPairFactory:
+
+    def factory(xs, mn, mx):
+
+        flexion_mn = jnp.min(xs)
+        flexion_mx = jnp.max(xs)
+
+        @hk.without_apply_rng
+        @hk.transform
+        def mlp(x):
+            # normalize the x input; [0, 1]
+            x = (x + flexion_mn) / (flexion_mx - flexion_mn)
+            # center the x input; [-0.5, 0.5]
+            x = x - 0.5
+            net = hk.nets.MLP(
+                [10, 5, 1],
+                activation=jnp.tanh,
+                w_init=hk.initializers.RandomNormal(),
+            )
+            return net(x)
+
+        example_q = jnp.zeros((1,))
+
+        def init(key):
+            return mlp.init(key, example_q)
+
+        def _apply(params, q):
+            q = q[None]
+            return jnp.squeeze(_shift_inv(jax.nn.sigmoid(mlp.apply(params, q)), mn, mx))
+
+        if center:
+
+            def apply(params, q):
+                return _apply(params, q) - _apply(params, flexion_mn)
+
+        else:
+            apply = _apply
+
+        return DrawnFnPair(init, apply)
+
+    return factory
+
+
+def _gp_draw_and_rom(key, xs, ys, length_scale, mn, mx, amin, amax):
+    randomized_ys = _gp_draw(key, xs, ys, length_scale)
+    if ys is not None:
+        amin += jnp.min(ys)
+        amax += jnp.max(ys)
+    return restrict(randomized_ys, mn, mx, amin, amax)
+
+
+def _gp_draw(key, xs, ys=None, length: float = 1.0, noise=0.0, method="svd", **kwargs):
     if ys is None:
         ys = jnp.zeros_like(xs)
     cov = _gp_K(lambda *args: _rbf_kernel(*args, length=length), xs, noise)
