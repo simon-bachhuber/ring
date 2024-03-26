@@ -6,11 +6,11 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+
 import ring
 from ring import ml
 from ring import utils
 from ring.ml import ml_utils
-
 import wandb
 
 
@@ -29,7 +29,7 @@ def test_save_load():
 
 
 def test_save_load_generators():
-    path = "~/data1/gen.h5"
+    path = Path(__file__).parent.joinpath("gen.h5")
 
     sys = ring.io.load_example("test_three_seg_seg2")
     rcmg = ring.RCMG(
@@ -48,8 +48,7 @@ def test_save_load_generators():
     assert ring.utils.tree_equal(data, data_reloaded)
 
     # clean up
-    os.system(f"rm {path}")
-    os.system("rmdir ~/data1")
+    os.system(f"rm {str(path)}")
 
 
 def generator(key):

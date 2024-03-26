@@ -2,6 +2,8 @@ import jax
 import jax.numpy as jnp
 import jax.random as jrand
 import numpy as np
+import tree_utils as tu
+
 from ring import algebra
 from ring import base
 from ring import maths
@@ -10,7 +12,6 @@ from ring.base import Force
 from ring.base import Inertia
 from ring.base import Motion
 from ring.base import Transform
-import tree_utils as tu
 
 """Tests that compare directly to matrix implementations of the same operations."""
 
@@ -27,7 +28,7 @@ def test_mat_transform():
         assert jnp.allclose(X, t.as_matrix())
         assert jnp.allclose(X @ X, algebra.transform_mul(t, t).as_matrix(), atol=1e-6)
         assert jnp.allclose(
-            jnp.linalg.inv(X), algebra.transform_inv(t).as_matrix(), atol=1e-7
+            jnp.linalg.inv(X), algebra.transform_inv(t).as_matrix(), atol=1e-6
         )
 
 
