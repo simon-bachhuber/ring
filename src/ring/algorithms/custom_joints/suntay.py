@@ -279,18 +279,24 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
     ring.register_new_joint_type(name, joint_model, 1, qd_width=0, overwrite=True)
 
 
-def MLP_DrawnFnPair(center: bool = False) -> DrawnFnPairFactory:
+def MLP_DrawnFnPair(
+    center: bool = False, flexion_center: Optional[float] = None
+) -> DrawnFnPairFactory:
 
     def factory(xs, mn, mx):
+        nonlocal flexion_center
 
         flexion_mn = jnp.min(xs)
         flexion_mx = jnp.max(xs)
+
+        if flexion_center is None:
+            flexion_center = (flexion_mn + flexion_mx) / 2
 
         @hk.without_apply_rng
         @hk.transform
         def mlp(x):
             # normalize the x input; [0, 1]
-            x = (x + flexion_mn) / (flexion_mx - flexion_mn)
+            x = _shift(x, flexion_mn, flexion_mx)
             # center the x input; [-0.5, 0.5]
             x = x - 0.5
             net = hk.nets.MLP(
@@ -312,7 +318,7 @@ def MLP_DrawnFnPair(center: bool = False) -> DrawnFnPairFactory:
         if center:
 
             def apply(params, q):
-                return _apply(params, q) - _apply(params, flexion_mn)
+                return _apply(params, q) - _apply(params, flexion_center)
 
         else:
             apply = _apply
