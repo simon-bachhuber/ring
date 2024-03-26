@@ -1,5 +1,5 @@
+from ikarus import benchmark
 import jax
-from sparsam import benchmark
 
 
 def unbatch_gen(gen):
