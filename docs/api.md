@@ -1,21 +1,21 @@
-::: ring.ml.ringnet.RING
+::: src.ring.ml.ringnet.RING
 
-::: ring.ml.RING_ICML24
+::: src.ring.ml.RING_ICML24
 
-::: ring.base.System
+::: src.ring.base.System
 
-::: ring.base.State
+::: src.ring.base.State
 
-::: ring.algorithms.dynamics.step
+::: src.ring.algorithms.dynamics.step
 
-::: ring.base.Transform
+::: src.ring.base.Transform
 
-::: ring.algorithms.generator.base.RCMG
+::: src.ring.algorithms.generator.base.RCMG
 
-::: ring.algorithms.jcalc.MotionConfig
+::: src.ring.algorithms.jcalc.MotionConfig
 
-::: ring.algorithms.jcalc.register_new_joint_type
+::: src.ring.algorithms.jcalc.register_new_joint_type
 
-::: ring.algorithms.jcalc.JointModel
+::: src.ring.algorithms.jcalc.JointModel
 
-::: ring.algorithms.jcalc.join_motionconfigs
+::: src.ring.algorithms.jcalc.join_motionconfigs

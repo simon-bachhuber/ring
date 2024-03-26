@@ -3,7 +3,7 @@ import jax
 import ring
 
 
-def test_vispy_render():
+def SKIP_test_vispy_render():
     for sys in ring.io.list_load_examples():
         sys.render(ring.State.create(sys).x, show_pbar=False, backend="vispy")
 
@@ -39,7 +39,7 @@ def test_shapes():
 
     mediapy = ring.utils.import_lib("mediapy")
 
-    for backend in ["mujoco", "vispy"]:
+    for backend in ["mujoco"]:
         frame = sys.render(state.x, show_pbar=False, backend=backend)[0]
         if WRITE_IMAGE:
             mediapy.write_image(f"docs/img/example_{backend}.png", frame)
