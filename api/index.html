@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ring.ml.ringnet.RING" class="md-skip">
+        <a href="#src.ring.ml.ringnet.RING" class="md-skip">
           Skip to content
         </a>
       
@@ -514,7 +514,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ring.ml.ringnet.RING" class="md-nav__link">
+  <a href="#src.ring.ml.ringnet.RING" class="md-nav__link">
     <span class="md-ellipsis">
       RING
     </span>
@@ -523,7 +523,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.ml.RING_ICML24" class="md-nav__link">
+  <a href="#src.ring.ml.RING_ICML24" class="md-nav__link">
     <span class="md-ellipsis">
       RING_ICML24
     </span>
@@ -532,7 +532,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.base.System" class="md-nav__link">
+  <a href="#src.ring.base.System" class="md-nav__link">
     <span class="md-ellipsis">
       System
     </span>
@@ -541,7 +541,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.base.State" class="md-nav__link">
+  <a href="#src.ring.base.State" class="md-nav__link">
     <span class="md-ellipsis">
       State
     </span>
@@ -550,7 +550,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.algorithms.dynamics.step" class="md-nav__link">
+  <a href="#src.ring.algorithms.dynamics.step" class="md-nav__link">
     <span class="md-ellipsis">
       step
     </span>
@@ -559,7 +559,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.base.Transform" class="md-nav__link">
+  <a href="#src.ring.base.Transform" class="md-nav__link">
     <span class="md-ellipsis">
       Transform
     </span>
@@ -568,7 +568,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.algorithms.generator.base.RCMG" class="md-nav__link">
+  <a href="#src.ring.algorithms.generator.base.RCMG" class="md-nav__link">
     <span class="md-ellipsis">
       RCMG
     </span>
@@ -577,7 +577,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.algorithms.jcalc.MotionConfig" class="md-nav__link">
+  <a href="#src.ring.algorithms.jcalc.MotionConfig" class="md-nav__link">
     <span class="md-ellipsis">
       MotionConfig
     </span>
@@ -586,7 +586,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.algorithms.jcalc.register_new_joint_type" class="md-nav__link">
+  <a href="#src.ring.algorithms.jcalc.register_new_joint_type" class="md-nav__link">
     <span class="md-ellipsis">
       register_new_joint_type
     </span>
@@ -595,7 +595,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.algorithms.jcalc.JointModel" class="md-nav__link">
+  <a href="#src.ring.algorithms.jcalc.JointModel" class="md-nav__link">
     <span class="md-ellipsis">
       JointModel
     </span>
@@ -604,7 +604,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ring.algorithms.jcalc.join_motionconfigs" class="md-nav__link">
+  <a href="#src.ring.algorithms.jcalc.join_motionconfigs" class="md-nav__link">
     <span class="md-ellipsis">
       join_motionconfigs
     </span>
@@ -641,11 +641,11 @@
 
 
 
-<h4 id="ring.ml.ringnet.RING" class="doc doc-heading">
+<h4 id="src.ring.ml.ringnet.RING" class="doc doc-heading">
           <code>RING</code>
 
 
-<a href="#ring.ml.ringnet.RING" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.ml.ringnet.RING" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -855,13 +855,19 @@
 
 
 
-<h4 id="ring.ml.RING_ICML24" class="doc doc-heading">
-          <code class="highlight language-python"><span class="n">RING_ICML24</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+<h4 id="src.ring.ml.RING_ICML24" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">RING_ICML24</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
-<a href="#ring.ml.RING_ICML24" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.ml.RING_ICML24" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
+  
+      <p>Create the RING network used in the icml24 paper.</p>
+<p>X[..., :3]  = acc
+X[..., 3:6] = gyr
+X[..., 6:9] = jointaxis
+X[..., 9:]  = dt</p>
 
           <details class="quote">
             <summary>Source code in <code>src/ring/ml/__init__.py</code></summary>
@@ -873,10 +879,28 @@
 <span class="normal">21</span>
 <span class="normal">22</span>
 <span class="normal">23</span>
-<span class="normal">24</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">RING_ICML24</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">RING_ICML24</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the RING network used in the icml24 paper.</span>
+
+<span class="sd">    X[..., :3]  = acc</span>
+<span class="sd">    X[..., 3:6] = gyr</span>
+<span class="sd">    X[..., 6:9] = jointaxis</span>
+<span class="sd">    X[..., 9:]  = dt</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
-    <span class="n">params</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;params/0x13e3518065c21cd8.pickle&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;params/0x13e3518065c21cd8.pickle&quot;</span><span class="p">)</span>
+
     <span class="n">ringnet</span> <span class="o">=</span> <span class="n">RING</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># noqa: F811</span>
     <span class="n">ringnet</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">ScaleX_FilterWrapper</span><span class="p">(</span><span class="n">ringnet</span><span class="p">)</span>
     <span class="n">ringnet</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">LPF_FilterWrapper</span><span class="p">(</span><span class="n">ringnet</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">samp_freq</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
@@ -892,11 +916,11 @@
 
 
 
-<h4 id="ring.base.System" class="doc doc-heading">
+<h4 id="src.ring.base.System" class="doc doc-heading">
           <code>System</code>
 
 
-<a href="#ring.base.System" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.base.System" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -904,9 +928,7 @@
 
             <details class="quote">
               <summary>Source code in <code>src/ring/base.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">400</span>
 <span class="normal">401</span>
 <span class="normal">402</span>
 <span class="normal">403</span>
@@ -1294,7 +1316,17 @@
 <span class="normal">785</span>
 <span class="normal">786</span>
 <span class="normal">787</span>
-<span class="normal">788</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@struct</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="normal">788</span>
+<span class="normal">789</span>
+<span class="normal">790</span>
+<span class="normal">791</span>
+<span class="normal">792</span>
+<span class="normal">793</span>
+<span class="normal">794</span>
+<span class="normal">795</span>
+<span class="normal">796</span>
+<span class="normal">797</span>
+<span class="normal">798</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@struct</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span> <span class="nc">System</span><span class="p">(</span><span class="n">_Base</span><span class="p">):</span>
     <span class="n">link_parents</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">links</span><span class="p">:</span> <span class="n">Link</span>
@@ -1651,7 +1683,15 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path_or_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;System&quot;</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path_or_str</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;.xml&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+
+        <span class="n">exists</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">exists</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="c1"># file length too length</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">exists</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_xml</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="n">path_or_str</span><span class="p">)</span>
@@ -1705,10 +1745,10 @@
 
 
 
-<h5 id="ring.base.System.idx_map" class="doc doc-heading">
+<h5 id="src.ring.base.System.idx_map" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">idx_map</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span></code>
 
-<a href="#ring.base.System.idx_map" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.idx_map" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -1717,16 +1757,16 @@
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">443</span>
-<span class="normal">444</span>
-<span class="normal">445</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">445</span>
 <span class="normal">446</span>
 <span class="normal">447</span>
 <span class="normal">448</span>
 <span class="normal">449</span>
 <span class="normal">450</span>
 <span class="normal">451</span>
-<span class="normal">452</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">idx_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">idx_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
     <span class="s2">&quot;type: is either `l` or `q` or `d`&quot;</span>
     <span class="n">dict_int_slices</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -1747,10 +1787,10 @@
 
 
 
-<h5 id="ring.base.System.change_joint_type" class="doc doc-heading">
+<h5 id="src.ring.base.System.change_joint_type" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">change_joint_type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">new_joint_type</span><span class="p">,</span> <span class="n">new_arma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_damp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_stif</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_zero</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
-<a href="#ring.base.System.change_joint_type" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.change_joint_type" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -1759,9 +1799,7 @@
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">564</span>
-<span class="normal">565</span>
-<span class="normal">566</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">566</span>
 <span class="normal">567</span>
 <span class="normal">568</span>
 <span class="normal">569</span>
@@ -1790,7 +1828,9 @@
 <span class="normal">592</span>
 <span class="normal">593</span>
 <span class="normal">594</span>
-<span class="normal">595</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">change_joint_type</span><span class="p">(</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">change_joint_type</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">new_joint_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1833,10 +1873,10 @@
 
 
 
-<h5 id="ring.base.System.scan" class="doc doc-heading">
+<h5 id="src.ring.base.System.scan" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">scan</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">in_types</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
-<a href="#ring.base.System.scan" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.scan" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -1942,9 +1982,7 @@
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">622</span>
-<span class="normal">623</span>
-<span class="normal">624</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">624</span>
 <span class="normal">625</span>
 <span class="normal">626</span>
 <span class="normal">627</span>
@@ -1957,7 +1995,9 @@
 <span class="normal">634</span>
 <span class="normal">635</span>
 <span class="normal">636</span>
-<span class="normal">637</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">in_types</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">reverse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">in_types</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">reverse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Scan `f` along each link in system whilst carrying along state.</span>
 
 <span class="sd">    Args:</span>
@@ -1984,10 +2024,10 @@
 
 
 
-<h5 id="ring.base.System.parse" class="doc doc-heading">
+<h5 id="src.ring.base.System.parse" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">parse</span><span class="p">()</span></code>
 
-<a href="#ring.base.System.parse" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.parse" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -2009,9 +2049,7 @@ Currently it does:
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">639</span>
-<span class="normal">640</span>
-<span class="normal">641</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">641</span>
 <span class="normal">642</span>
 <span class="normal">643</span>
 <span class="normal">644</span>
@@ -2025,7 +2063,9 @@ Currently it does:
 <span class="normal">652</span>
 <span class="normal">653</span>
 <span class="normal">654</span>
-<span class="normal">655</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;System&quot;</span><span class="p">:</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;System&quot;</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initial setup of system. System object does not work unless it is parsed.</span>
 <span class="sd">    Currently it does:</span>
 <span class="sd">    - some consistency checks</span>
@@ -2053,10 +2093,10 @@ Currently it does:
 
 
 
-<h5 id="ring.base.System.render" class="doc doc-heading">
+<h5 id="src.ring.base.System.render" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">render</span><span class="p">(</span><span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_pbar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;mujoco&#39;</span><span class="p">,</span> <span class="n">render_every_nth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">scene_kwargs</span><span class="p">)</span></code>
 
-<a href="#ring.base.System.render" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.render" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -2079,7 +2119,7 @@ Currently it does:
         <tr>
           <td><code>sys</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="ring.base.System" href="#ring.base.System">System</a></code>
+                <code><a class="autorefs autorefs-internal" title="src.ring.base.System" href="#src.ring.base.System">System</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2093,7 +2133,7 @@ Currently it does:
         <tr>
           <td><code>xs</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="ring.base.Transform" href="#ring.base.Transform">Transform</a> | list[<a class="autorefs autorefs-internal" title="ring.base.Transform" href="#ring.base.Transform">Transform</a>]</code>
+                <code><a class="autorefs autorefs-internal" title="src.ring.base.Transform" href="#src.ring.base.Transform">Transform</a> | list[<a class="autorefs autorefs-internal" title="src.ring.base.Transform" href="#src.ring.base.Transform">Transform</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2147,9 +2187,7 @@ Currently it does:
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">657</span>
-<span class="normal">658</span>
-<span class="normal">659</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">659</span>
 <span class="normal">660</span>
 <span class="normal">661</span>
 <span class="normal">662</span>
@@ -2170,7 +2208,9 @@ Currently it does:
 <span class="normal">677</span>
 <span class="normal">678</span>
 <span class="normal">679</span>
-<span class="normal">680</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">render</span><span class="p">(</span>
+<span class="normal">680</span>
+<span class="normal">681</span>
+<span class="normal">682</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">render</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">xs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Transform</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Transform</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">camera</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2205,10 +2245,10 @@ Currently it does:
 
 
 
-<h5 id="ring.base.System.render_prediction" class="doc doc-heading">
+<h5 id="src.ring.base.System.render_prediction" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">render_prediction</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">yhat</span><span class="p">,</span> <span class="n">stepframe</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">transparent_segment_to_root</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
-<a href="#ring.base.System.render_prediction" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.render_prediction" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -2217,9 +2257,7 @@ Currently it does:
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">682</span>
-<span class="normal">683</span>
-<span class="normal">684</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">684</span>
 <span class="normal">685</span>
 <span class="normal">686</span>
 <span class="normal">687</span>
@@ -2229,7 +2267,9 @@ Currently it does:
 <span class="normal">691</span>
 <span class="normal">692</span>
 <span class="normal">693</span>
-<span class="normal">694</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">render_prediction</span><span class="p">(</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">render_prediction</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">xs</span><span class="p">:</span> <span class="n">Transform</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Transform</span><span class="p">],</span>
     <span class="n">yhat</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -2253,10 +2293,10 @@ Currently it does:
 
 
 
-<h5 id="ring.base.System.delete_system" class="doc doc-heading">
+<h5 id="src.ring.base.System.delete_system" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">delete_system</span><span class="p">(</span><span class="n">link_name</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
-<a href="#ring.base.System.delete_system" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.delete_system" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -2265,9 +2305,9 @@ Currently it does:
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">696</span>
-<span class="normal">697</span>
-<span class="normal">698</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">delete_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">delete_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
     <span class="s2">&quot;Cut subsystem starting at `link_name` (inclusive) from tree.&quot;</span>
     <span class="k">return</span> <span class="n">ring</span><span class="o">.</span><span class="n">sys_composer</span><span class="o">.</span><span class="n">delete_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link_name</span><span class="p">,</span> <span class="n">strict</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -2281,10 +2321,10 @@ Currently it does:
 
 
 
-<h5 id="ring.base.System.make_sys_noimu" class="doc doc-heading">
+<h5 id="src.ring.base.System.make_sys_noimu" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">make_sys_noimu</span><span class="p">(</span><span class="n">imu_link_names</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
-<a href="#ring.base.System.make_sys_noimu" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.make_sys_noimu" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -2293,9 +2333,9 @@ Currently it does:
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">700</span>
-<span class="normal">701</span>
-<span class="normal">702</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">make_sys_noimu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">imu_link_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">make_sys_noimu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">imu_link_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="s2">&quot;Returns, e.g., imu_attachment = {&#39;imu1&#39;: &#39;seg1&#39;, &#39;imu2&#39;: &#39;seg3&#39;}&quot;</span>
     <span class="k">return</span> <span class="n">ring</span><span class="o">.</span><span class="n">sys_composer</span><span class="o">.</span><span class="n">make_sys_noimu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">imu_link_names</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -2309,10 +2349,10 @@ Currently it does:
 
 
 
-<h5 id="ring.base.System.inject_system" class="doc doc-heading">
+<h5 id="src.ring.base.System.inject_system" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">inject_system</span><span class="p">(</span><span class="n">other_system</span><span class="p">,</span> <span class="n">at_body</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
-<a href="#ring.base.System.inject_system" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.inject_system" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -2335,7 +2375,7 @@ Currently it does:
         <tr>
           <td><code>sys</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="ring.base.System" href="#ring.base.System">System</a></code>
+                <code><a class="autorefs autorefs-internal" title="src.ring.base.System" href="#src.ring.base.System">System</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2349,7 +2389,7 @@ Currently it does:
         <tr>
           <td><code>sub_sys</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="ring.base.System" href="#ring.base.System">System</a></code>
+                <code><a class="autorefs autorefs-internal" title="src.ring.base.System" href="#src.ring.base.System">System</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2404,9 +2444,7 @@ small system will be included. Defaults to <code>worldbody</code>.</p>
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">706</span>
 <span class="normal">707</span>
 <span class="normal">708</span>
 <span class="normal">709</span>
@@ -2417,7 +2455,9 @@ small system will be included. Defaults to <code>worldbody</code>.</p>
 <span class="normal">714</span>
 <span class="normal">715</span>
 <span class="normal">716</span>
-<span class="normal">717</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">inject_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_system</span><span class="p">:</span> <span class="s2">&quot;System&quot;</span><span class="p">,</span> <span class="n">at_body</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="normal">717</span>
+<span class="normal">718</span>
+<span class="normal">719</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">inject_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_system</span><span class="p">:</span> <span class="s2">&quot;System&quot;</span><span class="p">,</span> <span class="n">at_body</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Combine two systems into one.</span>
 
 <span class="sd">    Args:</span>
@@ -2442,10 +2482,10 @@ small system will be included. Defaults to <code>worldbody</code>.</p>
 
 
 
-<h5 id="ring.base.System.morph_system" class="doc doc-heading">
+<h5 id="src.ring.base.System.morph_system" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">morph_system</span><span class="p">(</span><span class="n">new_parents</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_anchor</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
-<a href="#ring.base.System.morph_system" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.morph_system" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -2468,7 +2508,7 @@ small system will be included. Defaults to <code>worldbody</code>.</p>
         <tr>
           <td><code>sys</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="ring.base.System" href="#ring.base.System">System</a></code>
+                <code><a class="autorefs autorefs-internal" title="src.ring.base.System" href="#src.ring.base.System">System</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2524,9 +2564,7 @@ corresponding to the j-th link in the old system.</p>
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">719</span>
-<span class="normal">720</span>
-<span class="normal">721</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">721</span>
 <span class="normal">722</span>
 <span class="normal">723</span>
 <span class="normal">724</span>
@@ -2541,7 +2579,9 @@ corresponding to the j-th link in the old system.</p>
 <span class="normal">733</span>
 <span class="normal">734</span>
 <span class="normal">735</span>
-<span class="normal">736</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">morph_system</span><span class="p">(</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">morph_system</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">new_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">new_anchor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2570,10 +2610,10 @@ corresponding to the j-th link in the old system.</p>
 
 
 
-<h5 id="ring.base.System.coordinate_vector_to_q" class="doc doc-heading">
+<h5 id="src.ring.base.System.coordinate_vector_to_q" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">coordinate_vector_to_q</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">custom_joints</span><span class="o">=</span><span class="p">{})</span></code>
 
-<a href="#ring.base.System.coordinate_vector_to_q" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.System.coordinate_vector_to_q" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -2582,17 +2622,7 @@ corresponding to the j-th link in the old system.</p>
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">760</span>
-<span class="normal">761</span>
-<span class="normal">762</span>
-<span class="normal">763</span>
-<span class="normal">764</span>
-<span class="normal">765</span>
-<span class="normal">766</span>
-<span class="normal">767</span>
-<span class="normal">768</span>
-<span class="normal">769</span>
-<span class="normal">770</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">770</span>
 <span class="normal">771</span>
 <span class="normal">772</span>
 <span class="normal">773</span>
@@ -2610,7 +2640,17 @@ corresponding to the j-th link in the old system.</p>
 <span class="normal">785</span>
 <span class="normal">786</span>
 <span class="normal">787</span>
-<span class="normal">788</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">coordinate_vector_to_q</span><span class="p">(</span>
+<span class="normal">788</span>
+<span class="normal">789</span>
+<span class="normal">790</span>
+<span class="normal">791</span>
+<span class="normal">792</span>
+<span class="normal">793</span>
+<span class="normal">794</span>
+<span class="normal">795</span>
+<span class="normal">796</span>
+<span class="normal">797</span>
+<span class="normal">798</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">coordinate_vector_to_q</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">q</span><span class="p">:</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span>
     <span class="n">custom_joints</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">{},</span>
@@ -2658,11 +2698,11 @@ corresponding to the j-th link in the old system.</p>
 
 
 
-<h4 id="ring.base.State" class="doc doc-heading">
+<h4 id="src.ring.base.State" class="doc doc-heading">
           <code>State</code>
 
 
-<a href="#ring.base.State" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.base.State" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -2744,17 +2784,7 @@ Use <code>.create()</code> to create this object.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/ring/base.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 967</span>
-<span class="normal"> 968</span>
-<span class="normal"> 969</span>
-<span class="normal"> 970</span>
-<span class="normal"> 971</span>
-<span class="normal"> 972</span>
-<span class="normal"> 973</span>
-<span class="normal"> 974</span>
-<span class="normal"> 975</span>
-<span class="normal"> 976</span>
-<span class="normal"> 977</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 977</span>
 <span class="normal"> 978</span>
 <span class="normal"> 979</span>
 <span class="normal"> 980</span>
@@ -2813,7 +2843,17 @@ Use <code>.create()</code> to create this object.</p>
 <span class="normal">1033</span>
 <span class="normal">1034</span>
 <span class="normal">1035</span>
-<span class="normal">1036</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@struct</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span>
+<span class="normal">1045</span>
+<span class="normal">1046</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@struct</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">_Base</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The static and dynamic state of a system in minimal and maximal coordinates.</span>
 <span class="sd">    Use `.create()` to create this object.</span>
@@ -2903,14 +2943,14 @@ Use <code>.create()</code> to create this object.</p>
 
 
 
-<h5 id="ring.base.State.create" class="doc doc-heading">
+<h5 id="src.ring.base.State.create" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">create</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_joints</span><span class="o">=</span><span class="p">{})</span></code>
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
-<a href="#ring.base.State.create" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.State.create" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -2933,7 +2973,7 @@ Use <code>.create()</code> to create this object.</p>
         <tr>
           <td><code>sys</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="ring.base.System" href="#ring.base.System">System</a></code>
+                <code><a class="autorefs autorefs-internal" title="src.ring.base.System" href="#src.ring.base.System">System</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2988,7 +3028,7 @@ Use <code>.create()</code> to create this object.</p>
     <tbody>
         <tr>
           <td>
-                <code><a class="autorefs autorefs-internal" title="ring.base.State" href="#ring.base.State">State</a></code>
+                <code><a class="autorefs autorefs-internal" title="src.ring.base.State" href="#src.ring.base.State">State</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3001,17 +3041,7 @@ Use <code>.create()</code> to create this object.</p>
 
           <details class="quote">
             <summary>Source code in <code>src/ring/base.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 984</span>
-<span class="normal"> 985</span>
-<span class="normal"> 986</span>
-<span class="normal"> 987</span>
-<span class="normal"> 988</span>
-<span class="normal"> 989</span>
-<span class="normal"> 990</span>
-<span class="normal"> 991</span>
-<span class="normal"> 992</span>
-<span class="normal"> 993</span>
-<span class="normal"> 994</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 994</span>
 <span class="normal"> 995</span>
 <span class="normal"> 996</span>
 <span class="normal"> 997</span>
@@ -3053,7 +3083,17 @@ Use <code>.create()</code> to create this object.</p>
 <span class="normal">1033</span>
 <span class="normal">1034</span>
 <span class="normal">1035</span>
-<span class="normal">1036</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span>
+<span class="normal">1045</span>
+<span class="normal">1046</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">sys</span><span class="p">:</span> <span class="n">System</span><span class="p">,</span>
@@ -3126,10 +3166,10 @@ Use <code>.create()</code> to create this object.</p>
 
 
 
-<h4 id="ring.algorithms.dynamics.step" class="doc doc-heading">
+<h4 id="src.ring.algorithms.dynamics.step" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">step</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">taus</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_substeps</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
 
-<a href="#ring.algorithms.dynamics.step" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.algorithms.dynamics.step" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -3193,11 +3233,11 @@ Use <code>.create()</code> to create this object.</p>
 
 
 
-<h4 id="ring.base.Transform" class="doc doc-heading">
+<h4 id="src.ring.base.Transform" class="doc doc-heading">
           <code>Transform</code>
 
 
-<a href="#ring.base.Transform" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.base.Transform" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -3298,14 +3338,14 @@ relative quaternion from A to B.</p>
 
 
 
-<h5 id="ring.base.Transform.zero" class="doc doc-heading">
+<h5 id="src.ring.base.Transform.zero" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">zero</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">())</span></code>
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
-<a href="#ring.base.Transform.zero" class="headerlink" title="Permanent link">¤</a></h5>
+<a href="#src.ring.base.Transform.zero" class="headerlink" title="Permanent link">¤</a></h5>
 
 
   <div class="doc doc-contents ">
@@ -3344,11 +3384,11 @@ relative quaternion from A to B.</p>
 
 
 
-<h4 id="ring.algorithms.generator.base.RCMG" class="doc doc-heading">
+<h4 id="src.ring.algorithms.generator.base.RCMG" class="doc doc-heading">
           <code>RCMG</code>
 
 
-<a href="#ring.algorithms.generator.base.RCMG" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.algorithms.generator.base.RCMG" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -3695,7 +3735,7 @@ relative quaternion from A to B.</p>
 
 
 
-<h4 id="ring.algorithms.jcalc.MotionConfig" class="doc doc-heading">
+<h4 id="src.ring.algorithms.jcalc.MotionConfig" class="doc doc-heading">
           <code>MotionConfig</code>
 
   
@@ -3703,7 +3743,7 @@ relative quaternion from A to B.</p>
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
-<a href="#ring.algorithms.jcalc.MotionConfig" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.algorithms.jcalc.MotionConfig" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -3711,8 +3751,7 @@ relative quaternion from A to B.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/ring/algorithms/jcalc.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">18</span>
-<span class="normal">19</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">19</span>
 <span class="normal">20</span>
 <span class="normal">21</span>
 <span class="normal">22</span>
@@ -3781,7 +3820,8 @@ relative quaternion from A to B.</p>
 <span class="normal">85</span>
 <span class="normal">86</span>
 <span class="normal">87</span>
-<span class="normal">88</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">88</span>
+<span class="normal">89</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">MotionConfig</span><span class="p">:</span>
     <span class="n">T</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">60.0</span>  <span class="c1"># length of random motion</span>
     <span class="n">t_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># min time between two generated angles</span>
@@ -3881,47 +3921,47 @@ relative quaternion from A to B.</p>
 
 
 
-<h4 id="ring.algorithms.jcalc.register_new_joint_type" class="doc doc-heading">
+<h4 id="src.ring.algorithms.jcalc.register_new_joint_type" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">register_new_joint_type</span><span class="p">(</span><span class="n">joint_type</span><span class="p">,</span> <span class="n">joint_model</span><span class="p">,</span> <span class="n">q_width</span><span class="p">,</span> <span class="n">qd_width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
-<a href="#ring.algorithms.jcalc.register_new_joint_type" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.algorithms.jcalc.register_new_joint_type" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
 
           <details class="quote">
             <summary>Source code in <code>src/ring/algorithms/jcalc.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">685</span>
-<span class="normal">686</span>
-<span class="normal">687</span>
-<span class="normal">688</span>
-<span class="normal">689</span>
-<span class="normal">690</span>
-<span class="normal">691</span>
-<span class="normal">692</span>
-<span class="normal">693</span>
-<span class="normal">694</span>
-<span class="normal">695</span>
-<span class="normal">696</span>
-<span class="normal">697</span>
-<span class="normal">698</span>
-<span class="normal">699</span>
-<span class="normal">700</span>
-<span class="normal">701</span>
-<span class="normal">702</span>
-<span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span>
-<span class="normal">707</span>
-<span class="normal">708</span>
-<span class="normal">709</span>
-<span class="normal">710</span>
-<span class="normal">711</span>
-<span class="normal">712</span>
-<span class="normal">713</span>
-<span class="normal">714</span>
-<span class="normal">715</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">register_new_joint_type</span><span class="p">(</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span>
+<span class="normal">746</span>
+<span class="normal">747</span>
+<span class="normal">748</span>
+<span class="normal">749</span>
+<span class="normal">750</span>
+<span class="normal">751</span>
+<span class="normal">752</span>
+<span class="normal">753</span>
+<span class="normal">754</span>
+<span class="normal">755</span>
+<span class="normal">756</span>
+<span class="normal">757</span>
+<span class="normal">758</span>
+<span class="normal">759</span>
+<span class="normal">760</span>
+<span class="normal">761</span>
+<span class="normal">762</span>
+<span class="normal">763</span>
+<span class="normal">764</span>
+<span class="normal">765</span>
+<span class="normal">766</span>
+<span class="normal">767</span>
+<span class="normal">768</span>
+<span class="normal">769</span>
+<span class="normal">770</span>
+<span class="normal">771</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">register_new_joint_type</span><span class="p">(</span>
     <span class="n">joint_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">joint_model</span><span class="p">:</span> <span class="n">JointModel</span><span class="p">,</span>
     <span class="n">q_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -3962,7 +4002,7 @@ relative quaternion from A to B.</p>
 
 
 
-<h4 id="ring.algorithms.jcalc.JointModel" class="doc doc-heading">
+<h4 id="src.ring.algorithms.jcalc.JointModel" class="doc doc-heading">
           <code>JointModel</code>
 
   
@@ -3970,7 +4010,7 @@ relative quaternion from A to B.</p>
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
-<a href="#ring.algorithms.jcalc.JointModel" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.algorithms.jcalc.JointModel" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
@@ -3978,8 +4018,7 @@ relative quaternion from A to B.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/ring/algorithms/jcalc.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">222</span>
-<span class="normal">223</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">223</span>
 <span class="normal">224</span>
 <span class="normal">225</span>
 <span class="normal">226</span>
@@ -4004,7 +4043,8 @@ relative quaternion from A to B.</p>
 <span class="normal">245</span>
 <span class="normal">246</span>
 <span class="normal">247</span>
-<span class="normal">248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">248</span>
+<span class="normal">249</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">JointModel</span><span class="p">:</span>
     <span class="c1"># (q, params) -&gt; Transform</span>
     <span class="n">transform</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">],</span> <span class="n">base</span><span class="o">.</span><span class="n">Transform</span><span class="p">]</span>
@@ -4060,18 +4100,17 @@ relative quaternion from A to B.</p>
 
 
 
-<h4 id="ring.algorithms.jcalc.join_motionconfigs" class="doc doc-heading">
+<h4 id="src.ring.algorithms.jcalc.join_motionconfigs" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">join_motionconfigs</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="n">boundaries</span><span class="p">)</span></code>
 
-<a href="#ring.algorithms.jcalc.join_motionconfigs" class="headerlink" title="Permanent link">¤</a></h4>
+<a href="#src.ring.algorithms.jcalc.join_motionconfigs" class="headerlink" title="Permanent link">¤</a></h4>
 
 
   <div class="doc doc-contents first">
 
           <details class="quote">
             <summary>Source code in <code>src/ring/algorithms/jcalc.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">138</span>
-<span class="normal">139</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">139</span>
 <span class="normal">140</span>
 <span class="normal">141</span>
 <span class="normal">142</span>
@@ -4101,7 +4140,8 @@ relative quaternion from A to B.</p>
 <span class="normal">166</span>
 <span class="normal">167</span>
 <span class="normal">168</span>
-<span class="normal">169</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">join_motionconfigs</span><span class="p">(</span>
+<span class="normal">169</span>
+<span class="normal">170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">join_motionconfigs</span><span class="p">(</span>
     <span class="n">configs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">MotionConfig</span><span class="p">],</span> <span class="n">boundaries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MotionConfig</span><span class="p">:</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">configs</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span>
