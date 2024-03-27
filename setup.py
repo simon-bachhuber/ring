@@ -65,7 +65,7 @@ setuptools.setup(
         "tqdm",
         "wget",
         "h5py",
-        "tree_utils @ git+https://github.com/SimiPixel/tree_utils.git",
+        "imt-tree-utils",
         "wandb",
         "optax",
         "dm-haiku",
