@@ -252,3 +252,41 @@ class ScaleX_FilterWrapper(AbstractFilterWrapper):
         X = {key: val * self._factors[key] for key, val in X.items()}
         X = tree_utils.batch_concat_acme(X, num_batch_dims=num_batch_dims)
         return super().apply(X, params, state, y, lam)
+
+
+class NoGraph_FilterWrapper(AbstractFilterWrapper):
+
+    def __init__(
+        self, filter: AbstractFilter, quat_normalize: bool = False, name=None
+    ) -> None:
+        super().__init__(filter, name)
+        self._quat_normalize = quat_normalize
+
+    def init(self, bs=None, X=None, lam=None, seed: int = 1):
+        batched = X.ndim == 4
+        if batched:
+            B, T, N, F = X.shape
+            X = X.reshape((B, T, 1, N * F))
+        else:
+            T, N, F = X.shape
+            X = X.reshape(T, 1, N * F)
+        return super().init(bs, X, (-1,), seed)
+
+    def apply(self, X: jax.Array, params=None, state=None, y=None, lam=None):
+        batched = X.ndim == 4
+        if batched:
+            B, T, N, F = X.shape
+            X = X.reshape((B, T, 1, N * F))
+            yhat, state = super().apply(X, params, state, y, (-1,))
+            yhat = yhat.reshape((B, T, N, -1))
+        else:
+            T, N, F = X.shape
+            X = X.reshape((T, 1, N * F))
+            yhat, state = super().apply(X, params, state, y, (-1,))
+            yhat = yhat.reshape((T, N, -1))
+
+        if self._quat_normalize:
+            assert yhat.shape[-1] == 4
+            yhat = ring.maths.safe_normalize(yhat)
+
+        return yhat, state
