@@ -11,7 +11,7 @@ Supports `Python=3.10/3.11/3.12` (tested).
 
 Install with `pip` using
 
-`pip install 'ring @ git+https://github.com/SimiPixel/ring'`
+`pip install imt-ring`
 
 Typically, this will install `jax` as cpu-only version. Afterwards, gpu-enabled version can be installed with
 ```bash
