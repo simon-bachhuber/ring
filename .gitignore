@@ -13,3 +13,4 @@ site/
 testing.ipynb
 wandb
 .neptune
+dist

@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "imt-ring"
+version = "1.2.1"
+authors = [
+  { name="Simon Bachhuber", email="simon.bachhuber@fau.de" },
+]
+description = "RING: Recurrent Inertial Graph-based Estimator"
+readme = "readme.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "jaxlib",
+    "jax",
+    "jaxopt",
+    "numpy",
+    "flax",
+    "tqdm",
+    "wget",
+    "h5py",
+    "imt-tree-utils",
+    "wandb",
+    "optax",
+    "dm-haiku",
+    "joblib",
+    "pyyaml",
+    "qmt",
+    "scipy",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "mknotebooks",
+    "pytest",
+    # for parallel test execution; $ pytest -n auto
+    "pytest-xdist",
+    # for testing of notebooks; $ pytest --nbmake **/*ipynb
+    "nbmake",
+]
+
+[project.urls]
+Homepage = "https://github.com/SimiPixel/ring"
+Issues = "https://github.com/SimiPixel/ring/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"ring.io.examples" = ["**/*.xml"]
+"ring.ml.params" = ["**/*.pickle"]
