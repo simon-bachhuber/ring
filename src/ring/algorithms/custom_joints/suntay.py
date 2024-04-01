@@ -291,6 +291,8 @@ def MLP_DrawnFnPair(
 
         if flexion_center is None:
             flexion_center = (flexion_mn + flexion_mx) / 2
+        else:
+            flexion_center = jnp.array(flexion_center)
 
         @hk.without_apply_rng
         @hk.transform
