@@ -274,6 +274,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
         utilities=dict(
             Q_S_H_alpha_beta_gamma=_utils_Q_S_H_alpha_beta_gamma,
             find_suntay_joint=_utils_find_suntay_joint,
+            sconfig=sconfig,
         ),
     )
     ring.register_new_joint_type(name, joint_model, 1, qd_width=0, overwrite=True)
