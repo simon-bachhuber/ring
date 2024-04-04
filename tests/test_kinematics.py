@@ -1,13 +1,15 @@
 import jax
 import jax.numpy as jnp
+import jaxopt
 import numpy as np
+import tree_utils as tu
+
 import ring
 from ring import base
 from ring import maths
 from ring.algorithms import jcalc
 from ring.algorithms import kinematics
 from ring.sim2real.sim2real import _checks_time_series_of_xs
-import tree_utils as tu
 
 
 def test_forward_kinematics_transforms():
@@ -80,9 +82,9 @@ def test_inv_kinematics_endeffector():
                 "endeffector",
                 endeffector_x,
                 q0=q0,
-                # jaxopt_solver=jaxopt.GradientDescent,
-                # maxiter=5000,
-                # maxls=5,
+                jaxopt_solver=jaxopt.GradientDescent,
+                maxiter=5000,
+                maxls=3,
             )
             return value
 
