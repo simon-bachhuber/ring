@@ -245,7 +245,7 @@ class SaveParamsTrainingLoopCallback(training_loop.TrainingLoopCallback):
                     extension="pickle",
                 )
 
-            pickle_save(ele.params, filename, overwrite=True)
+            pickle_save(ele.params, filename, overwrite=False)
             if self.upload:
                 success = False
                 for logger in self._loggers:
