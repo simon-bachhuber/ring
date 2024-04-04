@@ -8,6 +8,7 @@ from tree_utils import PyTree
 
 import ring
 from ring import maths
+from ring.algorithms import jcalc
 from ring.algorithms._random import random_angle_over_time
 
 Params = PyTree
@@ -258,6 +259,9 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
             mconfig.cdf_bins_max,
             mconfig.interpolation_method,
         )
+        return _apply_rom(qs_flexion)
+
+    def _apply_rom(qs_flexion):
         return restrict(
             qs_flexion,
             sconfig.flexion_rot_min,
@@ -267,9 +271,18 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
             method=sconfig.flexion_rot_restrict_method,
         )
 
+    def coordinate_vector_to_q_suntay(q_flexion):
+        q_flexion = ring.maths.wrap_to_pi(q_flexion)
+        return _apply_rom(q_flexion)
+
     joint_model = ring.JointModel(
         transform=_transform_suntay,
+        motion=[jcalc.mrx],
         rcmg_draw_fn=_draw_flexion_angle,
+        p_control_term=jcalc._p_control_term_rxyz,
+        qd_from_q=jcalc._qd_from_q_cartesian,
+        coordinate_vector_to_q=coordinate_vector_to_q_suntay,
+        inv_kin=None,
         init_joint_params=_init_joint_params_suntay,
         utilities=dict(
             Q_S_H_alpha_beta_gamma=_utils_Q_S_H_alpha_beta_gamma,
@@ -277,7 +290,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
             sconfig=sconfig,
         ),
     )
-    ring.register_new_joint_type(name, joint_model, 1, qd_width=0, overwrite=True)
+    ring.register_new_joint_type(name, joint_model, 1, overwrite=True)
 
 
 def MLP_DrawnFnPair(

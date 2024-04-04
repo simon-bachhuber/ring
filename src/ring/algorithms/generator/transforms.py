@@ -277,6 +277,7 @@ _P_gains = {
     "p3d": jnp.array(3 * [P_pos]),
     "saddle": jnp.array([P_rot, P_rot]),
     "frozen": jnp.array([]),
+    "suntay": jnp.array([P_rot]),
 }
 
 
