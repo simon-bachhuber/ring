@@ -2,9 +2,10 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+import tree_utils
+
 from ring import base
 from ring import io
-import tree_utils
 
 
 def imu_reference_link_name(imu_link_name: str) -> str:
@@ -15,11 +16,21 @@ def unactuated_subsystem(sys) -> list[str]:
     return [imu_reference_link_name(name) for name in sys.findall_imus()]
 
 
-def _subsystem_factory(imu_name: str, pos_min_max: float) -> base.System:
+def _subsystem_factory(
+    imu_name: str,
+    pos_min_max: float,
+    translational_stif: float,
+    translational_damp: float,
+) -> base.System:
     assert pos_min_max >= 0
     pos = f'pos_min="-{pos_min_max} -{pos_min_max} -{pos_min_max}" pos_max="{pos_min_max} {pos_min_max} {pos_min_max}"'  # noqa: E501
-    stiff = 'spring_stiff="50 50 50"'
-    damping = 'damping="5 5 5"'
+    stiff = (
+        f'spring_stiff="{translational_stif} {translational_stif} {translational_stif}"'
+    )
+    translational_damp = translational_stif * translational_damp
+    damping = (
+        f'damping="{translational_damp} {translational_damp} {translational_damp}"'
+    )
     return io.load_sys_from_str(
         f"""
         <x_xy>
@@ -34,12 +45,16 @@ def _subsystem_factory(imu_name: str, pos_min_max: float) -> base.System:
 def inject_subsystems(
     sys: base.System,
     pos_min_max: float = 0.0,
+    rotational_stif: float = 0.3,
+    rotational_damp: float = 0.1,
+    translational_stif: float = 50.0,
+    translational_damp: float = 0.1,
     **kwargs,
 ) -> base.System:
     imu_idx_to_name_map = {sys.name_to_idx(imu): imu for imu in sys.findall_imus()}
 
-    default_spher_stif = jnp.ones((3,)) * 0.3
-    default_spher_damp = default_spher_stif * 0.1
+    default_spher_stif = jnp.ones((3,)) * rotational_stif
+    default_spher_damp = default_spher_stif * rotational_damp
     for imu in sys.findall_imus():
         sys = sys.unfreeze(imu, "spherical")
         # set default stiffness and damping of spherical joint
@@ -51,7 +66,12 @@ def inject_subsystems(
 
         _imu = imu_reference_link_name(imu)
         sys = sys.change_link_name(imu, _imu)
-        sys = sys.inject_system(_subsystem_factory(imu, pos_min_max), _imu)
+        sys = sys.inject_system(
+            _subsystem_factory(
+                imu, pos_min_max, translational_stif, translational_damp
+            ),
+            _imu,
+        )
 
     # attach geoms to newly injected link
     new_geoms = []
