@@ -229,7 +229,7 @@ def _color_to_rgba(geom: base.Geometry) -> base.Geometry:
 def _xyz_to_three_capsules(xyz: base.XYZ) -> list[base.Geometry]:
     capsules = []
     length = xyz.size
-    radius = length / 6
+    radius = length / 7
     colors = ["red", "green", "blue"]
     rot_axis = [1, 0, 2]
 
