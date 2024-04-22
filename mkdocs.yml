@@ -13,6 +13,7 @@ nav:
     - 'notebooks/error_quaternion.ipynb'
     - 'notebooks/machine_learning.ipynb'
     - 'notebooks/visualisation.ipynb'
+    - 'notebooks/knee_angle_tracking.ipynb'
   - api.md
 
 theme:
