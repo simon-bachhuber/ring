@@ -159,3 +159,17 @@ def pickle_load(
     with open(path, "rb") as file:
         obj = pickle.load(file)
     return obj
+
+
+def primes(n: int) -> list[int]:
+    "Primefactor decomposition in ascending order."
+    primfac = []
+    d = 2
+    while d * d <= n:
+        while (n % d) == 0:
+            primfac.append(d)  # supposing you want multiple factors repeated
+            n //= d
+        d += 1
+    if n > 1:
+        primfac.append(n)
+    return primfac

@@ -4,6 +4,8 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+import tree_utils
+
 from ring import base
 from ring import utils
 from ring.algorithms import jcalc
@@ -13,7 +15,6 @@ from ring.algorithms.generator import motion_artifacts
 from ring.algorithms.generator import randomize
 from ring.algorithms.generator import transforms
 from ring.algorithms.generator import types
-import tree_utils
 
 
 class RCMG:
@@ -108,23 +109,20 @@ class RCMG:
                         partial_build_gen(sys=_sys, config=_config, sys_ml=sys_ml)
                     )
 
-    def _to_data(self, sizes, seed, jit):
-        return batch.batch_generators_eager_to_list(
-            self.gens, sizes, seed=seed, jit=jit
-        )
+    def _to_data(self, sizes, seed):
+        return batch.batch_generators_eager_to_list(self.gens, sizes, seed=seed)
 
-    def to_list(self, sizes: int | list[int] = 1, seed: int = 1, jit: bool = False):
-        return self._to_data(sizes, seed, jit)
+    def to_list(self, sizes: int | list[int] = 1, seed: int = 1):
+        return self._to_data(sizes, seed)
 
     def to_pickle(
         self,
         path: str,
         sizes: int | list[int] = 1,
         seed: int = 1,
-        jit: bool = False,
         overwrite: bool = True,
     ) -> None:
-        data = tree_utils.tree_batch(self._to_data(sizes, seed, jit))
+        data = tree_utils.tree_batch(self._to_data(sizes, seed))
         utils.pickle_save(data, path, overwrite=overwrite)
 
     def to_hdf5(
@@ -132,10 +130,9 @@ class RCMG:
         path: str,
         sizes: int | list[int] = 1,
         seed: int = 1,
-        jit: bool = False,
         overwrite: bool = True,
     ) -> None:
-        data = tree_utils.tree_batch(self._to_data(sizes, seed, jit))
+        data = tree_utils.tree_batch(self._to_data(sizes, seed))
         utils.hdf5_save(path, data, overwrite=overwrite)
 
     def to_eager_gen(
@@ -143,11 +140,8 @@ class RCMG:
         batchsize: int = 1,
         sizes: int | list[int] = 1,
         seed: int = 1,
-        jit: bool = False,
     ) -> types.BatchedGenerator:
-        return batch.batch_generators_eager(
-            self.gens, sizes, batchsize, seed=seed, jit=jit
-        )
+        return batch.batch_generators_eager(self.gens, sizes, batchsize, seed=seed)
 
     def to_lazy_gen(
         self, sizes: int | list[int] = 1, jit: bool = True

@@ -6,11 +6,12 @@ import warnings
 import jax
 import jax.numpy as jnp
 import numpy as np
-from ring import utils
-from ring.algorithms.generator import types
 from tqdm import tqdm
 import tree_utils
 from tree_utils import tree_batch
+
+from ring import utils
+from ring.algorithms.generator import types
 
 
 def _build_batch_matrix(batchsizes: list[int]) -> jax.Array:
@@ -61,11 +62,24 @@ def batch_generators_lazy(
     return generator
 
 
+def _number_of_executions_required(size: int) -> int:
+    vmap_threshold = 128
+    _, vmap = utils.distribute_batchsize(size)
+
+    primes = iter(utils.primes(vmap))
+    n_calls = 1
+    while vmap > vmap_threshold:
+        prime = next(primes)
+        n_calls *= prime
+        vmap /= prime
+
+    return n_calls
+
+
 def batch_generators_eager_to_list(
     generators: types.Generator | list[types.Generator],
     sizes: int | list[int],
     seed: int = 1,
-    jit: bool = True,
 ) -> list[tree_utils.PyTree]:
     "Returns list of unbatched sequences as numpy arrays."
     generators, sizes = _process_sizes_batchsizes_generators(generators, sizes)
@@ -73,11 +87,20 @@ def batch_generators_eager_to_list(
     key = jax.random.PRNGKey(seed)
     data = []
     for gen, size in tqdm(zip(generators, sizes), desc="eager data generation"):
-        key, consume = jax.random.split(key)
-        sample = batch_generators_lazy(gen, size, jit=jit)(consume)
-        # converts also to numpy
-        sample = jax.device_get(sample)
-        data.extend([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
+
+        n_calls = _number_of_executions_required(size)
+        # decrease size by n_calls times
+        size = int(size / n_calls)
+        jit = True if n_calls > 1 else False
+        gen_jit = batch_generators_lazy(gen, size, jit=jit)
+
+        for _ in range(n_calls):
+            key, consume = jax.random.split(key)
+            sample = gen_jit(consume)
+            # converts also to numpy
+            sample = jax.device_get(sample)
+            data.extend([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
+
     return data
 
 
@@ -243,12 +266,11 @@ def batch_generators_eager(
     shuffle: bool = True,
     drop_last: bool = True,
     seed: int = 1,
-    jit: bool = True,
 ) -> types.BatchedGenerator:
     """Eagerly create a large precomputed generator by calling multiple generators
     and stacking their output."""
 
-    data = batch_generators_eager_to_list(generators, sizes, seed=seed, jit=jit)
+    data = batch_generators_eager_to_list(generators, sizes, seed=seed)
     return batched_generator_from_list(data, batchsize, shuffle, drop_last)
 
 
@@ -270,7 +292,7 @@ def _process_sizes_batchsizes_generators(
 
     assert len(generators) == len(list_sizes)
 
-    _WARN_SIZE = 4096
+    _WARN_SIZE = 1e6  # disable this warning
     for size in list_sizes:
         if size >= _WARN_SIZE:
             warnings.warn(
