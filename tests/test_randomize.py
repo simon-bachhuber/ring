@@ -11,21 +11,21 @@ def _load_1Seg2Seg3Seg4Seg_system(
 ):
     """
     4Seg:
-        Four anchors : ["seg5", "seg2", "seg3", "seg4"]
-        Two anchors  : ["seg5", "seg4"]
+        Four anchors : ["seg2", "seg3", "seg4", "seg5"]
+        Two anchors  : ["seg2", "seg5"]
     3Seg:
-        Three anchors: ["seg2", "seg3", "seg4"]
-        Two anchors  : ["seg2", "seg4"]
+        Three anchors: ["seg3", "seg4", "seg5"]
+        Two anchors  : ["seg3", "seg5"]
     2Seg:
-        Two anchors: ["seg2", "seg3"]
+        Two anchors: ["seg3", "seg4"]
     1Seg:
         Single anchor: Any of the five segments.
     """
     delete_4Seg = ["seg1"]
-    delete_3Seg = ["seg5"]
-    delete_2Seg = ["seg5", "seg4"]
+    delete_3Seg = ["seg2"]
+    delete_2Seg = ["seg2", "seg5"]
     delete_1Seg = list(
-        set(["seg1", "seg5", "seg2", "seg3", "seg4"]) - set([anchor_1Seg])
+        set(["seg1", "seg2", "seg3", "seg4", "seg5"]) - set([anchor_1Seg])
     )
 
     assert not (
@@ -90,12 +90,12 @@ def _new_load_standard_system():
         _load_sys(
             1,
         )
-        .morph_system(new_anchor="seg5")
+        .morph_system(new_anchor="seg2")
         .delete_system("seg1")
     )
-    sys_3Seg = sys_4Seg.morph_system(new_anchor="seg2").delete_system("seg5")
-    sys_2Seg = sys_3Seg.delete_system("seg4")
-    sys_1Seg = sys_2Seg.delete_system("seg3")
+    sys_3Seg = sys_4Seg.morph_system(new_anchor="seg3").delete_system("seg2")
+    sys_2Seg = sys_3Seg.delete_system("seg5")
+    sys_1Seg = sys_2Seg.delete_system("seg4")
 
     def add_suffix(sys, suffix):
         return sys.change_model_name(suffix=suffix).add_prefix_suffix(suffix=suffix)
@@ -115,10 +115,10 @@ def test_new_load_standard_system():
     assert ring.utils.sys_compare(
         sys,
         _load_1Seg2Seg3Seg4Seg_system(
+            "seg3",
+            "seg3",
+            "seg3",
             "seg2",
-            "seg2",
-            "seg2",
-            "seg5",
         ),
     )
 
@@ -126,24 +126,24 @@ def test_new_load_standard_system():
 
 
 def SKIP_test_randomize_anchors_long():
-    anchors_2Seg = ["seg2", "seg3"]
-    anchors_3Seg = ["seg2", "seg4"]
-    anchors_4Seg = ["seg5", "seg2", "seg3", "seg4"]
+    anchors_2Seg = ["seg3", "seg4"]
+    anchors_3Seg = ["seg3", "seg5"]
+    anchors_4Seg = ["seg2", "seg3", "seg4", "seg5"]
 
     sys_data = []
     for a2S in anchors_2Seg:
         for a3S in anchors_3Seg:
             for a4S in anchors_4Seg:
-                sys_data.append(_load_1Seg2Seg3Seg4Seg_system("seg2", a2S, a3S, a4S))
+                sys_data.append(_load_1Seg2Seg3Seg4Seg_system("seg3", a2S, a3S, a4S))
     anchors = [
-        "seg2_2Seg",
         "seg3_2Seg",
-        "seg2_3Seg",
-        "seg4_3Seg",
-        "seg5_4Seg",
+        "seg4_2Seg",
+        "seg3_3Seg",
+        "seg5_3Seg",
         "seg2_4Seg",
         "seg3_4Seg",
         "seg4_4Seg",
+        "seg5_4Seg",
     ]
     sys_data_new = ring.algorithms.generator.randomize_anchors(
         ring.io.load_example("exclude/standard_sys"), anchors
@@ -154,18 +154,18 @@ def SKIP_test_randomize_anchors_long():
 
 
 def test_randomize_anchors():
-    anchors_2Seg = ["seg2", "seg3"]
-    anchors_3Seg = ["seg2", "seg4"]
+    anchors_2Seg = ["seg3", "seg4"]
+    anchors_3Seg = ["seg3", "seg5"]
 
     sys_data = []
     for a2S in anchors_2Seg:
         for a3S in anchors_3Seg:
             sys_data.append(_load_1Seg2Seg3Seg4Seg_system(None, a2S, a3S, None))
     anchors = [
-        "seg2_2Seg",
         "seg3_2Seg",
-        "seg2_3Seg",
-        "seg4_3Seg",
+        "seg4_2Seg",
+        "seg3_3Seg",
+        "seg5_3Seg",
     ]
     sys_data_new = ring.algorithms.generator.randomize_anchors(sys_data[0], anchors)
 

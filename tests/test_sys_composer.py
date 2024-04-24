@@ -77,9 +77,9 @@ def test_delete_subsystem_cut_twice_versus_cut_once():
         delete_subsystem(sys, ["seg1", "seg2"]), delete_subsystem(sys, ["seg2"])
     )
 
-    sys = _compat._load_sys(1).morph_system(new_anchor="seg3")
+    sys = _compat._load_sys(1).morph_system(new_anchor="seg4")
     assert sys_compare(
-        delete_subsystem(sys, ["seg5", "seg2"]), delete_subsystem(sys, ["seg2"])
+        delete_subsystem(sys, ["seg2", "seg3"]), delete_subsystem(sys, ["seg3"])
     )
 
 
@@ -208,17 +208,17 @@ def test_morph_new_anchor():
         morph_system(
             sys,
             new_parents=[
-                "seg5",
+                "seg2",
                 "seg1",
+                "seg3",
                 "seg2",
-                "seg5",
                 -1,
-                "seg2",
-                "seg2",
                 "seg3",
                 "seg3",
                 "seg4",
+                "seg4",
+                "seg5",
             ],
         ),
-        morph_system(sys, new_anchor="seg2"),
+        morph_system(sys, new_anchor="seg3"),
     )
