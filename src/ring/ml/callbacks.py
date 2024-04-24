@@ -108,6 +108,10 @@ class EvalXyTrainingLoopCallback(training_loop.TrainingLoopCallback):
         if (i_episode % self.eval_every) == 0:
             point_estimates = self.eval_fn(params)
             self.last_metrices = {self.metric_identifier: point_estimates}
+
+        assert (
+            self.metric_identifier not in metrices
+        ), f"`{self.metric_identifier}` is already in `{metrices.keys()}`"
         metrices.update(self.last_metrices)
 
 

@@ -286,7 +286,7 @@ class NoGraph_FilterWrapper(AbstractFilterWrapper):
             yhat = yhat.reshape((T, N, -1))
 
         if self._quat_normalize:
-            assert yhat.shape[-1] == 4
+            assert yhat.shape[-1] == 4, f"yhat.shape={yhat.shape}"
             yhat = ring.maths.safe_normalize(yhat)
 
         return yhat, state
