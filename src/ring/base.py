@@ -99,14 +99,14 @@ class _Base:
     def ndim(self):
         return tu.tree_ndim(self)
 
-    def shape(self, axis=0) -> int:
-        return tu.tree_shape(self, axis)
-
-    def __len__(self) -> int:
-        Bs = tree_map(lambda arr: arr.shape[0], self)
+    def shape(self, axis: int = 0) -> int:
+        Bs = tree_map(lambda arr: arr.shape[axis], self)
         Bs = set(jax.tree_util.tree_flatten(Bs)[0])
         assert len(Bs) == 1
         return list(Bs)[0]
+
+    def __len__(self) -> int:
+        return self.shape(axis=0)
 
 
 @struct.dataclass
@@ -685,14 +685,13 @@ class System(_Base):
         self,
         xs: Transform | list[Transform],
         yhat: dict | jax.Array | np.ndarray,
-        stepframe: int = 1,
         # by default we don't predict the global rotation
         transparent_segment_to_root: bool = True,
         **kwargs,
     ):
         "`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent."
         return ring.rendering.render_prediction(
-            self, xs, yhat, stepframe, transparent_segment_to_root, **kwargs
+            self, xs, yhat, transparent_segment_to_root, **kwargs
         )
 
     def delete_system(self, link_name: str | list[str], strict: bool = True):

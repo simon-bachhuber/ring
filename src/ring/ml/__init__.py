@@ -12,6 +12,8 @@ from .optimizer import make_optimizer
 from .ringnet import RING
 from .train import train_fn
 
+_lpf_cutoff_freq = 10.0
+
 
 def RING_ICML24(params=None, eval: bool = True, **kwargs):
     """Create the RING network used in the icml24 paper.
@@ -29,7 +31,7 @@ def RING_ICML24(params=None, eval: bool = True, **kwargs):
     ringnet = RING(params=params, **kwargs)  # noqa: F811
     ringnet = base.ScaleX_FilterWrapper(ringnet)
     if eval:
-        ringnet = base.LPF_FilterWrapper(ringnet, 10.0, samp_freq=None)
+        ringnet = base.LPF_FilterWrapper(ringnet, _lpf_cutoff_freq, samp_freq=None)
     ringnet = base.GroundTruthHeading_FilterWrapper(ringnet)
     return ringnet
 
@@ -55,7 +57,7 @@ def RNNO(
     ringnet = base.NoGraph_FilterWrapper(ringnet, quat_normalize=return_quats)
     ringnet = base.ScaleX_FilterWrapper(ringnet)
     if eval and return_quats:
-        ringnet = base.LPF_FilterWrapper(ringnet, 10.0, samp_freq=None)
+        ringnet = base.LPF_FilterWrapper(ringnet, _lpf_cutoff_freq, samp_freq=None)
     if return_quats:
         ringnet = base.GroundTruthHeading_FilterWrapper(ringnet)
     return ringnet

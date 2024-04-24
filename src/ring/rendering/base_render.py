@@ -136,12 +136,15 @@ def render_prediction(
     sys: base.System,
     xs: base.Transform | list[base.Transform],
     yhat: dict | jax.Array | np.ndarray,
-    stepframe: int = 1,
     # by default we don't predict the global rotation
     transparent_segment_to_root: bool = True,
     **kwargs,
 ):
     "`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent."
+
+    offset_truth = kwargs.pop("offset_truth", [0, 0, 0])
+    offset_pred = kwargs.pop("offset_pred", [0, 0, 0])
+
     if isinstance(xs, list):
         # list -> batched Transform
         xs = xs[0].batch(*xs[1:])
@@ -180,18 +183,23 @@ def render_prediction(
 
     # swap time axis, and link axis
     xs, xshat = xs.transpose((1, 0, 2)), xshat.transpose((1, 0, 2))
+
+    add_offset = lambda x, offset: algebra.transform_mul(
+        x, base.Transform.create(pos=jnp.array(offset, dtype=jnp.float32))
+    )
+
     # create mapping from `name` -> Transform
     xs_dict = dict(
         zip(
             ["hat_" + name for name in sys_noimu.link_names],
-            [xshat[i] for i in range(sys_noimu.num_links())],
+            [add_offset(xshat[i], offset_pred) for i in range(sys_noimu.num_links())],
         )
     )
     xs_dict.update(
         dict(
             zip(
                 sys.link_names,
-                [xs[i] for i in range(sys.num_links())],
+                [add_offset(xs[i], offset_truth) for i in range(sys.num_links())],
             )
         )
     )
@@ -202,11 +210,8 @@ def render_prediction(
         xs_render.append(xs_dict[name])
     xs_render = xs_render[0].batch(*xs_render[1:])
     xs_render = xs_render.transpose((1, 0, 2))
-    N = xs_render.shape()
-    xs_render = [xs_render[t] for t in range(0, N, stepframe)]
 
     frames = render(sys_render, xs_render, **kwargs)
-
     return frames
 
 
