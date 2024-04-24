@@ -88,6 +88,118 @@ class MotionConfig:
         assert nomotion_config.is_feasible()
         return nomotion_config
 
+    @staticmethod
+    def from_register(name: str) -> "MotionConfig":
+        return _registered_motion_configs[name]
+
+
+_registered_motion_configs = {
+    "hinUndHer": MotionConfig(
+        t_min=0.3,
+        t_max=1.5,
+        dang_max=3.0,
+        delta_ang_min=0.5,
+        pos_min=-1.5,
+        pos_max=1.5,
+        randomized_interpolation_angle=True,
+        cor=True,
+    ),
+    "langsam": MotionConfig(
+        t_min=0.2,
+        t_max=1.25,
+        dang_max=2.0,
+        randomized_interpolation_angle=True,
+        dang_max_free_spherical=2.0,
+        cdf_bins_min=1,
+        cdf_bins_max=3,
+        pos_min=-1.5,
+        pos_max=1.5,
+        cor=True,
+    ),
+    "standard": MotionConfig(
+        randomized_interpolation_angle=True,
+        cdf_bins_min=1,
+        cdf_bins_max=5,
+        cor=True,
+    ),
+    "expFast": MotionConfig(
+        t_min=0.4,
+        t_max=1.1,
+        dang_max=jnp.deg2rad(180),
+        delta_ang_min=jnp.deg2rad(60),
+        delta_ang_max=jnp.deg2rad(110),
+        pos_min=-1.5,
+        pos_max=1.5,
+        range_of_motion_hinge_method="sigmoid",
+        randomized_interpolation_angle=True,
+        cdf_bins_min=1,
+        cdf_bins_max=3,
+        cor=True,
+    ),
+    "expSlow": MotionConfig(
+        t_min=0.75,
+        t_max=3.0,
+        dang_min=0.1,
+        dang_max=1.0,
+        dang_min_free_spherical=0.1,
+        delta_ang_min=0.4,
+        dang_max_free_spherical=1.0,
+        delta_ang_max_free_spherical=1.0,
+        dpos_max=0.3,
+        cor_dpos_max=0.3,
+        range_of_motion_hinge_method="sigmoid",
+        randomized_interpolation_angle=True,
+        cdf_bins_min=1,
+        cdf_bins_max=5,
+        cor=True,
+    ),
+    "expFastNoSig": MotionConfig(
+        t_min=0.4,
+        t_max=1.1,
+        dang_max=jnp.deg2rad(180),
+        delta_ang_min=jnp.deg2rad(60),
+        delta_ang_max=jnp.deg2rad(110),
+        pos_min=-1.5,
+        pos_max=1.5,
+        randomized_interpolation_angle=True,
+        cdf_bins_min=1,
+        cdf_bins_max=3,
+        cor=True,
+    ),
+    "expSlowNoSig": MotionConfig(
+        t_min=0.75,
+        t_max=3.0,
+        dang_min=0.1,
+        dang_max=1.0,
+        dang_min_free_spherical=0.1,
+        delta_ang_min=0.4,
+        dang_max_free_spherical=1.0,
+        delta_ang_max_free_spherical=1.0,
+        dpos_max=0.3,
+        cor_dpos_max=0.3,
+        randomized_interpolation_angle=True,
+        cdf_bins_min=1,
+        cdf_bins_max=3,
+        cor=True,
+    ),
+    "verySlow": MotionConfig(
+        t_min=1.5,
+        t_max=5.0,
+        dang_min=jnp.deg2rad(1),
+        dang_max=jnp.deg2rad(30),
+        delta_ang_min=jnp.deg2rad(20),
+        dang_min_free_spherical=jnp.deg2rad(1),
+        dang_max_free_spherical=jnp.deg2rad(10),
+        delta_ang_min_free_spherical=jnp.deg2rad(5),
+        dpos_max=0.3,
+        cor_dpos_max=0.3,
+        randomized_interpolation_angle=True,
+        cdf_bins_min=1,
+        cdf_bins_max=3,
+        cor=True,
+    ),
+}
+
 
 def _is_feasible_config1(c: MotionConfig) -> bool:
     t_min, t_max = c.t_min, _to_float(c.t_max, 0.0)
