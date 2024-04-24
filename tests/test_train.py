@@ -1,12 +1,15 @@
+from pathlib import Path
+
 import numpy as np
 import optax
+import tree_utils
+
 import ring
 from ring import ml
 from ring import utils
-import tree_utils
 
 
-def test_ring():
+def _load_gen_lam():
     example = "test_three_seg_seg2"
     sys = ring.io.load_example(example)
     sys_noimu = sys.make_sys_noimu()[0]
@@ -19,15 +22,39 @@ def test_ring():
         use_link_number_in_Xy=1,
     ).to_lazy_gen()
     gen = ring.algorithms.GeneratorTrafoExpandFlatten(gen)
+    lam = sys_noimu.link_parents
+    return gen, lam
+
+
+def test_rnno():
+    gen, lam = _load_gen_lam()
+
+    N = len(lam)
+    ml.train_fn(
+        gen,
+        5,
+        ml.RNNO(N * 4, return_quats=True, eval=False, hidden_state_dim=20),
+    )
+
+
+def test_ring():
+    gen, lam = _load_gen_lam()
 
     ml.train_fn(
         gen,
         5,
-        ml.RING(hidden_state_dim=20, message_dim=10, lam=sys_noimu.link_parents),
+        ml.RING(hidden_state_dim=20, message_dim=10, lam=lam),
     )
 
 
+def _remove_file_if_exists(path: str) -> None:
+    Path(path).expanduser().unlink(missing_ok=True)
+
+
 def test_checkpointing():
+    _remove_file_if_exists("~/params/test_checkpointing_nopause.pickle")
+    _remove_file_if_exists("~/params/test_checkpointing_pause.pickle")
+
     optimizer = optax.adam(0.1)
 
     ring.setup(unique_id="test_checkpointing_nopause")
