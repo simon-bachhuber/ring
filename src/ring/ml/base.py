@@ -34,9 +34,9 @@ class AbstractFilter(ABC):
     def _apply_batched(self, X, params, state, y, lam):
         pass
 
-    @abstractmethod
     def init(self, bs, X, lam, seed: int):
-        pass
+        params = state = None
+        return params, state
 
     def apply(self, X, params=None, state=None, y=None, lam=None):
         "X.shape = (B, T, N, F) or (T, N, F)"

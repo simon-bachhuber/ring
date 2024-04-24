@@ -3,6 +3,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+
 import ring
 from ring.algorithms.jcalc import _find_interval
 
@@ -59,3 +60,7 @@ def test_find_interval():
     assert _find_interval(1.5, jnp.array([0.0, 1.0, 2.0])) == 2
     assert _find_interval(0.5, jnp.array([0.0])) == 1
     assert _find_interval(-0.5, jnp.array([0.0])) == 0
+
+
+def test_motion_config_register():
+    ring.MotionConfig.from_register("expSlow")
