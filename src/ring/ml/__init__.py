@@ -41,6 +41,7 @@ def RNNO(
     return_quats: bool = False,
     params=None,
     eval: bool = True,
+    samp_freq: float | None = None,
     **kwargs,
 ):
     assert "message_dim" not in kwargs
@@ -57,7 +58,7 @@ def RNNO(
     ringnet = base.NoGraph_FilterWrapper(ringnet, quat_normalize=return_quats)
     ringnet = base.ScaleX_FilterWrapper(ringnet)
     if eval and return_quats:
-        ringnet = base.LPF_FilterWrapper(ringnet, _lpf_cutoff_freq, samp_freq=None)
+        ringnet = base.LPF_FilterWrapper(ringnet, _lpf_cutoff_freq, samp_freq=samp_freq)
     if return_quats:
         ringnet = base.GroundTruthHeading_FilterWrapper(ringnet)
     return ringnet

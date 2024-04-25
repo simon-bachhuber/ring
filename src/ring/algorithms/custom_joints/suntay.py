@@ -293,6 +293,63 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
     ring.register_new_joint_type(name, joint_model, 1, overwrite=True)
 
 
+def Polynomial_DrawnFnPair(
+    order: int = 2,
+    val: float = 2.0,
+    center: bool = False,
+    flexion_center: Optional[float] = None,
+) -> DrawnFnPairFactory:
+    assert val >= 0.0
+
+    # because 0-th order is also counted
+    order += 1
+
+    def factory(xs, mn, mx):
+        nonlocal flexion_center
+
+        flexion_mn = jnp.min(xs)
+        flexion_mx = jnp.max(xs)
+
+        def _apply_poly_factors(poly_factors, q):
+            return poly_factors @ jnp.power(q, jnp.arange(order))
+
+        if flexion_center is None:
+            flexion_center = (flexion_mn + flexion_mx) / 2
+        else:
+            flexion_center = jnp.array(flexion_center)
+
+        def init(key):
+            c1, c2 = jax.random.split(key)
+            poly_factors = jax.random.uniform(
+                c1, shape=(order,), minval=-val, maxval=val
+            )
+            q0 = jax.random.uniform(c2, minval=flexion_mn, maxval=flexion_mx)
+            values = jax.vmap(_apply_poly_factors, in_axes=(None, 0))(
+                poly_factors, xs - q0
+            )
+            amax = jnp.max(values)
+            amin = jnp.min(values)
+            return amin, amax, poly_factors, q0
+
+        def _apply(params, q):
+            amin, amax, poly_factors, q0 = params
+            q = q - q0
+            value = _apply_poly_factors(poly_factors, q)
+            return restrict(value, mn, mx, amin, amax)
+
+        if center:
+
+            def apply(params, q):
+                return _apply(params, q) - _apply(params, flexion_center)
+
+        else:
+            apply = _apply
+
+        return DrawnFnPair(init, apply)
+
+    return factory
+
+
 def MLP_DrawnFnPair(
     center: bool = False, flexion_center: Optional[float] = None
 ) -> DrawnFnPairFactory:
