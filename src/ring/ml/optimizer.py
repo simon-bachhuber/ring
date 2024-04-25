@@ -14,10 +14,10 @@ from optax._src.transform import AddNoiseState
 def make_optimizer(
     lr: float,
     n_episodes: int,
-    n_steps_per_episode: int,
+    n_steps_per_episode: int = 6,
     adap_clip: Optional[float] = 0.1,
     glob_clip: Optional[float] = 0.2,
-    skip_large_update_max_normsq: float = 5.0,
+    skip_large_update_max_normsq: float = 100.0,
     skip_large_update_warmup: int = 300,
     inner_opt=optax.lamb,
     cos_decay_twice: bool = False,
