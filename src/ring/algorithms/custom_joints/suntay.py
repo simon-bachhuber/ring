@@ -327,8 +327,8 @@ def Polynomial_DrawnFnPair(
             values = jax.vmap(_apply_poly_factors, in_axes=(None, 0))(
                 poly_factors, xs - q0
             )
-            amax = jnp.max(values)
-            amin = jnp.min(values)
+            eps = 1e-6
+            amin, amax = jnp.min(values), jnp.max(values) + eps
             return amin, amax, poly_factors, q0
 
         def _apply(params, q):
@@ -344,6 +344,22 @@ def Polynomial_DrawnFnPair(
 
         else:
             apply = _apply
+
+        return DrawnFnPair(init, apply)
+
+    return factory
+
+
+def ConstantValue_DrawnFnPair(value: float) -> DrawnFnPairFactory:
+    value = jnp.array(value)
+
+    def factory(xs, mn, mx):
+
+        def init(key):
+            return {}
+
+        def apply(params, q):
+            return value
 
         return DrawnFnPair(init, apply)
 
