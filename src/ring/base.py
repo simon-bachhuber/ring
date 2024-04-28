@@ -929,15 +929,21 @@ def _parse_system_calculate_inertia(sys: System):
 def _scan_sys(sys: System, f: Callable, in_types: str, *args, reverse: bool = False):
     assert len(args) == len(in_types)
     for in_type, arg in zip(in_types, args):
-        B = len(arg)
+
         if in_type == "l":
-            assert B == sys.num_links()
+            required_length = sys.num_links()
         elif in_type == "q":
-            assert B == sys.q_size()
+            required_length = sys.q_size()
         elif in_type == "d":
-            assert B == sys.qd_size()
+            required_length = sys.qd_size()
         else:
             raise Exception("`in_types` must be one of `l` or `q` or `d`")
+
+        B = len(arg)
+        B_re = required_length
+        assert (
+            B == B_re
+        ), f"arg={arg} has a length of B={B} which isn't the required length={B_re}"
 
     order = range(sys.num_links())
     q_idx, qd_idx = 0, 0
