@@ -295,14 +295,15 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
 
 def Polynomial_DrawnFnPair(
     order: int = 2,
-    val: float = 2.0,
     center: bool = False,
     flexion_center: Optional[float] = None,
+    include_bias: bool = True,
 ) -> DrawnFnPairFactory:
-    assert val >= 0.0
+    assert not (order == 0 and not include_bias)
 
     # because 0-th order is also counted
     order += 1
+    powers = jnp.arange(order) if include_bias else jnp.arange(1, order)
 
     def factory(xs, mn, mx):
         nonlocal flexion_center
@@ -311,7 +312,7 @@ def Polynomial_DrawnFnPair(
         flexion_mx = jnp.max(xs)
 
         def _apply_poly_factors(poly_factors, q):
-            return poly_factors @ jnp.power(q, jnp.arange(order))
+            return poly_factors @ jnp.power(q, powers)
 
         if flexion_center is None:
             flexion_center = (flexion_mn + flexion_mx) / 2
@@ -319,9 +320,9 @@ def Polynomial_DrawnFnPair(
             flexion_center = jnp.array(flexion_center)
 
         def init(key):
-            c1, c2 = jax.random.split(key)
+            c1, c2, c3 = jax.random.split(key, 3)
             poly_factors = jax.random.uniform(
-                c1, shape=(order,), minval=-val, maxval=val
+                c1, shape=(len(powers),), minval=-1.0, maxval=1.0
             )
             q0 = jax.random.uniform(c2, minval=flexion_mn, maxval=flexion_mx)
             values = jax.vmap(_apply_poly_factors, in_axes=(None, 0))(
@@ -329,6 +330,9 @@ def Polynomial_DrawnFnPair(
             )
             eps = 1e-6
             amin, amax = jnp.min(values), jnp.max(values) + eps
+            delta = amax - amin
+            scale_delta = jnp.clip(jax.random.normal(c3) + 0.5, 1.0)
+            amax = amin + delta * scale_delta
             return amin, amax, poly_factors, q0
 
         def _apply(params, q):
