@@ -319,10 +319,17 @@ def Polynomial_DrawnFnPair(
         else:
             flexion_center = jnp.array(flexion_center)
 
+        if (order - 1) == 0:
+            method = "clip"
+            minval, maxval = mn, mx
+        else:
+            method = "minmax"
+            minval, maxval = -1.0, 1.0
+
         def init(key):
             c1, c2, c3 = jax.random.split(key, 3)
             poly_factors = jax.random.uniform(
-                c1, shape=(len(powers),), minval=-1.0, maxval=1.0
+                c1, shape=(len(powers),), minval=minval, maxval=maxval
             )
             q0 = jax.random.uniform(c2, minval=flexion_mn, maxval=flexion_mx)
             values = jax.vmap(_apply_poly_factors, in_axes=(None, 0))(
@@ -339,7 +346,7 @@ def Polynomial_DrawnFnPair(
             amin, amax, poly_factors, q0 = params
             q = q - q0
             value = _apply_poly_factors(poly_factors, q)
-            return restrict(value, mn, mx, amin, amax)
+            return restrict(value, mn, mx, amin, amax, method=method)
 
         if center:
 
