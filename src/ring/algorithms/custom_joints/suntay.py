@@ -298,6 +298,7 @@ def Polynomial_DrawnFnPair(
     center: bool = False,
     flexion_center: Optional[float] = None,
     include_bias: bool = True,
+    enable_scale_delta: bool = True,
 ) -> DrawnFnPairFactory:
     assert not (order == 0 and not include_bias)
 
@@ -337,9 +338,10 @@ def Polynomial_DrawnFnPair(
             )
             eps = 1e-6
             amin, amax = jnp.min(values), jnp.max(values) + eps
-            delta = amax - amin
-            scale_delta = jnp.clip(jax.random.normal(c3) + 0.5, 1.0)
-            amax = amin + delta * scale_delta
+            if enable_scale_delta:
+                delta = amax - amin
+                scale_delta = jnp.clip(jax.random.normal(c3) + 0.5, 1.0)
+                amax = amin + delta * scale_delta
             return amin, amax, poly_factors, q0
 
         def _apply(params, q):
