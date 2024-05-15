@@ -573,6 +573,8 @@ class System(_Base):
         new_zero: Optional[jax.Array] = None,
     ):
         "By default damping, stiffness are set to zero."
+        from ring.algorithms import get_joint_model
+
         q_size, qd_size = Q_WIDTHS[new_joint_type], QD_WIDTHS[new_joint_type]
 
         def logic_unfreeze_to_spherical(link_name, olt, ola, old, ols, olz):
@@ -594,7 +596,13 @@ class System(_Base):
 
             return nlt, nla, nld, nls, nlz
 
-        return _update_sys_if_replace_joint_type(self, logic_unfreeze_to_spherical)
+        sys = _update_sys_if_replace_joint_type(self, logic_unfreeze_to_spherical)
+
+        jm = get_joint_model(new_joint_type)
+        if jm.init_joint_params is not None:
+            sys = sys.from_str(sys.to_str())
+
+        return sys
 
     def findall_imus(self) -> list[str]:
         return [name for name in self.link_names if name[:3] == "imu"]
