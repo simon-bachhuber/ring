@@ -97,8 +97,10 @@ def batch_generators_eager_to_list(
         for _ in range(n_calls):
             key, consume = jax.random.split(key)
             sample = gen_jit(consume)
-            # converts also to numpy
+            # converts also to numpy; but with np.array.flags.writeable = False
             sample = jax.device_get(sample)
+            # this then sets this flag to True
+            sample = jax.tree_map(np.array, sample)
             data.extend([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
 
     return data
