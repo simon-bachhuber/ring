@@ -424,14 +424,14 @@ def _draw_rxyz(
     # TODO, delete these args and pass a modifified `config` with `replace` instead
     enable_range_of_motion: bool = True,
     free_spherical: bool = False,
+    # how often it should try to fullfill the dang_min/max and delta_ang_min/max conds
+    max_iter: int = 5,
 ) -> jax.Array:
     key_value, consume = jax.random.split(key_value)
     ANG_0 = jax.random.uniform(consume, minval=config.ang0_min, maxval=config.ang0_max)
     # `random_angle_over_time` always returns wrapped angles, thus it would be
     # inconsistent to allow an initial value that is not wrapped
     ANG_0 = maths.wrap_to_pi(ANG_0)
-    # only used for `delta_ang_min_max` logic
-    max_iter = 5
     return _random.random_angle_over_time(
         key_t,
         key_value,
