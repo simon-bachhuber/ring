@@ -4,6 +4,7 @@ import warnings
 import jax
 from jax import random
 import jax.numpy as jnp
+
 from ring import maths
 
 Float = jax.Array
@@ -40,20 +41,20 @@ def random_angle_over_time(
     def body_fn_outer(val):
         i, t, phi, key_t, key_ang, ANG = val
 
-        key_t, consume = random.split(key_t)
-        dt = random.uniform(consume, minval=t_min, maxval=_to_float(t_max, t))
-
-        key_ang, consume = random.split(key_ang)
-        phi = _resolve_range_of_motion(
+        key_t, consume_t = random.split(key_t)
+        key_ang, consume_ang = random.split(key_ang)
+        dt, phi = _resolve_range_of_motion(
             range_of_motion,
             range_of_motion_method,
             _to_float(dang_min, t),
             _to_float(dang_max, t),
             _to_float(delta_ang_min, t),
             _to_float(delta_ang_max, t),
-            dt,
+            t_min,
+            _to_float(t_max, t),
             phi,
-            consume,
+            consume_t,
+            consume_ang,
             max_iter,
         )
         t += dt
@@ -246,12 +247,14 @@ def _resolve_range_of_motion(
     dang_max,
     delta_ang_min,
     delta_ang_max,
-    dt,
+    t_min,
+    t_max,
     prev_phi,
-    key,
+    key_t,
+    key_ang,
     max_iter,
 ):
-    def _next_phi(key):
+    def _next_phi(key, dt):
         key, consume = random.split(key)
 
         if range_of_motion:
@@ -294,21 +297,33 @@ def _resolve_range_of_motion(
             return prev_phi + sign * dphi
 
     def body_fn(val):
-        key, _, i = val
-        key, consume = jax.random.split(key)
-        next_phi = _next_phi(consume)
-        return key, next_phi, i + 1
+        key_t, key_ang, _, _, i = val
+
+        key_t, consume_t = jax.random.split(key_t)
+        dt = jax.random.uniform(consume_t, minval=t_min, maxval=t_max)
+
+        key_ang, consume_ang = jax.random.split(key_ang)
+        next_phi = _next_phi(consume_ang, dt)
+
+        return key_t, key_ang, dt, next_phi, i + 1
 
     def cond_fn(val):
-        _, next_phi, i = val
+        *_, dt, next_phi, i = val
         delta_phi = jnp.abs(next_phi - prev_phi)
-        # delta is in bounds
-        break_if_true1 = (delta_phi >= delta_ang_min) & (delta_phi <= delta_ang_max)
+        # delta_ang is in bounds
+        cond_delta_ang = (delta_phi >= delta_ang_min) & (delta_phi <= delta_ang_max)
+        # dang is in bounds
+        dang = delta_phi / dt
+        cond_dang = (dang >= dang_min) & (dang <= dang_max)
+
+        break_if_true1 = jnp.logical_and(cond_delta_ang, cond_dang)
+        # break out of loop
         break_if_true2 = i > max_iter
         return (i == 0) | (jnp.logical_not(break_if_true1 | break_if_true2))
 
-    # the `prev_phi` here is unused
-    return jax.lax.while_loop(cond_fn, body_fn, (key, prev_phi, 0))[1]
+    init_val = (key_t, key_ang, 1.0, prev_phi, 0)
+    *_, dt, next_phi, _ = jax.lax.while_loop(cond_fn, body_fn, init_val)
+    return dt, next_phi
 
 
 def cosInterpolate(x, xp, fp):
