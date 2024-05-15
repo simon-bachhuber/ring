@@ -296,11 +296,16 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
 def Polynomial_DrawnFnPair(
     order: int = 2,
     center: bool = False,
-    flexion_center: Optional[float] = None,
+    flexion_center_deg: Optional[float] = None,
     include_bias: bool = True,
     enable_scale_delta: bool = True,
 ) -> DrawnFnPairFactory:
     assert not (order == 0 and not include_bias)
+
+    flexion_center = (
+        jnp.deg2rad(flexion_center_deg) if flexion_center_deg is not None else None
+    )
+    del flexion_center_deg
 
     # because 0-th order is also counted
     order += 1
@@ -317,8 +322,6 @@ def Polynomial_DrawnFnPair(
 
         if flexion_center is None:
             flexion_center = (flexion_mn + flexion_mx) / 2
-        else:
-            flexion_center = jnp.array(flexion_center)
 
         if (order - 1) == 0:
             method = "clip"
