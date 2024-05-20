@@ -3,6 +3,7 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
+
 from ring import algebra
 from ring import algorithms
 from ring import base
@@ -445,22 +446,18 @@ def _joint_axes_from_xs(sys, xs, sys_xs):
 
 def _joint_axes_from_sys(sys: base.Transform, N: int) -> dict:
     "`sys` should be `sys_noimu`. `N` is number of timesteps"
-    xaxis = jnp.array([1.0, 0, 0])
-    yaxis = jnp.array([0.0, 1, 0])
-    zaxis = jnp.array([0.0, 0, 1])
-    id_to_axis = {"x": xaxis, "y": yaxis, "z": zaxis}
     X = {}
 
     def f(_, __, name, link_type, link):
         joint_params = link.joint_params
         if link_type in ["rx", "ry", "rz"]:
-            joint_axes = id_to_axis[link_type[1]]
+            joint_axes = maths.unit_vectors(link_type[1])
         elif link_type == "rr":
             joint_axes = joint_params["rr"]["joint_axes"]
         elif link_type[:6] == "rr_imp":
             joint_axes = joint_params[link_type]["joint_axes"]
         else:
-            joint_axes = xaxis
+            joint_axes = maths.x_unit_vector
         X[name] = {"joint_axes": joint_axes}
 
     sys.scan(f, "lll", sys.link_names, sys.link_types, sys.links)

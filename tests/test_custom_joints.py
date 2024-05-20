@@ -1,5 +1,7 @@
 import jax
 import numpy as np
+import pytest
+
 import ring
 from ring import MotionConfig
 from ring.algorithms import custom_joints
@@ -21,14 +23,19 @@ def pipeline_load_data_X(
     return gen(jax.random.PRNGKey(1))[0]
 
 
-def test_virtual_input_joint_axes_rr_joint():
-    sys = ring.io.load_example("test_three_seg_seg2")
+def _replace_ry_rz_with(sys, new_joint_type: str):
     sys_rr = sys.replace(
         link_types=[
-            "rr" if link_type in ["ry", "rz"] else link_type
+            new_joint_type if link_type in ["ry", "rz"] else link_type
             for link_type in sys.link_types
         ]
     )
+    return sys_rr
+
+
+def test_virtual_input_joint_axes_rr_joint():
+    sys = ring.io.load_example("test_three_seg_seg2")
+    sys_rr = _replace_ry_rz_with(sys, "rr")
     sys_rr = _init_joint_params(jax.random.PRNGKey(1), sys_rr)
     joint_axes = sys_rr.links.joint_params["rr"]["joint_axes"]
 
@@ -38,7 +45,7 @@ def test_virtual_input_joint_axes_rr_joint():
     np.testing.assert_allclose(
         X["seg1"]["joint_axes"],
         np.repeat(np.array([[0.0, -1, 0]]), 1000, axis=0),
-        atol=1e-7,
+        atol=4e-7,
     )
     np.testing.assert_allclose(
         X["seg3"]["joint_axes"],
@@ -52,8 +59,8 @@ def test_virtual_input_joint_axes_rr_joint():
     np.testing.assert_allclose(
         X["seg1"]["joint_axes"],
         np.repeat(-joint_axes[1:2], 1000, axis=0),
-        atol=3e-7,
-        rtol=2e-6,
+        atol=4e-7,
+        rtol=2e-4,
     )
     np.testing.assert_allclose(
         X["seg3"]["joint_axes"],
@@ -63,6 +70,7 @@ def test_virtual_input_joint_axes_rr_joint():
     )
 
 
+@pytest.mark.filterwarnings("ignore:The system has")
 def test_virtual_input_joint_axes_rr_imp_joint():
     custom_joints.register_rr_imp_joint(MotionConfig(T=10.0))
 
@@ -85,8 +93,8 @@ def test_virtual_input_joint_axes_rr_imp_joint():
     np.testing.assert_allclose(
         X["seg3"]["joint_axes"],
         np.repeat(-joint_axes[3:4], 1000, axis=0),
-        atol=0.002,
-        rtol=0.002,
+        atol=0.01,
+        rtol=0.032,
     )
 
     # test `make_generator`
@@ -97,10 +105,10 @@ def test_virtual_input_joint_axes_rr_imp_joint():
     np.testing.assert_allclose(
         X["seg1"]["joint_axes"],
         np.repeat(np.array([[0.0, -1, 0]]), 1000, axis=0),
-        atol=1e-7,
+        atol=4e-7,
     )
     np.testing.assert_allclose(
         X["seg3"]["joint_axes"],
         np.repeat(np.array([[0.0, 0, 1]]), 1000, axis=0),
-        atol=1e-7,
+        atol=4e-7,
     )

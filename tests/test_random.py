@@ -1,6 +1,7 @@
 from jax import random as jrand
 import numpy as np
 import pytest
+
 import ring
 from ring.algorithms._random import _resolve_range_of_motion
 
@@ -17,21 +18,27 @@ from ring.algorithms._random import _resolve_range_of_motion
 def test_delta_ang_min_max(
     range_of_motion, range_of_motion_method, delta_ang_min, delta_ang_max
 ):
+    max_iter = 100
+    t_min, t_max = 0.1, 3.1
     for seed in range(10):
-        key = jrand.PRNGKey(seed)
-        phi = _resolve_range_of_motion(
-            range_of_motion,
-            range_of_motion_method,
-            0.0,
-            3.14,
-            float(delta_ang_min),
-            float(delta_ang_max),
-            1.0,
-            0.0,
-            key,
-            100,
-        )
-        assert delta_ang_min < abs(phi) < delta_ang_max
+        for prev_phi in [-3.0, 0.0, 3.0]:
+            key_t, key_ang = jrand.split(jrand.PRNGKey(seed))
+            dt, next_phi = _resolve_range_of_motion(
+                range_of_motion,
+                range_of_motion_method,
+                0.0,
+                3.14,
+                float(delta_ang_min),
+                float(delta_ang_max),
+                t_min,
+                t_max,
+                prev_phi,
+                key_t,
+                key_ang,
+                max_iter,
+            )
+            assert t_min <= dt <= t_max
+            assert delta_ang_min < abs(next_phi - prev_phi) < delta_ang_max
 
 
 @pytest.mark.parametrize(
