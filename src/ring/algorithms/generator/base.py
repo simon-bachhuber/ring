@@ -140,8 +140,11 @@ class RCMG:
         batchsize: int = 1,
         sizes: int | list[int] = 1,
         seed: int = 1,
+        shuffle: bool = True,
     ) -> types.BatchedGenerator:
-        return batch.batch_generators_eager(self.gens, sizes, batchsize, seed=seed)
+        return batch.batch_generators_eager(
+            self.gens, sizes, batchsize, seed=seed, shuffle=shuffle
+        )
 
     def to_lazy_gen(
         self, sizes: int | list[int] = 1, jit: bool = True
