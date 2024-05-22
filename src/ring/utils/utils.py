@@ -122,6 +122,8 @@ def pytree_deepcopy(tree):
         return tuple(pytree_deepcopy(ele) for ele in tree)
     elif isinstance(tree, dict):
         return {key: pytree_deepcopy(value) for key, value in tree.items()}
+    elif isinstance(tree, _Base):
+        return tree
     else:
         raise NotImplementedError(f"Not implemented for type={type(tree)}")
 
