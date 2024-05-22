@@ -293,12 +293,25 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
     ring.register_new_joint_type(name, joint_model, 1, overwrite=True)
 
 
+def _scale_delta(method: str, key, xs, mn, mx, amin, amax, **kwargs):
+    if method == "normal":
+        delta = jnp.clip(jax.random.normal(key) + 0.5, 1.0)
+    elif method == "uniform":
+        delta = 1 / (jax.random.uniform(key) + 1e-2)
+    else:
+        raise NotImplementedError
+
+    return delta
+
+
 def Polynomial_DrawnFnPair(
     order: int = 2,
     center: bool = False,
     flexion_center_deg: Optional[float] = None,
     include_bias: bool = True,
     enable_scale_delta: bool = True,
+    scale_delta_method: str = "normal",
+    scale_delta_kwargs: dict = dict(),
 ) -> DrawnFnPairFactory:
     assert not (order == 0 and not include_bias)
 
@@ -343,7 +356,9 @@ def Polynomial_DrawnFnPair(
             amin, amax = jnp.min(values), jnp.max(values) + eps
             if enable_scale_delta:
                 delta = amax - amin
-                scale_delta = jnp.clip(jax.random.normal(c3) + 0.5, 1.0)
+                scale_delta = _scale_delta(
+                    scale_delta_method, c3, xs, mn, mx, amin, amax, **scale_delta_kwargs
+                )
                 amax = amin + delta * scale_delta
             return amin, amax, poly_factors, q0
 
