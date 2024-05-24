@@ -5,6 +5,8 @@ from typing import Callable, Optional, Tuple
 import jax
 import jax.numpy as jnp
 import optax
+import tree_utils
+
 from ring import maths
 from ring.algorithms.generator import types
 from ring.ml import base as ml_base
@@ -15,8 +17,6 @@ from ring.utils import distribute_batchsize
 from ring.utils import expand_batchsize
 from ring.utils import parse_path
 from ring.utils import pickle_load
-import tree_utils
-
 import wandb
 
 # (T, N, F) -> Scalar
@@ -142,15 +142,17 @@ def train_fn(
         Wether or not the training run was killed by a callback.
     """
 
+    filter = filter.nojit()
+
     if checkpoint is not None:
         checkpoint = Path(checkpoint).with_suffix(".pickle")
         recv_checkpoint: dict = pickle_load(checkpoint)
-        filter.params = recv_checkpoint["params"]
+        filter_params = recv_checkpoint["params"]
         opt_state = recv_checkpoint["opt_state"]
+        del recv_checkpoint
+    else:
+        filter_params = filter.search_attr("params")
 
-    filter = filter.nojit()
-
-    filter_params = filter.search_attr("params")
     if filter_params is None:
         X, _ = generator(jax.random.PRNGKey(1))
         filter_params, _ = filter.init(X=X, seed=seed_network)
