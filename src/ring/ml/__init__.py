@@ -3,6 +3,7 @@ from . import callbacks
 from . import ml_utils
 from . import optimizer
 from . import ringnet
+from . import rnno_v1
 from . import train
 from . import training_loop
 from .base import AbstractFilter
@@ -42,17 +43,28 @@ def RNNO(
     params=None,
     eval: bool = True,
     samp_freq: float | None = None,
+    v1: bool = False,
     **kwargs,
 ):
     assert "message_dim" not in kwargs
     assert "link_output_normalize" not in kwargs
     assert "link_output_dim" not in kwargs
 
+    if v1:
+        kwargs.update(
+            dict(forward_factory=rnno_v1.rnno_v1_forward_factory, output_dim=output_dim)
+        )
+    else:
+        kwargs.update(
+            dict(
+                message_dim=0,
+                link_output_normalize=False,
+                link_output_dim=output_dim,
+            )
+        )
+
     ringnet = RING(  # noqa: F811
         params=params,
-        message_dim=0,
-        link_output_normalize=False,
-        link_output_dim=output_dim,
         **kwargs,
     )
     ringnet = base.NoGraph_FilterWrapper(ringnet, quat_normalize=return_quats)

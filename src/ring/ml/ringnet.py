@@ -191,8 +191,16 @@ class LSTM(hk.RNNCore):
 
 
 class RING(ml_base.AbstractFilter):
-    def __init__(self, params=None, lam=None, jit: bool = True, name=None, **kwargs):
-        self.forward_lam_factory = partial(make_ring, **kwargs)
+    def __init__(
+        self,
+        params=None,
+        lam=None,
+        jit: bool = True,
+        name=None,
+        forward_factory=make_ring,
+        **kwargs,
+    ):
+        self.forward_lam_factory = partial(forward_factory, **kwargs)
         self.params = self._load_params(params)
         self.lam = lam
         self._name = name

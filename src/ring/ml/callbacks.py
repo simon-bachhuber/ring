@@ -245,7 +245,8 @@ class SaveParamsTrainingLoopCallback(training_loop.TrainingLoopCallback):
             else:
                 value = "{:.2f}".format(ele.value).replace(".", ",")
                 filename = parse_path(
-                    self.path_to_file + f"_episode={ele.episode}_value={value}",
+                    str(Path(self.path_to_file).with_suffix(""))
+                    + f"_episode={ele.episode}_value={value}",
                     extension="pickle",
                 )
 
@@ -404,7 +405,7 @@ class CheckpointCallback(training_loop.TrainingLoopCallback):
         # only checkpoint if run has been killed
         if training_loop.recv_kill_run_signal():
             path = parse_path(
-                "~/.xxy_checkpoints", ml_utils.unique_id(), extension="pickle"
+                "~/.ring_checkpoints", ml_utils.unique_id(), extension="pickle"
             )
             data = {"params": self.params, "opt_state": self.opt_state}
             pickle_save(

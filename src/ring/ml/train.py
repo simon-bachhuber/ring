@@ -15,7 +15,6 @@ from ring.ml import ml_utils
 from ring.ml import training_loop
 from ring.utils import distribute_batchsize
 from ring.utils import expand_batchsize
-from ring.utils import parse_path
 from ring.utils import pickle_load
 import wandb
 
@@ -217,7 +216,7 @@ def train_fn(
 
         callbacks_all.append(
             ml_callbacks.SaveParamsTrainingLoopCallback(
-                path_to_file=parse_path(callback_save_params, extension=""),
+                path_to_file=callback_save_params,
                 last_n_params=3,
                 track_metrices=callback_save_params_track_metrices,
                 cleanup=False,

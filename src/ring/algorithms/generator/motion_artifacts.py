@@ -180,9 +180,13 @@ def setup_fn_randomize_damping_stiffness_factory(
             link_spring_stiffness = link_spring_stiffness.at[slice].set(stif)
             link_damping = link_damping.at[slice].set(damp)
 
-        assert len(imus_surely_rigid) == len(triggered_surely_rigid)
+        assert len(imus_surely_rigid) == len(
+            triggered_surely_rigid
+        ), f"{imus_surely_rigid}, {triggered_surely_rigid}"
         for imu_surely_rigid in imus_surely_rigid:
-            assert imu_surely_rigid in triggered_surely_rigid
+            assert (
+                imu_surely_rigid in triggered_surely_rigid
+            ), f"{imus_surely_rigid} not in {triggered_surely_rigid}"
 
         return sys.replace(
             link_damping=link_damping, link_spring_stiffness=link_spring_stiffness

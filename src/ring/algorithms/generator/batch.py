@@ -147,7 +147,7 @@ def _data_fn_from_paths(
     paths = [utils.parse_path(p, mkdir=False) for p in paths]
 
     extensions = list(set([Path(p).suffix for p in paths]))
-    assert len(extensions) == 1
+    assert len(extensions) == 1, f"{extensions}"
 
     if extensions[0] == ".h5":
         N = sum([utils.hdf5_load_length(p) for p in paths])
