@@ -86,7 +86,11 @@ def batch_generators_eager_to_list(
 
     key = jax.random.PRNGKey(seed)
     data = []
-    for gen, size in tqdm(zip(generators, sizes), desc="eager data generation"):
+    for gen, size in tqdm(
+        zip(generators, sizes),
+        desc="executing generators",
+        total=len(sizes),
+    ):
 
         n_calls = _number_of_executions_required(size)
         # decrease size by n_calls times

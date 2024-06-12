@@ -4,6 +4,7 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+import tqdm
 import tree_utils
 
 from ring import base
@@ -83,10 +84,14 @@ class RCMG:
             ), "If `randomize_anchors`, then only one system is expected"
             sys = randomize.randomize_anchors(sys[0], **randomize_anchors_kwargs)
 
-        zip_sys_config = False
         if randomize_hz:
-            zip_sys_config = True
             sys, config = randomize.randomize_hz(sys, config, **randomize_hz_kwargs)
+        else:
+            # create zip
+            N_sys = len(sys)
+            sys = sum([len(config) * [s] for s in sys], start=[])
+            config = N_sys * config
+            assert len(sys) == len(config)
 
         if sys_ml is None:
             # TODO
@@ -97,17 +102,10 @@ class RCMG:
             sys_ml = sys[0]
 
         self.gens = []
-        if zip_sys_config:
-            for _sys, _config in zip(sys, config):
-                self.gens.append(
-                    partial_build_gen(sys=_sys, config=_config, sys_ml=sys_ml)
-                )
-        else:
-            for _sys in sys:
-                for _config in config:
-                    self.gens.append(
-                        partial_build_gen(sys=_sys, config=_config, sys_ml=sys_ml)
-                    )
+        for _sys, _config in tqdm.tqdm(
+            zip(sys, config), desc="building generators", total=len(sys)
+        ):
+            self.gens.append(partial_build_gen(sys=_sys, config=_config, sys_ml=sys_ml))
 
     def _to_data(self, sizes, seed):
         return batch.batch_generators_eager_to_list(self.gens, sizes, seed=seed)
