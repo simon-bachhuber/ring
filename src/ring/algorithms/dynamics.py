@@ -1,7 +1,9 @@
 from typing import Optional, Tuple
+import warnings
 
 import jax
 import jax.numpy as jnp
+
 from ring import algebra
 from ring import base
 from ring import maths
@@ -213,7 +215,7 @@ def forward_dynamics(
     q: jax.Array,
     qd: jax.Array,
     tau: jax.Array,
-    mass_mat_inv: jax.Array,
+    # mass_mat_inv: jax.Array,
 ) -> Tuple[jax.Array, jax.Array]:
     C = inverse_dynamics(sys, qd, jnp.zeros_like(qd))
     mass_matrix = compute_mass_matrix(sys)
@@ -235,6 +237,11 @@ def forward_dynamics(
 
         mass_mat_inv = jax.scipy.linalg.solve(mass_matrix, eye, assume_a="pos")
     else:
+        warnings.warn(
+            f"You are using `sys.mass_mat_iters`={sys.mass_mat_iters} which is >0. "
+            "This feature is currently not fully supported. See the local TODO."
+        )
+        mass_mat_inv = jnp.diag(jnp.ones((sys.qd_size(),)))
         mass_mat_inv = _inv_approximate(mass_matrix, mass_mat_inv, sys.mass_mat_iters)
 
     return mass_mat_inv @ qf_smooth, mass_mat_inv
@@ -254,9 +261,8 @@ def _strapdown_integration(
 def _semi_implicit_euler_integration(
     sys: base.System, state: base.State, taus: jax.Array
 ) -> base.State:
-    qdd, mass_mat_inv = forward_dynamics(
-        sys, state.q, state.qd, taus, state.mass_mat_inv
-    )
+    qdd, mass_mat_inv = forward_dynamics(sys, state.q, state.qd, taus)
+    del mass_mat_inv
     qd_next = state.qd + sys.dt * qdd
 
     q_next = []
@@ -277,7 +283,7 @@ def _semi_implicit_euler_integration(
     sys.scan(q_integrate, "qdl", state.q, qd_next, sys.link_types)
     q_next = jnp.concatenate(q_next)
 
-    state = state.replace(q=q_next, qd=qd_next, mass_mat_inv=mass_mat_inv)
+    state = state.replace(q=q_next, qd=qd_next)
     return state
 
 

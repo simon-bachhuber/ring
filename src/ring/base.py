@@ -997,13 +997,11 @@ class State(_Base):
         q (jax.Array): System state in minimal coordinates (equals `sys.q_size()`)
         qd (jax.Array): System velocity in minimal coordinates (equals `sys.qd_size()`)
         x: (Transform): Maximal coordinates of all links. From epsilon-to-link.
-        mass_mat_inv (jax.Array): Inverse of the mass matrix. Internal usage.
     """
 
     q: jax.Array
     qd: jax.Array
     x: Transform
-    mass_mat_inv: jax.Array
 
     @classmethod
     def create(
@@ -1057,4 +1055,4 @@ class State(_Base):
         if x is None:
             x = Transform.zero((sys.num_links(),))
 
-        return cls(q, qd, x, jnp.diag(jnp.ones((sys.qd_size(),))))
+        return cls(q, qd, x)
