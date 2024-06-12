@@ -49,6 +49,7 @@ def inject_subsystems(
     rotational_damp: float = 0.1,
     translational_stif: float = 50.0,
     translational_damp: float = 0.1,
+    disable_warning: bool = False,
     **kwargs,
 ) -> base.System:
     imu_idx_to_name_map = {sys.name_to_idx(imu): imu for imu in sys.findall_imus()}
@@ -92,10 +93,11 @@ def inject_subsystems(
     # TODO set all joint_params to zeros; they can not be preserved anyways and
     # otherwise many warnings will be rose
     # instead warn explicitly once now and move on
-    warnings.warn(
-        "`sys.links.joint_params` has been set to zero, this might lead to "
-        "unexpected behaviour unless you use `randomize_joint_params`"
-    )
+    if not disable_warning:
+        warnings.warn(
+            "`sys.links.joint_params` has been set to zero, this might lead to "
+            "unexpected behaviour unless you use `randomize_joint_params`"
+        )
     joint_params_zeros = tree_utils.tree_zeros_like(sys.links.joint_params)
     sys = sys.replace(links=sys.links.replace(joint_params=joint_params_zeros))
 
