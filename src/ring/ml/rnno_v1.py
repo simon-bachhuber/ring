@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 import haiku as hk
 import jax
@@ -12,14 +12,18 @@ def rnno_v1_forward_factory(
     layernorm: bool = True,
     act_fn_linear=jax.nn.relu,
     act_fn_rnn=jax.nn.elu,
+    lam: Optional[tuple[int]] = None,
 ):
+    # unused
+    del lam
+
     @hk.without_apply_rng
     @hk.transform_with_state
     def forward_fn(X):
         assert X.shape[-2] == 1
 
         for i, n_units in enumerate(rnn_layers):
-            state = hk.get_state(f"rnn_{i}", shape=[n_units], init=jnp.zeros)
+            state = hk.get_state(f"rnn_{i}", shape=[1, n_units], init=jnp.zeros)
             X, state = hk.dynamic_unroll(hk.GRU(n_units), X, state)
             hk.set_state(f"rnn_{i}", state)
 
