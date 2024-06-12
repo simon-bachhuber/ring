@@ -28,7 +28,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest mediapy mujoco
-        pip install imt-ikarus
+        pip install imt-diodem
         pip install .
         wandb offline
     - name: Lint with flake8
