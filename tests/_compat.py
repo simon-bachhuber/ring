@@ -1,4 +1,4 @@
-from ikarus import benchmark
+from diodem import benchmark
 import jax
 
 
