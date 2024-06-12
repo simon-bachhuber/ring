@@ -4,6 +4,7 @@ from typing import Optional
 from flax import struct
 import jax
 import jax.numpy as jnp
+
 from ring import base
 from ring.algorithms import dynamics
 from ring.algorithms import jcalc
@@ -49,7 +50,7 @@ def _pd_control(P: jax.Array, D: Optional[jax.Array] = None):
         assert sys.q_size() == q_ref.shape[1], f"q_ref.shape = {q_ref.shape}"
         assert sys.qd_size() == P.size
         if D is not None:
-            sys.qd_size() == D.size
+            assert sys.qd_size() == D.size
 
         q_ref_as_dict = {}
         qd_ref_as_dict = {}
