@@ -12,7 +12,7 @@ def batchsize_thresholds():
         eager_threshold = 4
     elif backend == "gpu":
         vmap_size_min = 8
-        eager_threshold = 128
+        eager_threshold = 32
     else:
         raise Exception(
             f"Backend {backend} has no default values, please add them in this function"
