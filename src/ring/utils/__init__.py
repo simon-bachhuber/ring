@@ -1,4 +1,4 @@
-from .batchsize import backend
+from .batchsize import batchsize_thresholds
 from .batchsize import distribute_batchsize
 from .batchsize import expand_batchsize
 from .batchsize import merge_batchsize

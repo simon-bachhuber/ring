@@ -63,12 +63,12 @@ def batch_generators_lazy(
 
 
 def _number_of_executions_required(size: int) -> int:
-    vmap_threshold = 128
     _, vmap = utils.distribute_batchsize(size)
 
+    eager_threshold = utils.batchsize_thresholds()[1]
     primes = iter(utils.primes(vmap))
     n_calls = 1
-    while vmap > vmap_threshold:
+    while vmap > eager_threshold:
         prime = next(primes)
         n_calls *= prime
         vmap /= prime

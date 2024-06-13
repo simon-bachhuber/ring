@@ -1,19 +1,37 @@
-from typing import Optional, Tuple
+from typing import Tuple, TypeVar
 
 import jax
-from tree_utils import PyTree
+
+PyTree = TypeVar("PyTree")
+
+
+def batchsize_thresholds():
+    backend = jax.default_backend()
+    if backend == "cpu":
+        vmap_size_min = 1
+        eager_threshold = 4
+    elif backend == "gpu":
+        vmap_size_min = 8
+        eager_threshold = 128
+    else:
+        raise Exception(
+            f"Backend {backend} has no default values, please add them in this function"
+        )
+    return vmap_size_min, eager_threshold
 
 
 def distribute_batchsize(batchsize: int) -> Tuple[int, int]:
     """Distributes batchsize accross pmap and vmap."""
-    vmap_size_min = 8
+    vmap_size_min = batchsize_thresholds()[0]
     if batchsize <= vmap_size_min:
         return 1, batchsize
     else:
         n_devices = jax.local_device_count()
-        assert (
-            batchsize % n_devices
-        ) == 0, f"Your GPU count of {n_devices} does not split batchsize {batchsize}"
+        msg = (
+            f"Your local device count of {n_devices} does not split batchsize"
+            + f" {batchsize}. local devices are {jax.local_devices()}"
+        )
+        assert (batchsize % n_devices) == 0, msg
         vmap_size = int(batchsize / n_devices)
         return int(batchsize / vmap_size), vmap_size
 
@@ -35,17 +53,3 @@ def expand_batchsize(tree: PyTree, pmap_size: int, vmap_size: int) -> PyTree:
         ),
         tree,
     )
-
-
-CPU_ONLY = False
-
-
-def backend(cpu_only: bool = False, n_gpus: Optional[int] = None):
-    "Sets backend for all jax operations (including this library)."
-    global CPU_ONLY
-
-    if cpu_only and not CPU_ONLY:
-        CPU_ONLY = True
-        from jax import config
-
-        config.update("jax_platform_name", "cpu")
