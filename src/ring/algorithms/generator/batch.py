@@ -98,7 +98,12 @@ def batch_generators_eager_to_list(
         jit = True if n_calls > 1 else False
         gen_jit = batch_generators_lazy(gen, size, jit=jit)
 
-        for _ in range(n_calls):
+        for _ in tqdm(
+            range(n_calls),
+            desc="number of calls for each generator",
+            total=n_calls,
+            leave=False,
+        ):
             key, consume = jax.random.split(key)
             sample = gen_jit(consume)
             # converts also to numpy; but with np.array.flags.writeable = False
