@@ -154,25 +154,20 @@ def _data_fn_from_paths(
 
     # expanduser
     paths = [utils.parse_path(p, mkdir=False) for p in paths]
-
     extensions = list(set([Path(p).suffix for p in paths]))
     assert len(extensions) == 1, f"{extensions}"
+    h5 = extensions[0] == ".h5"
 
-    if extensions[0] == ".h5":
-        N = sum([utils.hdf5_load_length(p) for p in paths])
-
-    if extensions[0] == ".h5" and not load_all_into_memory:
+    if h5 and not load_all_into_memory:
 
         def data_fn(indices: list[int]):
             tree = utils.hdf5_load_from_multiple(paths, indices)
             return tree if tree_transform is None else tree_transform(tree)
 
+        N = sum([utils.hdf5_load_length(p) for p in paths])
     else:
 
-        if extensions[0] == ".h5":
-            load_from_path = utils.hdf5_load
-        else:
-            load_from_path = utils.pickle_load
+        load_from_path = utils.hdf5_load if h5 else utils.pickle_load
 
         def load_fn(path):
             tree = load_from_path(path)
@@ -190,8 +185,10 @@ def _data_fn_from_paths(
                 _list_of_data += load_fn(p)
 
         N = len(_list_of_data)
-
-        list_of_data = _replace_elements_w_nans(_list_of_data, include_samples)
+        list_of_data = _replace_elements_w_nans(
+            _list_of_data,
+            include_samples if include_samples is not None else list(range(N)),
+        )
 
         if include_samples is not None:
             list_of_data = [
