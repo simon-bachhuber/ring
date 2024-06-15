@@ -18,7 +18,74 @@ from .algorithms import step
 from .base import State
 from .base import System
 from .base import Transform
-from .ml import RING
+
+
+def RING(lam: list[int], Ts: float | None):
+    """Creates the RING network.
+
+    Params:
+        lam: parent array
+        Ts : sampling interval of IMU data; time delta in seconds
+
+    Usage:
+    >>> import ring
+    >>> import numpy as np
+    >>>
+    >>> T  : int       = 30        # sequence length     [s]
+    >>> Ts : float     = 0.01      # sampling interval   [s]
+    >>> B  : int       = 1         # batch size
+    >>> lam: list[int] = [0, 1, 2] # parent array
+    >>> N  : int       = len(lam)  # number of bodies
+    >>> T_i: int       = int(T/Ts) # number of timesteps
+    >>>
+    >>> X = np.zeros((B, T_i, N, 9))
+    >>> # where X is structured as follows:
+    >>> # X[..., :3]  = acc
+    >>> # X[..., 3:6] = gyr
+    >>> # X[..., 6:9] = jointaxis
+    >>>
+    >>> # let's assume we have an IMU on each outer segment of the
+    >>> # three-segment kinematic chain
+    >>> X[:, :, 0, :3]  = acc_segment1
+    >>> X[:, :, 2, :3]  = acc_segment3
+    >>> X[:, :, 0, 3:6] = gyr_segment1
+    >>> X[:, :, 2, 3:6] = gyr_segment3
+    >>>
+    >>> ringnet = ring.RING(lam, Ts)
+    >>>
+    >>> yhat, _ = ringnet.apply(X)
+    >>> # yhat : unit quaternions, shape = (B, T_i, N, 4)
+    >>>
+    >>> # use `jax.jit` to compile the forward pass
+    >>> jit_apply = jax.jit(ringnet.apply)
+    >>> yhat, _ = jit_apply(X)
+    >>>
+    >>> # manually pass in and out the hidden state like so
+    >>> initial_state = None
+    >>> yhat, state = ringnet.apply(X, state=initial_state)
+    >>> # state: final hidden state, shape = (B, N, 2*H)
+
+    """
+    from pathlib import Path
+    import warnings
+
+    if Ts > (1 / 40) or Ts < (1 / 200):
+        warnings.warn(
+            "RING was only trained on sampling rates between 40 to 200 Hz "
+            f"but found {1 / Ts}Hz"
+        )
+
+    params = Path(__file__).parent.joinpath("ml/params/0x13e3518065c21cd8.pickle")
+
+    ringnet = ml.RING(params=params, lam=tuple(lam), jit=False)
+    ringnet = ml.base.ScaleX_FilterWrapper(ringnet)
+    ringnet = ml.base.LPF_FilterWrapper(
+        ringnet, ml._LPF_CUTOFF_FREQ, samp_freq=None if Ts is None else 1 / Ts
+    )
+    ringnet = ml.base.GroundTruthHeading_FilterWrapper(ringnet)
+    ringnet = ml.base.AddTs_FilterWrapper(ringnet, Ts)
+    return ringnet
+
 
 _TRAIN_TIMING_START = None
 _UNIQUE_ID = None

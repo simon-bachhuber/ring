@@ -290,3 +290,24 @@ class NoGraph_FilterWrapper(AbstractFilterWrapper):
             yhat = ring.maths.safe_normalize(yhat)
 
         return yhat, state
+
+
+class AddTs_FilterWrapper(AbstractFilterWrapper):
+    def __init__(self, filter: AbstractFilter, Ts: float | None, name=None) -> None:
+        super().__init__(filter, name)
+        self.Ts = Ts
+
+    def _add_Ts(self, X):
+        if self.Ts is None:
+            assert X.shape[-1] == 10
+            return X
+        else:
+            assert X.shape[-1] == 9
+            X_Ts = jnp.ones(X.shape[:-1] + (1,)) * self.Ts
+            return jnp.concatenate((X, X_Ts), axis=-1)
+
+    def init(self, bs=None, X=None, lam=None, seed: int = 1):
+        return super().init(bs, self._add_Ts(X), lam, seed)
+
+    def apply(self, X, params=None, state=None, y=None, lam=None):
+        return super().apply(self._add_Ts(X), params, state, y, lam)
