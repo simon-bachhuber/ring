@@ -144,11 +144,13 @@ class LPF_FilterWrapper(AbstractFilterWrapper):
         cutoff_freq: float,
         samp_freq: float | None,
         filtfilt: bool = True,
+        quiet: bool = False,
         name="LPF_FilterWrapper",
     ) -> None:
         super().__init__(filter, name)
         self.samp_freq = samp_freq
         self._kwargs = dict(cutoff_freq=cutoff_freq, filtfilt=filtfilt)
+        self.quiet = quiet
 
     def apply(self, X, params=None, state=None, y=None, lam=None):
         if X.ndim == 4:
@@ -166,7 +168,7 @@ class LPF_FilterWrapper(AbstractFilterWrapper):
                 dt = X[0, 0, -1]
                 samp_freq = 1 / dt
 
-        if self.samp_freq is None:
+        if self.samp_freq is None and not self.quiet:
             print(f"Detected the following sampling rates from `X`: {samp_freq}")
 
         yhat, state = super().apply(X, params, state, y, lam)
@@ -293,7 +295,9 @@ class NoGraph_FilterWrapper(AbstractFilterWrapper):
 
 
 class AddTs_FilterWrapper(AbstractFilterWrapper):
-    def __init__(self, filter: AbstractFilter, Ts: float | None, name=None) -> None:
+    def __init__(
+        self, filter: AbstractFilter, Ts: float | None, name="AddTs_FilterWrapper"
+    ) -> None:
         super().__init__(filter, name)
         self.Ts = Ts
 
