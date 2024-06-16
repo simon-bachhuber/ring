@@ -69,21 +69,34 @@ def RING(lam: list[int], Ts: float | None):
     from pathlib import Path
     import warnings
 
-    if Ts > (1 / 40) or Ts < (1 / 200):
+    if Ts is not None and (Ts > (1 / 40) or Ts < (1 / 200)):
         warnings.warn(
             "RING was only trained on sampling rates between 40 to 200 Hz "
             f"but found {1 / Ts}Hz"
         )
 
-    params = Path(__file__).parent.joinpath("ml/params/0x13e3518065c21cd8.pickle")
+    if Ts is not None and Ts == 0.01:
+        # this set of parameters was trained exclusively on 100Hz data; it also
+        # expects F=9 features per node and not F=10 where the last features is
+        # the sampling interval Ts
+        params = Path(__file__).parent.joinpath("ml/params/0x1d76628065a71e0f.pickle")
+        add_Ts = False
+    else:
+        # this set of parameters was trained on sampling rates from 40 to 200 Hz
+        params = Path(__file__).parent.joinpath("ml/params/0x13e3518065c21cd8.pickle")
+        add_Ts = True
 
-    ringnet = ml.RING(params=params, lam=tuple(lam), jit=False)
+    ringnet = ml.RING(params=params, lam=tuple(lam), jit=False, name="RING")
     ringnet = ml.base.ScaleX_FilterWrapper(ringnet)
     ringnet = ml.base.LPF_FilterWrapper(
-        ringnet, ml._LPF_CUTOFF_FREQ, samp_freq=None if Ts is None else 1 / Ts
+        ringnet,
+        ml._LPF_CUTOFF_FREQ,
+        samp_freq=None if Ts is None else 1 / Ts,
+        quiet=True,
     )
     ringnet = ml.base.GroundTruthHeading_FilterWrapper(ringnet)
-    ringnet = ml.base.AddTs_FilterWrapper(ringnet, Ts)
+    if add_Ts:
+        ringnet = ml.base.AddTs_FilterWrapper(ringnet, Ts)
     return ringnet
 
 
