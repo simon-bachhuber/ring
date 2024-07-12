@@ -2,10 +2,12 @@ from typing import Optional, Sequence
 
 import mujoco
 import numpy as np
+
 from ring import base
 from ring import maths
 
 _skybox = """<texture name="skybox" type="skybox" builtin="gradient" rgb1=".4 .6 .8" rgb2="0 0 0" width="800" height="800" mark="random" markrgb="1 1 1"/>"""  # noqa: E501
+_skybox_white = """<texture name="skybox" type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="1 1 1" width="800" height="800" mark="random" markrgb="1 1 1"/>"""  # noqa: E501
 _floor = """<geom name="floor" pos="0 0 -0.5" size="0 0 1" type="plane" material="matplane" mass="0"/>"""  # noqa: E501
 
 
@@ -90,7 +92,6 @@ def _build_model_of_geoms(
 <camera pos="0 -1 1" name="target" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -3 3" name="targetfar" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -5 5" name="targetFar" mode="targetbodycom" target="{targetbody}"/>
-<light pos="0 0 4" dir="0 0 -1"/>
 {_floor if floor else ''}
 {inside_worldbody_cameras}
 {inside_worldbody_lights}
