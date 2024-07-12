@@ -20,11 +20,11 @@ from .base import System
 from .base import Transform
 
 
-def RING(lam: list[int], Ts: float | None):
+def RING(lam: list[int] | None, Ts: float | None, **kwargs):
     """Creates the RING network.
 
     Params:
-        lam: parent array
+        lam: parent array, if `None` must be given via `ringnet.apply(..., lam=lam)`
         Ts : sampling interval of IMU data; time delta in seconds
 
     Usage:
@@ -55,6 +55,7 @@ def RING(lam: list[int], Ts: float | None):
     >>>
     >>> yhat, _ = ringnet.apply(X)
     >>> # yhat : unit quaternions, shape = (B, T_i, N, 4)
+    >>> # yhat[b, :, i] is the orientation from body `i` to parent body `lam[i]`
     >>>
     >>> # use `jax.jit` to compile the forward pass
     >>> jit_apply = jax.jit(ringnet.apply)
@@ -69,13 +70,20 @@ def RING(lam: list[int], Ts: float | None):
     from pathlib import Path
     import warnings
 
+    config = dict(
+        use_100Hz_RING=True,
+        use_lpf=True,
+        lpf_cutoff_freq=ml._LPF_CUTOFF_FREQ,
+    )
+    config.update(kwargs)
+
     if Ts is not None and (Ts > (1 / 40) or Ts < (1 / 200)):
         warnings.warn(
             "RING was only trained on sampling rates between 40 to 200 Hz "
             f"but found {1 / Ts}Hz"
         )
 
-    if Ts is not None and Ts == 0.01:
+    if Ts is not None and Ts == 0.01 and config["use_100Hz_RING"]:
         # this set of parameters was trained exclusively on 100Hz data; it also
         # expects F=9 features per node and not F=10 where the last features is
         # the sampling interval Ts
@@ -86,14 +94,17 @@ def RING(lam: list[int], Ts: float | None):
         params = Path(__file__).parent.joinpath("ml/params/0x13e3518065c21cd8.pickle")
         add_Ts = True
 
-    ringnet = ml.RING(params=params, lam=tuple(lam), jit=False, name="RING")
-    ringnet = ml.base.ScaleX_FilterWrapper(ringnet)
-    ringnet = ml.base.LPF_FilterWrapper(
-        ringnet,
-        ml._LPF_CUTOFF_FREQ,
-        samp_freq=None if Ts is None else 1 / Ts,
-        quiet=True,
+    ringnet = ml.RING(
+        params=params, lam=None if lam is None else tuple(lam), jit=False, name="RING"
     )
+    ringnet = ml.base.ScaleX_FilterWrapper(ringnet)
+    if config["use_lpf"]:
+        ringnet = ml.base.LPF_FilterWrapper(
+            ringnet,
+            config["lpf_cutoff_freq"],
+            samp_freq=None if Ts is None else 1 / Ts,
+            quiet=True,
+        )
     ringnet = ml.base.GroundTruthHeading_FilterWrapper(ringnet)
     if add_Ts:
         ringnet = ml.base.AddTs_FilterWrapper(ringnet, Ts)
