@@ -34,7 +34,7 @@ class RCMG:
         randomize_motion_artifacts: bool = False,
         randomize_joint_params: bool = False,
         imu_motion_artifacts: bool = False,
-        imu_motion_artifacts_kwargs: dict = dict(hide_injected_bodies=True),
+        imu_motion_artifacts_kwargs: dict = dict(),
         dynamic_simulation: bool = False,
         dynamic_simulation_kwargs: dict = dict(),
         output_transform: Optional[Callable] = None,
@@ -49,9 +49,6 @@ class RCMG:
 
         for c in config:
             assert c.is_feasible()
-
-        if cor:
-            sys = [s._replace_free_with_cor() for s in sys]
 
         self.gens = []
         for _sys in sys:
@@ -78,6 +75,7 @@ class RCMG:
                     output_transform=output_transform,
                     keep_output_extras=keep_output_extras,
                     use_link_number_in_Xy=use_link_number_in_Xy,
+                    cor=cor,
                 )
             )
 
@@ -238,6 +236,7 @@ def _build_mconfig_batched_generator(
     output_transform: Callable | None,
     keep_output_extras: bool,
     use_link_number_in_Xy: bool,
+    cor: bool,
 ) -> types.BatchedGenerator:
 
     if add_X_jointaxes or add_y_relpose or add_y_rootincl:
@@ -284,13 +283,17 @@ def _build_mconfig_batched_generator(
         for f in pipe:
             key, consume = jax.random.split(key)
             sys = f(consume, sys)
+        if cor:
+            sys = sys._replace_free_with_cor()
         return sys
 
     def _finalize_fn(Xy: types.Xy, extras: types.OutputExtras):
         pipe = []
         if dynamic_simulation:
             pipe.append(finalize_fns.DynamicalSimulation(**dynamic_simulation_kwargs))
-        if imu_motion_artifacts and imu_motion_artifacts_kwargs["hide_injected_bodies"]:
+        if imu_motion_artifacts and imu_motion_artifacts_kwargs.get(
+            "hide_injected_bodies", True
+        ):
             pipe.append(motion_artifacts.HideInjectedBodies())
         if finalize_fn is not None:
             pipe.append(finalize_fns.FinalizeFn(finalize_fn))
@@ -312,14 +315,14 @@ def _build_mconfig_batched_generator(
         return Xy, extras
 
     def _gen(key: types.PRNGKey):
-        qs = []
-        for _config in config:
-            key, _q = draw_random_q(key, sys, _config)
-            qs.append(_q)
-        qs = jnp.stack(qs)
-
         key, *consume = jax.random.split(key, len(config) + 1)
         syss = jax.vmap(_setup_fn, (0, None))(jnp.array(consume), sys)
+
+        qs = []
+        for i, _config in enumerate(config):
+            key, _q = draw_random_q(key, syss[i], _config)
+            qs.append(_q)
+        qs = jnp.stack(qs)
 
         @jax.vmap
         def _vmapped_context(key, q, sys):

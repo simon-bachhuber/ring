@@ -1,3 +1,4 @@
+import inspect
 import warnings
 
 import jax
@@ -127,6 +128,7 @@ def setup_fn_randomize_damping_stiffness_factory(
     prob_rigid: float = 0.0,
     all_imus_either_rigid_or_flex: bool = False,
     imus_surely_rigid: list[str] = [],
+    **kwargs,
 ):
     assert 0 <= prob_rigid <= 1
     assert prob_rigid != 1, "Use `imu_motion_artifacts`=False instead."
@@ -196,6 +198,18 @@ def setup_fn_randomize_damping_stiffness_factory(
         )
 
     return setup_fn_randomize_damping_stiffness
+
+
+# assert that there exists no keyword arg duplicate which would induce ambiguity
+kwargs = lambda f: set(inspect.signature(f).parameters.keys())
+assert (
+    len(
+        kwargs(inject_subsystems).intersection(
+            kwargs(setup_fn_randomize_damping_stiffness_factory)
+        )
+    )
+    == 1
+)
 
 
 def _match_q_x_between_sys(
