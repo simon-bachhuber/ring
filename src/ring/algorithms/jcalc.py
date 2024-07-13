@@ -60,7 +60,6 @@ class MotionConfig:
     pos0_max: float = 0.0
 
     # cor (center of rotation) custom fields
-    cor: bool = False
     cor_t_min: float = 0.2
     cor_t_max: float | TimeDependentFloat = 2.0
     cor_dpos_min: float | TimeDependentFloat = 0.00001
@@ -102,7 +101,6 @@ _registered_motion_configs = {
         pos_min=-1.5,
         pos_max=1.5,
         randomized_interpolation_angle=True,
-        cor=True,
     ),
     "langsam": MotionConfig(
         t_min=0.2,
@@ -114,13 +112,11 @@ _registered_motion_configs = {
         cdf_bins_max=3,
         pos_min=-1.5,
         pos_max=1.5,
-        cor=True,
     ),
     "standard": MotionConfig(
         randomized_interpolation_angle=True,
         cdf_bins_min=1,
         cdf_bins_max=5,
-        cor=True,
     ),
     "expFast": MotionConfig(
         t_min=0.4,
@@ -134,7 +130,6 @@ _registered_motion_configs = {
         randomized_interpolation_angle=True,
         cdf_bins_min=1,
         cdf_bins_max=3,
-        cor=True,
     ),
     "expSlow": MotionConfig(
         t_min=0.75,
@@ -151,7 +146,6 @@ _registered_motion_configs = {
         randomized_interpolation_angle=True,
         cdf_bins_min=1,
         cdf_bins_max=5,
-        cor=True,
     ),
     "expFastNoSig": MotionConfig(
         t_min=0.4,
@@ -164,7 +158,6 @@ _registered_motion_configs = {
         randomized_interpolation_angle=True,
         cdf_bins_min=1,
         cdf_bins_max=3,
-        cor=True,
     ),
     "expSlowNoSig": MotionConfig(
         t_min=0.75,
@@ -180,7 +173,6 @@ _registered_motion_configs = {
         randomized_interpolation_angle=True,
         cdf_bins_min=1,
         cdf_bins_max=3,
-        cor=True,
     ),
     "verySlow": MotionConfig(
         t_min=1.5,
@@ -196,7 +188,6 @@ _registered_motion_configs = {
         randomized_interpolation_angle=True,
         cdf_bins_min=1,
         cdf_bins_max=3,
-        cor=True,
     ),
 }
 
