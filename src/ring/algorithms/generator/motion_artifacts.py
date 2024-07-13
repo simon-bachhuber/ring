@@ -50,7 +50,8 @@ def inject_subsystems(
     translational_stif: float = 50.0,
     translational_damp: float = 0.1,
     disable_warning: bool = False,
-    **kwargs,
+    **kwargs,  # needed because `imu_motion_artifacts_kwargs` is used
+    # for `setup_fn_randomize_damping_stiffness_factory` also
 ) -> base.System:
     imu_idx_to_name_map = {sys.name_to_idx(imu): imu for imu in sys.findall_imus()}
 
@@ -123,9 +124,9 @@ def _log_uniform(key, shape, minval, maxval):
 
 
 def setup_fn_randomize_damping_stiffness_factory(
-    prob_rigid: float,
-    all_imus_either_rigid_or_flex: bool,
-    imus_surely_rigid: list[str],
+    prob_rigid: float = 0.0,
+    all_imus_either_rigid_or_flex: bool = False,
+    imus_surely_rigid: list[str] = [],
 ):
     assert 0 <= prob_rigid <= 1
     assert prob_rigid != 1, "Use `imu_motion_artifacts`=False instead."
@@ -228,21 +229,18 @@ def _match_q_x_between_sys(
     return q_small, x_small
 
 
-class GeneratorTrafoHideInjectedBodies:
-    def __call__(self, gen):
-        def _gen(*args):
-            (X, y), (key, q, x, sys_x) = gen(*args)
+class HideInjectedBodies:
+    def __call__(self, Xy, extras):
+        (X, y), (key, q, x, sys_x) = Xy, extras
 
-            # delete injected frames; then rename from `_imu` back to `imu`
-            imus = sys_x.findall_imus()
-            _imu2imu_map = {imu_reference_link_name(imu): imu for imu in imus}
-            sys = sys_x.delete_system(imus)
-            for _imu, imu in _imu2imu_map.items():
-                sys = sys.change_link_name(_imu, imu).change_joint_type(imu, "frozen")
+        # delete injected frames; then rename from `_imu` back to `imu`
+        imus = sys_x.findall_imus()
+        _imu2imu_map = {imu_reference_link_name(imu): imu for imu in imus}
+        sys = sys_x.delete_system(imus)
+        for _imu, imu in _imu2imu_map.items():
+            sys = sys.change_link_name(_imu, imu).change_joint_type(imu, "frozen")
 
-            # match q and x to `sys`; second axis is link axis
-            q, x = _match_q_x_between_sys(sys, q, x, sys_x, q_large_skip=imus)
+        # match q and x to `sys`; second axis is link axis
+        q, x = _match_q_x_between_sys(sys, q, x, sys_x, q_large_skip=imus)
 
-            return (X, y), (key, q, x, sys)
-
-        return _gen
+        return (X, y), (key, q, x, sys)
