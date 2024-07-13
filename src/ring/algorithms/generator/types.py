@@ -1,8 +1,9 @@
-from typing import Callable, Protocol
+from typing import Callable
 
 import jax
-from ring import base
 from tree_utils import PyTree
+
+from ring import base
 
 PRNGKey = jax.Array
 InputExtras = base.System
@@ -18,19 +19,3 @@ Generator = Callable[[PRNGKey], Xy]
 BatchedGenerator = Callable[[PRNGKey], BatchedXy]
 SETUP_FN = Callable[[PRNGKey, base.System], base.System]
 FINALIZE_FN = Callable[[PRNGKey, jax.Array, base.Transform, base.System], Xy]
-
-
-class GeneratorTrafo(Protocol):
-    def __call__(  # noqa: E704
-        self,
-        gen: (
-            GeneratorWithInputOutputExtras
-            | GeneratorWithOutputExtras
-            | GeneratorWithInputExtras
-        ),
-    ) -> (
-        GeneratorWithInputOutputExtras
-        | GeneratorWithOutputExtras
-        | GeneratorWithInputExtras
-        | Generator
-    ): ...
