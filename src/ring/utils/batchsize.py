@@ -1,8 +1,7 @@
-from typing import Tuple, TypeVar
+from typing import Tuple
 
 import jax
-
-PyTree = TypeVar("PyTree")
+from tree_utils import PyTree
 
 
 def batchsize_thresholds():
@@ -36,7 +35,16 @@ def distribute_batchsize(batchsize: int) -> Tuple[int, int]:
         return int(batchsize / vmap_size), vmap_size
 
 
-def merge_batchsize(tree: PyTree, pmap_size: int, vmap_size: int) -> PyTree:
+def merge_batchsize(
+    tree: PyTree, pmap_size: int, vmap_size: int, third_dim_also: bool = False
+) -> PyTree:
+    if third_dim_also:
+        return jax.tree_map(
+            lambda arr: arr.reshape(
+                (pmap_size * vmap_size * arr.shape[2],) + arr.shape[3:]
+            ),
+            tree,
+        )
     return jax.tree_map(
         lambda arr: arr.reshape((pmap_size * vmap_size,) + arr.shape[2:]), tree
     )

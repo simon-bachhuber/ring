@@ -2,10 +2,11 @@ from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
-import ring
-from ring.algorithms.generator.transforms import _draw_pos_uniform
-from ring.algorithms.generator.transforms import _setup_fn_randomize_positions
 import tree_utils
+
+import ring
+from ring.algorithms.generator.setup_fns import _draw_pos_uniform
+from ring.algorithms.generator.setup_fns import _setup_fn_randomize_positions
 
 
 def finalize_fn_full_imu_setup(key, q, x, sys):
@@ -87,9 +88,7 @@ def test_randomize_positions():
 def test_cor():
     sys = ring.io.load_example("test_three_seg_seg2")
     sys = sys.inject_system(sys.add_prefix_suffix("second_"))
-    ring.RCMG(
-        sys, ring.MotionConfig(cor=True), finalize_fn=lambda key, q, x, sys: (q, x)
-    ).to_lazy_gen()(jax.random.PRNGKey(1))
+    ring.RCMG(sys, cor=True).to_list()
 
 
 P_rot, P_pos = 50.0, 200.0

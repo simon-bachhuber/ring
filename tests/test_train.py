@@ -54,6 +54,7 @@ def _remove_file_if_exists(path: str) -> None:
 def test_checkpointing():
     _remove_file_if_exists("~/params/test_checkpointing_nopause.pickle")
     _remove_file_if_exists("~/params/test_checkpointing_pause.pickle")
+    _remove_file_if_exists("~/.ring_checkpoints/test_checkpointing_pause.pickle")
 
     optimizer = optax.adam(0.1)
 
@@ -73,19 +74,33 @@ def test_checkpointing():
 
     ringnet = ml.RING(hidden_state_dim=20, message_dim=10, lam=sys_noimu.link_parents)
 
-    ml.train_fn(gen, 10, ringnet, callback_save_params=True, optimizer=optimizer)
+    ml.train_fn(
+        gen,
+        10,
+        ringnet,
+        callback_save_params=True,
+        optimizer=optimizer,
+        callback_create_checkpoint=False,
+    )
     trained_params_nopause_flat = tree_utils.batch_concat_acme(
         utils.pickle_load("~/params/test_checkpointing_nopause.pickle"), 0
     )
 
     ring.setup(unique_id="test_checkpointing_pause")
-    ml.train_fn(gen, 10, ringnet, callback_kill_after_episode=5, optimizer=optimizer)
+    ml.train_fn(
+        gen,
+        10,
+        ringnet,
+        optimizer=optimizer,
+        callback_create_checkpoint=True,
+        callback_kill_after_episode=5,
+    )
     ml.train_fn(
         gen,
         4,
         ringnet,
         callback_save_params=True,
-        checkpoint="~/.xxy_checkpoints/test_checkpointing_pause",
+        checkpoint="~/.ring_checkpoints/test_checkpointing_pause",
         optimizer=optimizer,
     )
     trained_params_pause_flat = tree_utils.batch_concat_acme(

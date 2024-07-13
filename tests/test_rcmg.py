@@ -1,8 +1,8 @@
-from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+
 import ring
 from ring.maths import unit_quats_like
 from ring.maths import wrap_to_pi
@@ -16,12 +16,12 @@ def test_batch_generator(N: int, seed: int):
     gen1 = ring.RCMG(
         sys, config1, finalize_fn=lambda key, q, x, sys: (q, x)
     ).to_lazy_gen()
-    gen1 = unbatch_gen(gen1)
     gen2 = ring.RCMG(
         sys, config2, finalize_fn=lambda key, q, x, sys: (q, x)
     ).to_lazy_gen()
-    gen2 = unbatch_gen(gen2)
-    gen = ring.algorithms.batch_generators_lazy([gen1, gen2, gen1], [N, N, N])
+    gen = ring.algorithms.generator.batch.generators_lazy(
+        [gen1, gen2, gen1], [N, N, N], jit=0
+    )
     q, _ = gen(jax.random.PRNGKey(seed))
 
     arr_eq = lambda a, b: np.testing.assert_allclose(
@@ -51,11 +51,8 @@ def test_initial_ang_pos_values():
                 T=T,
             ),
             finalize_fn=lambda key, q, x, sys: (q, x),
-        ).to_lazy_gen()
-        q, _ = ring.algorithms.batch_generators_lazy(
-            unbatch_gen(gen),
-            bs,
-        )(jax.random.PRNGKey(1))
+        ).to_lazy_gen(bs, jit=False)
+        q, _ = gen(jax.random.PRNGKey(1))
         return q
 
     for init_val in np.linspace(-5.0, 5.0, num=10):
@@ -86,17 +83,64 @@ def test_rcmg():
                 # this tests `TimeDependentFloat`-logic
                 dang_max=_dang_max,
             )
-            generator = unbatch_gen(
-                ring.RCMG(
-                    sys, config, finalize_fn=lambda key, q, x, sys: (q, x)
-                ).to_lazy_gen()
-            )
-            bs = 8
-            generator = ring.algorithms.batch_generators_lazy(generator, bs)
 
-            seed = jax.random.PRNGKey(
-                1,
+            bs = 8
+
+            generator = ring.RCMG(
+                sys, config, finalize_fn=lambda key, q, x, sys: (q, x)
+            ).to_lazy_gen(bs, jit=False)
+
+            qs, xs = generator(
+                jax.random.PRNGKey(
+                    1,
+                )
             )
-            qs, xs = generator(seed)
 
             assert qs.shape == (bs, 100, sys.q_size())
+
+
+def test_rcmg_sizes_arg():
+    s = ring.io.load_example("test_double_pendulum")
+    c = ring.MotionConfig(T=3.0)
+    make = lambda n_s, n_c: ring.RCMG(
+        n_s * [s], n_c * [c], add_y_relpose=1, disable_tqdm=1
+    )
+
+    # size too small
+    with pytest.raises(AssertionError):
+        make(1, 2).to_list(1)
+
+    with pytest.raises(AssertionError):
+        make(2, 1).to_list(1)
+
+    with pytest.raises(AssertionError):
+        make(2, 3).to_list(5)
+
+    with pytest.raises(AssertionError):
+        make(2, 3).to_list([1, 6])
+
+    with pytest.raises(AssertionError):
+        make(2, 3).to_list([2, 6])
+
+    # split uniform not possible
+    with pytest.raises(AssertionError):
+        make(2, 3).to_list(9)
+
+    with pytest.raises(AssertionError):
+        make(3, 2).to_list(8)
+
+    d = make(2, 3).to_list([3, 6])
+    assert len(d) == 9
+
+    d = make(2, 3).to_list([6, 3])
+    assert len(d) == 9
+
+    # n_gens != n_sizes
+    with pytest.raises(AssertionError):
+        make(3, 2).to_list([3, 6])
+
+    d = make(3, 2).to_list([2, 2, 4])
+    assert len(d) == 8
+
+    d = make(3, 2).to_list(6)
+    assert len(d) == 6

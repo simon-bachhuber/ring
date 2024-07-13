@@ -2,6 +2,7 @@ from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
+
 import ring
 from ring.algorithms.generator.pd_control import _pd_control
 
@@ -104,12 +105,13 @@ def test_dynamical_simulation_trafo():
     for example in ["test_three_seg_seg2"]:
         sys = ring.io.load_example(example)
         sys = _sys_large_damping(sys)
-        gen = ring.algorithms.GeneratorPipe(
-            ring.algorithms.generator.transforms.GeneratorTrafoDynamicalSimulation(
-                P_gains, return_q_ref=True
-            ),
-            ring.algorithms.GeneratorTrafoRemoveInputExtras(sys),
-        )(ring.MotionConfig(T=20.0))
-        (X, _), (__, q_obs, ___, ____) = gen(jax.random.PRNGKey(1))
+        data = ring.RCMG(
+            sys,
+            ring.MotionConfig(T=20.0),
+            dynamic_simulation=1,
+            dynamic_simulation_kwargs=dict(custom_P_gains=P_gains, return_q_ref=True),
+            keep_output_extras=1,
+        ).to_list()
+        (X, _), (__, q_obs, ___, ____) = data[0]
         error = jnp.sqrt(jnp.mean((X["q_ref"][500:, -2:] - q_obs[500:, -2:]) ** 2))
         assert error < 0.1

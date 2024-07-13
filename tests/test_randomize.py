@@ -1,6 +1,7 @@
 from _compat import _load_sys
 
 import ring
+from ring.utils import randomize_sys
 
 
 def _load_1Seg2Seg3Seg4Seg_system(
@@ -145,7 +146,7 @@ def SKIP_test_randomize_anchors_long():
         "seg4_4Seg",
         "seg5_4Seg",
     ]
-    sys_data_new = ring.algorithms.generator.randomize_anchors(
+    sys_data_new = randomize_sys.randomize_anchors(
         ring.io.load_example("exclude/standard_sys"), anchors
     )
 
@@ -167,7 +168,7 @@ def test_randomize_anchors():
         "seg3_3Seg",
         "seg5_3Seg",
     ]
-    sys_data_new = ring.algorithms.generator.randomize_anchors(sys_data[0], anchors)
+    sys_data_new = randomize_sys.randomize_anchors(sys_data[0], anchors)
 
     for sys_old, sys_new in zip(sys_data, sys_data_new):
         assert ring.utils.sys_compare(sys_old, sys_new)

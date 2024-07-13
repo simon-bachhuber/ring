@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import time
 
+from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -29,7 +30,7 @@ def test_save_load():
 
 
 def test_save_load_generators():
-    path = Path(__file__).parent.joinpath("gen.h5")
+    path = Path(__file__).parent.joinpath("gen.pickle")
 
     sys = ring.io.load_example("test_three_seg_seg2")
     rcmg = ring.RCMG(
@@ -38,12 +39,10 @@ def test_save_load_generators():
         add_y_relpose=True,
     )
     data = rcmg.to_list()[0]
-    rcmg.to_hdf5(path)
+    rcmg.to_pickle(path)
 
-    gen_reloaded, _ = ring.algorithms.batched_generator_from_paths([path, path], 1)
-    data_reloaded = jax.tree_map(
-        lambda arr: arr[0], gen_reloaded(jax.random.PRNGKey(1))
-    )
+    gen_reloaded, _ = ring.RCMG.eager_gen_from_paths(path, 1)
+    data_reloaded = unbatch_gen(gen_reloaded)(jax.random.PRNGKey(1))
 
     assert ring.utils.tree_equal(data, data_reloaded)
 
