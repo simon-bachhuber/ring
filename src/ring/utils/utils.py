@@ -175,3 +175,9 @@ def primes(n: int) -> list[int]:
     if n > 1:
         primfac.append(n)
     return primfac
+
+
+def gcd(a: int, b: int) -> int:
+    while b:
+        a, b = b, a % b
+    return a
