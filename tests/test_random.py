@@ -70,6 +70,7 @@ def test_angle(randomized_interpolation, range_of_motion, range_of_motion_method
                 0.5,
                 T,
                 Ts,
+                None,
                 5,
                 randomized_interpolation,
                 range_of_motion,
@@ -84,7 +85,7 @@ def test_position():
         T = 30
         POS_0 = 0.0
         pos = ring.algorithms.random_position_over_time(
-            jrand.PRNGKey(1), POS_0, -0.2, 0.2, 0.1, 0.5, 0.1, 0.5, T, Ts, 10
+            jrand.PRNGKey(1), POS_0, -0.2, 0.2, 0.1, 0.5, 0.1, 0.5, T, Ts, None, 10
         )
         assert pos.shape == (int(T / Ts),)
         # TODO Why does this fail for POS_0 != 0.0?

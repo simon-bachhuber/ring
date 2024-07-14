@@ -16,6 +16,7 @@ from .utils import pickle_load
 from .utils import pickle_save
 from .utils import primes
 from .utils import pytree_deepcopy
+from .utils import replace_elements_w_nans
 from .utils import sys_compare
 from .utils import to_list
 from .utils import tree_equal

@@ -41,7 +41,8 @@ def test_save_load_generators():
     data = rcmg.to_list()[0]
     rcmg.to_pickle(path)
 
-    gen_reloaded, _ = ring.RCMG.eager_gen_from_paths(path, 1)
+    data_list = [jax.tree_map(lambda a: a[0], utils.pickle_load(path))]
+    gen_reloaded = ring.RCMG.eager_gen_from_list(data_list, 1)
     data_reloaded = unbatch_gen(gen_reloaded)(jax.random.PRNGKey(1))
 
     assert ring.utils.tree_equal(data, data_reloaded)

@@ -225,7 +225,8 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
         mconfig: ring.MotionConfig,
         key_t: jax.random.PRNGKey,
         key_value: jax.random.PRNGKey,
-        dt: float,
+        dt: float | jax.Array,
+        N: int | None,
         _: jax.Array,
     ) -> jax.Array:
         key_value, consume = jax.random.split(key_value)
@@ -251,6 +252,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
             mconfig.t_max,
             mconfig.T,
             dt,
+            N,
             5,
             mconfig.randomized_interpolation_angle,
             mconfig.range_of_motion_hinge,

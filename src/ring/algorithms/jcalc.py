@@ -274,8 +274,15 @@ def join_motionconfigs(
 
 
 DRAW_FN = Callable[
-    # config, key_t, key_value, dt, params
-    [MotionConfig, jax.random.PRNGKey, jax.random.PRNGKey, float, jax.Array],
+    # config, key_t, key_value, dt, N, params
+    [
+        MotionConfig,
+        jax.random.PRNGKey,
+        jax.random.PRNGKey,
+        float | jax.Array,
+        int | None,
+        jax.Array,
+    ],
     jax.Array,
 ]
 P_CONTROL_TERM = Callable[
@@ -410,7 +417,8 @@ def _draw_rxyz(
     config: MotionConfig,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
-    dt: float,
+    dt: float | jax.Array,
+    N: int | None,
     _: jax.Array,
     # TODO, delete these args and pass a modifified `config` with `replace` instead
     enable_range_of_motion: bool = True,
@@ -435,6 +443,7 @@ def _draw_rxyz(
         config.t_max,
         config.T,
         dt,
+        N,
         max_iter,
         config.randomized_interpolation_angle,
         config.range_of_motion_hinge if enable_range_of_motion else False,
@@ -449,7 +458,8 @@ def _draw_pxyz(
     config: MotionConfig,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
-    dt: float,
+    dt: float | jax.Array,
+    N: int | None,
     __: jax.Array,
     cor: bool = False,
 ) -> jax.Array:
@@ -467,6 +477,7 @@ def _draw_pxyz(
         config.cor_t_max if cor else config.t_max,
         config.T,
         dt,
+        N,
         max_iter,
         config.randomized_interpolation_position,
         config.cdf_bins_min,
@@ -479,7 +490,8 @@ def _draw_spherical(
     config: MotionConfig,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
-    dt: float,
+    dt: float | jax.Array,
+    N: int | None,
     _: jax.Array,
 ) -> jax.Array:
     # NOTE: We draw 3 euler angles and then build a quaternion.
@@ -491,6 +503,7 @@ def _draw_spherical(
             key_t,
             key_value,
             dt,
+            N,
             None,
             enable_range_of_motion=False,
             free_spherical=True,
@@ -506,7 +519,8 @@ def _draw_saddle(
     config: MotionConfig,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
-    dt: float,
+    dt: float | jax.Array,
+    N: int | None,
     _: jax.Array,
 ) -> jax.Array:
     @jax.vmap
@@ -516,6 +530,7 @@ def _draw_saddle(
             key_t,
             key_value,
             dt,
+            N,
             None,
             enable_range_of_motion=False,
             free_spherical=False,
@@ -530,11 +545,12 @@ def _draw_p3d_and_cor(
     config: MotionConfig,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
-    dt: float,
+    dt: float | jax.Array,
+    N: int | None,
     __: jax.Array,
     cor: bool,
 ) -> jax.Array:
-    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key, dt, None, cor))(
+    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key, dt, N, None, cor))(
         jax.random.split(key_value, 3)
     )
     return pos.T
@@ -544,22 +560,24 @@ def _draw_p3d(
     config: MotionConfig,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
-    dt: float,
+    dt: float | jax.Array,
+    N: int | None,
     __: jax.Array,
 ) -> jax.Array:
-    return _draw_p3d_and_cor(config, _, key_value, dt, None, cor=False)
+    return _draw_p3d_and_cor(config, _, key_value, dt, N, None, cor=False)
 
 
 def _draw_cor(
     config: MotionConfig,
     _: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
-    dt: float,
+    dt: float | jax.Array,
+    N: int | None,
     __: jax.Array,
 ) -> jax.Array:
     key_value1, key_value2 = jax.random.split(key_value)
-    q_free = _draw_free(config, _, key_value1, dt, None)
-    q_p3d = _draw_p3d_and_cor(config, _, key_value2, dt, None, cor=True)
+    q_free = _draw_free(config, _, key_value1, dt, N, None)
+    q_p3d = _draw_p3d_and_cor(config, _, key_value2, dt, N, None, cor=True)
     return jnp.concatenate((q_free, q_p3d), axis=1)
 
 
@@ -567,12 +585,13 @@ def _draw_free(
     config: MotionConfig,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
-    dt: float,
+    dt: float | jax.Array,
+    N: int | None,
     __: jax.Array,
 ) -> jax.Array:
     key_value1, key_value2 = jax.random.split(key_value)
-    q = _draw_spherical(config, key_t, key_value1, dt, None)
-    pos = _draw_p3d(config, None, key_value2, dt, None)
+    q = _draw_spherical(config, key_t, key_value1, dt, N, None)
+    pos = _draw_p3d(config, None, key_value2, dt, N, None)
     return jnp.concatenate((q, pos), axis=1)
 
 
@@ -580,7 +599,8 @@ def _draw_free_2d(
     config: MotionConfig,
     key_t: jax.random.PRNGKey,
     key_value: jax.random.PRNGKey,
-    dt: float,
+    dt: float | jax.Array,
+    N: int | None,
     __: jax.Array,
 ) -> jax.Array:
     key_value1, key_value2 = jax.random.split(key_value)
@@ -589,16 +609,20 @@ def _draw_free_2d(
         key_t,
         key_value1,
         dt,
+        N,
         None,
         enable_range_of_motion=False,
         free_spherical=True,
     )[:, None]
-    pos_yz = _draw_p3d(config, None, key_value2, dt, None)[:, :2]
+    pos_yz = _draw_p3d(config, None, key_value2, dt, N, None)[:, :2]
     return jnp.concatenate((angle_x, pos_yz), axis=1)
 
 
-def _draw_frozen(config: MotionConfig, _, __, dt: float, ___) -> jax.Array:
-    N = int(config.T / dt)
+def _draw_frozen(
+    config: MotionConfig, _, __, dt: float | jax.Array, N: int | None, ___
+) -> jax.Array:
+    if N is None:
+        N = int(config.T / dt)
     return jnp.zeros((N, 0))
 
 

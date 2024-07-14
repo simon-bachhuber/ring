@@ -2,6 +2,7 @@ from dataclasses import replace
 
 import jax
 import jax.numpy as jnp
+
 import ring
 from ring import maths
 from ring.algorithms.jcalc import _draw_rxyz
@@ -21,12 +22,12 @@ def register_rr_imp_joint(
         rot = ring.maths.quat_mul(rot_res, rot_pri)
         return ring.Transform.create(rot=rot)
 
-    def _draw_rr_imp(config, key_t, key_value, dt, _):
+    def _draw_rr_imp(config, key_t, key_value, dt, N, _):
         key_t1, key_t2 = jax.random.split(key_t)
         key_value1, key_value2 = jax.random.split(key_value)
-        q_traj_pri = _draw_rxyz(config, key_t1, key_value1, dt, _)
+        q_traj_pri = _draw_rxyz(config, key_t1, key_value1, dt, N, _)
         q_traj_res = _draw_rxyz(
-            replace(config_res, T=config.T), key_t2, key_value2, dt, _
+            replace(config_res, T=config.T), key_t2, key_value2, dt, N, _
         )
         # scale to be within bounds
         q_traj_res = q_traj_res * (jnp.deg2rad(ang_max_deg) / jnp.pi)

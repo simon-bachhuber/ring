@@ -29,7 +29,8 @@ def random_angle_over_time(
     t_min: float,
     t_max: float | TimeDependentFloat,
     T: float,
-    Ts: float,
+    Ts: float | jax.Array,
+    N: Optional[int] = None,
     max_iter: int = 5,
     randomized_interpolation: bool = False,
     range_of_motion: bool = False,
@@ -84,7 +85,10 @@ def random_angle_over_time(
     )
 
     # resample
-    t = jnp.arange(T, step=Ts)
+    if N is None:
+        t = jnp.arange(T, step=Ts)
+    else:
+        t = jnp.arange(N) * Ts
     if randomized_interpolation:
         q = interpolate(cdf_bins_min, cdf_bins_max, method=interpolation_method)(
             t, ANG[:, 0], ANG[:, 1], consume
@@ -117,7 +121,8 @@ def random_position_over_time(
     t_max: float | TimeDependentFloat,
     T: float,
     Ts: float,
-    max_it: int,
+    N: Optional[int] = None,
+    max_it: int = 100,
     randomized_interpolation: bool = False,
     cdf_bins_min: int = 5,
     cdf_bins_max: Optional[int] = None,
@@ -203,7 +208,10 @@ def random_position_over_time(
     )
 
     # resample
-    t = jnp.arange(T, step=Ts)
+    if N is None:
+        t = jnp.arange(T, step=Ts)
+    else:
+        t = jnp.arange(N) * Ts
     if randomized_interpolation:
         r = interpolate(cdf_bins_min, cdf_bins_max, method=interpolation_method)(
             t, POS[:, 0], POS[:, 1], consume

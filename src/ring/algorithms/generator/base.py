@@ -34,6 +34,8 @@ class RCMG:
         randomize_positions: bool = False,
         randomize_motion_artifacts: bool = False,
         randomize_joint_params: bool = False,
+        randomize_hz: bool = False,
+        randomize_hz_kwargs: dict = dict(),
         imu_motion_artifacts: bool = False,
         imu_motion_artifacts_kwargs: dict = dict(),
         dynamic_simulation: bool = False,
@@ -69,6 +71,8 @@ class RCMG:
                     randomize_positions=randomize_positions,
                     randomize_motion_artifacts=randomize_motion_artifacts,
                     randomize_joint_params=randomize_joint_params,
+                    randomize_hz=randomize_hz,
+                    randomize_hz_kwargs=randomize_hz_kwargs,
                     imu_motion_artifacts=imu_motion_artifacts,
                     imu_motion_artifacts_kwargs=imu_motion_artifacts_kwargs,
                     dynamic_simulation=dynamic_simulation,
@@ -232,6 +236,8 @@ def _build_mconfig_batched_generator(
     randomize_positions: bool,
     randomize_motion_artifacts: bool,
     randomize_joint_params: bool,
+    randomize_hz: bool,
+    randomize_hz_kwargs: dict,
     imu_motion_artifacts: bool,
     imu_motion_artifacts_kwargs: dict,
     dynamic_simulation: bool,
@@ -321,16 +327,29 @@ def _build_mconfig_batched_generator(
         key, *consume = jax.random.split(key, len(config) + 1)
         syss = jax.vmap(_setup_fn, (0, None))(jnp.array(consume), sys)
 
+        if randomize_hz:
+            assert "sampling_rates" in randomize_hz_kwargs
+            hzs = randomize_hz_kwargs["sampling_rates"]
+            assert len(set([c.T for c in config])) == 1
+            N = int(min(hzs) * config[0].T)
+            key, consume = jax.random.split(key)
+            dt = 1 / jax.random.choice(consume, jnp.array(hzs))
+            # makes sys.dt from float to AbstractArray
+            syss = syss.replace(dt=jnp.array(dt))
+        else:
+            N = None
+
         qs = []
         for i, _config in enumerate(config):
-            key, _q = draw_random_q(key, syss[i], _config)
+            key, _q = draw_random_q(key, syss[i], _config, N)
             qs.append(_q)
         qs = jnp.stack(qs)
 
         @jax.vmap
         def _vmapped_context(key, q, sys):
             x, _ = jax.vmap(kinematics.forward_kinematics_transforms, (None, 0))(sys, q)
-            Xy, extras = ({}, {}), (key, q, x, sys)
+            X = {"dt": jnp.array(sys.dt)} if randomize_hz else {}
+            Xy, extras = (X, {}), (key, q, x, sys)
             return _finalize_fn(Xy, extras)
 
         keys = jax.random.split(key, len(config))
@@ -346,6 +365,7 @@ def draw_random_q(
     key: types.PRNGKey,
     sys: base.System,
     config: jcalc.MotionConfig,
+    N: int | None,
 ) -> tuple[types.Xy, types.OutputExtras]:
 
     key_start = key
@@ -366,7 +386,7 @@ def draw_random_q(
         draw_fn = jcalc.get_joint_model(link_type).rcmg_draw_fn
         if draw_fn is None:
             raise Exception(f"The joint type {link_type} has no draw fn specified.")
-        q_link = draw_fn(config, key_t, key_value, sys.dt, joint_params)
+        q_link = draw_fn(config, key_t, key_value, sys.dt, N, joint_params)
         # even revolute and prismatic joints must be 2d arrays
         q_link = q_link if q_link.ndim == 2 else q_link[:, None]
         q_list.append(q_link)
