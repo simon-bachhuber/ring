@@ -1,11 +1,13 @@
 from importlib import import_module as _import_module
 import io
 import pickle
+import random
 from typing import Optional
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+import tree_utils
 
 from ring.base import _Base
 from ring.base import Geometry
@@ -181,3 +183,36 @@ def gcd(a: int, b: int) -> int:
     while b:
         a, b = b, a % b
     return a
+
+
+def replace_elements_w_nans(
+    list_of_data: list[tree_utils.PyTree],
+    include_elements: Optional[list[int]] = None,
+    verbose: bool = False,
+) -> list[tree_utils.PyTree]:
+    if include_elements is None:
+        include_elements = list(range(len(list_of_data)))
+
+    assert min(include_elements) >= 0
+    assert max(include_elements) < len(list_of_data)
+
+    def _is_nan(ele: tree_utils.PyTree, i: int):
+        isnan = np.any(
+            [np.any(np.isnan(arr)) for arr in jax.tree_util.tree_leaves(ele)]
+        )
+        if isnan:
+            if verbose:
+                print(f"Sample with idx={i} is nan. It will be replaced.")
+            return True
+        return False
+
+    list_of_data_nonan = []
+    for i, ele in enumerate(list_of_data):
+        if _is_nan(ele, i):
+            while True:
+                j = random.choice(include_elements)
+                if not _is_nan(list_of_data[j], j):
+                    ele = list_of_data[j]
+                    break
+        list_of_data_nonan.append(ele)
+    return list_of_data_nonan
