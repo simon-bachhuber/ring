@@ -251,8 +251,8 @@ def _expand_dt(X: dict, T: int):
     return X
 
 
-def _expand_then_flatten(args):
-    X, y = args
+def _expand_then_flatten(Xy):
+    X, y = Xy
     gyr = X["0"]["gyr"]
 
     batched = True

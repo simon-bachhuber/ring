@@ -1,3 +1,4 @@
+import random
 from typing import Callable, Optional
 import warnings
 
@@ -172,35 +173,37 @@ class RCMG:
         sizes: int | list[int] = 1,
         seed: int = 1,
         shuffle: bool = True,
+        transform=None,
     ) -> types.BatchedGenerator:
         data = self.to_list(sizes, seed)
         assert len(data) >= batchsize
-
-        def data_fn(indices: list[int]):
-            return tree_utils.tree_batch([data[i] for i in indices])
-
-        return batch.generator_from_data_fn(
-            data_fn, list(range(len(data))), shuffle, batchsize
-        )
+        return self.eager_gen_from_list(data, batchsize, shuffle, transform)
 
     @staticmethod
-    def eager_gen_from_paths(
-        paths: str | list[str],
+    def eager_gen_from_list(
+        data: list[tree_utils.PyTree],
         batchsize: int,
-        include_samples: Optional[list[int]] = None,
         shuffle: bool = True,
-        load_all_into_memory: bool = False,
-        tree_transform=None,
-    ) -> tuple[types.BatchedGenerator, int]:
-        paths = utils.to_list(paths)
-        return batch.generator_from_paths(
-            paths,
-            batchsize,
-            include_samples,
-            shuffle,
-            load_all_into_memory=load_all_into_memory,
-            tree_transform=tree_transform,
-        )
+        transform=None,
+    ) -> types.BatchedGenerator:
+        data = data.copy()
+        n_batches, i = len(data) // batchsize, 0
+
+        def generator(key: jax.Array):
+            nonlocal i
+            if shuffle and i == 0:
+                random.shuffle(data)
+
+            start, stop = i * batchsize, (i + 1) * batchsize
+            batch = tree_utils.tree_batch(data[start:stop], backend="numpy")
+            batch = utils.pytree_deepcopy(batch)
+            if transform is not None:
+                batch = transform(batch)
+
+            i = (i + 1) % n_batches
+            return batch
+
+        return generator
 
 
 def _copy_dicts(f) -> dict:
