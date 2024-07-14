@@ -3,17 +3,16 @@ from functools import partial
 import os
 from pathlib import Path
 import pickle
-import random
 import time
 from typing import Optional, Protocol
 import warnings
 
 import jax
 import numpy as np
-import ring
-from ring.utils import import_lib
 from tree_utils import PyTree
 
+import ring
+from ring.utils import import_lib
 import wandb
 
 # An arbitrarily nested dictionary with Array leaves; Or strings
@@ -229,43 +228,6 @@ def save_model_tf(jax_func, path: str, *input, validate: bool = True):
             output_jax,
             output_tf,
         )
-
-
-def train_val_split(
-    tps: list[str],
-    bs: int,
-    n_batches_for_val: int = 1,
-    transform_gen=None,
-    tree_transform=None,
-):
-    "Uses `random` module for shuffeling."
-    if transform_gen is None:
-        transform_gen = lambda gen: gen
-
-    len_val = n_batches_for_val * bs
-
-    _, N = ring.RCMG.eager_gen_from_paths(tps, 1)
-    include_samples = list(range(N))
-    random.shuffle(include_samples)
-
-    train_data, val_data = include_samples[:-len_val], include_samples[-len_val:]
-    X_val, y_val = transform_gen(
-        ring.RCMG.eager_gen_from_paths(
-            tps, len_val, val_data, tree_transform=tree_transform
-        )[0]
-    )(jax.random.PRNGKey(420))
-
-    generator = transform_gen(
-        ring.RCMG.eager_gen_from_paths(
-            tps,
-            bs,
-            train_data,
-            load_all_into_memory=True,
-            tree_transform=tree_transform,
-        )[0]
-    )
-
-    return generator, (X_val, y_val)
 
 
 def _unknown_link_names(N: int):
