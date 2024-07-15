@@ -44,27 +44,19 @@ _rgbas = {
 }
 
 
-def render(
-    sys: base.System,
-    xs: Optional[base.Transform | list[base.Transform]] = None,
-    camera: Optional[str] = None,
-    show_pbar: bool = True,
-    backend: str = "mujoco",
-    render_every_nth: int = 1,
-    **scene_kwargs,
-) -> list[np.ndarray]:
-    """Render frames from system and trajectory of maximal coordinates `xs`.
+_args = None
+_scene = None
 
-    Args:
-        sys (base.System): System to render.
-        xs (base.Transform | list[base.Transform]): Single or time-series
-        of maximal coordinates `xs`.
-        show_pbar (bool, optional): Whether or not to show a progress bar.
-        Defaults to True.
 
-    Returns:
-        list[np.ndarray]: Stacked rendered frames. Length == len(xs).
-    """
+def _load_scene(sys, backend, **scene_kwargs):
+    global _args, _scene
+
+    args = (sys, backend, scene_kwargs)
+    if _args is not None:
+        if utils.tree_equal(_args, args):
+            return _scene
+
+    _args = args
     if backend == "mujoco":
         utils.import_lib("mujoco")
         from ring.rendering.mujoco_render import MujocoScene
@@ -95,6 +87,34 @@ def render(
     # convert all colors to rgbas
     geoms_rgba = [_color_to_rgba(geom) for geom in geoms]
 
+    scene.init(geoms_rgba)
+
+    _scene = scene
+    return _scene
+
+
+def render(
+    sys: base.System,
+    xs: Optional[base.Transform | list[base.Transform]] = None,
+    camera: Optional[str] = None,
+    show_pbar: bool = True,
+    backend: str = "mujoco",
+    render_every_nth: int = 1,
+    **scene_kwargs,
+) -> list[np.ndarray]:
+    """Render frames from system and trajectory of maximal coordinates `xs`.
+
+    Args:
+        sys (base.System): System to render.
+        xs (base.Transform | list[base.Transform]): Single or time-series
+        of maximal coordinates `xs`.
+        show_pbar (bool, optional): Whether or not to show a progress bar.
+        Defaults to True.
+
+    Returns:
+        list[np.ndarray]: Stacked rendered frames. Length == len(xs).
+    """
+
     if xs is None:
         xs = kinematics.forward_kinematics(sys, base.State.create(sys))[1].x
 
@@ -122,7 +142,7 @@ def render(
     for x in xs:
         data_check(x)
 
-    scene.init(geoms_rgba)
+    scene = _load_scene(sys, backend, **scene_kwargs)
 
     frames = []
     for x in tqdm.tqdm(xs, "Rendering frames..", disable=not show_pbar):
@@ -132,19 +152,9 @@ def render(
     return frames
 
 
-def render_prediction(
-    sys: base.System,
-    xs: base.Transform | list[base.Transform],
-    yhat: dict | jax.Array | np.ndarray,
-    # by default we don't predict the global rotation
-    transparent_segment_to_root: bool = True,
-    **kwargs,
+def _render_prediction_internals(
+    sys, xs, yhat, transparent_segment_to_root, offset_truth, offset_pred
 ):
-    "`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent."
-
-    offset_truth = kwargs.pop("offset_truth", [0, 0, 0])
-    offset_pred = kwargs.pop("offset_pred", [0, 0, 0])
-
     if isinstance(xs, list):
         # list -> batched Transform
         xs = xs[0].batch(*xs[1:])
@@ -185,7 +195,7 @@ def render_prediction(
     xs, xshat = xs.transpose((1, 0, 2)), xshat.transpose((1, 0, 2))
 
     add_offset = lambda x, offset: algebra.transform_mul(
-        x, base.Transform.create(pos=jnp.array(offset, dtype=jnp.float32))
+        x, base.Transform.create(pos=offset)
     )
 
     # create mapping from `name` -> Transform
@@ -210,6 +220,26 @@ def render_prediction(
         xs_render.append(xs_dict[name])
     xs_render = xs_render[0].batch(*xs_render[1:])
     xs_render = xs_render.transpose((1, 0, 2))
+
+    return sys_render, xs_render
+
+
+def render_prediction(
+    sys: base.System,
+    xs: base.Transform | list[base.Transform],
+    yhat: dict | jax.Array | np.ndarray,
+    # by default we don't predict the global rotation
+    transparent_segment_to_root: bool = True,
+    **kwargs,
+):
+    "`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent."
+
+    offset_truth = jnp.array(kwargs.pop("offset_truth", [0.0, 0, 0]))
+    offset_pred = jnp.array(kwargs.pop("offset_pred", [0.0, 0, 0]))
+
+    sys_render, xs_render = jax.jit(_render_prediction_internals, static_argnums=3)(
+        sys, xs, yhat, transparent_segment_to_root, offset_truth, offset_pred
+    )
 
     frames = render(sys_render, xs_render, **kwargs)
     return frames
