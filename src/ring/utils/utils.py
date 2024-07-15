@@ -16,7 +16,6 @@ from .path import parse_path
 
 
 def tree_equal(a, b):
-    "Copied from Marcel / Thomas"
     if type(a) is not type(b):
         return False
     if isinstance(a, _Base):

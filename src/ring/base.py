@@ -490,24 +490,6 @@ class System(_Base):
         new_link_names = [prefix + name + suffix for name in self.link_names]
         return self.replace(link_names=new_link_names)
 
-    @staticmethod
-    def deep_equal(a, b):
-        if type(a) is not type(b):
-            return False
-        if isinstance(a, _Base):
-            return System.deep_equal(a.__dict__, b.__dict__)
-        if isinstance(a, dict):
-            if a.keys() != b.keys():
-                return False
-            return all(System.deep_equal(a[k], b[k]) for k in a.keys())
-        if isinstance(a, (list, tuple)):
-            if len(a) != len(b):
-                return False
-            return all(System.deep_equal(a[i], b[i]) for i in range(len(a)))
-        if isinstance(a, (np.ndarray, jnp.ndarray, jax.Array)):
-            return jnp.array_equal(a, b)
-        return a == b
-
     def _replace_free_with_cor(self) -> "System":
         # check that
         # - all free joints connect to -1
