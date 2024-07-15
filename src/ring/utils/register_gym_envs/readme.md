@@ -1,6 +1,9 @@
 # Gymnasium Environments
 Environments that allow to validate inertial motion tracking filters.
 
+## Installation
+`pip install imt-ring gymnasium`
+
 ## Usage
 ```python
 from ring.utils import register_gym_envs
