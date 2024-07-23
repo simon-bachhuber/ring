@@ -119,7 +119,7 @@ def quat_inv(q: jnp.ndarray) -> jnp.ndarray:
 
 @partial(jnp.vectorize, signature="(3),(4)->(3)")
 def rotate(vector: jnp.ndarray, quat: jnp.ndarray):
-    """Rotates a vector `vector` by a *unit* quaternion `quat`."""
+    """Rotates a vector `vector` by a *unit* quaternion `quat`. q x vec x q^*"""
     qvec = jnp.array([0, *vector])
     return rotate_quat(qvec, quat)[1:4]
 
