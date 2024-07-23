@@ -157,13 +157,16 @@ def _array_to_str(arr: Sequence[float]) -> str:
     return "".join(["{:.4f} ".format(np.round(value, 4)) for value in arr])[:-1]
 
 
+_default_lights = {-1: '<light pos="0 0 4" dir="0 0 -1"/>'}
+
+
 class MujocoScene:
     def __init__(
         self,
         height: int = 240,
         width: int = 320,
         add_cameras: dict[int, str | Sequence[str]] = {},
-        add_lights: dict[int, str | Sequence[str]] = {},
+        add_lights: dict[int, str | Sequence[str]] = _default_lights,
         show_stars: bool = True,
         show_floor: bool = True,
         debug: bool = False,
