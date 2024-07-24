@@ -330,7 +330,10 @@ def rel_pose(
 
 
 def root_incl(
-    sys: base.System, x: base.Transform, sys_x: base.System
+    sys: base.System,
+    x: base.Transform,
+    sys_x: base.System,
+    child_to_parent: bool = False,
 ) -> dict[str, jax.Array]:
     # (time, nlinks, 4) -> (nlinks, time, 4)
     rots = x.rot.transpose((1, 0, 2))
@@ -341,8 +344,10 @@ def root_incl(
     def f(_, __, name: str, parent: int):
         if parent != -1:
             return
-        q_eps_to_i = maths.quat_project(rots[l_map[name]], jnp.array([0.0, 0, 1]))[1]
-        y[name] = maths.quat_inv(q_eps_to_i)
+        q_i = maths.quat_project(rots[l_map[name]], jnp.array([0.0, 0, 1]))[1]
+        if child_to_parent:
+            q_i = maths.quat_inv(q_i)
+        y[name] = q_i
 
     sys.scan(f, "ll", sys.link_names, sys.link_parents)
 
@@ -350,7 +355,10 @@ def root_incl(
 
 
 def root_full(
-    sys: base.System, x: base.Transform, sys_x: base.System
+    sys: base.System,
+    x: base.Transform,
+    sys_x: base.System,
+    child_to_parent: bool = False,
 ) -> dict[str, jax.Array]:
     # (time, nlinks, 4) -> (nlinks, time, 4)
     rots = x.rot.transpose((1, 0, 2))
@@ -361,8 +369,10 @@ def root_full(
     def f(_, __, name: str, parent: int):
         if parent != -1:
             return
-        q_eps_to_i = rots[l_map[name]]
-        y[name] = maths.quat_inv(q_eps_to_i)
+        q_i = rots[l_map[name]]
+        if child_to_parent:
+            q_i = maths.quat_inv(q_i)
+        y[name] = q_i
 
     sys.scan(f, "ll", sys.link_names, sys.link_parents)
 

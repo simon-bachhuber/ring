@@ -77,12 +77,13 @@ class RelPose:
 
 
 class RootIncl:
-    def __init__(self, sys: base.System):
+    def __init__(self, sys: base.System, **kwargs):
         self.sys = sys
+        self.kwargs = kwargs
 
     def __call__(self, Xy, extras):
         (X, y), (key, q, x, sys_x) = Xy, extras
-        y_root_incl = sensors.root_incl(self.sys, x, sys_x)
+        y_root_incl = sensors.root_incl(self.sys, x, sys_x, **self.kwargs)
         y = utils.dict_union(y, y_root_incl)
         return (X, y), (key, q, x, sys_x)
 
