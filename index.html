@@ -298,7 +298,16 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Documentation">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quickstart Example
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quickstart Example">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -657,6 +666,34 @@
 </code></pre></div></p>
 <h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">¤</a></h2>
 <p>Available <a href="https://simipixel.github.io/ring/">here</a>.</p>
+<h2 id="quickstart-example">Quickstart Example<a class="headerlink" href="#quickstart-example" title="Permanent link">¤</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">ring</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">T</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">30</span>        <span class="c1"># sequence length     [s]</span>
+<span class="n">Ts</span> <span class="p">:</span> <span class="nb">float</span>     <span class="o">=</span> <span class="mf">0.01</span>      <span class="c1"># sampling interval   [s]</span>
+<span class="n">B</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">1</span>         <span class="c1"># batch size</span>
+<span class="n">lam</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="c1"># parent array</span>
+<span class="n">N</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span>  <span class="c1"># number of bodies</span>
+<span class="n">T_i</span><span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="n">Ts</span><span class="p">)</span> <span class="c1"># number of timesteps</span>
+
+<span class="n">X</span>              <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">B</span><span class="p">,</span> <span class="n">T_i</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+<span class="c1"># where X is structured as follows:</span>
+<span class="c1"># X[..., :3]   = acc</span>
+<span class="c1"># X[..., 3:6]  = gyr</span>
+<span class="c1"># X[..., 6:9]  = jointaxis</span>
+
+<span class="c1"># let&#39;s assume we have an IMU on each outer segment of the</span>
+<span class="c1"># three-segment kinematic chain</span>
+<span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>  <span class="o">=</span> <span class="n">acc_segment1</span>
+<span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>  <span class="o">=</span> <span class="n">acc_segment3</span>
+<span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">gyr_segment1</span>
+<span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">gyr_segment3</span>
+
+<span class="n">ringnet</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">RING</span><span class="p">(</span><span class="n">lam</span><span class="p">,</span> <span class="n">Ts</span><span class="p">)</span>
+<span class="n">yhat</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ringnet</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="c1"># yhat: unit quaternions, shape = (B, T_i, N, 4)</span>
+</code></pre></div>
 <h3 id="known-fixes">Known fixes<a class="headerlink" href="#known-fixes" title="Permanent link">¤</a></h3>
 <h4 id="offscreen-rendering-with-mujoco">Offscreen rendering with Mujoco<a class="headerlink" href="#offscreen-rendering-with-mujoco" title="Permanent link">¤</a></h4>
 <blockquote>

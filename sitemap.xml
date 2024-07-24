@@ -2,92 +2,92 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ring.com/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/api/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/batched_simulation/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/control/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/custom_joint_type/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/error_quaternion/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/experimental_data/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/getting_started/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/imu_modeling/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/knee_angle_tracking/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/knee_joint_translational_dof/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/machine_learning/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/magnetometer_modeling/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/morph_system/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/motion_artifact_rejection/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/notebooks/visualisation/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/prism/ss_23_marcel_thomas/notebook/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://ring.com/prism/ss_23_moritz/notebook/</loc>
-         <lastmod>2024-04-22</lastmod>
+         <lastmod>2024-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
