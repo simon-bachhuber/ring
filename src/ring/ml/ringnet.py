@@ -200,6 +200,7 @@ class RING(ml_base.AbstractFilter):
         forward_factory=make_ring,
         **kwargs,
     ):
+        "Untrained RING network"
         self.forward_lam_factory = partial(forward_factory, **kwargs)
         self.params = self._load_params(params)
         self.lam = lam

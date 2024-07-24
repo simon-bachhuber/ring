@@ -113,7 +113,9 @@ class _Base:
 class Transform(_Base):
     """Represents the Transformation from Plücker A to Plücker B,
     where B is located relative to A at `pos` in frame A and `rot` is the
-    relative quaternion from A to B."""
+    relative quaternion from A to B.
+    Create using `Transform.create(pos=..., rot=...)
+    """
 
     pos: Vector
     rot: Quaternion
@@ -399,6 +401,7 @@ QD_WIDTHS = {
 
 @struct.dataclass
 class System(_Base):
+    "System object. Create using `System.create(path_xml)`"
     link_parents: list[int] = struct.field(False)
     links: Link
     link_types: list[str] = struct.field(False)

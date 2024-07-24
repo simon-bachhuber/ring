@@ -47,6 +47,7 @@ class RCMG:
         cor: bool = False,
         disable_tqdm: bool = False,
     ) -> None:
+        "Random Chain Motion Generator"
 
         sys, config = utils.to_list(sys), utils.to_list(config)
         sys_ml = sys[0] if sys_ml is None else sys_ml

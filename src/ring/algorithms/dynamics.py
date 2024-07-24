@@ -303,6 +303,7 @@ def step(
     taus: Optional[jax.Array] = None,
     n_substeps: int = 1,
 ) -> base.State:
+    "Steps the dynamics. Returns the state of next timestep."
     assert sys.q_size() == state.q.size
     if taus is None:
         taus = jnp.zeros_like(state.qd)

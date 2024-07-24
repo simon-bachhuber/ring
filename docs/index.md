@@ -22,6 +22,36 @@ pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-re
 
 Available [here](https://simipixel.github.io/ring/).
 
+## Quickstart Example
+```python
+import ring
+import numpy as np
+
+T  : int       = 30        # sequence length     [s]
+Ts : float     = 0.01      # sampling interval   [s]
+B  : int       = 1         # batch size
+lam: list[int] = [0, 1, 2] # parent array
+N  : int       = len(lam)  # number of bodies
+T_i: int       = int(T/Ts) # number of timesteps
+
+X              = np.zeros((B, T_i, N, 9))
+# where X is structured as follows:
+# X[..., :3]   = acc
+# X[..., 3:6]  = gyr
+# X[..., 6:9]  = jointaxis
+
+# let's assume we have an IMU on each outer segment of the
+# three-segment kinematic chain
+X[..., 0, :3]  = acc_segment1
+X[..., 2, :3]  = acc_segment3
+X[..., 0, 3:6] = gyr_segment1
+X[..., 2, 3:6] = gyr_segment3
+
+ringnet = ring.RING(lam, Ts)
+yhat, _ = ringnet.apply(X)
+# yhat: unit quaternions, shape = (B, T_i, N, 4)
+```
+
 ### Known fixes
 
 #### Offscreen rendering with Mujoco

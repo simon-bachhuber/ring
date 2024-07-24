@@ -14,32 +14,13 @@ nav:
     - 'notebooks/machine_learning.ipynb'
     - 'notebooks/visualisation.ipynb'
     - 'notebooks/knee_angle_tracking.ipynb'
-  - api.md
+  - API:
+    - ring: 'api.md'
 
 theme:
-    name: material
+    name: readthedocs
     logo: img/icon.svg
     favicon: img/favicon.ico
-    features:
-        - navigation.sections  # Sections are included in the navigation on the left.
-        - toc.integrate  # Table of contents is integrated on the left; does not appear separately on the right.
-        - header.autohide  # header disappears as you scroll
-    palette:
-        # Light mode / dark mode
-        # We deliberately don't automatically use `media` to check a user's preferences. We default to light mode as
-        # (a) it looks more professional, and (b) is more obvious about the fact that it offers a (dark mode) toggle.
-        - scheme: default
-          primary: white
-          accent: amber
-          toggle:
-             icon: material/weather-night
-             name: Switch to dark mode
-        - scheme: slate
-          primary: black
-          accent: amber
-          toggle:
-             icon: material/weather-sunny
-             name: Switch to light mode
 
 markdown_extensions:
     - pymdownx.arithmatex:  # Render LaTeX via MathJax
