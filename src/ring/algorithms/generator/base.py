@@ -4,6 +4,7 @@ import warnings
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import tree_utils
 
 from ring import base
@@ -142,7 +143,9 @@ class RCMG:
 
         return n_calls
 
-    def to_list(self, sizes: int | list[int] = 1, seed: int = 1):
+    def to_list(
+        self, sizes: int | list[int] = 1, seed: int = 1
+    ) -> list[tree_utils.PyTree[np.ndarray]]:
         "Returns list of unbatched sequences as numpy arrays."
         repeats = self._compute_repeats(sizes)
         sizes = list(jnp.array(repeats) * jnp.array(self._size_of_generators))
@@ -171,7 +174,7 @@ class RCMG:
         seed: int = 1,
         overwrite: bool = True,
     ) -> None:
-        data = tree_utils.tree_batch(self.to_list(sizes, seed))
+        data = tree_utils.tree_batch(self.to_list(sizes, seed), backend="numpy")
         utils.pickle_save(data, path, overwrite=overwrite)
 
     def to_eager_gen(
