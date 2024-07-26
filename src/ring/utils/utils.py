@@ -115,7 +115,7 @@ def pytree_deepcopy(tree):
     "Recursivley copies a pytree."
     if isinstance(tree, (int, float, jax.Array)):
         return tree
-    elif isinstance(tree, np.ndarray):
+    elif isinstance(tree, np.ndarray) or np.isscalar(tree):
         return tree.copy()
     elif isinstance(tree, list):
         return [pytree_deepcopy(ele) for ele in tree]
