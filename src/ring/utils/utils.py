@@ -210,8 +210,9 @@ def replace_elements_w_nans(
         if _is_nan(ele, i):
             while True:
                 j = random.choice(include_elements)
-                if not _is_nan(list_of_data[j], j):
-                    ele = list_of_data[j]
+                ele_j = list_of_data[j]
+                if not _is_nan(ele_j, j):
+                    ele = pytree_deepcopy(ele_j)
                     break
         list_of_data_nonan.append(ele)
     return list_of_data_nonan
