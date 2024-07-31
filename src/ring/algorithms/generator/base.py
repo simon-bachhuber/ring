@@ -322,7 +322,7 @@ def _build_mconfig_batched_generator(
         if add_y_relpose:
             pipe.append(finalize_fns.RelPose(sys_noimu))
         if add_y_rootincl:
-            pipe.append(finalize_fns.RootIncl(sys_noimu))
+            pipe.append(finalize_fns.RootIncl(sys_noimu, **add_y_rootincl_kwargs))
         if use_link_number_in_Xy:
             pipe.append(finalize_fns.Names2Indices(sys_noimu))
 
