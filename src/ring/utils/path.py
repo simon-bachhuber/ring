@@ -12,6 +12,24 @@ def parse_path(
     mkdir: bool = True,
     require_is_file: bool = False,
 ) -> str:
+    """Utility for performing actions on a path
+
+    Args:
+        path (str): The (root) path to file or folder
+        extension (Optional[str], optional): The file extension. Defaults to None.
+        file_exists_ok (bool, optional): If false, will error if file already exists.
+            Defaults to True.
+        mkdir (bool, optional): Will create all subdirs in the process.
+            Defaults to True.
+        require_is_file (bool, optional): if true, will error if file does not
+            already exist. Defaults to False.
+
+    Raises:
+        Exception: _description_
+
+    Returns:
+        str: The home-expanded path to folder or file
+    """
     path = Path(os.path.expanduser(path))
 
     for p in join_paths:
