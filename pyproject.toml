@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "imt-ring"
-version = "1.6.6"
+version = "1.6.7"
 authors = [
   { name="Simon Bachhuber", email="simon.bachhuber@fau.de" },
 ]
@@ -23,16 +23,11 @@ dependencies = [
     "numpy",
     "flax",
     "tqdm",
-    "wget",
-    "h5py",
     "imt-tree-utils",
     "wandb",
     "optax",
     "dm-haiku",
-    "joblib",
     "pyyaml",
-    "qmt",
-    "scipy",
 ]
 
 [project.optional-dependencies]

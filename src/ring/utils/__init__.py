@@ -1,4 +1,3 @@
-from . import hdf5
 from . import randomize_sys
 from .batchsize import batchsize_thresholds
 from .batchsize import distribute_batchsize
