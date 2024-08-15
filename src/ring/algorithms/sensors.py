@@ -130,8 +130,8 @@ def magnetometer(rot: jax.Array, magvec: jax.Array) -> jax.Array:
 # - acc: m/s/s
 # - gyr: rad/s
 # - mag: a.u.
-NOISE_LEVELS = {"acc": 0.03, "gyr": jnp.deg2rad(0.5), "mag": 0.01}
-BIAS_LEVELS = {"acc": 0.1, "gyr": jnp.deg2rad(0.5), "mag": 0.0}
+NOISE_LEVELS = {"acc": 0.048, "gyr": jnp.deg2rad(0.7), "mag": 0.01}
+BIAS_LEVELS = {"acc": 0.5, "gyr": jnp.deg2rad(3.6), "mag": 0.0}
 
 
 def add_noise_bias(
