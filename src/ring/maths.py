@@ -312,7 +312,7 @@ def quat_project(q: jax.Array, k: jax.Array) -> tuple[jax.Array, jax.Array]:
         k (jax.Array): Primary axis direction.
 
     Returns:
-        tuple[jax.Array, jax.Array]: Primary quaternion, residual quaternion
+        tuple(jax.Array, jax.Array): Primary quaternion, residual quaternion
     """
     phi_pri = 2 * jnp.arctan2(q[1:] @ k, q[0])
     # NOTE: CONVENTION
