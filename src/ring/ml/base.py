@@ -77,6 +77,10 @@ class AbstractFilter(ABC):
     def search_attr(self, attr: str):
         return getattr(self, attr)
 
+    @property
+    def unwrapped_deep(self):
+        return self
+
 
 class AbstractFilterUnbatched(AbstractFilter):
     @abstractmethod
@@ -135,6 +139,10 @@ class AbstractFilterWrapper(AbstractFilter):
     @property
     def name(self):
         return self.unwrapped.name + " ->\n" + super().name
+
+    @property
+    def unwrapped_deep(self) -> AbstractFilter:
+        return self.unwrapped.unwrapped_deep
 
 
 class LPF_FilterWrapper(AbstractFilterWrapper):
