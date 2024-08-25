@@ -590,12 +590,14 @@ class System(_Base):
 
         return sys
 
-    def findall_imus(self) -> list[str]:
-        return [name for name in self.link_names if name[:3] == "imu"]
+    def findall_imus(self, names: bool = True) -> list[str] | list[int]:
+        bodies = [name for name in self.link_names if name[:3] == "imu"]
+        return bodies if names else [self.name_to_idx(n) for n in bodies]
 
-    def findall_segments(self) -> list[str]:
-        imus = self.findall_imus()
-        return [name for name in self.link_names if name not in imus]
+    def findall_segments(self, names: bool = True) -> list[str] | list[int]:
+        imus = self.findall_imus(names=True)
+        bodies = [name for name in self.link_names if name not in imus]
+        return bodies if names else [self.name_to_idx(n) for n in bodies]
 
     def _bodies_indices_to_bodies_name(self, bodies: list[int]) -> list[str]:
         return [self.idx_to_name(i) for i in bodies]
@@ -614,6 +616,11 @@ class System(_Base):
     ) -> list[int] | list[str]:
         bodies = [i for i, _typ in enumerate(self.link_types) if _typ == typ]
         return self._bodies_indices_to_bodies_name(bodies) if names else bodies
+
+    def children(self, name: str, names: bool = False) -> list[int] | list[str]:
+        p = self.name_to_idx(name)
+        bodies = [i for i in range(self.num_links()) if self.link_parents[i] == p]
+        return bodies if (not names) else [self.idx_to_name(i) for i in bodies]
 
     def scan(self, f: Callable, in_types: str, *args, reverse: bool = False):
         """Scan `f` along each link in system whilst carrying along state.
