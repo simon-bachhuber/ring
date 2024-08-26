@@ -6,6 +6,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import tree_utils
+from tree_utils import PyTree
 
 from ring import base
 from ring import utils
@@ -143,9 +144,7 @@ class RCMG:
 
         return n_calls
 
-    def to_list(
-        self, sizes: int | list[int] = 1, seed: int = 1
-    ) -> list[tree_utils.PyTree[np.ndarray]]:
+    def _generators_ncalls(self, sizes: int | list[int] = 1):
         "Returns list of unbatched sequences as numpy arrays."
         repeats = self._compute_repeats(sizes)
         sizes = list(jnp.array(repeats) * jnp.array(self._size_of_generators))
@@ -165,7 +164,45 @@ class RCMG:
                 batch.generators_lazy([self.gens[i]], [reduced_repeats[i]], jits[i])
             )
 
-        return batch.generators_eager_to_list(gens, n_calls, seed, self._disable_tqdm)
+        return gens, n_calls
+
+    def to_list(
+        self, sizes: int | list[int] = 1, seed: int = 1
+    ) -> list[tree_utils.PyTree[np.ndarray]]:
+        "Returns list of unbatched sequences as numpy arrays."
+        gens, n_calls = self._generators_ncalls(sizes)
+
+        data = []
+        batch.generators_eager(
+            gens, n_calls, lambda d: data.extend(d), seed, self._disable_tqdm
+        )
+        return data
+
+    def to_folder(
+        self,
+        path: str,
+        sizes: int | list[int] = 1,
+        seed: int = 1,
+        overwrite: bool = True,
+        file_prefix: str = "seq",
+        save_fn: Callable[[PyTree[np.ndarray], str], None] = utils.pickle_save,
+        verbose: bool = True,
+    ):
+
+        i = 0
+
+        def callback(data: list[PyTree[np.ndarray]]) -> None:
+            nonlocal i
+            data = utils.replace_elements_w_nans(data, verbose=verbose)
+            for d in data:
+                file = utils.parse_path(
+                    path, file_prefix + str(i), file_exists_ok=overwrite
+                )
+                save_fn(d, file)
+                i += 1
+
+        gens, n_calls = self._generators_ncalls(sizes)
+        batch.generators_eager(gens, n_calls, callback, seed, self._disable_tqdm)
 
     def to_pickle(
         self,

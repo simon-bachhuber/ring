@@ -1,8 +1,10 @@
+from typing import Callable
+
 import jax
 import jax.numpy as jnp
 import numpy as np
 from tqdm import tqdm
-import tree_utils
+from tree_utils import PyTree
 
 from ring import utils
 from ring.algorithms.generator import types
@@ -50,15 +52,15 @@ def generators_lazy(
     return generator
 
 
-def generators_eager_to_list(
+def generators_eager(
     generators: list[types.BatchedGenerator],
     n_calls: list[int],
+    callback: Callable[[list[PyTree[np.ndarray]]], None],
     seed: int = 1,
     disable_tqdm: bool = False,
-) -> list[tree_utils.PyTree]:
+) -> None:
 
     key = jax.random.PRNGKey(seed)
-    data = []
     for gen, n_call in tqdm(
         zip(generators, n_calls),
         desc="executing generators",
@@ -81,6 +83,4 @@ def generators_eager_to_list(
 
             sample_flat, _ = jax.tree_util.tree_flatten(sample)
             size = 1 if len(sample_flat) == 0 else sample_flat[0].shape[0]
-            data.extend([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
-
-    return data
+            callback([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
