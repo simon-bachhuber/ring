@@ -1,3 +1,4 @@
+from functools import partial
 import random
 from typing import Callable, Optional
 import warnings
@@ -185,7 +186,9 @@ class RCMG:
         seed: int = 1,
         overwrite: bool = True,
         file_prefix: str = "seq",
-        save_fn: Callable[[PyTree[np.ndarray], str], None] = utils.pickle_save,
+        save_fn: Callable[[PyTree[np.ndarray], str], None] = partial(
+            utils.pickle_save, overwrite=True
+        ),
         verbose: bool = True,
     ):
 
