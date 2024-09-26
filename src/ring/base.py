@@ -690,7 +690,9 @@ class System(_Base):
         transparent_segment_to_root: bool = True,
         **kwargs,
     ):
-        "`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent."
+        """`xs` matches `sys`. `yhat` matches `sys_noimu`. `yhat` are child-to-parent.
+        Note that the body in yhat that connects to -1, is parent-to-child!
+        """
         return ring.rendering.render_prediction(
             self, xs, yhat, transparent_segment_to_root, **kwargs
         )
