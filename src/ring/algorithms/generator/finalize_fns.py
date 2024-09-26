@@ -180,6 +180,23 @@ class DynamicalSimulation:
         self.overwrite_q_ref = overwrite_q_ref
         self.unroll_kwargs = unroll_kwargs
 
+    @staticmethod
+    def assert_test_system(sys: base.System) -> None:
+        "test that system has no zero mass bodies and no joints without damping"
+
+        def f(_, __, n, m, d):
+            assert d.size == 0 or m > 0, (
+                "Dynamic simulation is set to `True` which requires masses >= 0, "
+                f"but found body `{n}` with mass={float(m[0])}. This can lead to NaNs."
+            )
+
+            assert d.size == 0 or all(d > 0.0), (
+                "Dynamic simulation is set to `True` which requires dampings > 0, "
+                f"but found body `{n}` with damping={d}. This can lead to NaNs."
+            )
+
+        sys.scan(f, "lld", sys.link_names, sys.links.inertia.mass, sys.link_damping)
+
     def __call__(
         self, Xy: types.Xy, extras: types.OutputExtras
     ) -> tuple[types.Xy, types.OutputExtras]:

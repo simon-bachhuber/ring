@@ -321,6 +321,9 @@ def _build_mconfig_batched_generator(
                 "using the `randomize_motion_artifacts` flag, so it must be enabled."
             )
 
+    if dynamic_simulation:
+        finalize_fns.DynamicalSimulation.assert_test_system(sys)
+
     def _setup_fn(key: types.PRNGKey, sys: base.System) -> base.System:
         pipe = []
         if imu_motion_artifacts and randomize_motion_artifacts:
