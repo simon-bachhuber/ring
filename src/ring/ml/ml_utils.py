@@ -12,7 +12,6 @@ import numpy as np
 from tree_utils import PyTree
 
 import ring
-from ring.utils import import_lib
 import wandb
 
 # An arbitrarily nested dictionary with Array leaves; Or strings
@@ -190,36 +189,30 @@ def unique_id() -> str:
 
 def save_model_tf(jax_func, path: str, *input, validate: bool = True):
     from jax.experimental import jax2tf
+    import tensorflow as tf
 
-    tf = import_lib("tensorflow", "the function `save_model_tf`")
+    signature = jax.tree_map(
+        lambda arr: tf.TensorSpec(list(arr.shape), tf.float32), input
+    )
 
-    def _create_module(jax_func, input):
-        signature = jax.tree_map(
-            lambda arr: tf.TensorSpec(list(arr.shape), tf.float32), input
+    tf_func = jax2tf.convert(jax_func, with_gradient=False)
+
+    class RingTFModule(tf.Module):
+        @partial(
+            tf.function, autograph=False, jit_compile=True, input_signature=signature
         )
+        def __call__(self, *args):
+            return tf_func(*args)
 
-        class RingTFModule(tf.Module):
-            def __init__(self, jax_func):
-                super().__init__()
-                self.tf_func = jax2tf.convert(jax_func, with_gradient=False)
+    model = RingTFModule()
 
-            @partial(
-                tf.function,
-                autograph=False,
-                jit_compile=True,
-                input_signature=signature,
-            )
-            def __call__(self, *args):
-                return self.tf_func(*args)
-
-        return RingTFModule(jax_func)
-
-    model = _create_module(jax_func, input)
     tf.saved_model.save(
         model,
         path,
         options=tf.saved_model.SaveOptions(experimental_custom_gradients=False),
+        signatures={"default": model.__call__},
     )
+
     if validate:
         output_jax = jax_func(*input)
         output_tf = tf.saved_model.load(path)(*input)
