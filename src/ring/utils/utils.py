@@ -3,6 +3,7 @@ import io
 import pickle
 import random
 from typing import Optional
+import warnings
 
 import jax
 import jax.numpy as jnp
@@ -195,7 +196,7 @@ def replace_elements_w_nans(
     assert min(include_elements) >= 0
     assert max(include_elements) < len(list_of_data)
 
-    def _is_nan(ele: tree_utils.PyTree, i: int):
+    def _is_nan(ele: tree_utils.PyTree, i: int, verbose: bool):
         isnan = np.any(
             [np.any(np.isnan(arr)) for arr in jax.tree_util.tree_leaves(ele)]
         )
@@ -205,13 +206,22 @@ def replace_elements_w_nans(
             return True
         return False
 
+    list_of_isnan = [int(_is_nan(e, 0, False)) for e in list_of_data]
+    perc_of_isnan = sum(list_of_isnan) / len(list_of_data)
+
+    if perc_of_isnan >= 0.02:
+        warnings.warn(
+            f"{perc_of_isnan * 100}% of {len(list_of_data)} datapoints are NaN"
+        )
+        assert perc_of_isnan != 1
+
     list_of_data_nonan = []
     for i, ele in enumerate(list_of_data):
-        if _is_nan(ele, i):
+        if _is_nan(ele, i, verbose):
             while True:
                 j = random.choice(include_elements)
                 ele_j = list_of_data[j]
-                if not _is_nan(ele_j, j):
+                if not _is_nan(ele_j, j, verbose):
                     ele = pytree_deepcopy(ele_j)
                     break
         list_of_data_nonan.append(ele)
