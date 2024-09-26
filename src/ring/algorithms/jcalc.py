@@ -205,7 +205,7 @@ def _is_feasible_config1(c: MotionConfig) -> bool:
             return False
         return True
 
-    return all(
+    cond1 = all(
         [
             dx_deltax_check(*args)
             for args in zip(
@@ -216,6 +216,15 @@ def _is_feasible_config1(c: MotionConfig) -> bool:
             )
         ]
     )
+
+    # this one tests that the initial value is inside the feasible value range
+    # so e.g. if you choose pos0_min=-10 then you can't choose pos_min=-1
+    def inside_box_checks(x_min, x_max, x0_min, x0_max) -> bool:
+        return (x0_min >= x_min) and (x0_max <= x_max)
+
+    cond2 = inside_box_checks(c.pos_min, c.pos_max, c.pos0_min, c.pos0_max)
+
+    return cond1 and cond2
 
 
 def _find_interval(t: jax.Array, boundaries: jax.Array):
