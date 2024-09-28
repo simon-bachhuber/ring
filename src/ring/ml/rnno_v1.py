@@ -33,13 +33,12 @@ def rnno_v1_forward_factory(
     @hk.transform_with_state
     def forward_fn(X):
         assert X.shape[-2] == 1
+        X = X[..., 0, :]
 
         for i, n_units in enumerate(rnn_layers):
-            state = hk.get_state(
-                f"rnn_{i}", shape=[1, n_units * _factor], init=jnp.zeros
-            )
-            X, state = hk.dynamic_unroll(_cell(n_units), X[..., 0, :], state[0])
-            hk.set_state(f"rnn_{i}", state[None])
+            state = hk.get_state(f"rnn_{i}", shape=[n_units * _factor], init=jnp.zeros)
+            X, state = hk.dynamic_unroll(_cell(n_units), X, state)
+            hk.set_state(f"rnn_{i}", state)
 
             if layernorm:
                 X = hk.LayerNorm(axis=-1, create_scale=False, create_offset=False)(X)

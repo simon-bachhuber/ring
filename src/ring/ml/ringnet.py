@@ -175,7 +175,7 @@ class LSTM(hk.RNNCore):
         prev_state: jax.Array,
     ):
         if len(inputs.shape) > 2 or not inputs.shape:
-            raise ValueError("LSTM input must be rank-1 or rank-2.")
+            raise ValueError(f"LSTM input must be rank-1 or rank-2; not {inputs.shape}")
         prev_state_h = prev_state[: self.hidden_size]
         prev_state_c = prev_state[self.hidden_size :]
         x_and_h = jnp.concatenate([inputs, prev_state_h], axis=-1)
