@@ -4,6 +4,8 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 
+from .ringnet import LSTM
+
 
 def rnno_v1_forward_factory(
     output_dim: int,
@@ -13,9 +15,19 @@ def rnno_v1_forward_factory(
     act_fn_linear=jax.nn.relu,
     act_fn_rnn=jax.nn.elu,
     lam: Optional[tuple[int]] = None,
+    celltype: str = "gru",
 ):
     # unused
     del lam
+
+    if celltype == "gru":
+        _cell = hk.GRU
+        _factor = 1
+    elif celltype == "lstm":
+        _cell = LSTM
+        _factor = 2
+    else:
+        raise NotImplementedError
 
     @hk.without_apply_rng
     @hk.transform_with_state
@@ -23,8 +35,9 @@ def rnno_v1_forward_factory(
         assert X.shape[-2] == 1
 
         for i, n_units in enumerate(rnn_layers):
+            n_units = _factor * n_units
             state = hk.get_state(f"rnn_{i}", shape=[1, n_units], init=jnp.zeros)
-            X, state = hk.dynamic_unroll(hk.GRU(n_units), X, state)
+            X, state = hk.dynamic_unroll(_cell(n_units), X, state)
             hk.set_state(f"rnn_{i}", state)
 
             if layernorm:
