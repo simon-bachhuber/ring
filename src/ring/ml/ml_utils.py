@@ -184,6 +184,8 @@ def on_cluster() -> bool:
 
 
 def unique_id() -> str:
+    if wandb.run is not None:
+        wandb.config.setdefault("unique_id", ring._UNIQUE_ID)
     return ring._UNIQUE_ID
 
 
