@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
@@ -88,8 +89,36 @@ class MotionConfig:
         return nomotion_config
 
     @staticmethod
+    def overwrite_for_joint_type(joint_type: str, **changes) -> None:
+        """Changes values of the `MotionConfig` used by the draw_fn for only a specific
+        joint.
+        """
+        previous_changes = _overwrite_for_joint_type_changes[joint_type]
+        for change in changes:
+            assert change not in previous_changes, f"For jointtype={joint_type} you "
+            f"previously changed the value={change}. You can't change it again, this "
+            "is not supported."
+        previous_changes.update(changes)
+
+        jm = get_joint_model(joint_type)
+
+        def draw_fn(config, *args):
+            return jm.rcmg_draw_fn(replace(config, **changes), *args)
+
+        register_new_joint_type(
+            joint_type,
+            replace(jm, rcmg_draw_fn=draw_fn),
+            base.Q_WIDTHS[joint_type],
+            base.QD_WIDTHS[joint_type],
+            overwrite=True,
+        )
+
+    @staticmethod
     def from_register(name: str) -> "MotionConfig":
         return _registered_motion_configs[name]
+
+
+_overwrite_for_joint_type_changes: dict[str, dict] = defaultdict(lambda: dict())
 
 
 _registered_motion_configs = {
