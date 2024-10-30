@@ -37,6 +37,7 @@ def test_batch_generator(N: int, seed: int):
 def test_initial_ang_pos_values():
     T = 1.0
     bs = 8
+    pos_min, pos_max = -5.0, 5.0
     # system consists only of prismatic, and then revolute joint
     sys = ring.io.load_example("test_ang0_pos0")
 
@@ -48,6 +49,8 @@ def test_initial_ang_pos_values():
                 ang0_max=ang0_max,
                 pos0_min=pos0_min,
                 pos0_max=pos0_max,
+                pos_min=pos_min,
+                pos_max=pos_max,
                 T=T,
             ),
             finalize_fn=lambda key, q, x, sys: (q, x),
@@ -55,7 +58,7 @@ def test_initial_ang_pos_values():
         q, _ = gen(jax.random.PRNGKey(1))
         return q
 
-    for init_val in np.linspace(-5.0, 5.0, num=10):
+    for init_val in np.linspace(pos_min, pos_max, num=10):
         q = rcmg(init_val, init_val, init_val, init_val)
         np.testing.assert_allclose(q[:, 0, 0], init_val * jnp.ones((bs,)))
         np.testing.assert_allclose(q[:, 0, 1], wrap_to_pi(init_val * jnp.ones((bs,))))
