@@ -182,13 +182,16 @@ class DynamicalSimulation:
 
     @staticmethod
     def assert_test_system(sys: base.System) -> None:
-        "test that system has no zero mass bodies and no joints without damping"
+        "test that system has no zero mass leaf bodies and no joints without damping"
 
         def f(_, __, n, m, d):
-            assert d.size == 0 or m > 0, (
-                "Dynamic simulation is set to `True` which requires masses >= 0, "
-                f"but found body `{n}` with mass={float(m[0])}. This can lead to NaNs."
-            )
+            is_leaf_body = len(sys.children(n)) == 0
+            if is_leaf_body:
+                assert d.size == 0 or m > 0, (
+                    "Dynamic simulation is set to `True` which requires masses >= 0, "
+                    f"but found body `{n}` with mass={float(m[0])}. This can lead to "
+                    "NaNs."
+                )
 
             assert d.size == 0 or all(d > 0.0), (
                 "Dynamic simulation is set to `True` which requires dampings > 0, "
