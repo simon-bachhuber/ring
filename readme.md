@@ -1,9 +1,9 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/SimiPixel/ring/main/docs/img/icon.svg" height="200" />
+<img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/icon.svg" height="200" />
 </p>
 
 # Recurrent Inertial Graph-based Estimator (RING)
-<img src="https://raw.githubusercontent.com/SimiPixel/ring/main/docs/img/coverage_badge.svg" height="20" />
+<img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/coverage_badge.svg" height="20" />
 
 ## Installation
 
