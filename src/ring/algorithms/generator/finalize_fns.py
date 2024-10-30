@@ -160,6 +160,7 @@ _P_gains = {
     "spherical": jnp.array(3 * [P_rot]),
     "p3d": jnp.array(3 * [P_pos]),
     "saddle": jnp.array([P_rot, P_rot]),
+    "rsaddle": jnp.array([P_rot, P_rot]),
     "frozen": jnp.array([]),
     "suntay": jnp.array([P_rot]),
 }

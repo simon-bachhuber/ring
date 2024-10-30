@@ -121,6 +121,7 @@ _UNIQUE_ID = None
 def setup(
     rr_joint_kwargs: None | dict = dict(),
     rr_imp_joint_kwargs: None | dict = dict(),
+    rsaddle_joint_kwargs: None | dict = dict(),
     suntay_joint_kwargs: None | dict = None,
     train_timing_start: None | float = None,
     unique_id: None | str = None,
@@ -137,6 +138,9 @@ def setup(
 
     if rr_imp_joint_kwargs is not None:
         custom_joints.register_rr_imp_joint(**rr_imp_joint_kwargs)
+
+    if rsaddle_joint_kwargs is not None:
+        custom_joints.register_rsaddle_joint(**rsaddle_joint_kwargs)
 
     if suntay_joint_kwargs is not None:
         custom_joints.register_suntay(**suntay_joint_kwargs)
