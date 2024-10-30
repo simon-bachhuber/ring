@@ -87,6 +87,7 @@ def make_ring(
     link_output_normalize: bool = True,
     link_output_transform: Optional[Callable] = None,
     layernorm: bool = True,
+    layernorm_trainable: bool = True,
 ) -> SimpleNamespace:
 
     if link_output_normalize:
@@ -104,7 +105,11 @@ def make_ring(
         )
 
         inner_cell = StackedRNNCell(
-            celltype, hidden_state_dim, stack_rnn_cells, layernorm=layernorm
+            celltype,
+            hidden_state_dim,
+            stack_rnn_cells,
+            layernorm=layernorm,
+            layernorm_trainable=layernorm_trainable,
         )
         send_output = hk.nets.MLP([hidden_state_dim, link_output_dim])
         state = hk.get_state(
@@ -143,6 +148,7 @@ class StackedRNNCell(hk.Module):
         hidden_state_dim,
         stacks: int,
         layernorm: bool = False,
+        layernorm_trainable: bool = True,
         name: str | None = None,
     ):
         super().__init__(name)
@@ -150,6 +156,7 @@ class StackedRNNCell(hk.Module):
 
         self.cells = [cell(hidden_state_dim) for _ in range(stacks)]
         self.layernorm = layernorm
+        self.layernorm_trainable = layernorm_trainable
 
     def __call__(self, x, state):
         output = x
@@ -159,7 +166,9 @@ class StackedRNNCell(hk.Module):
             next_state.append(next_state_i)
 
             if self.layernorm:
-                output = hk.LayerNorm(-1, True, True)(output)
+                output = hk.LayerNorm(
+                    -1, self.layernorm_trainable, self.layernorm_trainable
+                )(output)
 
         return output, jnp.stack(next_state)
 
