@@ -222,7 +222,9 @@ def _is_feasible_config1(c: MotionConfig) -> bool:
     def inside_box_checks(x_min, x_max, x0_min, x0_max) -> bool:
         return (x0_min >= x_min) and (x0_max <= x_max)
 
-    cond2 = inside_box_checks(c.pos_min, c.pos_max, c.pos0_min, c.pos0_max)
+    cond2 = inside_box_checks(
+        _to_float(c.pos_min, 0.0), _to_float(c.pos_max, 0.0), c.pos0_min, c.pos0_max
+    )
 
     return cond1 and cond2
 
