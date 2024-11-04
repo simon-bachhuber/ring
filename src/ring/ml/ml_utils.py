@@ -3,6 +3,7 @@ from functools import partial
 import os
 from pathlib import Path
 import pickle
+import shutil
 import time
 from typing import Optional, Protocol
 import warnings
@@ -107,7 +108,7 @@ class WandbLogger(MixinLogger):
         wandb.log(data)
 
     def log_params(self, path: str):
-        wandb.save(path, policy="now")
+        self.wandb_save(path)
 
     def log_video(
         self,
@@ -117,7 +118,7 @@ class WandbLogger(MixinLogger):
         step: Optional[int] = None,
     ):
         # TODO >>>
-        wandb.save(path, policy="now")
+        self.wandb_save(path)
         return
         # <<<
         data = {"video": wandb.Video(path, caption=caption, fps=fps)}
@@ -127,16 +128,33 @@ class WandbLogger(MixinLogger):
 
     def log_image(self, path: str, caption: Optional[str] = None):
         # wandb.log({"image": wandb.Image(path, caption=caption)})
-        wandb.save(path, policy="now")
+        self.wandb_save(path)
 
     def log_txt(self, path: str, wait: bool = True):
-        wandb.save(path, policy="now")
+        self.wandb_save(path)
         # TODO: `wandb` is not async at all?
         if wait:
             time.sleep(3)
 
     def close(self):
         wandb.run.finish()
+
+    @staticmethod
+    def wandb_save(path):
+        if wandb.run is not None and wandb.run.settings._offline:
+            # Create a dedicated directory in the WandB run directory to store copies
+            # of files
+            destination_dir = os.path.join(wandb.run.dir, "copied_files")
+            os.makedirs(destination_dir, exist_ok=True)
+
+            # Copy the file to this new location
+            copied_file_path = os.path.join(destination_dir, os.path.basename(path))
+            shutil.copy2(path, copied_file_path)
+
+            # Use wandb.save to save the copied file (now a true copy)
+            wandb.save(copied_file_path)
+        else:
+            wandb.save(path, policy="now")
 
 
 def _flatten_convert_filter_nested_dict(
