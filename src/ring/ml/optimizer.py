@@ -48,7 +48,11 @@ def make_optimizer(
             if adap_clip is not None
             else optax.identity()
         ),
-        optax.clip_by_global_norm(0.2) if glob_clip is not None else optax.identity(),
+        (
+            optax.clip_by_global_norm(glob_clip)
+            if glob_clip is not None
+            else optax.identity()
+        ),
         inner_opt(schedule, **inner_opt_kwargs),
     )
     optimizer = skip_large_update(

@@ -65,6 +65,14 @@ import os
 os.environ["MUJOCO_GL"] = "egl"
 ```
 
+#### Windows-related: ImportError: DLL load failed while importing ...
+
+> ImportError: DLL load failed while importing _multiarray_umath: Das angegebene Modul wurde nicht gefunden.
+
+Solution:
+1. `pip uninstall -y jax jaxlib`
+2. `conda install -c conda-forge jax`
+
 ## Publications
 
 The following publications utilize this software library, and refer to it as the *Random Chain Motion Generator (RCMG)* (more specifically the function `ring.RCMG`):
