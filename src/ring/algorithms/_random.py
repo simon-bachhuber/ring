@@ -199,7 +199,7 @@ def random_position_over_time(
     POS = jnp.zeros((int(T // t_min) + 1, 2))
     POS = POS.at[0, 1].set(POS_0)
 
-    val_outer = (1, 0.0, 0.0, 0.0, 0.0, key, POS)
+    val_outer = (1, 0.0, 0.0, POS_0, POS_0, key, POS)
     end, *_, consume, POS = jax.lax.while_loop(cond_fn_outer, body_fn_outer, val_outer)
     POS = jnp.where(
         (jnp.arange(len(POS)) < end)[:, None],

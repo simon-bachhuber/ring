@@ -167,7 +167,10 @@ def train_fn(
         tbp=tbp,
     )
 
-    default_callbacks = []
+    # always log, because we also want `i_epsiode` to be logged in wandb
+    default_callbacks = [
+        ml_callbacks.LogEpisodeTrainingLoopCallback(callback_kill_after_episode)
+    ]
     if metrices is not None:
         eval_fn = _build_eval_fn(metrices, filter, link_names)
         default_callbacks.append(_DefaultEvalFnCallback(eval_fn))
@@ -191,11 +194,6 @@ def train_fn(
 
     if callback_kill_if_nan:
         default_callbacks.append(ml_callbacks.NanKillRunCallback())
-
-    # always log, because we also want `i_epsiode` to be logged in wandb
-    default_callbacks.append(
-        ml_callbacks.LogEpisodeTrainingLoopCallback(callback_kill_after_episode)
-    )
 
     if callback_kill_after_seconds is not None:
         default_callbacks.append(

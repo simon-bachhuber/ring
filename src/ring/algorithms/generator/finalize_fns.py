@@ -88,6 +88,18 @@ class RootIncl:
         return (X, y), (key, q, x, sys_x)
 
 
+class RootFull:
+    def __init__(self, sys: base.System, **kwargs):
+        self.sys = sys
+        self.kwargs = kwargs
+
+    def __call__(self, Xy, extras):
+        (X, y), (key, q, x, sys_x) = Xy, extras
+        y_root_incl = sensors.root_full(self.sys, x, sys_x, **self.kwargs)
+        y = utils.dict_union(y, y_root_incl)
+        return (X, y), (key, q, x, sys_x)
+
+
 _default_imu_kwargs = dict(
     noisy=True,
     low_pass_filter_pos_f_cutoff=13.5,

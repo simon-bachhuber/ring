@@ -34,6 +34,8 @@ class RCMG:
         add_y_relpose: bool = False,
         add_y_rootincl: bool = False,
         add_y_rootincl_kwargs: dict = dict(),
+        add_y_rootfull: bool = False,
+        add_y_rootfull_kwargs: dict = dict(),
         sys_ml: Optional[base.System] = None,
         randomize_positions: bool = False,
         randomize_motion_artifacts: bool = False,
@@ -73,6 +75,8 @@ class RCMG:
                     add_y_relpose=add_y_relpose,
                     add_y_rootincl=add_y_rootincl,
                     add_y_rootincl_kwargs=add_y_rootincl_kwargs,
+                    add_y_rootfull=add_y_rootfull,
+                    add_y_rootfull_kwargs=add_y_rootfull_kwargs,
                     sys_ml=sys_ml,
                     randomize_positions=randomize_positions,
                     randomize_motion_artifacts=randomize_motion_artifacts,
@@ -279,6 +283,8 @@ def _build_mconfig_batched_generator(
     add_y_relpose: bool,
     add_y_rootincl: bool,
     add_y_rootincl_kwargs: dict,
+    add_y_rootfull: bool,
+    add_y_rootfull_kwargs: dict,
     sys_ml: base.System,
     randomize_positions: bool,
     randomize_motion_artifacts: bool,
@@ -365,7 +371,11 @@ def _build_mconfig_batched_generator(
         if add_y_relpose:
             pipe.append(finalize_fns.RelPose(sys_noimu))
         if add_y_rootincl:
+            assert not add_y_rootfull
             pipe.append(finalize_fns.RootIncl(sys_noimu, **add_y_rootincl_kwargs))
+        if add_y_rootfull:
+            assert not add_y_rootincl
+            pipe.append(finalize_fns.RootFull(sys_noimu, **add_y_rootfull_kwargs))
         if use_link_number_in_Xy:
             pipe.append(finalize_fns.Names2Indices(sys_noimu))
 
