@@ -1,3 +1,4 @@
+from dataclasses import replace
 from functools import partial
 import random
 from typing import Callable, Optional
@@ -446,7 +447,15 @@ def draw_random_q(
         draw_fn = jcalc.get_joint_model(link_type).rcmg_draw_fn
         if draw_fn is None:
             raise Exception(f"The joint type {link_type} has no draw fn specified.")
-        q_link = draw_fn(config, key_t, key_value, sys.dt, N, joint_params)
+
+        if link_type in config.joint_type_specific_overwrites:
+            _config = replace(
+                config, **config.joint_type_specific_overwrites[link_type]
+            )
+        else:
+            _config = config
+
+        q_link = draw_fn(_config, key_t, key_value, sys.dt, N, joint_params)
         # even revolute and prismatic joints must be 2d arrays
         q_link = q_link if q_link.ndim == 2 else q_link[:, None]
         q_list.append(q_link)
