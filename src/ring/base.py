@@ -7,6 +7,7 @@ from jax.core import Tracer
 import jax.numpy as jnp
 from jax.tree_util import tree_map
 import numpy as np
+import tree
 import tree_utils as tu
 
 import ring
@@ -590,6 +591,34 @@ class System(_Base):
 
         return sys
 
+    @staticmethod
+    def joint_type_simplification(typ: str) -> str:
+        if typ[:4] == "free":
+            if typ == "free_2d":
+                return "free_2d"
+            else:
+                return "free"
+        elif typ[:3] == "cor":
+            return "cor"
+        elif typ[:9] == "spherical":
+            return "spherical"
+        else:
+            return typ
+
+    @staticmethod
+    def joint_type_is_free_or_cor(typ: str) -> bool:
+        return System.joint_type_simplification(typ) in ["free", "cor"]
+
+    @staticmethod
+    def joint_type_is_spherical(typ: str) -> bool:
+        return System.joint_type_simplification(typ) == "spherical"
+
+    @staticmethod
+    def joint_type_is_free_or_cor_or_spherical(typ: str) -> bool:
+        return System.joint_type_is_free_or_cor(typ) or System.joint_type_is_spherical(
+            typ
+        )
+
     def findall_imus(self, names: bool = True) -> list[str] | list[int]:
         bodies = [name for name in self.link_names if name[:3] == "imu"]
         return bodies if names else [self.name_to_idx(n) for n in bodies]
@@ -618,9 +647,19 @@ class System(_Base):
         return self._bodies_indices_to_bodies_name(bodies) if names else bodies
 
     def children(self, name: str, names: bool = False) -> list[int] | list[str]:
+        "List all direct children of body, does not include body itself"
         p = self.name_to_idx(name)
         bodies = [i for i in range(self.num_links()) if self.link_parents[i] == p]
         return bodies if (not names) else [self.idx_to_name(i) for i in bodies]
+
+    def findall_bodies_subsystem(
+        self, name: str, names: bool = False
+    ) -> list[int] | list[str]:
+        "List all children and children's children; does not include body itself"
+        children = self.children(name, names=True)
+        grandchildren = [self.findall_bodies_subsystem(n, names=True) for n in children]
+        bodies = tree.flatten([children, grandchildren])
+        return bodies if names else [self.name_to_idx(n) for n in bodies]
 
     def scan(self, f: Callable, in_types: str, *args, reverse: bool = False):
         """Scan `f` along each link in system whilst carrying along state.
@@ -889,7 +928,9 @@ def _parse_system(sys: System) -> System:
         assert d.size == a.size == s.size == qd_size, error_msg
         assert z.size == q_size, error_msg
 
-        if typ in ["spherical", "free", "cor"] and not isinstance(z, Tracer):
+        if System.joint_type_is_free_or_cor_or_spherical(typ) and not isinstance(
+            z, Tracer
+        ):
             assert jnp.allclose(
                 jnp.linalg.norm(z[:4]), 1.0
             ), f"not unit quat for link `{name}` of typ `{typ}` in model"
@@ -1030,7 +1071,7 @@ class State(_Base):
             def replace_by_unit_quat(_, idx_map, link_typ, link_idx):
                 nonlocal q
 
-                if link_typ in ["free", "cor", "spherical"]:
+                if sys.joint_type_is_free_or_cor_or_spherical(link_typ):
                     q_idxs_link = idx_map["q"](link_idx)
                     q = q.at[q_idxs_link.start].set(1.0)
 

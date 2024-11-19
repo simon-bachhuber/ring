@@ -190,11 +190,11 @@ def _spring_force(sys: base.System, q: jax.Array):
 
     def _calc_spring_force_per_link(_, __, q, zeropoint, typ):
         # cor is (free, p3d) stacked; free is (spherical, p3d) stacked
-        if typ in ["free", "cor"]:
+        if base.System.joint_type_is_free_or_cor(typ):
             quat_force = _quaternion_spring_force(zeropoint[:4], q[:4])
             pos_force = zeropoint[4:] - q[4:]
             q_spring_force_link = jnp.concatenate((quat_force, pos_force))
-        elif typ == "spherical":
+        elif base.System.joint_type_is_spherical(typ):
             q_spring_force_link = _quaternion_spring_force(zeropoint, q)
         else:
             q_spring_force_link = zeropoint - q
@@ -268,11 +268,11 @@ def _semi_implicit_euler_integration(
     q_next = []
 
     def q_integrate(_, __, q, qd, typ):
-        if typ in ["free", "cor"]:
+        if sys.joint_type_is_free_or_cor(typ):
             quat_next = _strapdown_integration(q[:4], qd[:3], sys.dt)
             pos_next = q[4:] + qd[3:] * sys.dt
             q_next_i = jnp.concatenate((quat_next, pos_next))
-        elif typ == "spherical":
+        elif sys.joint_type_is_spherical(typ):
             quat_next = _strapdown_integration(q, qd, sys.dt)
             q_next_i = quat_next
         else:

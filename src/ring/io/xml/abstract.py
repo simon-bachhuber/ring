@@ -3,6 +3,7 @@ from typing import Tuple, TypeVar
 import jax
 import jax.numpy as jnp
 import numpy as np
+
 from ring import base
 
 T = TypeVar("T")
@@ -17,7 +18,7 @@ default_stiffness = lambda qd_size, **_: jnp.zeros((qd_size,))
 
 def default_zeropoint(q_size, link_typ: str, **_):
     zeropoint = jnp.zeros((q_size))
-    if link_typ in ["spherical", "free", "cor"]:
+    if base.System.joint_type_is_free_or_cor_or_spherical(link_typ):
         # zeropoint then is unit quaternion and not zeros
         zeropoint = zeropoint.at[0].set(1.0)
     return zeropoint
