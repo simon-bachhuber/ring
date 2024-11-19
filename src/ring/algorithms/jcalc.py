@@ -40,6 +40,12 @@ class MotionConfig:
     dpos_max: float | TimeDependentFloat = 0.7
     pos_min: float | TimeDependentFloat = -2.5
     pos_max: float | TimeDependentFloat = +2.5
+    pos_min_p3d_x: float | TimeDependentFloat = -2.5
+    pos_max_p3d_x: float | TimeDependentFloat = +2.5
+    pos_min_p3d_y: float | TimeDependentFloat = -2.5
+    pos_max_p3d_y: float | TimeDependentFloat = +2.5
+    pos_min_p3d_z: float | TimeDependentFloat = -2.5
+    pos_max_p3d_z: float | TimeDependentFloat = +2.5
 
     # used by both `random_angle_*` and `random_pos_*`
     # only used if `randomized_interpolation` is set
@@ -59,6 +65,12 @@ class MotionConfig:
     ang0_max: float = jnp.pi
     pos0_min: float = 0.0
     pos0_max: float = 0.0
+    pos0_min_p3d_x: float = 0.0
+    pos0_max_p3d_x: float = 0.0
+    pos0_min_p3d_y: float = 0.0
+    pos0_max_p3d_y: float = 0.0
+    pos0_min_p3d_z: float = 0.0
+    pos0_max_p3d_z: float = 0.0
 
     # cor (center of rotation) custom fields
     cor_t_min: float = 0.2
@@ -67,6 +79,14 @@ class MotionConfig:
     cor_dpos_max: float | TimeDependentFloat = 0.5
     cor_pos_min: float | TimeDependentFloat = -0.4
     cor_pos_max: float | TimeDependentFloat = 0.4
+    cor_pos0_min: float = 0.0
+    cor_pos0_max: float = 0.0
+
+    # specify changes for this motionconfig and for specific joint types
+    # map of `link_types` -> dictionary of changes
+    joint_type_specific_overwrites: dict[str, dict[str, Any]] = field(
+        default_factory=lambda: dict()
+    )
 
     def is_feasible(self) -> bool:
         return _is_feasible_config1(self)
@@ -92,6 +112,9 @@ class MotionConfig:
     def overwrite_for_joint_type(joint_type: str, **changes) -> None:
         """Changes values of the `MotionConfig` used by the draw_fn for only a specific
         joint.
+        !!! Note
+            This applies these changes to *all* MotionConfigs for this joint type!
+            This takes precedence *over* `Motionconfig.joint_type_specific_overwrites`!
         """
         previous_changes = _overwrite_for_joint_type_changes[joint_type]
         for change in changes:
@@ -112,6 +135,56 @@ class MotionConfig:
             base.QD_WIDTHS[joint_type],
             overwrite=True,
         )
+
+    @staticmethod
+    def overwrite_for_subsystem(
+        sys: base.System, link_name: str, **changes
+    ) -> base.System:
+        """Modifies motionconfig of all joints in subsystem with root `link_name`.
+        Note that if the subsystem contains a free joint then the jointtype will
+        will be re-named to `free_<link_name>`, then the RCMG flag `cor` will
+        potentially not work as expected because it searches for all joints of
+        type `free` to replace with `cor`. The workaround here is to change the
+        type already from `free` to `cor in the xml file.
+        This takes precedence *over* `Motionconfig.joint_type_specific_overwrites`!
+
+        Args:
+            sys (base.System): System object that gets updated
+            link_name (str): Root node of subsystem
+            changes: Changes to apply to the motionconfig
+
+        Return:
+            base.System: Updated system with new jointtypes
+        """
+        from ring.algorithms.generator.finalize_fns import _P_gains
+
+        # all bodies in the subsystem
+        bodies = sys.findall_bodies_subsystem(link_name) + [sys.name_to_idx(link_name)]
+
+        jts_subsys = set([sys.link_types[i] for i in bodies]) - set(["frozen"])
+        postfix = "_" + link_name
+        # create new joint types with updated motionconfig
+        for typ in jts_subsys:
+            register_new_joint_type(
+                typ + postfix,
+                get_joint_model(typ),
+                base.Q_WIDTHS[typ],
+                base.QD_WIDTHS[typ],
+            )
+            MotionConfig.overwrite_for_joint_type(typ + postfix, **changes)
+            _P_gains[typ + postfix] = _P_gains[typ]
+
+        # rename all jointtypes
+        new_link_types = [
+            (
+                sys.link_types[i] + postfix
+                if (i in bodies and sys.link_types[i] != "frozen")
+                else sys.link_types[i]
+            )
+            for i in range(sys.num_links())
+        ]
+        sys = sys.replace(link_types=new_link_types)
+        return sys
 
     @staticmethod
     def from_register(name: str) -> "MotionConfig":
@@ -221,6 +294,37 @@ _registered_motion_configs = {
 }
 
 
+def _joint_specific_overwrites_free_cor(
+    id: str, dang: float, dpos: float
+) -> MotionConfig:
+    changes = dict(
+        dang_max_free_spherical=dang,
+        dpos_max=dpos,
+        cor_dpos_max=dpos,
+        t_min=1.5,
+        t_max=15.0,
+    )
+    return replace(
+        _registered_motion_configs[id],
+        joint_type_specific_overwrites=dict(free=changes, cor=changes),
+    )
+
+
+_registered_motion_configs.update(
+    {
+        f"{id}-S": _joint_specific_overwrites_free_cor(id, 0.2, 0.1)
+        for id in ["expSlow", "expFast", "hinUndHer", "standard"]
+    }
+)
+_registered_motion_configs.update(
+    {
+        f"{id}-S+": _joint_specific_overwrites_free_cor(id, 0.1, 0.05)
+        for id in ["expSlow", "expFast", "hinUndHer", "standard"]
+    }
+)
+del _joint_specific_overwrites_free_cor
+
+
 def _is_feasible_config1(c: MotionConfig) -> bool:
     t_min, t_max = c.t_min, _to_float(c.t_max, 0.0)
 
@@ -254,8 +358,26 @@ def _is_feasible_config1(c: MotionConfig) -> bool:
     cond2 = inside_box_checks(
         _to_float(c.pos_min, 0.0), _to_float(c.pos_max, 0.0), c.pos0_min, c.pos0_max
     )
+    cond3 = inside_box_checks(
+        _to_float(c.pos_min_p3d_x, 0.0),
+        _to_float(c.pos_max_p3d_x, 0.0),
+        c.pos0_min_p3d_x,
+        c.pos0_max_p3d_x,
+    )
+    cond4 = inside_box_checks(
+        _to_float(c.pos_min_p3d_y, 0.0),
+        _to_float(c.pos_max_p3d_y, 0.0),
+        c.pos0_min_p3d_y,
+        c.pos0_max_p3d_y,
+    )
+    cond5 = inside_box_checks(
+        _to_float(c.pos_min_p3d_z, 0.0),
+        _to_float(c.pos_max_p3d_z, 0.0),
+        c.pos0_min_p3d_z,
+        c.pos0_max_p3d_z,
+    )
 
-    return cond1 and cond2
+    return cond1 and cond2 and cond3 and cond4 and cond5
 
 
 def _find_interval(t: jax.Array, boundaries: jax.Array):
@@ -504,7 +626,11 @@ def _draw_pxyz(
     cor: bool = False,
 ) -> jax.Array:
     key_value, consume = jax.random.split(key_value)
-    POS_0 = jax.random.uniform(consume, minval=config.pos0_min, maxval=config.pos0_max)
+    POS_0 = jax.random.uniform(
+        consume,
+        minval=config.cor_pos0_min if cor else config.pos0_min,
+        maxval=config.cor_pos0_max if cor else config.pos0_max,
+    )
     max_iter = 100
     return _random.random_position_over_time(
         key_value,
@@ -590,10 +716,27 @@ def _draw_p3d_and_cor(
     __: jax.Array,
     cor: bool,
 ) -> jax.Array:
-    pos = jax.vmap(lambda key: _draw_pxyz(config, None, key, dt, N, None, cor))(
-        jax.random.split(key_value, 3)
-    )
-    return pos.T
+    keys = jax.random.split(key_value, 3)
+
+    def draw(key, xyz: str):
+        return _draw_pxyz(
+            replace(
+                config,
+                pos_min=getattr(config, f"pos_min_p3d_{xyz}"),
+                pos_max=getattr(config, f"pos_max_p3d_{xyz}"),
+                pos0_min=getattr(config, f"pos0_min_p3d_{xyz}"),
+                pos0_max=getattr(config, f"pos0_max_p3d_{xyz}"),
+            ),
+            None,
+            key,
+            dt,
+            N,
+            None,
+            cor,
+        )[:, None]
+
+    px, py, pz = draw(keys[0], "x"), draw(keys[1], "y"), draw(keys[2], "z")
+    return jnp.concat((px, py, pz), axis=-1)
 
 
 def _draw_p3d(
