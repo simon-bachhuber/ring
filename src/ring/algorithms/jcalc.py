@@ -60,6 +60,11 @@ class MotionConfig:
     range_of_motion_hinge: bool = True
     range_of_motion_hinge_method: str = "uniform"
 
+    # this value has nothing to do with `range_of_motion` flag
+    # this forces the value to stay within [ANG_0 - rom_halfsize, ANG_0 + rom_halfsize]
+    # used only by the `_draw_rxyz` function
+    rom_halfsize: float | TimeDependentFloat = 2 * jnp.pi
+
     # initial value of joints
     ang0_min: float = -jnp.pi
     ang0_max: float = jnp.pi
@@ -377,7 +382,10 @@ def _is_feasible_config1(c: MotionConfig) -> bool:
         c.pos0_max_p3d_z,
     )
 
-    return cond1 and cond2 and cond3 and cond4 and cond5
+    # test that the delta_ang_min is smaller than 2*rom_halfsize
+    cond6 = _to_float(c.delta_ang_min, 0.0) < 2 * _to_float(c.rom_halfsize, 0.0)
+
+    return cond1 and cond2 and cond3 and cond4 and cond5 and cond6
 
 
 def _find_interval(t: jax.Array, boundaries: jax.Array):
@@ -610,6 +618,7 @@ def _draw_rxyz(
         config.randomized_interpolation_angle,
         config.range_of_motion_hinge if enable_range_of_motion else False,
         config.range_of_motion_hinge_method,
+        config.rom_halfsize,
         config.cdf_bins_min,
         config.cdf_bins_max,
         config.interpolation_method,

@@ -35,6 +35,9 @@ def random_angle_over_time(
     randomized_interpolation: bool = False,
     range_of_motion: bool = False,
     range_of_motion_method: str = "uniform",
+    # this value has nothing to do with `range_of_motion` flag
+    # this forces the value to stay within [ANG_0 - rom_halfsize, ANG_0 + rom_halfsize]
+    rom_halfsize: float | TimeDependentFloat = 2 * jnp.pi,
     cdf_bins_min: int = 5,
     cdf_bins_max: Optional[int] = None,
     interpolation_method: str = "cosine",
@@ -44,9 +47,14 @@ def random_angle_over_time(
 
         key_t, consume_t = random.split(key_t)
         key_ang, consume_ang = random.split(key_ang)
+        rom_halfsize_float = _to_float(rom_halfsize, t)
+        rom_lower = ANG_0 - rom_halfsize_float
+        rom_upper = ANG_0 + rom_halfsize_float
         dt, phi = _resolve_range_of_motion(
             range_of_motion,
             range_of_motion_method,
+            rom_lower,
+            rom_upper,
             _to_float(dang_min, t),
             _to_float(dang_max, t),
             _to_float(delta_ang_min, t),
@@ -251,6 +259,8 @@ def _clip_to_pi(phi):
 def _resolve_range_of_motion(
     range_of_motion,
     range_of_motion_method,
+    rom_lower: float,
+    rom_upper: float,
     dang_min,
     dang_max,
     delta_ang_min,
@@ -265,44 +275,47 @@ def _resolve_range_of_motion(
     def _next_phi(key, dt):
         key, consume = random.split(key)
 
-        if range_of_motion:
-            if range_of_motion_method == "coinflip":
-                probs = jnp.array([0.5, 0.5])
-            elif range_of_motion_method == "uniform":
-                p = 0.5 * (1 - prev_phi / jnp.pi)
-                probs = jnp.array([p, (1 - p)])
-            elif range_of_motion_method[:7] == "sigmoid":
-                scale = 1.5
-                provided_params = range_of_motion_method.split("-")
-                if len(provided_params) == 2:
-                    scale = float(provided_params[-1])
-                hardcut = jnp.pi - 0.01
-                p = jnp.where(
-                    prev_phi > hardcut,
-                    0.0,
-                    jnp.where(
-                        prev_phi < -hardcut, 1.0, jax.nn.sigmoid(-scale * prev_phi)
-                    ),
-                )
-                probs = jnp.array([p, (1 - p)])
-            else:
-                raise NotImplementedError
+        # legacy reasons, without range of motion the `sign` value, so going
+        # left or right is 50-50 for free joints and spherical joints
+        if not range_of_motion:
+            range_of_motion_method = "coinflip"
 
-            sign = random.choice(consume, jnp.array([1.0, -1.0]), p=probs)
-            lower = _clip_to_pi(prev_phi + sign * dang_min * dt)
-            upper = _clip_to_pi(prev_phi + sign * dang_max * dt)
-
-            # swap if lower > upper
-            lower, upper = jnp.sort(jnp.hstack((lower, upper)))
-
-            key, consume = random.split(key)
-            return random.uniform(consume, minval=lower, maxval=upper)
-
+        if range_of_motion_method == "coinflip":
+            probs = jnp.array([0.5, 0.5])
+        elif range_of_motion_method == "uniform":
+            p = 0.5 * (1 - prev_phi / jnp.pi)
+            probs = jnp.array([p, (1 - p)])
+        elif range_of_motion_method[:7] == "sigmoid":
+            scale = 1.5
+            provided_params = range_of_motion_method.split("-")
+            if len(provided_params) == 2:
+                scale = float(provided_params[-1])
+            hardcut = jnp.pi - 0.01
+            p = jnp.where(
+                prev_phi > hardcut,
+                0.0,
+                jnp.where(prev_phi < -hardcut, 1.0, jax.nn.sigmoid(-scale * prev_phi)),
+            )
+            probs = jnp.array([p, (1 - p)])
         else:
-            dphi = random.uniform(consume, minval=dang_min, maxval=dang_max) * dt
-            key, consume = random.split(key)
-            sign = random.choice(consume, jnp.array([1.0, -1.0]))
-            return prev_phi + sign * dphi
+            raise NotImplementedError
+
+        sign = random.choice(consume, jnp.array([1.0, -1.0]), p=probs)
+        lower = prev_phi + sign * dang_min * dt
+        upper = prev_phi + sign * dang_max * dt
+
+        if range_of_motion:
+            lower, upper = _clip_to_pi(lower), _clip_to_pi(upper)
+
+        # swap if lower > upper
+        lower, upper = jnp.sort(jnp.hstack((lower, upper)))
+
+        # clip bounds given by the angular velocity bounds to the rom bounds
+        lower = jnp.clip(lower, a_min=rom_lower)
+        upper = jnp.clip(upper, a_max=rom_upper)
+
+        key, consume = random.split(key)
+        return random.uniform(consume, minval=lower, maxval=upper)
 
     def body_fn(val):
         key_t, key_ang, _, _, i = val
