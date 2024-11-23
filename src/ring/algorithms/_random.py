@@ -272,13 +272,13 @@ def _resolve_range_of_motion(
     key_ang,
     max_iter,
 ):
+    # legacy reasons, without range of motion the `sign` value, so going
+    # left or right is 50-50 for free joints and spherical joints
+    if not range_of_motion:
+        range_of_motion_method = "coinflip"
+
     def _next_phi(key, dt):
         key, consume = random.split(key)
-
-        # legacy reasons, without range of motion the `sign` value, so going
-        # left or right is 50-50 for free joints and spherical joints
-        if not range_of_motion:
-            range_of_motion_method = "coinflip"
 
         if range_of_motion_method == "coinflip":
             probs = jnp.array([0.5, 0.5])
