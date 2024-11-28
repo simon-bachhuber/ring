@@ -243,5 +243,60 @@ def save_model_tf(jax_func, path: str, *input, validate: bool = True):
         )
 
 
+def to_onnx(
+    fn,
+    output_path,
+    *args: tuple[np.ndarray],
+    in_args_names: Optional[list[str]] = None,
+    out_args_names: Optional[list[str]] = None,
+    validate: bool = False,
+):
+    import jax.experimental.jax2tf as jax2tf
+    import tensorflow as tf
+    import tf2onnx
+
+    tf_fn = tf.function(jax2tf.convert(fn, enable_xla=False))
+    tf_args = [tf.TensorSpec(np.shape(x), np.result_type(x)) for x in args]
+    tf2onnx.convert.from_function(
+        tf_fn, input_signature=tf_args, output_path=output_path
+    )
+
+    if in_args_names is not None or out_args_names is not None:
+        import onnx
+        from sor4onnx import rename
+
+        model = onnx.load(output_path)
+
+        if in_args_names is not None:
+            old_names = [inp.name for inp in model.graph.input]
+            assert len(old_names) == len(in_args_names)
+            for old_name, new_name in zip(old_names, in_args_names):
+                model = rename([old_name, new_name], None, model, None, mode="inputs")
+
+        if out_args_names is not None:
+            old_names = [out.name for out in model.graph.output]
+            assert len(old_names) == len(out_args_names)
+            for old_name, new_name in zip(old_names, out_args_names):
+                model = rename([old_name, new_name], None, model, None, mode="outputs")
+
+        onnx.save(model, output_path)
+
+    if validate:
+        import onnxruntime as ort
+
+        output_jax = fn(*args)
+        session = ort.InferenceSession(output_path)
+        input_names = [inp.name for inp in session.get_inputs()]
+        output_onnx = session.run(
+            None, {name: np.array(arg) for name, arg in zip(input_names, args)}
+        )
+
+        for o1, o2 in zip(output_jax, output_onnx):
+            assert np.allclose(o1, o2, atol=1e-5, rtol=1e-5)
+
+        if out_args_names is not None:
+            assert [out.name for out in session.get_outputs()] == out_args_names
+
+
 def _unknown_link_names(N: int):
     return [f"link{i}" for i in range(N)]
