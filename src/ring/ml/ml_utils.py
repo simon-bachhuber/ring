@@ -251,6 +251,48 @@ def to_onnx(
     out_args_names: Optional[list[str]] = None,
     validate: bool = False,
 ):
+    """
+    Converts a JAX function to ONNX format, with optional input/output renaming and validation.
+
+    Args:
+        fn (callable): The JAX function to be converted.
+        output_path (str): Path where the ONNX model will be saved.
+        *args (tuple[np.ndarray]): Input arguments for the JAX function.
+        in_args_names (Optional[list[str]]): Names for the ONNX model's input tensors. Defaults to None.
+        out_args_names (Optional[list[str]]): Names for the ONNX model's output tensors. Defaults to None.
+        validate (bool): Whether to validate the ONNX model against the JAX function's outputs. Defaults to False.
+
+    Raises:
+        AssertionError: If the number of provided names does not match the number of inputs/outputs.
+        AssertionError: If the ONNX model's outputs do not match the JAX function's outputs within tolerance.
+        ValueError: If any error occurs during ONNX conversion, saving, or validation.
+
+    Notes:
+        - The function uses `jax2tf` to convert the JAX function to TensorFlow format,
+          and `tf2onnx` for ONNX conversion.
+        - Input and output tensor names in the ONNX model can be renamed using `sor4onnx.rename`.
+        - Validation compares outputs of the JAX function and the ONNX model using ONNX Runtime.
+
+    Example:
+        ```
+        import jax.numpy as jnp
+
+        def my_fn(x, y):
+            return x + y, x * y
+
+        x = jnp.array([1, 2, 3])
+        y = jnp.array([4, 5, 6])
+
+        to_onnx(
+            my_fn,
+            "model.onnx",
+            x, y,
+            in_args_names=["input1", "input2"],
+            out_args_names=["sum", "product"],
+            validate=True,
+        )
+        ```
+    """  # noqa: E501
     import jax.experimental.jax2tf as jax2tf
     import tensorflow as tf
     import tf2onnx
