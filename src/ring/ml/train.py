@@ -45,7 +45,7 @@ def _build_step_fn(
 
     @partial(jax.value_and_grad, has_aux=True)
     def loss_fn(params, state, X, y):
-        yhat, state = filter.apply(params=params, state=state, X=X)
+        yhat, state = filter.apply(params=params, state=state, X=X, y=y)
         # this vmap maps along batch-axis, not time-axis
         # time-axis is handled by `metric_fn`
         pipe = lambda q, qhat: jnp.mean(jax.vmap(metric_fn)(q, qhat))
@@ -261,7 +261,7 @@ def _build_eval_fn(
     """Build function that evaluates the filter performance."""
 
     def eval_fn(params, state, X, y):
-        yhat, _ = filter.apply(params=params, state=state, X=X)
+        yhat, _ = filter.apply(params=params, state=state, X=X, y=y)
 
         y = _arr_to_dict(y, link_names)
         yhat = _arr_to_dict(yhat, link_names)
