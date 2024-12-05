@@ -2,6 +2,7 @@ from xml.etree import ElementTree
 
 import jax
 import numpy as np
+
 from ring import base
 from ring.algorithms import jcalc
 from ring.utils import parse_path
@@ -181,7 +182,10 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
 
         link_parents[current_link_idx] = parent
         link_types[current_link_idx] = current_link_typ
-        link_names[current_link_idx] = body.attrib["name"]
+        current_name = body.attrib["name"]
+        link_names[current_link_idx] = (
+            current_name if isinstance(current_name, str) else str(int(current_name))
+        )
 
         transform = abstract.AbsTrans.from_xml(body.attrib)
         pos_min, pos_max = abstract.AbsPosMinMax.from_xml(body.attrib, transform.pos)
