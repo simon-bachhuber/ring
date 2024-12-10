@@ -8,7 +8,10 @@ from ring import maths
 
 _skybox = """<texture name="skybox" type="skybox" builtin="gradient" rgb1=".4 .6 .8" rgb2="0 0 0" width="800" height="800" mark="random" markrgb="1 1 1"/>"""  # noqa: E501
 _skybox_white = """<texture name="skybox" type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="1 1 1" width="800" height="800" mark="random" markrgb="1 1 1"/>"""  # noqa: E501
-_floor = """<geom name="floor" pos="0 0 -0.84" size="0 0 1" type="plane" material="matplane" mass="0"/>"""  # noqa: E501
+
+
+def _floor(floor_z: float) -> str:
+    return f"""<geom name="floor" pos="0 0 {floor_z}" size="0 0 1" type="plane" material="matplane" mass="0"/>"""  # noqa: E501
 
 
 def _build_model_of_geoms(
@@ -16,6 +19,7 @@ def _build_model_of_geoms(
     cameras: dict[int, Sequence[str]],
     lights: dict[int, Sequence[str]],
     floor: bool,
+    floor_z: float,
     stars: bool,
     debug: bool,
 ) -> mujoco.MjModel:
@@ -94,7 +98,7 @@ def _build_model_of_geoms(
 <camera pos="0 -1 1" name="target" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -3 3" name="targetfar" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -5 5" name="targetFar" mode="targetbodycom" target="{targetbody}"/>
-{_floor if floor else ''}
+{_floor(floor_z) if floor else ''}
 {inside_worldbody_cameras}
 {inside_worldbody_lights}
 {inside_worldbody}
@@ -171,6 +175,7 @@ class MujocoScene:
         add_lights: dict[int, str | Sequence[str]] = _default_lights,
         show_stars: bool = True,
         show_floor: bool = True,
+        floor_z: float = -0.84,
         debug: bool = False,
     ) -> None:
         self.debug = debug
@@ -185,6 +190,7 @@ class MujocoScene:
         self.add_cameras, self.add_lights = to_list(add_cameras), to_list(add_lights)
         self.show_stars = show_stars
         self.show_floor = show_floor
+        self.floor_z = floor_z
 
     def init(self, geoms: list[base.Geometry]):
         self._parent_ids = list(set([geom.link_idx for geom in geoms]))
@@ -193,6 +199,7 @@ class MujocoScene:
             self.add_cameras,
             self.add_lights,
             floor=self.show_floor,
+            floor_z=self.floor_z,
             stars=self.show_stars,
             debug=self.debug,
         )

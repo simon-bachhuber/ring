@@ -55,6 +55,11 @@ class RCMG:
     ) -> None:
         "Random Chain Motion Generator"
 
+        # add some default values
+        randomize_hz_kwargs_defaults = dict(add_dt=True)
+        randomize_hz_kwargs_defaults.update(randomize_hz_kwargs)
+        randomize_hz_kwargs = randomize_hz_kwargs_defaults
+
         sys, config = utils.to_list(sys), utils.to_list(config)
         sys_ml = sys[0] if sys_ml is None else sys_ml
 
@@ -409,7 +414,11 @@ def _build_mconfig_batched_generator(
         @jax.vmap
         def _vmapped_context(key, q, sys):
             x, _ = jax.vmap(kinematics.forward_kinematics_transforms, (None, 0))(sys, q)
-            X = {"dt": jnp.array(sys.dt)} if randomize_hz else {}
+            X = (
+                {"dt": jnp.array(sys.dt)}
+                if (randomize_hz and randomize_hz_kwargs["add_dt"])
+                else {}
+            )
             Xy, extras = (X, {}), (key, q, x, sys)
             return _finalize_fn(Xy, extras)
 

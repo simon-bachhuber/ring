@@ -98,7 +98,10 @@ def RING(lam: list[int] | None, Ts: float | None, **kwargs) -> ml.AbstractFilter
         add_Ts = True
 
     ringnet = ml.RING(
-        params=params, lam=None if lam is None else tuple(lam), jit=False, name="RING"
+        params=params,
+        lam=None if lam is None else tuple(lam),
+        jit=config.pop("jit", False),
+        name="RING",
     )
     ringnet = ml.base.ScaleX_FilterWrapper(ringnet)
     if config["use_lpf"]:

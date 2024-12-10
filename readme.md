@@ -5,6 +5,10 @@
 # Recurrent Inertial Graph-based Estimator (RING)
 <img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/coverage_badge.svg" height="20" />
 
+> **ℹ️ Tip:**
+> 
+> Check out my new plug-and-play interface for inertial motion tracking (RING included) [here](https://github.com/simon-bachhuber/imt.git).
+
 ## Installation
 
 Supports `Python=3.10/3.11/3.12` (tested).
