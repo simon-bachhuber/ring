@@ -90,6 +90,19 @@ def angle_error(q, qhat):
     return jnp.abs(quat_angle(quat_mul(quat_inv(q), qhat)))
 
 
+def inclination_loss(q, qhat):
+    """Absolute inclination angle in radians. `q`'s are from body-to-eps.
+    This function fullfills
+        inclination_loss(q1, q2)
+        == inclination_loss(qmt.addHeading(q1, H), q2)
+        == inclination_loss(q1, qmt.addHeading(q2, H))`
+    for any q1, q2, H
+    """
+    q_rel = quat_mul(q, quat_inv(qhat))
+    q_rel_incl = quat_project(q_rel, [0, 0, 1.0])[1]
+    return jnp.abs(quat_angle(q_rel_incl))
+
+
 def unit_quats_like(array):
     "Array of *unit* quaternions of identical shape."
     if array.shape[-1] != 4:

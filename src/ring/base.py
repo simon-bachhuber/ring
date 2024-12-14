@@ -558,6 +558,7 @@ class System(_Base):
         new_stif: Optional[jax.Array] = None,
         new_zero: Optional[jax.Array] = None,
         seed: int = 1,
+        warn: bool = True,
     ):
         "By default damping, stiffness are set to zero."
         from ring.algorithms import get_joint_model
@@ -587,7 +588,7 @@ class System(_Base):
 
         jm = get_joint_model(new_joint_type)
         if jm.init_joint_params is not None:
-            sys = sys.from_str(sys.to_str(), seed=seed)
+            sys = sys.from_str(sys.to_str(warn=warn), seed=seed)
 
         return sys
 
@@ -786,8 +787,8 @@ class System(_Base):
     def from_str(xml: str, seed: int = 1):
         return ring.io.load_sys_from_str(xml, seed)
 
-    def to_str(self) -> str:
-        return ring.io.save_sys_to_str(self)
+    def to_str(self, warn: bool = True) -> str:
+        return ring.io.save_sys_to_str(self, warn=warn)
 
     def to_xml(self, path: str) -> None:
         ring.io.save_sys_to_xml(self, path)

@@ -5,18 +5,19 @@ from xml.etree.ElementTree import SubElement
 from xml.etree.ElementTree import tostring
 
 import jax.numpy as jnp
-from ring import base
 from tree_utils import batch_concat
+
+from ring import base
 
 from . import abstract
 from .abstract import _to_str
 
 
-def save_sys_to_str(sys: base.System) -> str:
+def save_sys_to_str(sys: base.System, warn: bool = True) -> str:
     for joint_type in sys.links.joint_params:
         for i, link_name in enumerate(sys.link_names):
             joint_params_flat = batch_concat((sys.links[i]).joint_params[joint_type], 0)
-            if not jnp.all(joint_params_flat == 0.0):
+            if warn and (not jnp.all(joint_params_flat == 0.0)):
                 warnings.warn(
                     "The system has `sys.links.joint_params` unequal to the 'default'"
                     f" value (of zeros). In particular the link `{link_name}` has for"
