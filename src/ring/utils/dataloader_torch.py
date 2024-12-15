@@ -1,4 +1,6 @@
 import os
+from typing import Optional
+import warnings
 
 import jax
 import torch
@@ -35,15 +37,20 @@ def dataset_to_generator(
     batch_size: int,
     shuffle=True,
     seed: int = 1,
+    num_workers: Optional[int] = None,
     **kwargs,
 ):
     torch.manual_seed(seed)
+
+    if num_workers is None:
+        num_workers = _get_number_of_logical_cores()
 
     dl = DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=shuffle,
-        multiprocessing_context="spawn" if kwargs.get("num_workers", 0) > 0 else None,
+        multiprocessing_context="spawn" if num_workers > 0 else None,
+        num_workers=num_workers,
         **kwargs,
     )
     dl_iter = iter(dl)
@@ -60,3 +67,20 @@ def dataset_to_generator(
             return to_numpy(next(dl_iter))
 
     return generator
+
+
+def _get_number_of_logical_cores() -> int:
+    N = None
+    if hasattr(os, "sched_getaffinity"):
+        try:
+            N = len(os.sched_getaffinity(0))
+        except Exception:
+            pass
+    if N is None:
+        N = os.cpu_count()
+    if N is None:
+        warnings.warn(
+            "Could not automatically set the `num_workers` variable, defaults to `0`"
+        )
+        N = 0
+    return N
