@@ -201,9 +201,14 @@ def on_cluster() -> bool:
     return False if env_var is None else True
 
 
+_unique_id_is_logged = False
+
+
 def unique_id() -> str:
-    if wandb.run is not None:
-        wandb.config.setdefault("unique_id", ring._UNIQUE_ID)
+    global _unique_id_is_logged
+    if wandb.run is not None and _unique_id_is_logged is False:
+        wandb.config["unique_id"] = ring._UNIQUE_ID
+        _unique_id_is_logged = True
     return ring._UNIQUE_ID
 
 
