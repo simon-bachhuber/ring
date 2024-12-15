@@ -33,7 +33,8 @@ def test_rnno():
     ml.train_fn(
         gen,
         5,
-        ml.RNNO(N * 4, return_quats=True, eval=False, hidden_state_dim=20),
+        # .unwrapped to get ride of the `GroundtruthHeadingWrapper`
+        ml.RNNO(N * 4, return_quats=True, eval=False, hidden_state_dim=20).unwrapped,
     )
 
 

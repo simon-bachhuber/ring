@@ -26,6 +26,8 @@ def test_delta_ang_min_max(
             dt, next_phi = _resolve_range_of_motion(
                 range_of_motion,
                 range_of_motion_method,
+                -2 * np.pi,
+                2 * np.pi,
                 0.0,
                 3.14,
                 float(delta_ang_min),
@@ -83,10 +85,10 @@ def test_angle(randomized_interpolation, range_of_motion, range_of_motion_method
 def test_position():
     for Ts in [0.1, 0.01]:
         T = 30
-        POS_0 = 0.0
-        pos = ring.algorithms.random_position_over_time(
-            jrand.PRNGKey(1), POS_0, -0.2, 0.2, 0.1, 0.5, 0.1, 0.5, T, Ts, None, 10
-        )
-        assert pos.shape == (int(T / Ts),)
-        # TODO Why does this fail for POS_0 != 0.0?
-        assert pos[0] == POS_0
+        for POS_0 in [0.0, 1.0]:
+            pos = ring.algorithms.random_position_over_time(
+                jrand.PRNGKey(1), POS_0, -0.2, 0.2, 0.1, 0.5, 0.1, 0.5, T, Ts, None, 10
+            )
+            assert pos.shape == (int(T / Ts),)
+            # TODO Why does this fail for POS_0 != 0.0?
+            assert pos[0] == POS_0

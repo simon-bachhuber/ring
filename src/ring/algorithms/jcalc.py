@@ -412,6 +412,9 @@ def _find_interval(t: jax.Array, boundaries: jax.Array):
 def join_motionconfigs(
     configs: list[MotionConfig], boundaries: list[float]
 ) -> MotionConfig:
+    # to avoid a circular import due to `ring.utils.randomize_sys` importing `jcalc`
+    from ring.utils import tree_equal
+
     assert len(configs) == (
         len(boundaries) + 1
     ), "length of `boundaries` should be one less than length of `configs`"
@@ -434,10 +437,22 @@ def join_motionconfigs(
     time_independent_fields = [key for key in attrs if not is_time_dependent_field(key)]
 
     for time_dep_field in time_independent_fields:
-        field_values = set([getattr(config, time_dep_field) for config in configs])
-        assert (
-            len(field_values) == 1
-        ), f"MotionConfig.{time_dep_field}={field_values}. Should be one unique value.."
+        try:
+            field_values = set([getattr(config, time_dep_field) for config in configs])
+            assert (
+                len(field_values) == 1
+            ), f"MotionConfig.{time_dep_field}={field_values}. "
+            "Should be one unique value.."
+        except (
+            TypeError
+        ):  # dict is not hashable so test equality of all elements differently
+            comparison_ele = getattr(configs[0], time_dep_field)
+            for other_config in configs[1:]:
+                other_ele = getattr(other_config, time_dep_field)
+                assert tree_equal(
+                    comparison_ele, other_ele
+                ), f"MotionConfig.{time_dep_field} with {comparison_ele} != {other_ele}"
+                " Should be one unique value.."
 
     changes = {field: new_value(field) for field in time_dependent_fields}
     return replace(configs[0], **changes)

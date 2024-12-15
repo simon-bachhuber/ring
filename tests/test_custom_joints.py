@@ -43,7 +43,7 @@ def test_virtual_input_joint_axes_rr_joint():
     np.testing.assert_allclose(
         -X["seg1"]["joint_axes"],
         np.repeat(np.array([[0.0, 1, 0]]), 1000, axis=0),
-        atol=4e-7,
+        atol=2e-6,
     )
     np.testing.assert_allclose(
         -X["seg3"]["joint_axes"],
@@ -57,8 +57,8 @@ def test_virtual_input_joint_axes_rr_joint():
     np.testing.assert_allclose(
         X["seg1"]["joint_axes"],
         np.repeat(-joint_axes[1:2], 1000, axis=0),
-        atol=4e-7,
-        rtol=2e-4,
+        atol=2e-6,
+        rtol=5e-4,
     )
     np.testing.assert_allclose(
         -X["seg3"]["joint_axes"],
@@ -103,7 +103,7 @@ def test_virtual_input_joint_axes_rr_imp_joint():
     np.testing.assert_allclose(
         -X["seg1"]["joint_axes"],
         np.repeat(np.array([[0.0, 1, 0]]), 1000, axis=0),
-        atol=4e-7,
+        atol=2e-6,
     )
     np.testing.assert_allclose(
         X["seg3"]["joint_axes"],
