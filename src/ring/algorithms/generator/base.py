@@ -213,6 +213,8 @@ class RCMG:
                 )
                 save_fn(d, file)
                 i += 1
+            # cleanup
+            del data
 
         gens, n_calls = self._generators_ncalls(sizes)
         batch.generators_eager(gens, n_calls, callback, seed, self._disable_tqdm)

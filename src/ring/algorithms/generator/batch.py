@@ -1,3 +1,4 @@
+import gc
 from typing import Callable
 
 import jax
@@ -83,4 +84,8 @@ def generators_eager(
 
             sample_flat, _ = jax.tree_util.tree_flatten(sample)
             size = 1 if len(sample_flat) == 0 else sample_flat[0].shape[0]
-            callback([jax.tree_map(lambda a: a[i], sample) for i in range(size)])
+            callback([jax.tree_map(lambda a: a[i].copy(), sample) for i in range(size)])
+
+            # cleanup
+            del sample, sample_flat
+            gc.collect()

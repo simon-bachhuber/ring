@@ -1,8 +1,9 @@
 import os
-from typing import Optional
+from typing import Any, Optional
 import warnings
 
 import jax
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
@@ -12,7 +13,7 @@ from ring.utils import parse_path
 from ring.utils import pickle_load
 
 
-class FolderOfPickleFilesDataset(Dataset):
+class FolderOfFilesDataset(Dataset):
     def __init__(self, path, transform=None):
         self.files = self.listdir(path)
         self.transform = transform
@@ -22,7 +23,7 @@ class FolderOfPickleFilesDataset(Dataset):
         return self.N
 
     def __getitem__(self, idx: int):
-        element = pickle_load(self.files[idx])
+        element = self._load_file(self.files[idx])
         if self.transform is not None:
             element = self.transform(element)
         return element
@@ -30,6 +31,10 @@ class FolderOfPickleFilesDataset(Dataset):
     @staticmethod
     def listdir(path: str) -> list:
         return [parse_path(path, file) for file in os.listdir(path)]
+
+    @staticmethod
+    def _load_file(file_path: str) -> Any:
+        return pickle_load(file_path)
 
 
 def dataset_to_generator(
@@ -84,3 +89,60 @@ def _get_number_of_logical_cores() -> int:
         )
         N = 0
     return N
+
+
+class MultiDataset(Dataset):
+    def __init__(self, datasets, transform=None):
+        """
+        Args:
+            datasets: A list of datasets to sample from.
+            transform: A function that takes N items (one from each dataset) and combines them.
+        """  # noqa: E501
+        self.datasets = datasets
+        self.transform = transform
+
+    def __len__(self):
+        # Length is defined by the smallest dataset in the list
+        return min(len(ds) for ds in self.datasets)
+
+    def __getitem__(self, idx):
+        sampled_items = [ds[idx] for ds in self.datasets]
+
+        if self.transform:
+            # Apply the transformation to all sampled items
+            return self.transform(*sampled_items)
+
+        return tuple(sampled_items)
+
+
+class ShuffledDataset(Dataset):
+    def __init__(self, dataset):
+        """
+        Wrapper that shuffles the dataset indices once.
+
+        Args:
+            dataset (Dataset): The original dataset to shuffle.
+        """
+        self.dataset = dataset
+        self.shuffled_indices = np.random.permutation(
+            len(dataset)
+        )  # Shuffle indices once
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        """
+        Returns the data at the shuffled index.
+
+        Args:
+            idx (int): Index in the shuffled dataset.
+        """
+        original_idx = self.shuffled_indices[idx]
+        return self.dataset[original_idx]
+
+
+def dataset_to_Xy(ds: Dataset):
+    return dataset_to_generator(ds, batch_size=len(ds), shuffle=False, num_workers=0)(
+        None
+    )
