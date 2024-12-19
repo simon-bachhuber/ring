@@ -39,6 +39,7 @@ def _build_step_fn(
     filter: ml_base.AbstractFilter,
     optimizer,
     tbp,
+    skip_first_tbp_batch,
 ):
     """Build step function that optimizes filter parameters based on `metric_fn`.
     `initial_state` has shape (pmap, vmap, state_dim)"""
@@ -89,6 +90,8 @@ def _build_step_fn(
         ):
             (loss, state), grads = pmapped_loss_fn(params, state, X_tbp, y_tbp)
             debug_grads.append(grads)
+            if skip_first_tbp_batch and i == 0:
+                continue
             state = jax.lax.stop_gradient(state)
             params, opt_state = apply_grads(grads, params, opt_state)
 
@@ -119,6 +122,7 @@ def train_fn(
     loss_fn: LOSS_FN = _default_loss_fn,
     metrices: Optional[METRICES] = _default_metrices,
     link_names: Optional[list[str]] = None,
+    skip_first_tbp_batch: bool = False,
 ) -> bool:
     """Trains RNNO
 
@@ -161,10 +165,7 @@ def train_fn(
         opt_state = optimizer.init(filter_params)
 
     step_fn = _build_step_fn(
-        loss_fn,
-        filter,
-        optimizer,
-        tbp=tbp,
+        loss_fn, filter, optimizer, tbp=tbp, skip_first_tbp_batch=skip_first_tbp_batch
     )
 
     # always log, because we also want `i_epsiode` to be logged in wandb
