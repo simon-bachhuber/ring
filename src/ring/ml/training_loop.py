@@ -2,10 +2,11 @@ import random
 from typing import Optional
 
 import jax
-from ring.algorithms import Generator
-from ring.ml import ml_utils
 import tqdm
 import tree_utils
+
+from ring.algorithms import Generator
+from ring.ml import ml_utils
 
 _KILL_RUN = False
 
@@ -83,14 +84,20 @@ class TrainingLoop:
         # reset the kill_run flag from previous runs
         send_kill_run_signal(value=False)
 
-        for _ in tqdm.tqdm(range(n_episodes)):
-            self.step()
+        try:
+            for _ in tqdm.tqdm(range(n_episodes)):
+                self.step()
 
-            if recv_kill_run_signal():
-                break
-
-        if close_afterwards:
-            self.close()
+                if recv_kill_run_signal():
+                    break
+        except Exception as e:
+            print(
+                "Exception occured, attemping to .close() all callbacks before raising."
+            )
+            raise e
+        finally:
+            if close_afterwards:
+                self.close()
 
         return recv_kill_run_signal()
 
