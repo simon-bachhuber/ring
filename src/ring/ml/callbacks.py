@@ -388,6 +388,14 @@ class TimingKillRunCallback(training_loop.TrainingLoopCallback):
 
 
 class CheckpointCallback(training_loop.TrainingLoopCallback):
+    def __init__(
+        self,
+        checkpoint_every: Optional[int] = None,
+        checkpoint_folder: str = "~/.ring_checkpoints",
+    ):
+        self.checkpoint_every = checkpoint_every
+        self.checkpoint_folder = checkpoint_folder
+
     def after_training_step(
         self,
         i_episode: int,
@@ -401,18 +409,26 @@ class CheckpointCallback(training_loop.TrainingLoopCallback):
         self.params = params
         self.opt_state = opt_state
 
+        if self.checkpoint_every is not None and (
+            (i_episode % self.checkpoint_every) == 0
+        ):
+            self._create_checkpoint()
+
+    def _create_checkpoint(self):
+        path = parse_path(
+            self.checkpoint_folder, ml_utils.unique_id(), extension="pickle"
+        )
+        data = {"params": self.params, "opt_state": self.opt_state}
+        pickle_save(
+            obj=jax.device_get(data),
+            path=path,
+            overwrite=True,
+        )
+
     def close(self):
         # only checkpoint if run has been killed
         if training_loop.recv_kill_run_signal():
-            path = parse_path(
-                "~/.ring_checkpoints", ml_utils.unique_id(), extension="pickle"
-            )
-            data = {"params": self.params, "opt_state": self.opt_state}
-            pickle_save(
-                obj=jax.device_get(data),
-                path=path,
-                overwrite=True,
-            )
+            self._create_checkpoint()
 
 
 class WandbKillRun(training_loop.TrainingLoopCallback):
