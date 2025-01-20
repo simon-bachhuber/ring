@@ -1,5 +1,6 @@
 from importlib import import_module as _import_module
 import io
+from pathlib import Path
 import pickle
 import random
 from typing import Optional
@@ -152,13 +153,28 @@ def import_lib(
 
 def pickle_save(obj, path, overwrite: bool = False):
     path = parse_path(path, extension="pickle", file_exists_ok=overwrite)
-    with open(path, "wb") as file:
-        pickle.dump(obj, file, protocol=5)
+    try:
+        with open(path, "wb") as file:
+            pickle.dump(obj, file, protocol=5)
+    except OSError as e:
+        print(
+            f"saving with `pickle` throws exception {e}. "
+            + "Attempting to save using `joblib`"
+        )
+        path = parse_path(path, extension="joblib", file_exists_ok=overwrite)
+        import joblib
+
+        joblib.dump(obj, path)
 
 
 def pickle_load(
     path,
 ):
+    if Path(path).suffix == ".joblib":
+        import joblib
+
+        return joblib.load(path)
+
     path = parse_path(path, extension="pickle", require_is_file=True)
     with open(path, "rb") as file:
         obj = pickle.load(file)
