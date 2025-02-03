@@ -1,16 +1,25 @@
 import os
+import pickle
 from typing import Any, Optional
 import warnings
 
-import jax
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
+import tree
 from tree_utils import PyTree
 
-from ring.utils import parse_path
-from ring.utils import pickle_load
+from ring.utils.path import parse_path
+
+
+def pickle_load(
+    path,
+):
+    path = parse_path(path, extension="pickle", require_is_file=True)
+    with open(path, "rb") as file:
+        obj = pickle.load(file)
+    return obj
 
 
 class FolderOfFilesDataset(Dataset):
@@ -60,8 +69,8 @@ def dataset_to_generator(
     )
     dl_iter = iter(dl)
 
-    def to_numpy(tree: PyTree[torch.Tensor]):
-        return jax.tree_map(lambda tensor: tensor.numpy(), tree)
+    def to_numpy(data: PyTree[torch.Tensor]):
+        return tree.map_structure(lambda tensor: tensor.numpy(), data)
 
     def generator(_):
         nonlocal dl, dl_iter
