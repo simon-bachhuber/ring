@@ -807,7 +807,7 @@ class System(_Base):
         if exists:
             return cls.from_xml(path, seed=seed)
         else:
-            return cls.from_str(path_or_str)
+            return cls.from_str(path_or_str, seed=seed)
 
     def coordinate_vector_to_q(
         self,
