@@ -184,7 +184,7 @@ def register_suntay(sconfig: SuntayConfig, name: str = "suntay"):
 
         suntay_link_name = _utils_find_suntay_joint(sys)
 
-        params = jax.tree_map(
+        params = jax.tree.map(
             lambda arr: arr[sys.idx_map("l")[suntay_link_name]],
             sys.links.joint_params[name],
         )

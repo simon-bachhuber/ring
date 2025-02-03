@@ -2,6 +2,7 @@ from _compat import unbatch_gen
 import jax
 import jax.numpy as jnp
 import numpy as np
+
 import ring
 from ring import maths
 from ring import sim2real
@@ -49,7 +50,7 @@ def test_forward_kinematics_omc():
             # t1_omc should be used when p == -1, else t1_sys
             @jax.vmap
             def merge_transform1(t1_omc):
-                return jax.tree_map(
+                return jax.tree.map(
                     lambda a, b: jnp.where(
                         jnp.repeat(
                             jnp.array(sys.link_parents)[:, None] == -1,
@@ -138,7 +139,7 @@ def test_zip_unzip_scale():
         t1, t2 = sim2real.unzip_xs(sys, xs)
         xs_re = sim2real.zip_xs(sys, t1, t2)
 
-        jax.tree_map(
+        jax.tree.map(
             lambda a, b: np.testing.assert_allclose(a, b, rtol=1e-3, atol=1e-5),
             xs,
             xs_re,

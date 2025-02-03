@@ -3,8 +3,9 @@ from typing import Callable, TypeVar
 
 import jax
 import jax.numpy as jnp
-from ring.algorithms.generator import types
 import tree_utils
+
+from ring.algorithms.generator import types
 
 KEY = jax.random.PRNGKey(777)
 KEY_PERMUTATION = jax.random.PRNGKey(888)
@@ -37,12 +38,12 @@ def make_normalizer_from_generator(
     # permute 0-th axis, since batchsize of generator might be larger than
     # `approx_with_large_batchsize`, then we would not get a representative
     # subsample otherwise
-    Xs = jax.tree_map(lambda arr: jax.random.permutation(KEY_PERMUTATION, arr), Xs)
+    Xs = jax.tree.map(lambda arr: jax.random.permutation(KEY_PERMUTATION, arr), Xs)
     Xs = tree_utils.tree_slice(Xs, start=0, slice_size=approx_with_large_batchsize)
 
     # obtain statistics
-    mean = jax.tree_map(lambda arr: jnp.mean(arr, axis=(0, 1)), Xs)
-    std = jax.tree_map(lambda arr: jnp.std(arr, axis=(0, 1)), Xs)
+    mean = jax.tree.map(lambda arr: jnp.mean(arr, axis=(0, 1)), Xs)
+    std = jax.tree.map(lambda arr: jnp.std(arr, axis=(0, 1)), Xs)
 
     if verbose:
         print("Mean: ", mean)
@@ -51,6 +52,6 @@ def make_normalizer_from_generator(
     eps = 1e-8
 
     def normalizer(X):
-        return jax.tree_map(lambda a, b, c: (a - b) / (c + eps), X, mean, std)
+        return jax.tree.map(lambda a, b, c: (a - b) / (c + eps), X, mean, std)
 
     return normalizer

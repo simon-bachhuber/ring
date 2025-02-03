@@ -80,11 +80,11 @@ def generators_eager(
             # converts also to numpy; but with np.array.flags.writeable = False
             sample = jax.device_get(sample)
             # this then sets this flag to True
-            sample = jax.tree_map(np.array, sample)
+            sample = jax.tree.map(np.array, sample)
 
             sample_flat, _ = jax.tree_util.tree_flatten(sample)
             size = 1 if len(sample_flat) == 0 else sample_flat[0].shape[0]
-            callback([jax.tree_map(lambda a: a[i].copy(), sample) for i in range(size)])
+            callback([jax.tree.map(lambda a: a[i].copy(), sample) for i in range(size)])
 
             # cleanup
             del sample, sample_flat

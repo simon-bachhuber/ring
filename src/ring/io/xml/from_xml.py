@@ -252,7 +252,7 @@ def load_sys_from_str(xml_str: str, seed: int = 1) -> base.System:
 
     # numpy -> jax
     # we load using numpy in order to have float64 precision
-    sys = jax.tree_map(jax.numpy.asarray, sys)
+    sys = jax.tree.map(jax.numpy.asarray, sys)
 
     sys = jcalc._init_joint_params(jax.random.PRNGKey(seed), sys)
 

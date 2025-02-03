@@ -7,13 +7,14 @@ from typing import Optional, TypeVar
 import jax
 import jax.numpy as jnp
 import numpy as np
-from ring import algebra
-from ring import base
-from ring import maths
 from tree_utils import PyTree
 from tree_utils import tree_batch
 from vispy import scene
 from vispy.scene import MatrixTransform
+
+from ring import algebra
+from ring import base
+from ring import maths
 
 from . import vispy_visuals
 
@@ -192,7 +193,7 @@ class Scene(ABC):
 
         # step 3: update visuals
         for i, (visual, geom) in enumerate(zip(self.visuals, self.geoms)):
-            t = jax.tree_map(lambda arr: arr[i], transform_per_visual)
+            t = jax.tree.map(lambda arr: arr[i], transform_per_visual)
             if self._fresh_init:
                 self._init_visual(visual, t, geom)
             else:

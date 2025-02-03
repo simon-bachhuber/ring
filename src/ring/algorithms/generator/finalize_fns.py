@@ -311,7 +311,7 @@ def _expand_then_flatten(Xy):
 
     X, y = _flatten(X), _flatten(y)
     if not batched:
-        X, y = jax.tree_map(lambda arr: arr[0], (X, y))
+        X, y = jax.tree.map(lambda arr: arr[0], (X, y))
     return X, y
 
 

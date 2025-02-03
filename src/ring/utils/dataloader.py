@@ -4,13 +4,14 @@ from typing import Callable, Optional
 
 import jax
 import numpy as np
-from ring.utils import parse_path
-from ring.utils import pickle_load
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 import tqdm
 from tree_utils import PyTree
+
+from ring.utils import parse_path
+from ring.utils import pickle_load
 
 
 def make_generator(
@@ -103,7 +104,7 @@ def pytorch_generator(
     dl_iter = iter(dl)
 
     def to_numpy(tree: PyTree[torch.Tensor]):
-        return jax.tree_map(lambda tensor: tensor.numpy(), tree)
+        return jax.tree.map(lambda tensor: tensor.numpy(), tree)
 
     def generator(_):
         nonlocal dl, dl_iter

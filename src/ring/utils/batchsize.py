@@ -39,19 +39,19 @@ def merge_batchsize(
     tree: PyTree, pmap_size: int, vmap_size: int, third_dim_also: bool = False
 ) -> PyTree:
     if third_dim_also:
-        return jax.tree_map(
+        return jax.tree.map(
             lambda arr: arr.reshape(
                 (pmap_size * vmap_size * arr.shape[2],) + arr.shape[3:]
             ),
             tree,
         )
-    return jax.tree_map(
+    return jax.tree.map(
         lambda arr: arr.reshape((pmap_size * vmap_size,) + arr.shape[2:]), tree
     )
 
 
 def expand_batchsize(tree: PyTree, pmap_size: int, vmap_size: int) -> PyTree:
-    return jax.tree_map(
+    return jax.tree.map(
         lambda arr: arr.reshape(
             (
                 pmap_size,

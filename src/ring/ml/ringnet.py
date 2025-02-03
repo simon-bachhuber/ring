@@ -248,7 +248,7 @@ class RING(ml_base.AbstractFilter):
         params, state = self.forward_lam_factory(lam=lam).init(key, X)
 
         if bs is not None:
-            state = jax.tree_map(lambda arr: jnp.repeat(arr[None], bs, axis=0), state)
+            state = jax.tree.map(lambda arr: jnp.repeat(arr[None], bs, axis=0), state)
 
         return params, state
 

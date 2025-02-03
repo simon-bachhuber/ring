@@ -13,13 +13,13 @@ from ring.utils import pickle_save
 def _to_3d(tree):
     if tree is None:
         return None
-    return jax.tree_map(lambda arr: arr[None], tree)
+    return jax.tree.map(lambda arr: arr[None], tree)
 
 
 def _to_2d(tree, i: int = 0):
     if tree is None:
         return None
-    return jax.tree_map(lambda arr: arr[i], tree)
+    return jax.tree.map(lambda arr: arr[i], tree)
 
 
 class AbstractFilter(ABC):

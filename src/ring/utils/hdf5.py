@@ -121,7 +121,7 @@ def _parse_path(
 
 def _tree_concat(trees: list):
     # otherwise scalar-arrays will lead to indexing error
-    trees = jax.tree_map(lambda arr: np.atleast_1d(arr), trees)
+    trees = jax.tree.map(lambda arr: np.atleast_1d(arr), trees)
 
     if len(trees) == 0:
         return trees

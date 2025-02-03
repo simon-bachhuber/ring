@@ -2,12 +2,13 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
-from ring import base
 from tree_utils import tree_batch
+
+from ring import base
 
 
 def _tree_nan_like(tree, repeats: int):
-    return jax.tree_map(
+    return jax.tree.map(
         lambda arr: jnp.repeat(arr[0:1] * jnp.nan, repeats, axis=0), tree
     )
 

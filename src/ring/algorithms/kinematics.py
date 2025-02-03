@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 import jaxopt
 from jaxopt._src.base import Solver
+
 from ring import algebra
 from ring import base
 from ring import maths
@@ -171,7 +172,7 @@ def inverse_kinematics_endeffector(
 
             # find result of best q0 initial value
             best_q_index = jnp.argmin(values)
-            best_q, best_q_value = jax.tree_map(
+            best_q, best_q_value = jax.tree.map(
                 lambda arr: jax.lax.dynamic_index_in_dim(
                     arr, best_q_index, keepdims=False
                 ),

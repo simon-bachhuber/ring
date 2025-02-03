@@ -86,7 +86,7 @@ def _pd_control(P: jax.Array, D: Optional[jax.Array] = None):
         controller_state: PDControllerState, sys: base.System, state: base.State
     ) -> jax.Array:
         taus = jnp.zeros((sys.qd_size()))
-        q_ref, qd_ref = jax.tree_map(
+        q_ref, qd_ref = jax.tree.map(
             lambda arr: jax.lax.dynamic_index_in_dim(
                 arr, controller_state.i, keepdims=False
             ),

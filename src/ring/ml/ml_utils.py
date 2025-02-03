@@ -161,7 +161,7 @@ def _flatten_convert_filter_nested_dict(
     metrices: NestedDict, filter_nan_inf: bool = True
 ):
     metrices = _flatten_dict(metrices)
-    metrices = jax.tree_map(_to_float_if_not_string, metrices)
+    metrices = jax.tree.map(_to_float_if_not_string, metrices)
 
     if not filter_nan_inf:
         return metrices
@@ -216,7 +216,7 @@ def save_model_tf(jax_func, path: str, *input, validate: bool = True):
     from jax.experimental import jax2tf
     import tensorflow as tf
 
-    signature = jax.tree_map(
+    signature = jax.tree.map(
         lambda arr: tf.TensorSpec(list(arr.shape), tf.float32), input
     )
 
@@ -241,7 +241,7 @@ def save_model_tf(jax_func, path: str, *input, validate: bool = True):
     if validate:
         output_jax = jax_func(*input)
         output_tf = tf.saved_model.load(path)(*input)
-        jax.tree_map(
+        jax.tree.map(
             lambda a1, a2: np.allclose(a1, a2, atol=1e-5, rtol=1e-5),
             output_jax,
             output_tf,

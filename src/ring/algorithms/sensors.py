@@ -244,7 +244,7 @@ def imu(
         measurements["mag"] = magnetometer(xs.rot, magvec)
 
     if smoothen_degree is not None:
-        measurements = jax.tree_map(
+        measurements = jax.tree.map(
             lambda arr: _moving_average(arr, smoothen_degree),
             measurements,
         )
@@ -257,7 +257,7 @@ def imu(
             delay = half_window
 
     if delay is not None and delay > 0:
-        measurements = jax.tree_map(
+        measurements = jax.tree.map(
             lambda arr: (jnp.pad(arr, ((delay, 0), (0, 0)))[:-delay]), measurements
         )
 
@@ -473,7 +473,7 @@ def _joint_axes_from_sys(sys: base.Transform, N: int) -> dict:
         X[name] = {"joint_axes": joint_axes}
 
     sys.scan(f, "lll", sys.link_names, sys.link_types, sys.links)
-    X = jax.tree_map(lambda arr: jnp.repeat(arr[None], N, axis=0), X)
+    X = jax.tree.map(lambda arr: jnp.repeat(arr[None], N, axis=0), X)
     return X
 
 
