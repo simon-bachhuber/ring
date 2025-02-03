@@ -498,12 +498,12 @@ _quasi_physical_sys_str = r"""
 <x_xy>
     <options gravity="0 0 0"/>
     <worldbody>
-        <body name="IMU" joint="p3d" damping="0.1 0.1 0.1" spring_stiff="3 3 3">
-            <geom type="box" mass="0.002" dim="0.01 0.01 0.01"/>
+        <body name="IMU" joint="free" damping="1 1 1 10 10 10" spring_stiff="20 20 20 500 500 500">
+            <geom type="box" mass="1" dim="0.01 0.01 0.01"/>
         </body>
     </worldbody>
 </x_xy>
-"""
+"""  # noqa: E501
 
 
 def _quasi_physical_simulation_beautiful(
@@ -512,12 +512,14 @@ def _quasi_physical_simulation_beautiful(
     sys = io.load_sys_from_str(_quasi_physical_sys_str).replace(dt=dt)
 
     def step_dynamics(state: base.State, x):
-        state = algorithms.step(sys.replace(link_spring_zeropoint=x.pos), state)
+        state = algorithms.step(
+            sys.replace(link_spring_zeropoint=jnp.concatenate((x.rot, x.pos))), state
+        )
         return state, state.q
 
-    state = base.State.create(sys, q=xs.pos[0])
-    _, pos = jax.lax.scan(step_dynamics, state, xs)
-    return xs.replace(pos=pos)
+    state = base.State.create(sys, q=jnp.concatenate((xs.rot[0], xs.pos[0])))
+    _, qs = jax.lax.scan(step_dynamics, state, xs)
+    return xs.replace(rot=qs[:, :4], pos=qs[:, 4:])
 
 
 _constants = {
