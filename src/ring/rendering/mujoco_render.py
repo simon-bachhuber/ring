@@ -10,8 +10,8 @@ _skybox = """<texture name="skybox" type="skybox" builtin="gradient" rgb1=".4 .6
 _skybox_white = """<texture name="skybox" type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="1 1 1" width="800" height="800" mark="random" markrgb="1 1 1"/>"""  # noqa: E501
 
 
-def _floor(floor_z: float) -> str:
-    return f"""<geom name="floor" pos="0 0 {floor_z}" size="0 0 1" type="plane" material="matplane" mass="0"/>"""  # noqa: E501
+def _floor(z: float, material: str) -> str:
+    return f"""<geom name="floor" pos="0 0 {z}" size="0 0 1" type="plane" material="{material}" mass="0"/>"""  # noqa: E501
 
 
 def _build_model_of_geoms(
@@ -19,7 +19,7 @@ def _build_model_of_geoms(
     cameras: dict[int, Sequence[str]],
     lights: dict[int, Sequence[str]],
     floor: bool,
-    floor_z: float,
+    floor_kwargs: dict,
     stars: bool,
     debug: bool,
 ) -> mujoco.MjModel:
@@ -77,10 +77,13 @@ def _build_model_of_geoms(
     xml_str = f""" # noqa: E501
 <mujoco>
   <asset>
-    <texture name="texplane" type="2d" builtin="checker" rgb1=".25 .25 .25" rgb2=".3 .3 .3" width="512" height="512" mark="cross" markrgb=".8 .8 .8"/>
+    <texture name="texplane" type="2d" builtin="checker" rgb1=".25 .25 .25" rgb2=".3 .3 .3" width="512" height="512" mark="cross" markrgb=".3 .3 .3"/>
     <material name="matplane" reflectance="0.3" texture="texplane" texrepeat="1 1" texuniform="true"/>
     <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8" width="300" height="300"/>
     <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="2 2" reflectance="0.2"/>
+    <material name="beige" rgba="0.76 0.80 0.50 1.0" specular="0.3" shininess="0.1" />
+    <material name="white" rgba="0.9 0.9 0.9 1.0" reflectance="0"/>
+    <material name="gray" rgba="0.4 0.5 0.5 1.0" reflectance="0.25"/>
     {_skybox if stars else ''}
     <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="300" height="300" mark="edge" markrgb=".2 .3 .4"/>
     <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2"/>
@@ -98,7 +101,7 @@ def _build_model_of_geoms(
 <camera pos="0 -1 1" name="target" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -3 3" name="targetfar" mode="targetbodycom" target="{targetbody}"/>
 <camera pos="0 -5 5" name="targetFar" mode="targetbodycom" target="{targetbody}"/>
-{_floor(floor_z) if floor else ''}
+{_floor(**floor_kwargs) if floor else ''}
 {inside_worldbody_cameras}
 {inside_worldbody_lights}
 {inside_worldbody}
@@ -176,6 +179,7 @@ class MujocoScene:
         show_stars: bool = True,
         show_floor: bool = True,
         floor_z: float = -0.84,
+        floor_material: str = "matplane",
         debug: bool = False,
     ) -> None:
         self.debug = debug
@@ -190,7 +194,7 @@ class MujocoScene:
         self.add_cameras, self.add_lights = to_list(add_cameras), to_list(add_lights)
         self.show_stars = show_stars
         self.show_floor = show_floor
-        self.floor_z = floor_z
+        self.floor_kwargs = dict(z=floor_z, material=floor_material)
 
     def init(self, geoms: list[base.Geometry]):
         self._parent_ids = list(set([geom.link_idx for geom in geoms]))
@@ -199,7 +203,7 @@ class MujocoScene:
             self.add_cameras,
             self.add_lights,
             floor=self.show_floor,
-            floor_z=self.floor_z,
+            floor_kwargs=self.floor_kwargs,
             stars=self.show_stars,
             debug=self.debug,
         )
