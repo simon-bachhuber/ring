@@ -57,6 +57,8 @@
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#offscreen-rendering-with-mujoco">Offscreen rendering with Mujoco</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#windows-related-importerror-dll-load-failed-while-importing">Windows-related: ImportError: DLL load failed while importing ...</a>
+    </li>
         </ul>
     </li>
         </ul>
@@ -70,6 +72,10 @@
     <li class="toctree-l2"><a class="reference internal" href="#contact">Contact</a>
     </li>
     </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="xml_syntax/">XML Syntax Documentation</a>
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Examples / Notebooks</span></p>
@@ -122,11 +128,15 @@
             <div class="section" itemprop="articleBody">
               
                 <p align="center">
-<img src="https://raw.githubusercontent.com/SimiPixel/ring/main/docs/img/icon.svg" height="200" />
+<img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/icon.svg" height="200" />
 </p>
 
 <h1 id="recurrent-inertial-graph-based-estimator-ring">Recurrent Inertial Graph-based Estimator (RING)<a class="headerlink" href="#recurrent-inertial-graph-based-estimator-ring" title="Permanent link">¤</a></h1>
-<p><img src="https://raw.githubusercontent.com/SimiPixel/ring/main/docs/img/coverage_badge.svg" height="20" /></p>
+<p><img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/coverage_badge.svg" height="20" /></p>
+<blockquote>
+<p><strong>ℹ️ Tip:</strong></p>
+<p>Check out my new plug-and-play interface for inertial motion tracking (RING included) <a href="https://github.com/simon-bachhuber/imt.git">here</a>.</p>
+</blockquote>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">¤</a></h2>
 <p>Supports <code>Python=3.10/3.11/3.12</code> (tested).</p>
 <p>Install with <code>pip</code> using</p>
@@ -173,6 +183,13 @@
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
 <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;MUJOCO_GL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;egl&quot;</span>
 </code></pre></div>
+<h4 id="windows-related-importerror-dll-load-failed-while-importing">Windows-related: ImportError: DLL load failed while importing ...<a class="headerlink" href="#windows-related-importerror-dll-load-failed-while-importing" title="Permanent link">¤</a></h4>
+<blockquote>
+<p>ImportError: DLL load failed while importing _multiarray_umath: Das angegebene Modul wurde nicht gefunden.</p>
+</blockquote>
+<p>Solution:
+1. <code>pip uninstall -y jax jaxlib</code>
+2. <code>conda install -c conda-forge jax</code></p>
 <h2 id="publications">Publications<a class="headerlink" href="#publications" title="Permanent link">¤</a></h2>
 <p>The following publications utilize this software library, and refer to it as the <em>Random Chain Motion Generator (RCMG)</em> (more specifically the function <code>ring.RCMG</code>):</p>
 <ul>
@@ -189,7 +206,7 @@
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="notebooks/getting_started/" class="btn btn-neutral float-right" title="Getting started">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="xml_syntax/" class="btn btn-neutral float-right" title="XML Syntax Documentation">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -213,7 +230,7 @@
     
     
     
-      <span><a href="notebooks/getting_started/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="xml_syntax/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
@@ -236,5 +253,5 @@
 
 <!--
 MkDocs version : 1.5.3
-Build Date UTC : 2024-07-24 14:44:38.016497+00:00
+Build Date UTC : 2025-02-14 16:46:35.656004+00:00
 -->

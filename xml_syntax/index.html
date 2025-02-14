@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ring.com/xml_syntax/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>XML Syntax Documentation - ring</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../css/ansi-colours.css" rel="stylesheet" />
+        <link href="../css/jupyter-cells.css" rel="stylesheet" />
+        <link href="../css/pandas-dataframe.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "XML Syntax Documentation";
+        var mkdocs_page_input_path = "xml_syntax.md";
+        var mkdocs_page_url = "/xml_syntax/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="..">
+          <img src="../img/icon.svg" class="logo" alt="Logo"/>
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">XML Syntax Documentation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#root-element">Root Element</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#simulation-parameters">Simulation Parameters</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#default-parameters-for-geom-and-body">Default Parameters for geom and body</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#world-definition">World Definition</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#geometry-definition-and-rendering-properties">Geometry Definition and Rendering Properties</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#bodies">Bodies</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#example-model">Example Model</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples / Notebooks</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/getting_started/">Getting started</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/batched_simulation/">Batched simulation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/control/">Control</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/custom_joint_type/">Custom joint type</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/experimental_data/">Experimental data</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/error_quaternion/">Error quaternion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/machine_learning/">Machine learning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/visualisation/">Visualisation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/knee_angle_tracking/">Knee angle tracking</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/">ring</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ring</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">XML Syntax Documentation</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="xml-syntax-documentation">XML Syntax Documentation<a class="headerlink" href="#xml-syntax-documentation" title="Permanent link">¤</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">¤</a></h2>
+<p>This document describes the XML syntax used to define a physical system. The structure includes elements for defining bodies, joints, geometries, simulation parameters, and rendering properties.</p>
+<h2 id="root-element">Root Element<a class="headerlink" href="#root-element" title="Permanent link">¤</a></h2>
+<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;model</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;example_model&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span>...
+<span class="nt">&lt;/model&gt;</span>
+</code></pre></div>
+- <code>name</code> (string, required): The name of the model.</p>
+<h2 id="simulation-parameters">Simulation Parameters<a class="headerlink" href="#simulation-parameters" title="Permanent link">¤</a></h2>
+<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;options</span><span class="w"> </span><span class="na">gravity=</span><span class="s">&quot;0 0 -9.81&quot;</span><span class="w"> </span><span class="na">dt=</span><span class="s">&quot;0.01&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+</code></pre></div>
+- <code>gravity</code> (x y z, optional): Global gravity vector.
+- <code>dt</code> (float, optional): Simulation time step.</p>
+<h2 id="default-parameters-for-geom-and-body">Default Parameters for <code>geom</code> and <code>body</code><a class="headerlink" href="#default-parameters-for-geom-and-body" title="Permanent link">¤</a></h2>
+<p>Changes the default values. For example:</p>
+<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;defaults&gt;</span>
+<span class="w">    </span><span class="nt">&lt;geom</span><span class="w"> </span><span class="na">mass=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/defaults&gt;</span>
+</code></pre></div>
+- <code>mass</code> (float, optional): Default mass of geometries.</p>
+<h2 id="world-definition">World Definition<a class="headerlink" href="#world-definition" title="Permanent link">¤</a></h2>
+<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;worldbody&gt;</span>
+<span class="w">    </span><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;base&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0 0 0&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span>...
+<span class="w">    </span><span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/worldbody&gt;</span>
+</code></pre></div>
+- <code>&lt;worldbody&gt;</code>: The root container for all bodies.
+- <code>&lt;body&gt;</code>: Defines a physical body.
+  - <code>name</code> (string, required): Unique identifier for the body.
+  - <code>pos</code> (x y z, optional): Position in world coordinates.
+  - for more see section <code>Bodies</code> below</p>
+<h2 id="geometry-definition-and-rendering-properties">Geometry Definition and Rendering Properties<a class="headerlink" href="#geometry-definition-and-rendering-properties" title="Permanent link">¤</a></h2>
+<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;geom</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;box&quot;</span><span class="w"> </span><span class="na">mass=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">size=</span><span class="s">&quot;0.5 0.5 0.5&quot;</span><span class="w"> </span><span class="na">color=</span><span class="s">&quot;0.8 0.2 0.2&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+</code></pre></div>
+- <code>mass</code> (float, required): Mass of geometry.
+- <code>type</code> (string, required): Shape type (<code>box</code>, <code>sphere</code>, <code>cylinder</code>, <code>xyz</code>, <code>capsule</code>).
+- <code>dim</code> (Vector of floats, required): Dimensions of the geometry. Its dimensionality depends on the type of the geometry. 
+    - <code>box</code>: length_x, length_y, length_z
+    - <code>sphere</code>: radius
+    - <code>cylinder</code>: radius, height
+    - <code>xyz</code>: unit_vector_length
+    - <code>capsule</code>: radius, length
+- <code>color</code> (rgb or string, optional): RGB color (normalised from 0 to 1) of the object or string identifier of a color such as green, blue, red, orange, ...
+- <code>pos</code> (x y z, optional): Position of geometry in coordinate system of surrouning body. Points to the center of mass of the geometry. Defaults to zeros.
+- <code>euler</code> (x y z, optional): Euler angles in degree. Orientation of geometry in coordinate system of surrouning body. Mutually exclusive with field <code>quat</code>. Defaults to zeros.
+- <code>quat</code> (u x y z, optional): Orientation of geometry in coordinate system of surrouning body. Mutually exclusive with field <code>euler</code>. Defaults to 1 0 0 0.</p>
+<h2 id="bodies">Bodies<a class="headerlink" href="#bodies" title="Permanent link">¤</a></h2>
+<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;hinge&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;rx&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0 0 1&quot;</span><span class="w"> </span><span class="na">euler=</span><span class="s">&quot;90 0 0&quot;</span><span class="nt">/&gt;</span>
+</code></pre></div>
+- <code>name</code> (string, required): Identifier for the body.
+- <code>type</code> (string, required): Type of joint. Possible values:
+  - <code>free</code>: 6D free joint
+  - <code>cor</code>: 9D free joint, center of rotation also moves
+  - <code>free_2d</code>: 3D free joint (1D rotation + 2D translations)
+  - <code>frozen</code>: 0D joint
+  - <code>spherical</code>: 3D rotational joint
+  - <code>px</code>, <code>py</code>, <code>pz</code> (prismatic joints): 1D translational joints around x/y/z
+  - <code>rx</code>, <code>ry</code>, <code>rz</code> (revolute joints): 1D rotational joints around x/y/z
+  - <code>saddle</code>: 2D rotational joint
+  - <code>p3d</code>: 3D translational joint
+- <code>pos</code> (x y z, optional): Position relative to parent body. Defaults to zeros.
+- <code>euler</code> (x y z, optional): Euler angles in degree. Orientation relative to parent body. Mutually exclusive with field <code>quat</code>. Defaults to zeros.
+- <code>quat</code> (u x y z, optional): Orientation relative to parent body. Mutually exclusive with field <code>euler</code>. Defaults to 1 0 0 0.
+- <code>pos_min</code> (x y z, optional): Lower bound for randomization of the <code>pos</code> value. Defaults to zeros.
+- <code>pos_max</code> (x y z, optional): Upper bound for randomization of the <code>pos</code> value. Defaults to zeros.
+- <code>damping</code> (Vector of floats, optional): Damping of the joint. It's dimensionality depends on the <code>qd</code> size of the joint type. So for a 1D joint, this is a single float, for a 3D joint it is three floats. Defaults to zeros.
+- <code>armature</code> (Vector of floats, optional): Armature of the joint. It's dimensionality depends on the <code>qd</code> size of the joint type. So for a 1D joint, this is a single float, for a 3D joint it is three floats. Defaults to zeros.
+- <code>spring_stiff</code> (Vector of floats, optional): Spring stiffness of the joint. It's dimensionality depends on the <code>qd</code> size. Defaults to zeros.
+- <code>spring_zero</code> (Vector of floats, optional): Zero point for the spring force of the joint. It's dimensionality depends on the <code>q</code> size of the joint type. Defaults to 1 0 0 0 for <code>spherical</code>, <code>cor</code>, and <code>free</code>, and to zeros else.</p>
+<h2 id="example-model">Example Model<a class="headerlink" href="#example-model" title="Permanent link">¤</a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;x_xy</span><span class="w"> </span><span class="na">model=</span><span class="s">&quot;inv_pendulum&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;options</span><span class="w"> </span><span class="na">gravity=</span><span class="s">&quot;0 0 9.81&quot;</span><span class="w"> </span><span class="na">dt=</span><span class="s">&quot;0.01&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;defaults&gt;</span>
+<span class="w">        </span><span class="nt">&lt;geom</span><span class="w"> </span><span class="na">edge_color=</span><span class="s">&quot;black&quot;</span><span class="w"> </span><span class="na">color=</span><span class="s">&quot;white&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/defaults&gt;</span>
+<span class="w">    </span><span class="nt">&lt;worldbody&gt;</span>
+<span class="w">        </span><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;cart&quot;</span><span class="w"> </span><span class="na">joint=</span><span class="s">&quot;px&quot;</span><span class="w"> </span><span class="na">damping=</span><span class="s">&quot;0.01&quot;</span><span class="nt">&gt;</span>
+<span class="w">            </span><span class="nt">&lt;geom</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;box&quot;</span><span class="w"> </span><span class="na">mass=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">dim=</span><span class="s">&quot;0.4 0.1 0.1&quot;</span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;pendulum&quot;</span><span class="w"> </span><span class="na">joint=</span><span class="s">&quot;ry&quot;</span><span class="w"> </span><span class="na">euler=</span><span class="s">&quot;0 -90 0&quot;</span><span class="w"> </span><span class="na">damping=</span><span class="s">&quot;0.01&quot;</span><span class="nt">&gt;</span>
+<span class="w">                </span><span class="nt">&lt;geom</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;box&quot;</span><span class="w"> </span><span class="na">mass=</span><span class="s">&quot;0.5&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0.5 0 0&quot;</span><span class="w"> </span><span class="na">dim=</span><span class="s">&quot;1 0.1 0.1&quot;</span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;/body&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/body&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/worldbody&gt;</span>
+<span class="nt">&lt;/x_xy&gt;</span>
+</code></pre></div>
+<p>This syntax provides a structured way to define physical systems for simulation and rendering.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../notebooks/getting_started/" class="btn btn-neutral float-right" title="Getting started">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../notebooks/getting_started/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../javascripts/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
