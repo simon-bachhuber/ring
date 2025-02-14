@@ -123,150 +123,90 @@
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">¤</a></h2>
 <p>This document describes the XML syntax used to define a physical system. The structure includes elements for defining bodies, joints, geometries, simulation parameters, and rendering properties.</p>
 <h2 id="root-element">Root Element<a class="headerlink" href="#root-element" title="Permanent link">¤</a></h2>
-<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;model</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;example_model&quot;</span><span class="nt">&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;model</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;example_model&quot;</span><span class="nt">&gt;</span>
 <span class="w">    </span>...
 <span class="nt">&lt;/model&gt;</span>
 </code></pre></div>
-- <code>name</code> (string, required): The name of the model.</p>
-<h2 id="simulation-parameters">Simulation Parameters<a class="headerlink" href="#simulation-parameters" title="Permanent link">¤</a></h2>
-<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;options</span><span class="w"> </span><span class="na">gravity=</span><span class="s">&quot;0 0 -9.81&quot;</span><span class="w"> </span><span class="na">dt=</span><span class="s">&quot;0.01&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
-</code></pre></div>
-- <code>gravity</code> (x y z, optional): Global gravity vector.</p>
 <ul>
+<li><code>name</code> (string, required): The name of the model.</li>
+</ul>
+<h2 id="simulation-parameters">Simulation Parameters<a class="headerlink" href="#simulation-parameters" title="Permanent link">¤</a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;options</span><span class="w"> </span><span class="na">gravity=</span><span class="s">&quot;0 0 -9.81&quot;</span><span class="w"> </span><span class="na">dt=</span><span class="s">&quot;0.01&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+</code></pre></div>
+<ul>
+<li><code>gravity</code> (x y z, optional): Global gravity vector.</li>
 <li><code>dt</code> (float, optional): Simulation time step.</li>
 </ul>
 <h2 id="default-parameters-for-geom-and-body">Default Parameters for <code>geom</code> and <code>body</code><a class="headerlink" href="#default-parameters-for-geom-and-body" title="Permanent link">¤</a></h2>
 <p>Changes the default values. For example:</p>
-<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;defaults&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;defaults&gt;</span>
 <span class="w">    </span><span class="nt">&lt;geom</span><span class="w"> </span><span class="na">mass=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/defaults&gt;</span>
 </code></pre></div>
-- <code>mass</code> (float, optional): Default mass of geometries.</p>
+<ul>
+<li><code>mass</code> (float, optional): Default mass of geometries.</li>
+</ul>
 <h2 id="world-definition">World Definition<a class="headerlink" href="#world-definition" title="Permanent link">¤</a></h2>
-<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;worldbody&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;worldbody&gt;</span>
 <span class="w">    </span><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;base&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0 0 0&quot;</span><span class="nt">&gt;</span>
 <span class="w">        </span>...
 <span class="w">    </span><span class="nt">&lt;/body&gt;</span>
 <span class="nt">&lt;/worldbody&gt;</span>
 </code></pre></div>
-- <code>&lt;worldbody&gt;</code>: The root container for all bodies.</p>
 <ul>
-<li>
-<p><code>&lt;body&gt;</code>: Defines a physical body.</p>
-</li>
-<li>
-<p><code>name</code> (string, required): Unique identifier for the body.</p>
-</li>
-<li>
-<p><code>pos</code> (x y z, optional): Position in world coordinates.</p>
-</li>
-<li>
-<p>for more see section <code>Bodies</code> below</p>
+<li><code>&lt;worldbody&gt;</code>: The root container for all bodies.</li>
+<li><code>&lt;body&gt;</code>: Defines a physical body.<ul>
+<li><code>name</code> (string, required): Unique identifier for the body.</li>
+<li><code>pos</code> (x y z, optional): Position in world coordinates.</li>
+<li>for more see section <code>Bodies</code> below</li>
+</ul>
 </li>
 </ul>
 <h2 id="geometry-definition-and-rendering-properties">Geometry Definition and Rendering Properties<a class="headerlink" href="#geometry-definition-and-rendering-properties" title="Permanent link">¤</a></h2>
-<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;geom</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;box&quot;</span><span class="w"> </span><span class="na">mass=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">size=</span><span class="s">&quot;0.5 0.5 0.5&quot;</span><span class="w"> </span><span class="na">color=</span><span class="s">&quot;0.8 0.2 0.2&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;geom</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;box&quot;</span><span class="w"> </span><span class="na">mass=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">size=</span><span class="s">&quot;0.5 0.5 0.5&quot;</span><span class="w"> </span><span class="na">color=</span><span class="s">&quot;0.8 0.2 0.2&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
 </code></pre></div>
-- <code>mass</code> (float, required): Mass of geometry.</p>
 <ul>
-<li>
-<p><code>type</code> (string, required): Shape type (<code>box</code>, <code>sphere</code>, <code>cylinder</code>, <code>xyz</code>, <code>capsule</code>).</p>
-</li>
-<li>
-<p><code>dim</code> (Vector of floats, required): Dimensions of the geometry. Its dimensionality depends on the type of the geometry. </p>
-<ul>
-<li>
-<p><code>box</code>: length_x, length_y, length_z</p>
-</li>
-<li>
-<p><code>sphere</code>: radius</p>
-</li>
-<li>
-<p><code>cylinder</code>: radius, height</p>
-</li>
-<li>
-<p><code>xyz</code>: unit_vector_length</p>
-</li>
-<li>
-<p><code>capsule</code>: radius, length</p>
-</li>
+<li><code>mass</code> (float, required): Mass of geometry.</li>
+<li><code>type</code> (string, required): Shape type (<code>box</code>, <code>sphere</code>, <code>cylinder</code>, <code>xyz</code>, <code>capsule</code>).</li>
+<li><code>dim</code> (Vector of floats, required): Dimensions of the geometry. Its dimensionality depends on the type of the geometry. <ul>
+<li><code>box</code>: length_x, length_y, length_z</li>
+<li><code>sphere</code>: radius</li>
+<li><code>cylinder</code>: radius, height</li>
+<li><code>xyz</code>: unit_vector_length</li>
+<li><code>capsule</code>: radius, length</li>
 </ul>
 </li>
-<li>
-<p><code>color</code> (rgb or string, optional): RGB color (normalised from 0 to 1) of the object or string identifier of a color such as green, blue, red, orange, ...</p>
-</li>
-<li>
-<p><code>pos</code> (x y z, optional): Position of geometry in coordinate system of surrouning body. Points to the center of mass of the geometry. Defaults to zeros.</p>
-</li>
-<li>
-<p><code>euler</code> (x y z, optional): Euler angles in degree. Orientation of geometry in coordinate system of surrouning body. Mutually exclusive with field <code>quat</code>. Defaults to zeros.</p>
-</li>
-<li>
-<p><code>quat</code> (u x y z, optional): Orientation of geometry in coordinate system of surrouning body. Mutually exclusive with field <code>euler</code>. Defaults to 1 0 0 0.</p>
-</li>
+<li><code>color</code> (rgb or string, optional): RGB color (normalised from 0 to 1) of the object or string identifier of a color such as green, blue, red, orange, ...</li>
+<li><code>pos</code> (x y z, optional): Position of geometry in coordinate system of surrouning body. Points to the center of mass of the geometry. Defaults to zeros.</li>
+<li><code>euler</code> (x y z, optional): Euler angles in degree. Orientation of geometry in coordinate system of surrouning body. Mutually exclusive with field <code>quat</code>. Defaults to zeros.</li>
+<li><code>quat</code> (u x y z, optional): Orientation of geometry in coordinate system of surrouning body. Mutually exclusive with field <code>euler</code>. Defaults to 1 0 0 0.</li>
 </ul>
 <h2 id="bodies">Bodies<a class="headerlink" href="#bodies" title="Permanent link">¤</a></h2>
-<p><div class="highlight"><pre><span></span><code><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;hinge&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;rx&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0 0 1&quot;</span><span class="w"> </span><span class="na">euler=</span><span class="s">&quot;90 0 0&quot;</span><span class="nt">/&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;hinge&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;rx&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0 0 1&quot;</span><span class="w"> </span><span class="na">euler=</span><span class="s">&quot;90 0 0&quot;</span><span class="nt">/&gt;</span>
 </code></pre></div>
-- <code>name</code> (string, required): Identifier for the body.</p>
 <ul>
-<li>
-<p><code>type</code> (string, required): Type of joint. Possible values:</p>
+<li><code>name</code> (string, required): Identifier for the body.</li>
+<li><code>type</code> (string, required): Type of joint. Possible values:<ul>
+<li><code>free</code>: 6D free joint</li>
+<li><code>cor</code>: 9D free joint, center of rotation also moves</li>
+<li><code>free_2d</code>: 3D free joint (1D rotation + 2D translations)</li>
+<li><code>frozen</code>: 0D joint</li>
+<li><code>spherical</code>: 3D rotational joint</li>
+<li><code>px</code>, <code>py</code>, <code>pz</code> (prismatic joints): 1D translational joints around x/y/z</li>
+<li><code>rx</code>, <code>ry</code>, <code>rz</code> (revolute joints): 1D rotational joints around x/y/z</li>
+<li><code>saddle</code>: 2D rotational joint</li>
+<li><code>p3d</code>: 3D translational joint</li>
+</ul>
 </li>
-<li>
-<p><code>free</code>: 6D free joint</p>
-</li>
-<li>
-<p><code>cor</code>: 9D free joint, center of rotation also moves</p>
-</li>
-<li>
-<p><code>free_2d</code>: 3D free joint (1D rotation + 2D translations)</p>
-</li>
-<li>
-<p><code>frozen</code>: 0D joint</p>
-</li>
-<li>
-<p><code>spherical</code>: 3D rotational joint</p>
-</li>
-<li>
-<p><code>px</code>, <code>py</code>, <code>pz</code> (prismatic joints): 1D translational joints around x/y/z</p>
-</li>
-<li>
-<p><code>rx</code>, <code>ry</code>, <code>rz</code> (revolute joints): 1D rotational joints around x/y/z</p>
-</li>
-<li>
-<p><code>saddle</code>: 2D rotational joint</p>
-</li>
-<li>
-<p><code>p3d</code>: 3D translational joint</p>
-</li>
-<li>
-<p><code>pos</code> (x y z, optional): Position relative to parent body. Defaults to zeros.</p>
-</li>
-<li>
-<p><code>euler</code> (x y z, optional): Euler angles in degree. Orientation relative to parent body. Mutually exclusive with field <code>quat</code>. Defaults to zeros.</p>
-</li>
-<li>
-<p><code>quat</code> (u x y z, optional): Orientation relative to parent body. Mutually exclusive with field <code>euler</code>. Defaults to 1 0 0 0.</p>
-</li>
-<li>
-<p><code>pos_min</code> (x y z, optional): Lower bound for randomization of the <code>pos</code> value. Defaults to zeros.</p>
-</li>
-<li>
-<p><code>pos_max</code> (x y z, optional): Upper bound for randomization of the <code>pos</code> value. Defaults to zeros.</p>
-</li>
-<li>
-<p><code>damping</code> (Vector of floats, optional): Damping of the joint. It's dimensionality depends on the <code>qd</code> size of the joint type. So for a 1D joint, this is a single float, for a 3D joint it is three floats. Defaults to zeros.</p>
-</li>
-<li>
-<p><code>armature</code> (Vector of floats, optional): Armature of the joint. It's dimensionality depends on the <code>qd</code> size of the joint type. So for a 1D joint, this is a single float, for a 3D joint it is three floats. Defaults to zeros.</p>
-</li>
-<li>
-<p><code>spring_stiff</code> (Vector of floats, optional): Spring stiffness of the joint. It's dimensionality depends on the <code>qd</code> size. Defaults to zeros.</p>
-</li>
-<li>
-<p><code>spring_zero</code> (Vector of floats, optional): Zero point for the spring force of the joint. It's dimensionality depends on the <code>q</code> size of the joint type. Defaults to 1 0 0 0 for <code>spherical</code>, <code>cor</code>, and <code>free</code>, and to zeros else.</p>
-</li>
+<li><code>pos</code> (x y z, optional): Position relative to parent body. Defaults to zeros.</li>
+<li><code>euler</code> (x y z, optional): Euler angles in degree. Orientation relative to parent body. Mutually exclusive with field <code>quat</code>. Defaults to zeros.</li>
+<li><code>quat</code> (u x y z, optional): Orientation relative to parent body. Mutually exclusive with field <code>euler</code>. Defaults to 1 0 0 0.</li>
+<li><code>pos_min</code> (x y z, optional): Lower bound for randomization of the <code>pos</code> value. Defaults to zeros.</li>
+<li><code>pos_max</code> (x y z, optional): Upper bound for randomization of the <code>pos</code> value. Defaults to zeros.</li>
+<li><code>damping</code> (Vector of floats, optional): Damping of the joint. It's dimensionality depends on the <code>qd</code> size of the joint type. So for a 1D joint, this is a single float, for a 3D joint it is three floats. Defaults to zeros.</li>
+<li><code>armature</code> (Vector of floats, optional): Armature of the joint. It's dimensionality depends on the <code>qd</code> size of the joint type. So for a 1D joint, this is a single float, for a 3D joint it is three floats. Defaults to zeros.</li>
+<li><code>spring_stiff</code> (Vector of floats, optional): Spring stiffness of the joint. It's dimensionality depends on the <code>qd</code> size. Defaults to zeros.</li>
+<li><code>spring_zero</code> (Vector of floats, optional): Zero point for the spring force of the joint. It's dimensionality depends on the <code>q</code> size of the joint type. Defaults to 1 0 0 0 for <code>spherical</code>, <code>cor</code>, and <code>free</code>, and to zeros else.</li>
 </ul>
 <h2 id="example-model">Example Model<a class="headerlink" href="#example-model" title="Permanent link">¤</a></h2>
 <div class="highlight"><pre><span></span><code><span class="nt">&lt;x_xy</span><span class="w"> </span><span class="na">model=</span><span class="s">&quot;inv_pendulum&quot;</span><span class="nt">&gt;</span>
