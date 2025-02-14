@@ -4,6 +4,7 @@ site_description: The documentation for the ring software library.
 
 nav:
   - 'index.md'
+  - 'xml_syntax.md'
   - Examples / Notebooks:
     - 'notebooks/getting_started.ipynb'
     - 'notebooks/batched_simulation.ipynb'
