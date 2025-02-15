@@ -297,7 +297,8 @@ class NoGraph_FilterWrapper(AbstractFilterWrapper):
 
         if self._quat_normalize:
             assert yhat.shape[-1] == 4, f"yhat.shape={yhat.shape}"
-            yhat = ring.maths.safe_normalize(yhat)
+            # yhat = ring.maths.safe_normalize(yhat)
+            yhat = yhat / jnp.linalg.norm(yhat, axis=-1, keepdims=True)
 
         return yhat, state
 

@@ -1,9 +1,13 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/SimiPixel/ring/main/docs/img/icon.svg" height="200" />
+<img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/icon.svg" height="200" />
 </p>
 
 # Recurrent Inertial Graph-based Estimator (RING)
-<img src="https://raw.githubusercontent.com/SimiPixel/ring/main/docs/img/coverage_badge.svg" height="20" />
+<img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/coverage_badge.svg" height="20" />
+
+> **ℹ️ Tip:**
+> 
+> Check out my new plug-and-play interface for inertial motion tracking (RING included) [here](https://github.com/simon-bachhuber/imt.git).
 
 ## Installation
 
@@ -64,6 +68,14 @@ Solution:
 import os
 os.environ["MUJOCO_GL"] = "egl"
 ```
+
+#### Windows-related: ImportError: DLL load failed while importing ...
+
+> ImportError: DLL load failed while importing _multiarray_umath: Das angegebene Modul wurde nicht gefunden.
+
+Solution:
+1. `pip uninstall -y jax jaxlib`
+2. `conda install -c conda-forge jax`
 
 ## Publications
 

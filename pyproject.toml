@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "imt-ring"
-version = "1.6.38"
+version = "1.6.39"
 authors = [
   { name="Simon Bachhuber", email="simon.bachhuber@fau.de" },
 ]

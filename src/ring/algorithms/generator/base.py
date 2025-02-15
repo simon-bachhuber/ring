@@ -53,7 +53,85 @@ class RCMG:
         cor: bool = False,
         disable_tqdm: bool = False,
     ) -> None:
-        "Random Chain Motion Generator"
+        """
+        Initializes the Random Chain Motion Generator (RCMG).
+
+        The RCMG generates synthetic joint motion sequences for kinematic and dynamic
+        systems based on predefined motion configurations. It allows for system
+        randomization, augmentation with IMU and joint axis data, and optional
+        dynamic simulation.
+
+        Args:
+            sys (base.System | list[base.System]):
+                The system(s) for which motion should be generated.
+            config (jcalc.MotionConfig | list[jcalc.MotionConfig], optional):
+                Motion configuration(s) defining velocity limits, interpolation methods,
+                and range constraints. Defaults to `jcalc.MotionConfig()`.
+            setup_fn (Optional[types.SETUP_FN], optional):
+                A function to modify the system before motion generation. Defaults to `None`.
+            finalize_fn (Optional[types.FINALIZE_FN], optional):
+                A function to modify outputs after motion generation. Defaults to `None`.
+            add_X_imus (bool, optional):
+                Whether to add IMU sensor data to the output. Defaults to `False`.
+            add_X_imus_kwargs (dict, optional):
+                Additional keyword arguments for IMU data processing. Defaults to `{}`.
+            add_X_jointaxes (bool, optional):
+                Whether to add joint axis data to the output. Defaults to `False`.
+            add_X_jointaxes_kwargs (dict, optional):
+                Additional keyword arguments for joint axis data processing. Defaults to `{}`.
+            add_y_relpose (bool, optional):
+                Whether to add relative pose targets to the output. Defaults to `False`.
+            add_y_rootincl (bool, optional):
+                Whether to add root inclination targets to the output. Defaults to `False`.
+            add_y_rootincl_kwargs (dict, optional):
+                Additional keyword arguments for root inclination processing. Defaults to `{}`.
+            add_y_rootfull (bool, optional):
+                Whether to add full root state targets to the output. Defaults to `False`.
+            add_y_rootfull_kwargs (dict, optional):
+                Additional keyword arguments for full root state processing. Defaults to `{}`.
+            sys_ml (Optional[base.System], optional):
+                System that defines the graph and naming structure of the `X` and `y` outputs. Defaults to `None` which then uses the first provided system.
+            randomize_positions (bool, optional):
+                Whether to randomised positions based on `pos_min` and `pos_max`. Defaults to `False`.
+            randomize_motion_artifacts (bool, optional):
+                Whether to randomize the IMU motion artifact simulation. This randomises the spring stiffness and spring damping parameters of the passive free joint that is added between nonrigid and rigid IMU. Defaults to `False`.
+            randomize_joint_params (bool, optional):
+                Whether to randomize joint parameters by calling `JointModel.init_joint_params` before every sequence generation. Defaults to `False`.
+            randomize_hz (bool, optional):
+                Whether to randomize the sampling frequency of the generated data. Defaults to `False`.
+            randomize_hz_kwargs (dict, optional):
+                Additional keyword arguments for sampling frequency randomization. Defaults to `{}`.
+            imu_motion_artifacts (bool, optional):
+                Whether to simulate nonrigid IMU motion artifacts. Defaults to `False`.
+            imu_motion_artifacts_kwargs (dict, optional):
+                Additional keyword arguments for IMU motion artifact simulation. Defaults to `{}`.
+            dynamic_simulation (bool, optional):
+                Whether to use a physics-based simulation to generate motion instead of purely
+                kinematic methods. Defaults to `False`.
+            dynamic_simulation_kwargs (dict, optional):
+                Additional keyword arguments for dynamic simulation. Defaults to `{}`.
+            output_transform (Optional[Callable], optional):
+                A function to transform the generated output data. Defaults to `None`.
+            keep_output_extras (bool, optional):
+                Whether to keep additional output metadata. Defaults to `False`.
+            use_link_number_in_Xy (bool, optional):
+                Whether to replace joint names with numerical indices in the output. Defaults to `False`.
+            cor (bool, optional):
+                Whether to replace free joints with center-of-rotation (COR) 9D free joint. Defaults to `False`.
+            disable_tqdm (bool, optional):
+                Whether to disable progress bars during generation. Defaults to `False`.
+
+        Raises:
+            AssertionError: If any of the provided `MotionConfig` instances are infeasible.
+
+        Notes:
+            - This class supports batch generation, lazy and eager data loading, and
+              motion augmentation.
+            - If `randomize_hz=True`, the time step (`dt`) varies according to the specified
+              sampling rates.
+            - When `cor=True`, free joints are replaced with center-of-rotation models,
+              affecting joint motion behavior.
+        """  # noqa: E501
 
         # add some default values
         randomize_hz_kwargs_defaults = dict(add_dt=True)
@@ -139,6 +217,7 @@ class RCMG:
     def to_lazy_gen(
         self, sizes: int | list[int] = 1, jit: bool = True
     ) -> types.BatchedGenerator:
+        "Returns a generator `X, y = gen(key)` that lazily generates batched sequences."
         return batch.generators_lazy(self.gens, self._compute_repeats(sizes), jit)
 
     @staticmethod
@@ -201,7 +280,7 @@ class RCMG:
         ),
         verbose: bool = True,
     ):
-
+        "Stores unbatched sequences as numpy arrays into folder."
         i = 0
 
         def callback(data: list[PyTree[np.ndarray]]) -> None:
@@ -237,6 +316,7 @@ class RCMG:
         shuffle: bool = True,
         transform=None,
     ) -> types.BatchedGenerator:
+        "Returns a generator `X, y = gen(key)` that returns precomputed batched sequences."  # noqa: E501
         data = self.to_list(sizes, seed)
         assert len(data) >= batchsize
         return self.eager_gen_from_list(data, batchsize, shuffle, transform)

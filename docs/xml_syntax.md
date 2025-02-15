@@ -5,16 +5,18 @@ This document describes the XML syntax used to define a physical system. The str
 
 ## Root Element
 ```xml
-<model name="example_model">
+<x_xy name="example_model">
     ...
-</model>
+</x_xy>
 ```
+
 - `name` (string, required): The name of the model.
 
 ## Simulation Parameters
 ```xml
 <options gravity="0 0 -9.81" dt="0.01" />
 ```
+
 - `gravity` (x y z, optional): Global gravity vector.
 - `dt` (float, optional): Simulation time step.
 
@@ -26,26 +28,30 @@ Changes the default values. For example:
     <geom mass="1.0"/>
 </defaults>
 ```
+
 - `mass` (float, optional): Default mass of geometries.
 
 ## World Definition
 ```xml
 <worldbody>
-    <body name="base" pos="0 0 0">
+    <body name="base" joint="free" pos="0 0 0">
         ...
     </body>
 </worldbody>
 ```
+
 - `<worldbody>`: The root container for all bodies.
 - `<body>`: Defines a physical body.
-  - `name` (string, required): Unique identifier for the body.
-  - `pos` (x y z, optional): Position in world coordinates.
-  - for more see section `Bodies` below
+    - `name` (string, required): Unique identifier for the body.
+    - `joint` (string, required): Type of joint connecting to worldbody.
+    - `pos` (x y z, optional): Position in world coordinates.
+    - for more see section `Bodies` below
 
 ## Geometry Definition and Rendering Properties
 ```xml
 <geom type="box" mass="1" size="0.5 0.5 0.5" color="0.8 0.2 0.2" />
 ```
+
 - `mass` (float, required): Mass of geometry.
 - `type` (string, required): Shape type (`box`, `sphere`, `cylinder`, `xyz`, `capsule`).
 - `dim` (Vector of floats, required): Dimensions of the geometry. Its dimensionality depends on the type of the geometry. 
@@ -60,20 +66,25 @@ Changes the default values. For example:
 - `quat` (u x y z, optional): Orientation of geometry in coordinate system of surrouning body. Mutually exclusive with field `euler`. Defaults to 1 0 0 0.
 
 ## Bodies
+
 ```xml
-<body name="hinge" type="rx" pos="0 0 1" euler="90 0 0"/>
+<body name="hinge" joint="rx" pos="0 0 1" euler="90 0 0"/>
 ```
+
 - `name` (string, required): Identifier for the body.
-- `type` (string, required): Type of joint. Possible values:
-  - `free`: 6D free joint
-  - `cor`: 9D free joint, center of rotation also moves
-  - `free_2d`: 3D free joint (1D rotation + 2D translations)
-  - `frozen`: 0D joint
-  - `spherical`: 3D rotational joint
-  - `px`, `py`, `pz` (prismatic joints): 1D translational joints around x/y/z
-  - `rx`, `ry`, `rz` (revolute joints): 1D rotational joints around x/y/z
-  - `saddle`: 2D rotational joint
-  - `p3d`: 3D translational joint
+- `joint` (string, required): Type of joint. Possible values:
+    - `free`: 6D free joint
+    - `cor`: 9D free joint, center of rotation also moves
+    - `free_2d`: 3D free joint (1D rotation + 2D translations)
+    - `frozen`: 0D joint
+    - `spherical`: 3D rotational joint
+    - `px`, `py`, `pz` (prismatic joints): 1D translational joints around x/y/z
+    - `rx`, `ry`, `rz` (revolute joints): 1D rotational joints around x/y/z
+    - `saddle`: 2D rotational joint
+    - `p3d`: 3D translational joint
+    - `rr` (custom joint): 1D rotational joint with randomised joint axis direction
+    - `rr_imp` (custom joint): 1D rotational joint with randomised joint axis direction that is not a perfect 1D joint; there is a small secondary rotation possible
+    - `rsaddle` (custom joint): 2D rotational joint with randomised joint axes directions 
 - `pos` (x y z, optional): Position relative to parent body. Defaults to zeros.
 - `euler` (x y z, optional): Euler angles in degree. Orientation relative to parent body. Mutually exclusive with field `quat`. Defaults to zeros.
 - `quat` (u x y z, optional): Orientation relative to parent body. Mutually exclusive with field `euler`. Defaults to 1 0 0 0.
@@ -89,7 +100,7 @@ Changes the default values. For example:
 <x_xy model="inv_pendulum">
     <options gravity="0 0 9.81" dt="0.01"/>
     <defaults>
-        <geom edge_color="black" color="white"/>
+        <geom color="white"/>
     </defaults>
     <worldbody>
         <body name="cart" joint="px" damping="0.01">
@@ -101,5 +112,3 @@ Changes the default values. For example:
     </worldbody>
 </x_xy>
 ```
-
-This syntax provides a structured way to define physical systems for simulation and rendering.

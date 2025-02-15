@@ -303,7 +303,33 @@ def step(
     taus: Optional[jax.Array] = None,
     n_substeps: int = 1,
 ) -> base.State:
-    "Steps the dynamics. Returns the state of next timestep."
+    """
+    Advances the system dynamics by a single timestep using semi-implicit Euler integration.
+
+    This function updates the system's state by integrating the equations of motion
+    over a timestep, potentially with multiple substeps for improved numerical stability.
+    The method ensures that the system's kinematics are updated before each integration step.
+
+    Args:
+        sys (base.System):
+            The system to simulate, containing link information, joint dynamics, and integration parameters.
+        state (base.State):
+            The current state of the system, including joint positions (`q`), velocities (`qd`), and transforms (`x`).
+        taus (Optional[jax.Array], optional):
+            The control torques applied to the system joints. If `None`, zero torques are applied.
+            Defaults to `None`.
+        n_substeps (int, optional):
+            The number of integration substeps per timestep to improve numerical accuracy.
+            Defaults to `1`.
+
+    Returns:
+        base.State:
+            The updated state of the system after integration.
+
+    Raises:
+        AssertionError: If the system's degrees of freedom (`q` and `qd`) do not match expectations.
+        AssertionError: If an unsupported integration method is specified in `sys.integration_method`.
+    """  # noqa: E501
     assert sys.q_size() == state.q.size
     if taus is None:
         taus = jnp.zeros_like(state.qd)

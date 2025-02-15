@@ -19,6 +19,87 @@ from ring.algorithms._random import TimeDependentFloat
 
 @dataclass
 class MotionConfig:
+    """
+    Configuration for joint motion generation in kinematic and dynamic simulations.
+
+    This class defines the constraints and parameters for generating random joint motions,
+    including angular and positional velocity limits, interpolation methods, and range
+    restrictions for various joint types.
+
+    Attributes:
+        T (float): Total duration of the motion sequence (in seconds).
+        t_min (float): Minimum time interval between two generated joint states.
+        t_max (float | TimeDependentFloat): Maximum time interval between two generated joint states.
+
+        dang_min (float | TimeDependentFloat): Minimum angular velocity (rad/s).
+        dang_max (float | TimeDependentFloat): Maximum angular velocity (rad/s).
+        dang_min_free_spherical (float | TimeDependentFloat): Minimum angular velocity for free and spherical joints.
+        dang_max_free_spherical (float | TimeDependentFloat): Maximum angular velocity for free and spherical joints.
+
+        delta_ang_min (float | TimeDependentFloat): Minimum allowed change in joint angle (radians).
+        delta_ang_max (float | TimeDependentFloat): Maximum allowed change in joint angle (radians).
+        delta_ang_min_free_spherical (float | TimeDependentFloat): Minimum allowed change in angle for free/spherical joints.
+        delta_ang_max_free_spherical (float | TimeDependentFloat): Maximum allowed change in angle for free/spherical joints.
+
+        dpos_min (float | TimeDependentFloat): Minimum translational velocity.
+        dpos_max (float | TimeDependentFloat): Maximum translational velocity.
+        pos_min (float | TimeDependentFloat): Minimum position constraint.
+        pos_max (float | TimeDependentFloat): Maximum position constraint.
+
+        pos_min_p3d_x (float | TimeDependentFloat): Minimum position in x-direction for P3D joints.
+        pos_max_p3d_x (float | TimeDependentFloat): Maximum position in x-direction for P3D joints.
+        pos_min_p3d_y (float | TimeDependentFloat): Minimum position in y-direction for P3D joints.
+        pos_max_p3d_y (float | TimeDependentFloat): Maximum position in y-direction for P3D joints.
+        pos_min_p3d_z (float | TimeDependentFloat): Minimum position in z-direction for P3D joints.
+        pos_max_p3d_z (float | TimeDependentFloat): Maximum position in z-direction for P3D joints.
+
+        cdf_bins_min (int): Minimum number of bins for cumulative distribution function (CDF)-based random sampling.
+        cdf_bins_max (Optional[int]): Maximum number of bins for CDF-based sampling.
+
+        randomized_interpolation_angle (bool): Whether to use randomized interpolation for angular motion.
+        randomized_interpolation_position (bool): Whether to use randomized interpolation for positional motion.
+        interpolation_method (str): Interpolation method to be used (default: "cosine").
+
+        range_of_motion_hinge (bool): Whether to enforce range-of-motion constraints on hinge joints.
+        range_of_motion_hinge_method (str): Method used for range-of-motion enforcement (e.g., "uniform", "sigmoid").
+
+        rom_halfsize (float | TimeDependentFloat): Half-size of the range of motion restriction.
+
+        ang0_min (float): Minimum initial joint angle.
+        ang0_max (float): Maximum initial joint angle.
+        pos0_min (float): Minimum initial joint position.
+        pos0_max (float): Maximum initial joint position.
+
+        cor_t_min (float): Minimum time step for center-of-rotation (COR) joints.
+        cor_t_max (float | TimeDependentFloat): Maximum time step for COR joints.
+        cor_dpos_min (float | TimeDependentFloat): Minimum velocity for COR translation.
+        cor_dpos_max (float | TimeDependentFloat): Maximum velocity for COR translation.
+        cor_pos_min (float | TimeDependentFloat): Minimum position for COR translation.
+        cor_pos_max (float | TimeDependentFloat): Maximum position for COR translation.
+        cor_pos0_min (float): Initial minimum position for COR translation.
+        cor_pos0_max (float): Initial maximum position for COR translation.
+
+        joint_type_specific_overwrites (dict[str, dict[str, Any]]):
+            A dictionary mapping joint types to specific motion configuration overrides.
+
+    Methods:
+        is_feasible:
+            Checks if the motion configuration satisfies all constraints.
+
+        to_nomotion_config:
+            Returns a new `MotionConfig` where all velocities and angle changes are set to zero.
+
+        overwrite_for_joint_type:
+            Applies specific configuration changes for a given joint type.
+            Note: These changes affect all instances of `MotionConfig` for this joint type.
+
+        overwrite_for_subsystem:
+            Modifies the motion configuration for all joints in a subsystem rooted at `link_name`.
+
+        from_register:
+            Retrieves a predefined `MotionConfig` from the global registry.
+    """  # noqa: E501
+
     T: float = 60.0  # length of random motion
     t_min: float = 0.05  # min time between two generated angles
     t_max: float | TimeDependentFloat = 0.30  # max time ..
@@ -412,6 +493,30 @@ def _find_interval(t: jax.Array, boundaries: jax.Array):
 def join_motionconfigs(
     configs: list[MotionConfig], boundaries: list[float]
 ) -> MotionConfig:
+    """
+    Joins multiple `MotionConfig` objects in time, transitioning between them at specified boundaries.
+
+    This function takes a list of `MotionConfig` instances and a corresponding list of boundary times,
+    and constructs a new `MotionConfig` that varies in time according to the provided segments.
+
+    Args:
+        configs (list[MotionConfig]): A list of `MotionConfig` objects to be joined.
+        boundaries (list[float]): A list of time values where transitions between `configs` occur.
+            Must have one element less than `configs`, as each boundary defines the transition point
+            between two consecutive configurations.
+
+    Returns:
+        MotionConfig: A new `MotionConfig` object where time-dependent fields transition based on the
+        specified boundaries.
+
+    Raises:
+        AssertionError: If the number of boundaries does not match `len(configs) - 1`.
+        AssertionError: If time-independent fields have differing values across `configs`.
+
+    Notes:
+        - Only fields that are time-dependent (`float | TimeDependentFloat`) will change over time.
+        - Time-independent fields must be the same in all `configs`, or an error is raised.
+    """  # noqa: E501
     # to avoid a circular import due to `ring.utils.randomize_sys` importing `jcalc`
     from ring.utils import tree_equal
 
@@ -517,6 +622,55 @@ INV_KIN = Callable[[base.Transform, tree_utils.PyTree], jax.Array]
 
 @dataclass
 class JointModel:
+    """
+    Represents the kinematic and dynamic properties of a joint type.
+
+    A `JointModel` defines the mathematical functions required to compute joint
+    transformations, motion, control terms, and inverse kinematics. It is used to
+    describe the behavior of various joint types, including revolute, prismatic,
+    spherical, and free joints.
+
+    Attributes:
+        transform (Callable[[jax.Array, jax.Array], base.Transform]):
+            Computes the transformation (position and orientation) of the joint
+            given the joint state `q` and joint parameters.
+
+        motion (list[base.Motion | Callable[[jax.Array], base.Motion]]):
+            Defines the joint motion model. It can be a list of `Motion` objects
+            or callables that return `Motion` based on joint parameters.
+
+        rcmg_draw_fn (Optional[DRAW_FN]):
+            Function used to generate a reference motion trajectory for the joint
+            using Randomized Control Motion Generation (RCMG).
+
+        p_control_term (Optional[P_CONTROL_TERM]):
+            Function that computes the proportional control term for the joint.
+
+        qd_from_q (Optional[QD_FROM_Q]):
+            Function to compute joint velocity (`qd`) from joint positions (`q`).
+
+        coordinate_vector_to_q (Optional[COORDINATE_VECTOR_TO_Q]):
+            Function that maps a coordinate vector to a valid joint state `q`,
+            ensuring constraints (e.g., wrapping angles or normalizing quaternions).
+
+        inv_kin (Optional[INV_KIN]):
+            Function that computes the inverse kinematics for the joint, mapping
+            a desired transform to joint coordinates `q`.
+
+        init_joint_params (Optional[INIT_JOINT_PARAMS]):
+            Function that initializes joint-specific parameters.
+
+        utilities (Optional[dict[str, Any]]):
+            Additional utility functions or metadata related to the joint model.
+
+    Notes:
+        - The `transform` function is essential for computing the joint's spatial
+          transformation based on its generalized coordinates.
+        - The `motion` attribute describes how forces and torques affect the joint.
+        - The `rcmg_draw_fn` is used for RCMG motion generation.
+        - The `coordinate_vector_to_q` is critical for maintaining valid joint states.
+    """  # noqa: E501
+
     # (q, params) -> Transform
     transform: Callable[[jax.Array, jax.Array], base.Transform]
     # len(motion) == len(qd)
@@ -1079,6 +1233,50 @@ def register_new_joint_type(
     qd_width: Optional[int] = None,
     overwrite: bool = False,
 ):
+    """
+    Registers a new joint type with its corresponding `JointModel` and kinematic properties.
+
+    This function allows the addition of custom joint types to the system by associating
+    them with a `JointModel`, specifying their state and velocity dimensions, and optionally
+    overwriting existing joint definitions.
+
+    Args:
+        joint_type (str):
+            Name of the new joint type to register.
+        joint_model (JointModel):
+            The `JointModel` instance defining the kinematic and dynamic properties of the joint.
+        q_width (int):
+            Number of generalized coordinates (degrees of freedom) required to represent the joint.
+        qd_width (Optional[int], default=None):
+            Number of velocity coordinates associated with the joint. Defaults to `q_width`.
+        overwrite (bool, default=False):
+            If `True`, allows overwriting an existing joint type. Otherwise, raises an error if
+            the joint type already exists.
+
+    Raises:
+        AssertionError:
+            - If `joint_type` is `"default"` (reserved name).
+            - If `joint_type` already exists and `overwrite=False`.
+            - If `qd_width` is not provided and does not default to `q_width`.
+            - If `joint_model.motion` length does not match `qd_width`.
+
+    Notes:
+        - The function updates global dictionaries that store joint properties, including:
+          - `_joint_types`: Maps joint type names to `JointModel` instances.
+          - `base.Q_WIDTHS`: Stores the number of state coordinates for each joint type.
+          - `base.QD_WIDTHS`: Stores the number of velocity coordinates for each joint type.
+        - If `overwrite=True`, existing entries are removed before adding the new joint type.
+        - Ensures consistency between motion definitions and velocity coordinate dimensions.
+
+    Example:
+        ```python
+        new_joint = JointModel(
+            transform=my_transform_fn,
+            motion=[base.Motion.create(ang=jnp.array([1, 0, 0]))],
+        )
+        register_new_joint_type("custom_hinge", new_joint, q_width=1)
+        ```
+    """  # noqa: E501
     # this name is used
     assert joint_type != "default", "Please use another name."
 

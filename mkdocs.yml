@@ -5,6 +5,7 @@ site_description: The documentation for the ring software library.
 nav:
   - 'index.md'
   - 'xml_syntax.md'
+  - 'api.md'
   - Examples / Notebooks:
     - 'notebooks/getting_started.ipynb'
     - 'notebooks/batched_simulation.ipynb'
@@ -15,8 +16,6 @@ nav:
     - 'notebooks/machine_learning.ipynb'
     - 'notebooks/visualisation.ipynb'
     - 'notebooks/knee_angle_tracking.ipynb'
-  - API:
-    - ring: 'api.md'
 
 theme:
     name: readthedocs
@@ -53,6 +52,10 @@ plugins:
                     show_root_full_path: false
                     show_if_no_docstring: false
                     show_signature_annotations: false
-                    members_order: source  # order methods according to their order of definition in the source code, not alphabetical order
+                    members_order: source # order methods according to their order of definition in the source code, not alphabetical order
                     heading_level: 4  # Makes everything top-level be <h4>. Child entries will be <h5> etc., but because of toc_depth, above, (deliberately) won't appear in the TOC.
                     show_bases: false
+                    separate_signature: true  # Show function signatures separately
+                    docstring_section_style: table  # Formats docstring sections in tables
+                    show_source: false  # Hide source code by default
+                    group_by_category: true  # Groups methods by class/module
