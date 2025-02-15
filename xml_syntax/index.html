@@ -148,7 +148,7 @@
 </ul>
 <h2 id="world-definition">World Definition<a class="headerlink" href="#world-definition" title="Permanent link">¤</a></h2>
 <div class="highlight"><pre><span></span><code><span class="nt">&lt;worldbody&gt;</span>
-<span class="w">    </span><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;base&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0 0 0&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;base&quot;</span><span class="w"> </span><span class="na">joint=</span><span class="s">&quot;free&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0 0 0&quot;</span><span class="nt">&gt;</span>
 <span class="w">        </span>...
 <span class="w">    </span><span class="nt">&lt;/body&gt;</span>
 <span class="nt">&lt;/worldbody&gt;</span>
@@ -157,6 +157,7 @@
 <li><code>&lt;worldbody&gt;</code>: The root container for all bodies.</li>
 <li><code>&lt;body&gt;</code>: Defines a physical body.<ul>
 <li><code>name</code> (string, required): Unique identifier for the body.</li>
+<li><code>joint</code> (string, required): Type of joint connecting to worldbody.</li>
 <li><code>pos</code> (x y z, optional): Position in world coordinates.</li>
 <li>for more see section <code>Bodies</code> below</li>
 </ul>
@@ -182,11 +183,11 @@
 <li><code>quat</code> (u x y z, optional): Orientation of geometry in coordinate system of surrouning body. Mutually exclusive with field <code>euler</code>. Defaults to 1 0 0 0.</li>
 </ul>
 <h2 id="bodies">Bodies<a class="headerlink" href="#bodies" title="Permanent link">¤</a></h2>
-<div class="highlight"><pre><span></span><code><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;hinge&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;rx&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0 0 1&quot;</span><span class="w"> </span><span class="na">euler=</span><span class="s">&quot;90 0 0&quot;</span><span class="nt">/&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;body</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;hinge&quot;</span><span class="w"> </span><span class="na">joint=</span><span class="s">&quot;rx&quot;</span><span class="w"> </span><span class="na">pos=</span><span class="s">&quot;0 0 1&quot;</span><span class="w"> </span><span class="na">euler=</span><span class="s">&quot;90 0 0&quot;</span><span class="nt">/&gt;</span>
 </code></pre></div>
 <ul>
 <li><code>name</code> (string, required): Identifier for the body.</li>
-<li><code>type</code> (string, required): Type of joint. Possible values:<ul>
+<li><code>joint</code> (string, required): Type of joint. Possible values:<ul>
 <li><code>free</code>: 6D free joint</li>
 <li><code>cor</code>: 9D free joint, center of rotation also moves</li>
 <li><code>free_2d</code>: 3D free joint (1D rotation + 2D translations)</li>
