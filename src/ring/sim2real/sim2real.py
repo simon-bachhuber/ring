@@ -1,13 +1,14 @@
 from typing import Optional, Tuple
 
 import jax
+import tree_utils
+
 from ring import algebra
 from ring import base
 from ring import io
 from ring import maths
 from ring.algorithms import generator
 from ring.algorithms import jcalc
-import tree_utils
 
 
 def xs_from_raw(
@@ -189,7 +190,14 @@ def delete_to_world_pos_rot(sys: base.System, xs: base.Transform) -> base.Transf
 
 
 def randomize_to_world_pos_rot(
-    key: jax.Array, sys: base.System, xs: base.Transform, config: jcalc.MotionConfig
+    key: jax.Array,
+    sys: base.System,
+    xs: base.Transform,
+    config: jcalc.MotionConfig,
+    world_joint: str = "free",
+    cor: bool = False,
+    overwrite_q_ref: jax.Array = None,
+    damping=None,
 ) -> base.Transform:
     """Replace the transforms of all links that connect to the worldbody
     by randomize transforms.
@@ -210,14 +218,30 @@ def randomize_to_world_pos_rot(
 <x_xy>
     <options dt="0.01"/>
     <worldbody>
-        <body name="free" joint="free"/>
+        <body name="free" joint="free" damping="15.0 15.0 15.0 25.0 25.0 25.0">
+            <geom type="box" mass="1" dim="0.1 0.1 0.1"/>
+        </body>
     </worldbody>
 </x_xy>
 """
-
     free_sys = io.load_sys_from_str(free_sys_str)
+
+    dynamic_simulation = True if overwrite_q_ref is not None else False
+
+    if world_joint != "free":
+        if dynamic_simulation:
+            assert damping is not None
+        free_sys = free_sys.change_joint_type("free", world_joint, new_damp=damping)
+
     _, xs_free = generator.RCMG(
-        free_sys, config, finalize_fn=lambda key, q, x, sys: (q, x)
+        free_sys,
+        config,
+        finalize_fn=lambda key, q, x, sys: (q, x),
+        cor=cor,
+        dynamic_simulation=dynamic_simulation,
+        dynamic_simulation_kwargs=dict(
+            overwrite_q_ref=(overwrite_q_ref, free_sys.idx_map("q"))
+        ),
     ).to_lazy_gen()(key)
     xs_free = xs_free.take(0, axis=0)
     xs_free = xs_free.take(free_sys.name_to_idx("free"), axis=1)
