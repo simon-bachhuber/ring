@@ -1,0 +1,46 @@
+name: Create GitHub Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure we get all tags for history lookup
+
+      - name: Get previous tag
+        id: previous_tag
+        run: |
+          last_tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+' | sed -n 2p)
+          echo "PREVIOUS_TAG=$last_tag" >> $GITHUB_ENV
+          echo "Previous tag: $last_tag"
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "Fetching commits since $PREVIOUS_TAG"
+            git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD > release_notes.md
+          else
+            echo "No previous tag found, listing all commits"
+            git log --pretty=format:"- %s (%h)" > release_notes.md
+          fi
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          cat release_notes.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          body: "${{ env.RELEASE_NOTES }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
