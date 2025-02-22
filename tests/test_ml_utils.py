@@ -149,7 +149,7 @@ def test_wandb_logger():
     logger.log({"awesome_array": np.array(1.0)})
     logger.log({"awesome_string": "yay"})
 
-    root = Path(__file__).parent.parent.joinpath("test_ml_utils_assets")
+    root = Path(__file__).parent.joinpath("test_ml_utils_assets")
 
     logger.log_image(str(root.joinpath("image1.png")))
     logger.log_image(str(root.joinpath("image2.png")))

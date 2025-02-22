@@ -1,8 +1,9 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
-from ring import maths
 import tree_utils
+
+from ring import maths
 
 
 def test_quat_rot_axis_are_inverse():
@@ -12,7 +13,8 @@ def test_quat_rot_axis_are_inverse():
         )
     )
     axis, angle = maths.quat_to_rot_axis(q)
-    assert tree_utils.tree_close(q, maths.quat_rot_axis(axis, angle))
+    # since jax >= v0.5 it (for some reason) returns q -> -q
+    assert tree_utils.tree_close(q, -maths.quat_rot_axis(axis, angle))
 
 
 def test_3x3_are_inverse():
@@ -23,7 +25,8 @@ def test_3x3_are_inverse():
     )
     mat = maths.quat_to_3x3(q)
 
-    np.testing.assert_allclose(q, maths.quat_from_3x3(mat), rtol=1e-5, atol=1e-5)
+    # since jax >= v0.5 it (for some reason) returns q -> -q
+    np.testing.assert_allclose(q, -maths.quat_from_3x3(mat), rtol=1e-5, atol=1e-5)
     np.testing.assert_allclose(
         mat, maths.quat_to_3x3(maths.quat_from_3x3(mat)), rtol=1e-5, atol=1e-5
     )

@@ -41,7 +41,7 @@ def test_virtual_input_joint_axes_rr_joint():
     X = pipeline_load_data_X(sys)
 
     np.testing.assert_allclose(
-        -X["seg1"]["joint_axes"],
+        X["seg1"]["joint_axes"],
         np.repeat(np.array([[0.0, 1, 0]]), 1000, axis=0),
         atol=2e-6,
     )
@@ -55,7 +55,7 @@ def test_virtual_input_joint_axes_rr_joint():
     X = pipeline_load_data_X(sys_rr)
 
     np.testing.assert_allclose(
-        X["seg1"]["joint_axes"],
+        -X["seg1"]["joint_axes"],
         np.repeat(-joint_axes[1:2], 1000, axis=0),
         atol=2e-6,
         rtol=5e-4,
@@ -83,13 +83,13 @@ def test_virtual_input_joint_axes_rr_imp_joint():
     X = pipeline_load_data_X(sys_rr_imp)
 
     np.testing.assert_allclose(
-        -X["seg1"]["joint_axes"],
+        X["seg1"]["joint_axes"],
         np.repeat(joint_axes[1:2], 1000, axis=0),
         atol=0.01,
         rtol=0.02,
     )
     np.testing.assert_allclose(
-        -X["seg3"]["joint_axes"],
+        X["seg3"]["joint_axes"],
         np.repeat(joint_axes[3:4], 1000, axis=0),
         atol=0.01,
         rtol=0.032,
@@ -101,7 +101,7 @@ def test_virtual_input_joint_axes_rr_imp_joint():
     X = pipeline_load_data_X(sys)
 
     np.testing.assert_allclose(
-        -X["seg1"]["joint_axes"],
+        X["seg1"]["joint_axes"],
         np.repeat(np.array([[0.0, 1, 0]]), 1000, axis=0),
         atol=2e-6,
     )

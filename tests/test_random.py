@@ -18,7 +18,8 @@ from ring.algorithms._random import _resolve_range_of_motion
 def test_delta_ang_min_max(
     range_of_motion, range_of_motion_method, delta_ang_min, delta_ang_max
 ):
-    max_iter = 100
+    # add more patience if `delta_ang_max` is small (thus very unlikely)
+    max_iter = 200 if delta_ang_max == 0.1 else 100
     t_min, t_max = 0.1, 3.1
     for seed in range(10):
         for prev_phi in [-3.0, 0.0, 3.0]:

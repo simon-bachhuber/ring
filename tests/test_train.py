@@ -7,6 +7,11 @@ import tree_utils
 import ring
 from ring import ml
 from ring import utils
+import wandb
+
+# make sure that `ml.train_fn` doesn't think wandb is running and automatically
+# add a `WandBLogger`
+wandb.run = None
 
 
 def _load_gen_lam():
