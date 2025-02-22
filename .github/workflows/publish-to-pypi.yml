@@ -3,8 +3,8 @@ name: Publish Python 🐍 distribution 📦 to PyPI
 on:
   push:
     tags:
-      - "v*"
-      
+      - "**"
+
 jobs:
   build:
     name: Build distribution 📦
