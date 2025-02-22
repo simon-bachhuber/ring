@@ -297,8 +297,12 @@ class NoGraph_FilterWrapper(AbstractFilterWrapper):
 
         if self._quat_normalize:
             assert yhat.shape[-1] == 4, f"yhat.shape={yhat.shape}"
-            # yhat = ring.maths.safe_normalize(yhat)
-            yhat = yhat / jnp.linalg.norm(yhat, axis=-1, keepdims=True)
+
+            # for exporting neural networks to ONNX format, you will have to use
+            # the first version, but for neural network training the second version
+            # is required
+            # yhat = yhat / jnp.linalg.norm(yhat, axis=-1, keepdims=True)
+            yhat = ring.maths.safe_normalize(yhat)
 
         return yhat, state
 
