@@ -33,6 +33,9 @@ jobs:
             echo "No previous tag found, listing all commits"
             git log --pretty=format:"- %s (%h)" > release_notes.md
           fi
+          # Set the release notes as an output
+          notes=$(cat release_notes.md)
+          echo "notes=$notes" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
@@ -41,9 +44,3 @@ jobs:
           name: "Release ${{ github.ref_name }}"
           body: "${{ steps.release_notes.outputs.notes }}"
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set release notes as output
-        id: set_release_notes
-        run: |
-          notes=$(cat release_notes.md)
-          echo "notes=$notes" >> $GITHUB_OUTPUT
