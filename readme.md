@@ -1,9 +1,12 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/icon.svg" height="200" />
+<img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/concept_v4.png" height="200" />
 </p>
+
 
 # Recurrent Inertial Graph-based Estimator (RING)
 <img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/coverage_badge.svg" height="20" />
+
+RING provides a pluripotent, problem-unspecific plug-and-play IMT solution that, in contrast to conventional IMT solutions, eliminates the need for expert knowledge to identify, select, and parameterize the appropriate method. RING's pluripotency is enabled by a novel online-capable neural network architecture that uses a decentralized network of message-passing, parameter-sharing recurrent neural networks, which map local IMU measurements and nearest-neighbour messages to local orientations. This architecture enables RING to address a broad range of IMT problems that vary greatly in aspects such as the number of attached sensors, or the number of segments in the kinematic chain, and even generalize to previously unsolved IMT problems, including the challenging combination of magnetometer-free and sparse sensing with unknown sensor-to-segment parameters. Remarkably, RING is trained solely on simulated data, yet evaluated on experimental data, which indicates its exceptional ability to zero-shot generalize from simulation to experiment, while outperforming several state-of-the-art problem-specific solutions. For example, RING can, for the first time, accurately track a four-segment kinematic chain (which requires estimating four orientations) using only two magnetometer-free inertial measurement units.
 
 > **ℹ️ Tip:**
 > 
@@ -17,10 +20,7 @@ Install with `pip` using
 
 `pip install imt-ring`
 
-Typically, this will install `jax` as cpu-only version. Afterwards, gpu-enabled version can be installed with
-```bash
-pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-```
+Typically, this will install `jax` as cpu-only version. For GPU install instructions for `jax` see https://github.com/jax-ml/jax?tab=readme-ov-file#instructions.
 
 ## Documentation
 
@@ -31,12 +31,12 @@ Available [here](https://simipixel.github.io/ring/).
 import ring
 import numpy as np
 
-T  : int       = 30        # sequence length     [s]
-Ts : float     = 0.01      # sampling interval   [s]
-B  : int       = 1         # batch size
-lam: list[int] = [0, 1, 2] # parent array
-N  : int       = len(lam)  # number of bodies
-T_i: int       = int(T/Ts) # number of timesteps
+T  : int       = 30         # sequence length     [s]
+Ts : float     = 0.01       # sampling interval   [s]
+B  : int       = 1          # batch size
+lam: list[int] = [-1, 0, 1] # parent array
+N  : int       = len(lam)   # number of bodies
+T_i: int       = int(T/Ts)  # number of timesteps
 
 X              = np.zeros((B, T_i, N, 9))
 # where X is structured as follows:
@@ -79,7 +79,11 @@ Solution:
 
 ## Publications
 
-The following publications utilize this software library, and refer to it as the *Random Chain Motion Generator (RCMG)* (more specifically the function `ring.RCMG`):
+The main publication is:
+
+- [*Recurrent Inertial Graph-Based Estimator (RING): A Single Pluripotent Inertial Motion Tracking Solution*](https://openreview.net/pdf?id=h2C3rkn0zR)
+
+The following publications also utilize this software library, and refer to it as the *Random Chain Motion Generator (RCMG)* (more specifically the function `ring.RCMG`):
 
 - [*RNN-based Observability Analysis for Magnetometer-Free Sparse Inertial Motion Tracking*](https://ieeexplore.ieee.org/document/9841375)
 - [*Plug-and-Play Sparse Inertial Motion Tracking With Sim-to-Real Transfer*](https://ieeexplore.ieee.org/document/10225275)
