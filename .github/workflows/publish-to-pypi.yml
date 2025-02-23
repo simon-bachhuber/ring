@@ -52,7 +52,8 @@ jobs:
           if [[ "$file" == *.whl ]]; then
             unzip -p "$file" *.dist-info/METADATA | grep Version
           else
-            tar -xOf "$file" */PKG-INFO | grep Version
+            # Extract the PKG-INFO file from the source distribution
+            tar -xzf "$file" --wildcards --no-anchored '*/PKG-INFO' -O | grep Version
           fi
         done
     - name: Store the distribution packages
