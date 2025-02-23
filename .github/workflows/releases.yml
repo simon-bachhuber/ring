@@ -33,8 +33,9 @@ jobs:
             echo "No previous tag found, listing all commits"
             git log --pretty=format:"- %s (%h)" > release_notes.md
           fi
-          # Set the release notes as an output
-          notes=$(cat release_notes.md)
+
+          # Escape special characters in the release notes
+          notes=$(cat release_notes.md | sed ':a;N;$!ba;s/\n/%0A/g' | sed 's/"/%22/g')
           echo "notes=$notes" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
