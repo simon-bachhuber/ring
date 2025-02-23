@@ -16,6 +16,26 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.x"
+    - name: Verify tag
+      run: |
+        # Extract the version from pyproject.toml
+        VERSION=$(grep -oP 'version\s*=\s*"\K[^"]+' pyproject.toml)
+        echo "Version in pyproject.toml: $VERSION"
+        echo "Tag: ${{ github.ref_name }}"
+
+        # Check if the tag matches the expected format (vX.Y.Z)
+        if [[ ! "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Error: Tag '${{ github.ref_name }}' does not match the expected format (vX.Y.Z)"
+          exit 1
+        fi
+
+        # Check if the tag matches the version in pyproject.toml
+        if [[ "${{ github.ref_name }}" != "v$VERSION" ]]; then
+          echo "Error: Tag '${{ github.ref_name }}' does not match version '$VERSION' in pyproject.toml"
+          exit 1
+        fi
+    - name: Clean dist directory
+      run: rm -rf dist/
     - name: Install pypa/build
       run: >-
         python3 -m
@@ -24,6 +44,17 @@ jobs:
         --user
     - name: Build a binary wheel and a source tarball
       run: python3 -m build
+    - name: Verify version in built artifacts
+      run: |
+        ls dist/
+        for file in dist/*; do
+          echo "Checking version in $file"
+          if [[ "$file" == *.whl ]]; then
+            unzip -p "$file" *.dist-info/METADATA | grep Version
+          else
+            tar -xOf "$file" */PKG-INFO | grep Version
+          fi
+        done
     - name: Store the distribution packages
       uses: actions/upload-artifact@v4
       with:
@@ -50,5 +81,3 @@ jobs:
         path: dist/
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-
-  
