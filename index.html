@@ -127,11 +127,12 @@
             <div class="section" itemprop="articleBody">
               
                 <p align="center">
-<img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/icon.svg" height="200" />
+<img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/concept_v4.png" height="200" />
 </p>
 
 <h1 id="recurrent-inertial-graph-based-estimator-ring">Recurrent Inertial Graph-based Estimator (RING)<a class="headerlink" href="#recurrent-inertial-graph-based-estimator-ring" title="Permanent link">¤</a></h1>
 <p><img src="https://raw.githubusercontent.com/simon-bachhuber/ring/main/docs/img/coverage_badge.svg" height="20" /></p>
+<p>RING provides a pluripotent, problem-unspecific plug-and-play IMT solution that, in contrast to conventional IMT solutions, eliminates the need for expert knowledge to identify, select, and parameterize the appropriate method. RING's pluripotency is enabled by a novel online-capable neural network architecture that uses a decentralized network of message-passing, parameter-sharing recurrent neural networks, which map local IMU measurements and nearest-neighbour messages to local orientations. This architecture enables RING to address a broad range of IMT problems that vary greatly in aspects such as the number of attached sensors, or the number of segments in the kinematic chain, and even generalize to previously unsolved IMT problems, including the challenging combination of magnetometer-free and sparse sensing with unknown sensor-to-segment parameters. Remarkably, RING is trained solely on simulated data, yet evaluated on experimental data, which indicates its exceptional ability to zero-shot generalize from simulation to experiment, while outperforming several state-of-the-art problem-specific solutions. For example, RING can, for the first time, accurately track a four-segment kinematic chain (which requires estimating four orientations) using only two magnetometer-free inertial measurement units.</p>
 <blockquote>
 <p><strong>ℹ️ Tip:</strong></p>
 <p>Check out my new plug-and-play interface for inertial motion tracking (RING included) <a href="https://github.com/simon-bachhuber/imt.git">here</a>.</p>
@@ -140,21 +141,19 @@
 <p>Supports <code>Python=3.10/3.11/3.12</code> (tested).</p>
 <p>Install with <code>pip</code> using</p>
 <p><code>pip install imt-ring</code></p>
-<p>Typically, this will install <code>jax</code> as cpu-only version. Afterwards, gpu-enabled version can be installed with
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span><span class="s2">&quot;jax[cuda12_pip]&quot;</span><span class="w"> </span>-f<span class="w"> </span>https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-</code></pre></div></p>
+<p>Typically, this will install <code>jax</code> as cpu-only version. For GPU install instructions for <code>jax</code> see https://github.com/jax-ml/jax?tab=readme-ov-file#instructions.</p>
 <h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">¤</a></h2>
-<p>Available <a href="https://simipixel.github.io/ring/">here</a>.</p>
+<p>Available <a href="https://simon-bachhuber.github.io/ring/">here</a>.</p>
 <h2 id="quickstart-example">Quickstart Example<a class="headerlink" href="#quickstart-example" title="Permanent link">¤</a></h2>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">ring</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="n">T</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">30</span>        <span class="c1"># sequence length     [s]</span>
-<span class="n">Ts</span> <span class="p">:</span> <span class="nb">float</span>     <span class="o">=</span> <span class="mf">0.01</span>      <span class="c1"># sampling interval   [s]</span>
-<span class="n">B</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">1</span>         <span class="c1"># batch size</span>
-<span class="n">lam</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="c1"># parent array</span>
-<span class="n">N</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span>  <span class="c1"># number of bodies</span>
-<span class="n">T_i</span><span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="n">Ts</span><span class="p">)</span> <span class="c1"># number of timesteps</span>
+<span class="n">T</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">30</span>         <span class="c1"># sequence length     [s]</span>
+<span class="n">Ts</span> <span class="p">:</span> <span class="nb">float</span>     <span class="o">=</span> <span class="mf">0.01</span>       <span class="c1"># sampling interval   [s]</span>
+<span class="n">B</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">1</span>          <span class="c1"># batch size</span>
+<span class="n">lam</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="c1"># parent array</span>
+<span class="n">N</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span>   <span class="c1"># number of bodies</span>
+<span class="n">T_i</span><span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="n">Ts</span><span class="p">)</span>  <span class="c1"># number of timesteps</span>
 
 <span class="n">X</span>              <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">B</span><span class="p">,</span> <span class="n">T_i</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
 <span class="c1"># where X is structured as follows:</span>
@@ -190,7 +189,11 @@
 1. <code>pip uninstall -y jax jaxlib</code>
 2. <code>conda install -c conda-forge jax</code></p>
 <h2 id="publications">Publications<a class="headerlink" href="#publications" title="Permanent link">¤</a></h2>
-<p>The following publications utilize this software library, and refer to it as the <em>Random Chain Motion Generator (RCMG)</em> (more specifically the function <code>ring.RCMG</code>):</p>
+<p>The main publication is:</p>
+<ul>
+<li><a href="https://openreview.net/pdf?id=h2C3rkn0zR"><em>Recurrent Inertial Graph-Based Estimator (RING): A Single Pluripotent Inertial Motion Tracking Solution</em></a></li>
+</ul>
+<p>The following publications also utilize this software library, and refer to it as the <em>Random Chain Motion Generator (RCMG)</em> (more specifically the function <code>ring.RCMG</code>):</p>
 <ul>
 <li><a href="https://ieeexplore.ieee.org/document/9841375"><em>RNN-based Observability Analysis for Magnetometer-Free Sparse Inertial Motion Tracking</em></a></li>
 <li><a href="https://ieeexplore.ieee.org/document/10225275"><em>Plug-and-Play Sparse Inertial Motion Tracking With Sim-to-Real Transfer</em></a></li>
@@ -252,5 +255,5 @@
 
 <!--
 MkDocs version : 1.5.3
-Build Date UTC : 2025-02-15 13:06:35.001255+00:00
+Build Date UTC : 2025-03-03 16:40:55.494685+00:00
 -->
