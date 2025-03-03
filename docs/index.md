@@ -24,7 +24,7 @@ pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-re
 
 ## Documentation
 
-Available [here](https://simipixel.github.io/ring/).
+Available [here](https://simon-bachhuber.github.io/ring/).
 
 ## Quickstart Example
 ```python

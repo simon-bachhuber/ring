@@ -24,7 +24,7 @@ Typically, this will install `jax` as cpu-only version. For GPU install instruct
 
 ## Documentation
 
-Available [here](https://simipixel.github.io/ring/).
+Available [here](https://simon-bachhuber.github.io/ring/).
 
 ## Quickstart Example
 ```python
