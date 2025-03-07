@@ -3,7 +3,7 @@ name: Publish Python 🐍 distribution 📦 to PyPI
 on:
   push:
     tags:
-      - "**"
+      - "v*.*.*"  # Only trigger on semver tags
 
 jobs:
   build:
@@ -12,15 +12,23 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Get full history including the commit the tag points to
+    
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.x"
-    - name: Verify tag
+    
+    - name: Verify tag and pyproject.toml
       run: |
-        # Extract the version from pyproject.toml
-        VERSION=$(grep -oP 'version\s*=\s*"\K[^"]+' pyproject.toml)
-        echo "Version in pyproject.toml: $VERSION"
+        # Print Git information for debugging
+        echo "Current commit: $(git rev-parse HEAD)"
+        echo "Tag ${{ github.ref_name }} points to: $(git rev-list -n 1 ${{ github.ref_name }})"
+        
+        # Get the actual pyproject.toml content from the tagged commit
+        VERSION=$(git show ${{ github.ref_name }}:pyproject.toml | grep -oP 'version\s*=\s*"\K[^"]+')
+        echo "Version in pyproject.toml at tag: $VERSION"
         echo "Tag: ${{ github.ref_name }}"
 
         # Check if the tag matches the expected format (vX.Y.Z)
@@ -31,19 +39,24 @@ jobs:
 
         # Check if the tag matches the version in pyproject.toml
         if [[ "${{ github.ref_name }}" != "v$VERSION" ]]; then
-          echo "Error: Tag '${{ github.ref_name }}' does not match version '$VERSION' in pyproject.toml"
+          echo "Error: Tag '${{ github.ref_name }}' does not match version '$VERSION' in pyproject.toml at the tagged commit"
+          echo "This could mean your tag was created before pushing the version change."
           exit 1
         fi
+    
     - name: Clean dist directory
       run: rm -rf dist/
+    
     - name: Install pypa/build
       run: >-
         python3 -m
         pip install
         build
         --user
+    
     - name: Build a binary wheel and a source tarball
       run: python3 -m build
+    
     - name: Verify version in built artifacts
       run: |
         ls dist/
@@ -52,10 +65,11 @@ jobs:
           if [[ "$file" == *.whl ]]; then
             unzip -p "$file" *.dist-info/METADATA | grep Version
           else
-            # Extract the PKG-INFO file from the source distribution
-            tar -xzf "$file" --wildcards --no-anchored '*/PKG-INFO' -O | grep Version
+            # Use proper tar extraction for the source distribution
+            tar -xf "$file" --wildcards --no-anchored '*/PKG-INFO' -O | grep Version
           fi
         done
+    
     - name: Store the distribution packages
       uses: actions/upload-artifact@v4
       with:
@@ -70,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/imt-ring  # Replace <package-name> with your PyPI project name
+      url: https://pypi.org/p/imt-ring  # Replace with your PyPI project name
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
 
@@ -80,5 +94,6 @@ jobs:
       with:
         name: python-package-distributions
         path: dist/
+    
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
