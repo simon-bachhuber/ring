@@ -31,10 +31,11 @@ jobs:
             git log --pretty=format:"- %s (%h)" > release_notes.md
           fi
           
-          # Create multiline output properly using EOF delimiter
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          # Proper delimiter handling for GitHub Actions
+          delimiter="RELEASE_NOTES_EOF"
+          echo "notes<<$delimiter" >> $GITHUB_OUTPUT
           cat release_notes.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "$delimiter" >> $GITHUB_OUTPUT
       
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
