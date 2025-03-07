@@ -21,7 +21,6 @@ jobs:
           echo "Previous tag: $last_tag"
       
       - name: Generate release notes
-        id: release_notes
         run: |
           if [ -n "$PREVIOUS_TAG" ]; then
             echo "Fetching commits since $PREVIOUS_TAG"
@@ -30,17 +29,11 @@ jobs:
             echo "No previous tag found, listing all commits"
             git log --pretty=format:"- %s (%h)" > release_notes.md
           fi
-          
-          # Proper delimiter handling for GitHub Actions
-          delimiter="RELEASE_NOTES_EOF"
-          echo "notes<<$delimiter" >> $GITHUB_OUTPUT
-          cat release_notes.md >> $GITHUB_OUTPUT
-          echo "$delimiter" >> $GITHUB_OUTPUT
       
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
           name: "Release ${{ github.ref_name }}"
-          body: ${{ steps.release_notes.outputs.notes }}
+          bodyFile: "release_notes.md"
           token: ${{ secrets.GITHUB_TOKEN }}
