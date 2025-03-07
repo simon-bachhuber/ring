@@ -1,28 +1,25 @@
 name: Create GitHub Release
-
 on:
   push:
     tags:
       - "**"
-
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Ensure we get all tags for history lookup
-
+      
       - name: Get previous tag
         id: previous_tag
         run: |
           last_tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+' | sed -n 2p)
           echo "PREVIOUS_TAG=$last_tag" >> $GITHUB_ENV
           echo "Previous tag: $last_tag"
-
+      
       - name: Generate release notes
         id: release_notes
         run: |
@@ -33,15 +30,16 @@ jobs:
             echo "No previous tag found, listing all commits"
             git log --pretty=format:"- %s (%h)" > release_notes.md
           fi
-
-          # Escape special characters in the release notes
-          notes=$(cat release_notes.md | sed ':a;N;$!ba;s/\n/%0A/g' | sed 's/"/%22/g')
-          echo "notes=$notes" >> $GITHUB_OUTPUT
-
+          
+          # Create multiline output properly using EOF delimiter
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
           name: "Release ${{ github.ref_name }}"
-          body: "${{ steps.release_notes.outputs.notes }}"
+          body: ${{ steps.release_notes.outputs.notes }}
           token: ${{ secrets.GITHUB_TOKEN }}
