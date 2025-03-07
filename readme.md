@@ -97,3 +97,8 @@ Particularly useful is the following publication from *Roy Featherstone*
 ## Contact
 
 Simon Bachhuber (simon.bachhuber@fau.de)
+
+### How to bump verion in this python package
+
+1) commit and *push* your code changes. Make sure to also update the version in `pyproject.toml`
+2) create the tag and push the tag
