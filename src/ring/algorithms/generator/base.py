@@ -1,5 +1,6 @@
 from dataclasses import replace
 from functools import partial
+import logging
 import random
 from typing import Callable, Optional
 import warnings
@@ -19,6 +20,8 @@ from ring.algorithms.generator import finalize_fns
 from ring.algorithms.generator import motion_artifacts
 from ring.algorithms.generator import setup_fns
 from ring.algorithms.generator import types
+
+logger = logging.getLogger(__name__)
 
 
 class RCMG:
@@ -237,7 +240,9 @@ class RCMG:
     def _generators_ncalls(self, sizes: int | list[int] = 1):
         "Returns list of unbatched sequences as numpy arrays."
         repeats = self._compute_repeats(sizes)
+        logger.info(f"`repeats` = {repeats}")
         sizes = list(jnp.array(repeats) * jnp.array(self._size_of_generators))
+        logger.info(f"`sizes` = {sizes}")
 
         reduced_repeats = []
         n_calls = []
@@ -246,6 +251,9 @@ class RCMG:
             gcd = utils.gcd(n_call, repeat)
             n_calls.append(gcd)
             reduced_repeats.append(repeat // gcd)
+        logger.info(f"`reduced_repeats` = {reduced_repeats}")
+        logger.info(f"`n_calls` = {n_calls}")
+
         jits = [N > 1 for N in n_calls]
 
         gens = []
