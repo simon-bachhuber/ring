@@ -124,6 +124,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../notebooks/knee_angle_tracking/">Knee angle tracking</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../notebooks/interactive_viewer/">Interactive viewer</a>
+                  </li>
               </ul>
       </div>
     </div>
@@ -232,12 +234,12 @@ parameters.</p>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ring</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">T</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">30</span>        <span class="c1"># sequence length     [s]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Ts</span> <span class="p">:</span> <span class="nb">float</span>     <span class="o">=</span> <span class="mf">0.01</span>      <span class="c1"># sampling interval   [s]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">1</span>         <span class="c1"># batch size</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">lam</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="c1"># parent array</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">N</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span>  <span class="c1"># number of bodies</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">T_i</span><span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="n">Ts</span><span class="p">)</span> <span class="c1"># number of timesteps</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">T</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">30</span>         <span class="c1"># sequence length     [s]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Ts</span> <span class="p">:</span> <span class="nb">float</span>     <span class="o">=</span> <span class="mf">0.01</span>       <span class="c1"># sampling interval   [s]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="mi">1</span>          <span class="c1"># batch size</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lam</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="c1"># parent array</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">N</span>  <span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span>   <span class="c1"># number of bodies</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">T_i</span><span class="p">:</span> <span class="nb">int</span>       <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="n">Ts</span><span class="p">)</span>  <span class="c1"># number of timesteps</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">B</span><span class="p">,</span> <span class="n">T_i</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># where X is structured as follows:</span>
@@ -2038,7 +2040,7 @@ Currently it does:
 
 
 <a href="#src.ring.base.System.render" class="headerlink" title="Permanent link">¤</a></h5>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">render</span><span class="p">(</span><span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_pbar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;mujoco&#39;</span><span class="p">,</span> <span class="n">render_every_nth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">scene_kwargs</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">render</span><span class="p">(</span><span class="n">qs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_pbar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;mujoco&#39;</span><span class="p">,</span> <span class="n">render_every_nth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">scene_kwargs</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
