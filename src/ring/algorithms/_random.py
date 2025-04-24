@@ -41,30 +41,48 @@ def random_angle_over_time(
     cdf_bins_min: int = 5,
     cdf_bins_max: Optional[int] = None,
     interpolation_method: str = "cosine",
+    include_standstills_prob: float = 0.0,  # 0.0 means no standstills
+    include_standstills_t_min: float = 0.5,
+    include_standstills_t_max: float = 5.0,
 ) -> jax.Array:
     def body_fn_outer(val):
         i, t, phi, key_t, key_ang, ANG = val
 
-        key_t, consume_t = random.split(key_t)
+        key_t, consume_t, consume_standstill = random.split(key_t, 3)
         key_ang, consume_ang = random.split(key_ang)
         rom_halfsize_float = _to_float(rom_halfsize, t)
         rom_lower = ANG_0 - rom_halfsize_float
         rom_upper = ANG_0 + rom_halfsize_float
-        dt, phi = _resolve_range_of_motion(
-            range_of_motion,
-            range_of_motion_method,
-            rom_lower,
-            rom_upper,
-            _to_float(dang_min, t),
-            _to_float(dang_max, t),
-            _to_float(delta_ang_min, t),
-            _to_float(delta_ang_max, t),
-            t_min,
-            _to_float(t_max, t),
-            phi,
-            consume_t,
-            consume_ang,
-            max_iter,
+
+        is_standstill = jax.random.bernoulli(
+            consume_standstill, include_standstills_prob
+        )
+        dt, phi = jax.lax.cond(
+            is_standstill,
+            lambda: (
+                jax.random.uniform(
+                    consume_t,
+                    minval=include_standstills_t_min,
+                    maxval=include_standstills_t_max,
+                ),
+                phi,
+            ),
+            lambda: _resolve_range_of_motion(
+                range_of_motion,
+                range_of_motion_method,
+                rom_lower,
+                rom_upper,
+                _to_float(dang_min, t),
+                _to_float(dang_max, t),
+                _to_float(delta_ang_min, t),
+                _to_float(delta_ang_max, t),
+                t_min,
+                _to_float(t_max, t),
+                phi,
+                consume_t,
+                consume_ang,
+                max_iter,
+            ),
         )
         t += dt
 
@@ -119,7 +137,8 @@ def random_angle_over_time(
 
 # APPROVED
 def random_position_over_time(
-    key: random.PRNGKey,
+    key_t: random.PRNGKey,
+    key_value: random.PRNGKey,
     POS_0: float,
     pos_min: float | TimeDependentFloat,
     pos_max: float | TimeDependentFloat,
@@ -135,18 +154,13 @@ def random_position_over_time(
     cdf_bins_min: int = 5,
     cdf_bins_max: Optional[int] = None,
     interpolation_method: str = "cosine",
+    include_standstills_prob: float = 0.0,  # 0.0 means no standstills
+    include_standstills_t_min: float = 0.5,
+    include_standstills_t_max: float = 5.0,
 ) -> jax.Array:
     def body_fn_inner(val):
         i, t, t_pre, x, x_pre, key = val
         dt = t - t_pre
-
-        def sample_dx_squared(key):
-            key, consume = random.split(key)
-            dx = (
-                random.uniform(consume) * (2 * dpos_max * t_max**2)
-                - dpos_max * t_max**2
-            )
-            return key, dx
 
         def sample_dx(key):
             key, consume1, consume2 = random.split(key, 3)
@@ -182,24 +196,43 @@ def random_position_over_time(
         return jnp.logical_not(break_if_true1 | break_if_true2)
 
     def body_fn_outer(val):
-        i, t, t_pre, x, x_pre, key, POS = val
-        key, consume = random.split(key)
-        t += random.uniform(consume, minval=t_min, maxval=_to_float(t_max, t_pre))
+        i, t, t_pre, x, x_pre, key_t, key_value, POS = val
+        key_t, consume_t, consume_standstill = random.split(key_t, 3)
 
-        # that zero resets the max_it count
-        val_inner = (0, t, t_pre, x, x_pre, key)
-        _, t, t_pre, x, x_pre, key = jax.lax.while_loop(
-            cond_fn_inner, body_fn_inner, val_inner
+        is_standstill = jax.random.bernoulli(
+            consume_standstill, include_standstills_prob
+        )
+
+        def is_standstill_branch():
+            dt = random.uniform(
+                consume_t,
+                minval=include_standstills_t_min,
+                maxval=include_standstills_t_max,
+            )
+            t = t_pre + dt
+            return 0, t, t_pre, x, x_pre, key_value
+
+        def no_standstill_branch():
+            dt = random.uniform(consume_t, minval=t_min, maxval=_to_float(t_max, t_pre))
+            t = t_pre + dt
+            # that zero resets the max_it count
+            val_inner = (0, t, t_pre, x, x_pre, key_value)
+            return jax.lax.while_loop(cond_fn_inner, body_fn_inner, val_inner)
+
+        _, t, t_pre, x, x_pre, key_value = jax.lax.cond(
+            is_standstill,
+            is_standstill_branch,
+            no_standstill_branch,
         )
 
         POS_i = jnp.array([[jnp.floor(t / Ts) * Ts, x]])
         POS = jax.lax.dynamic_update_slice_in_dim(POS, POS_i, start_index=i, axis=0)
         t_pre = t
         x_pre = x
-        return i + 1, t, t_pre, x, x_pre, key, POS
+        return i + 1, t, t_pre, x, x_pre, key_t, key_value, POS
 
     def cond_fn_outer(val):
-        i, t, t_pre, x, x_pre, key, POS = val
+        i, t, t_pre, x, x_pre, key_t, key_value, POS = val
         return t <= T
 
     # preallocate POS array
@@ -207,7 +240,7 @@ def random_position_over_time(
     POS = jnp.zeros((int(T // t_min) + 1, 2))
     POS = POS.at[0, 1].set(POS_0)
 
-    val_outer = (1, 0.0, 0.0, POS_0, POS_0, key, POS)
+    val_outer = (1, 0.0, 0.0, POS_0, POS_0, key_t, key_value, POS)
     end, *_, consume, POS = jax.lax.while_loop(cond_fn_outer, body_fn_outer, val_outer)
     POS = jnp.where(
         (jnp.arange(len(POS)) < end)[:, None],
