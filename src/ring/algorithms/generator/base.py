@@ -1,5 +1,6 @@
 from dataclasses import replace
 from functools import partial
+import json
 import logging
 import random
 from typing import Callable, Optional
@@ -136,6 +137,14 @@ class RCMG:
               affecting joint motion behavior.
         """  # noqa: E501
 
+        # capture all funtion arguments before creating local variables
+        to_json_kwargs = locals()
+        # the purpose is to not capture the RCMG itself since we want to make it
+        # serialisable in the first place
+        to_json_kwargs.pop("self")
+        to_json_kwargs.pop("sys")
+        to_json_kwargs.pop("config")
+
         # add some default values
         randomize_hz_kwargs_defaults = dict(add_dt=True)
         randomize_hz_kwargs_defaults.update(randomize_hz_kwargs)
@@ -185,6 +194,11 @@ class RCMG:
         self._size_of_generators = [self._n_mconfigs] * len(self.gens)
 
         self._disable_tqdm = disable_tqdm
+
+        # store arguments that fully define the RCMG objects for use in `.to_json`
+        self._to_json_sys = sys
+        self._to_json_mconfig = config
+        self._to_json_kwargs = to_json_kwargs
 
     def _compute_repeats(self, sizes: int | list[int]) -> list[int]:
         "how many times the generators are repeated to create a batch of `sizes`"
@@ -354,6 +368,21 @@ class RCMG:
             return batch
 
         return generator
+
+    def serialise_to_dict(self) -> dict:
+        dict_representation = {
+            "system": [_sys.to_str(warn=False) for _sys in self._to_json_sys],
+            "motion_configs": [_config.__dict__ for _config in self._to_json_mconfig],
+            "kwargs": self._to_json_kwargs,
+        }
+        return dict_representation
+
+    def serialise_to_json(self, path_of_json: str) -> None:
+        with open(path_of_json, "w") as file:
+            json.dump(self.serialise_to_dict(), file, indent=4)
+
+    def from_json(self, path_to_json: str) -> "RCMG":
+        raise NotImplementedError
 
 
 def _copy_dicts(f) -> dict:
@@ -526,7 +555,7 @@ def draw_random_q(
     sys: base.System,
     config: jcalc.MotionConfig,
     N: int | None,
-) -> tuple[types.Xy, types.OutputExtras]:
+) -> tuple[jax.random.PRNGKey, jax.Array]:
 
     key_start = key
     # build generalized coordintes vector `q`
