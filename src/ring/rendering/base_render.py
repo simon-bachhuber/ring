@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Optional
 
 import jax
@@ -93,15 +94,29 @@ def _load_scene(sys, backend, **scene_kwargs):
     return _scene
 
 
+@jax.jit
+def _jit_forward_kinematics(sys):
+    _, state = kinematics.forward_kinematics(sys, base.State.create(sys))
+    return state.x
+
+
+@jax.jit
+@partial(jax.vmap, in_axes=(None, 0))
+def _jit_vmap_forward_kinematics(sys, q):
+    _, state = kinematics.forward_kinematics(sys, base.State.create(sys, q=q))
+    return state.x
+
+
 def render(
     sys: base.System,
+    qs: Optional[jax.Array | list[jax.Array]] = None,
     xs: Optional[base.Transform | list[base.Transform]] = None,
     camera: Optional[str] = None,
     show_pbar: bool = True,
     backend: str = "mujoco",
     render_every_nth: int = 1,
     **scene_kwargs,
-) -> list[np.ndarray]:
+) -> list[np.ndarray | None]:
     """Render frames from system and trajectory of maximal coordinates `xs`.
 
     Args:
@@ -114,9 +129,13 @@ def render(
     Returns:
         list[np.ndarray]: Stacked rendered frames. Length == len(xs).
     """
+    assert not (qs is not None and xs is not None)
 
+    if xs is None and qs is None:
+        xs = _jit_forward_kinematics(sys)
     if xs is None:
-        xs = kinematics.forward_kinematics(sys, base.State.create(sys))[1].x
+        qs = jnp.stack(utils.to_list(qs), axis=0)
+        xs = _jit_vmap_forward_kinematics(sys, qs)
 
     # convert time-axis of batched xs object into a list of unbatched x objects
     if isinstance(xs, base.Transform) and xs.ndim() == 3:
@@ -143,6 +162,9 @@ def render(
         data_check(x)
 
     scene = _load_scene(sys, backend, **scene_kwargs)
+
+    if scene_kwargs.get("interactive", False):
+        show_pbar = False
 
     frames = []
     for x in tqdm.tqdm(xs, "Rendering frames..", disable=not show_pbar):

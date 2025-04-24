@@ -981,6 +981,7 @@ class System(_Base):
 
     def render(
         self,
+        qs: Optional[jax.Array | list[jax.Array]] = None,
         xs: Optional[Transform | list[Transform]] = None,
         camera: Optional[str] = None,
         show_pbar: bool = True,
@@ -1001,7 +1002,7 @@ class System(_Base):
             list[np.ndarray]: Stacked rendered frames. Length == len(xs).
         """
         return ring.rendering.render(
-            self, xs, camera, show_pbar, backend, render_every_nth, **scene_kwargs
+            self, qs, xs, camera, show_pbar, backend, render_every_nth, **scene_kwargs
         )
 
     def render_prediction(
