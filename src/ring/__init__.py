@@ -35,12 +35,12 @@ def RING(lam: list[int] | None, Ts: float | None, **kwargs) -> ml.AbstractFilter
         >>> import ring
         >>> import numpy as np
         >>>
-        >>> T  : int       = 30        # sequence length     [s]
-        >>> Ts : float     = 0.01      # sampling interval   [s]
-        >>> B  : int       = 1         # batch size
-        >>> lam: list[int] = [0, 1, 2] # parent array
-        >>> N  : int       = len(lam)  # number of bodies
-        >>> T_i: int       = int(T/Ts) # number of timesteps
+        >>> T  : int       = 30         # sequence length     [s]
+        >>> Ts : float     = 0.01       # sampling interval   [s]
+        >>> B  : int       = 1          # batch size
+        >>> lam: list[int] = [-1, 0, 1] # parent array
+        >>> N  : int       = len(lam)   # number of bodies
+        >>> T_i: int       = int(T/Ts)  # number of timesteps
         >>>
         >>> X = np.zeros((B, T_i, N, 9))
         >>> # where X is structured as follows:
