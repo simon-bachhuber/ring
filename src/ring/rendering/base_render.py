@@ -134,7 +134,12 @@ def render(
     if xs is None and qs is None:
         xs = _jit_forward_kinematics(sys)
     if xs is None:
-        qs = jnp.stack(utils.to_list(qs), axis=0)
+        # throw error if `xs` has been given by accident as `qs` argument
+        qs = utils.to_list(qs)
+        assert not isinstance(
+            qs[0], base.Transform
+        ), "`qs` should be `jax.Array` and not `Transform`; maybe you want to pass `xs` as keyword argument `xs=xs`?"  # noqa: E501
+        qs = jnp.stack(qs, axis=0)
         xs = _jit_vmap_forward_kinematics(sys, qs)
 
     # convert time-axis of batched xs object into a list of unbatched x objects
@@ -263,7 +268,7 @@ def render_prediction(
         sys, xs, yhat, transparent_segment_to_root, offset_truth, offset_pred
     )
 
-    frames = render(sys_render, xs_render, **kwargs)
+    frames = render(sys=sys_render, xs=xs_render, **kwargs)
     return frames
 
 
