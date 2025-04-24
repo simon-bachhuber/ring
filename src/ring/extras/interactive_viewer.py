@@ -82,10 +82,10 @@ def _fire_main(path_sys_xml: str, path_qs_np: Optional[str] = None, **scene_kwar
 
     assert qs.ndim == 2, f"qs.shape = {qs.shape}"
     T, Q = qs.shape
-    assert Q == sys.q_size()
+    assert Q == sys.q_size(), f"Q={Q} != sys.q_size={sys.q_size()}"
     dt_target = sys.dt
 
-    with InteractiveViewer(sys, **scene_kwargs) as viewer:
+    with InteractiveViewer(sys, width=640, height=480, **scene_kwargs) as viewer:
         dt = dt_target
         last_t = time.time()
         t = -1
