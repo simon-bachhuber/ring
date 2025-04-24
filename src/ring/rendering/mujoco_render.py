@@ -118,8 +118,10 @@ def _xml_str_one_body(
     body_number: int, geoms: list[base.Geometry], cameras: list[str], lights: list[str]
 ) -> str:
     inside_body_geoms = ""
-    for geom in geoms:
-        inside_body_geoms += _xml_str_one_geom(geom)
+    for geom_number, geom in enumerate(geoms):
+        inside_body_geoms += _xml_str_one_geom(
+            geom, name=f"body{body_number}_geom{geom_number}"
+        )
 
     inside_body_cameras = ""
     for camera in cameras:
@@ -138,7 +140,7 @@ def _xml_str_one_body(
 """
 
 
-def _xml_str_one_geom(geom: base.Geometry) -> str:
+def _xml_str_one_geom(geom: base.Geometry, name: str) -> str:
     rgba = f'rgba="{_array_to_str(geom.color)}"'
 
     if isinstance(geom, base.Box):
@@ -158,7 +160,8 @@ def _xml_str_one_geom(geom: base.Geometry) -> str:
 
     rot, pos = maths.quat_inv(geom.transform.rot), geom.transform.pos
     rot, pos = f'pos="{_array_to_str(pos)}"', f'quat="{_array_to_str(rot)}"'
-    return f"<geom {type_size} {rgba} {rot} {pos}/>"
+    name = f'name="{name}"'
+    return f"<geom {type_size} {rgba} {rot} {pos} {name}/>"
 
 
 def _array_to_str(arr: Sequence[float]) -> str:
@@ -181,6 +184,8 @@ class MujocoScene:
         floor_z: float = -0.84,
         floor_material: str = "matplane",
         debug: bool = False,
+        interactive: bool = False,
+        interactive_hide_menu: bool = False,
     ) -> None:
         self.debug = debug
         self.height, self.width = height, width
@@ -195,6 +200,8 @@ class MujocoScene:
         self.show_stars = show_stars
         self.show_floor = show_floor
         self.floor_kwargs = dict(z=floor_z, material=floor_material)
+        self.interactive = interactive
+        self.interactive_hide_menu = interactive_hide_menu
 
     def init(self, geoms: list[base.Geometry]):
         self._parent_ids = list(set([geom.link_idx for geom in geoms]))
@@ -208,7 +215,22 @@ class MujocoScene:
             debug=self.debug,
         )
         self._data = mujoco.MjData(self._model)
-        self._renderer = mujoco.Renderer(self._model, self.height, self.width)
+        if self.interactive:
+            import mujoco_viewer
+
+            self._renderer = mujoco_viewer.MujocoViewer(
+                self._model,
+                self._data,
+                width=self.width,
+                height=self.height,
+                hide_menus=self.interactive_hide_menu,
+            )
+
+            if self.interactive_hide_menu:
+                print("Menu can be shown with key `H` for H(elp)")
+
+        else:
+            self._renderer = mujoco.Renderer(self._model, self.height, self.width)
 
     def update(self, x: base.Transform):
         rot, pos = maths.quat_inv(x.rot), x.pos
@@ -234,6 +256,15 @@ class MujocoScene:
 
         mujoco.mj_forward(self._model, self._data)
 
-    def render(self, camera: Optional[str] = None):
-        self._renderer.update_scene(self._data, camera=-1 if camera is None else camera)
+    def render(self, camera: Optional[str] = None) -> np.ndarray | None:
+        if not self.interactive:
+            self._renderer.update_scene(
+                self._data, camera=-1 if camera is None else camera
+            )
         return self._renderer.render()
+
+    def close(self):
+        self._renderer.close()
+
+    def __del__(self):
+        self.close()
